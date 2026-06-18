@@ -150,6 +150,9 @@ Use box terms that are non-empty only under the desired condition, combined with
 **What does each letter in a CRUD annotation like `cRud` mean?**
 `C` is create, `R` is read, `U` is update, `D` is delete — uppercase allows the operation and lowercase denies it. This compact notation gives you fine control over what users can do. [Learn more →](https://ampersandtarski.github.io/prototype/reference-material/frontend-components)
 
+**Can I see how my interfaces turn into a web API?**
+When the compiler builds a prototype it also writes `generics/openapi.json`, an OpenAPI 3.0 description of its REST API. Each INTERFACE becomes a path, and the CRUD rights decide which fields are readable and which GET, PATCH, POST and DELETE operations exist; changing a CRUD right and regenerating shows the effect on the API. [Learn more →](../the-tools-we-use/openapi-generation.md)
+
 ### Installing & running your model
 
 **How do I install Ampersand on my own computer?**

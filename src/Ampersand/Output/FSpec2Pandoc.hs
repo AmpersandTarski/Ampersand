@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc) where
+module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc, crossRefWrap) where
 
 import Ampersand.Diagnosis.Extract (extractDiagnostics)
 import Ampersand.Output.ToPandoc
@@ -66,34 +66,7 @@ fSpec2Pandoc env now fSpec = (thePandoc, L.sortOn (name . pType) thePictures)
     l = localize outputLang'
     outputLang' = outputLang env fSpec
     wrap :: Pandoc -> Pandoc
-    wrap (Pandoc meta blocks) =
-      Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks
-      where
-        m' =
-          figureTitle ((str . l) (NL "Figuur", EN "Figure"))
-            <> tableTitle ((str . l) (NL "Tabel", EN "Table"))
-            <> figPrefix
-              [ (str . l) (NL "fig.", EN "fig."),
-                (str . l) (NL "figs.", EN "figs.")
-              ]
-            <> eqnPrefix
-              [ (str . l) (NL "relatie", EN "relation"),
-                (str . l) (NL "relaties", EN "relations")
-              ]
-            <> tblPrefix
-              [ (str . l) (NL "tbl.", EN "tbl."),
-                (str . l) (NL "tbls.", EN "tbls.")
-              ]
-            <> lstPrefix
-              [ (str . l) (NL "afspraak", EN "agreement"),
-                (str . l) (NL "afspraken", EN "agreements")
-              ]
-            <> secPrefix
-              [ (str . l) (NL "hoofdstuk", EN "chapter"),
-                (str . l) (NL "hoofdstukken", EN "chapters")
-              ]
-            <> cref True -- required for pandoc-crossref to do its work properly
-            <> chapters True -- Numbering with subnumbers per chapter
+    wrap = crossRefWrap outputLang'
     thePandoc =
       wrap
         . setTitle
@@ -160,3 +133,38 @@ fSpec2Pandoc env now fSpec = (thePandoc, L.sortOn (name . pType) thePictures)
     fspec2Blocks Diagnosis = chpDiagnosis env fSpec diagData
     fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis env 0 fSpec
     fspec2Blocks DataAnalysis = chpDataAnalysis env fSpec
+
+-- | Configure pandoc-crossref (figure/table/section numbering and cross
+-- references) for a generated document, in the given output language.
+-- Shared by the functional design document and the solution architecture.
+crossRefWrap :: Lang -> Pandoc -> Pandoc
+crossRefWrap lang (Pandoc meta blocks) =
+  Pandoc meta $ runCrossRef m' Nothing crossRefBlocks blocks
+  where
+    l :: LocalizedStr -> Text
+    l = localize lang
+    m' =
+      figureTitle ((str . l) (NL "Figuur", EN "Figure"))
+        <> tableTitle ((str . l) (NL "Tabel", EN "Table"))
+        <> figPrefix
+          [ (str . l) (NL "fig.", EN "fig."),
+            (str . l) (NL "figs.", EN "figs.")
+          ]
+        <> eqnPrefix
+          [ (str . l) (NL "relatie", EN "relation"),
+            (str . l) (NL "relaties", EN "relations")
+          ]
+        <> tblPrefix
+          [ (str . l) (NL "tbl.", EN "tbl."),
+            (str . l) (NL "tbls.", EN "tbls.")
+          ]
+        <> lstPrefix
+          [ (str . l) (NL "afspraak", EN "agreement"),
+            (str . l) (NL "afspraken", EN "agreements")
+          ]
+        <> secPrefix
+          [ (str . l) (NL "hoofdstuk", EN "chapter"),
+            (str . l) (NL "hoofdstukken", EN "chapters")
+          ]
+        <> cref True -- required for pandoc-crossref to do its work properly
+        <> chapters True -- Numbering with subnumbers per chapter

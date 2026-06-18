@@ -91,6 +91,16 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   positives, so a green run never blocks a good PR. Link cross-repo and README targets
   with the `.md` extension so Docusaurus resolves them to the right route.
 
+## Proof layer (proofs/)
+
+- `proofs/spike/` holds the machine-checked proof layer for rule rewrites (see
+  `HANDOFF_bewijsassistent_skill.md` and `proofs/spike/SPIKE_REPORT.md`).
+- Toolchain: Isabelle 2025-2 (CLI `/Applications/Isabelle2025-2.app/bin/isabelle`,
+  headless via `isabelle build`) + Prover9/Mace4 (Homebrew). After the cask install,
+  strip the quarantine attribute or every binary dies with SIGKILL (`install.sh`
+  does this).
+- Prover9/Mace4 print "THEOREM PROVED"/"MODEL" on **stderr**, not stdout.
+
 ## Gotcha
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a

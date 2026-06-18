@@ -364,6 +364,9 @@ To extend them, follow the liatrio folder layout (common, requests, scenarios, s
 **What does the architecture of a generated application look like?**
 The big picture before you extend it: Ampersand generates a monolithic web application with a stateful database service and a stateless service of interfaces, fronted by an API and an MVC-style front-end. [Learn more →](../reference-material/architecture-of-an-ampersand-application.md)
 
+**Where does the compiler describe that API as OpenAPI?**
+`Ampersand.Output.ToJSON.OpenAPI` builds `generics/openapi.json` from the FSpec, alongside the other `generics/*.json` generators, and `doGenBackend` writes it unless you pass `--no-openapi`. A separate page explains the mapping it applies, from interfaces and CRUD rights to paths and schemas, and how to extend it. [Learn more →](../the-tools-we-use/openapi-generation.md)
+
 **What design principles underlie the Ampersand language?**
 These principles guide what a "good" contribution looks like: Ampersand favours constraints over obligations, reliable relation-algebraic semantics, automated design, and working systems over comprehensive documentation, supporting incremental development. [Learn more →](../reference-material/design-considerations.md)
 

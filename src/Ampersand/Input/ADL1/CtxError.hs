@@ -794,8 +794,19 @@ mkCartesianProductWarning orig context originalTerm fullExpr offending verboseEx
       [ "SQL will compute a Cartesian product for " <> context
       , "Term: " <> originalTerm
       , "Term (after type checking): " <> (showP . aExpression2pTermPrim) fullExpr
+      , "Construct: " <> constructTag offending  -- machine-readable tag for analysis
       -- , "(reason: " <> reasonFor offending <> ")"
       ]
+    -- A stable, greppable token naming the constructor that forces the cross join.
+    constructTag e = case e of
+      EDcV _ -> "EDcV"
+      EPrd _ -> "EPrd"
+      ECpl _ -> "ECpl"
+      ERrs _ -> "ERrs"
+      ELrs _ -> "ELrs"
+      EDia _ -> "EDia"
+      ERad _ -> "ERad"
+      _      -> "other"
     -- Pattern-specific advice.  Currently only one situation is recognised:
     -- a V at the tail of an ECps-chain on the RHS of an inclusion, used as a
     -- type bridge.  In that case the rule can usually be reformulated on an

@@ -18,6 +18,7 @@ import Ampersand.Commands.ExportAsADL
 import Ampersand.Commands.Population
 import Ampersand.Commands.Proof
 import Ampersand.Commands.Proto
+import Ampersand.Commands.SolutionArchitecture
 import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
 {-getProgName,-}
@@ -141,6 +142,13 @@ commandLineHandler currentDir _progName args =
         "Generate prototype files from your specification. To be used with the prototype framework."
         (mkAction proto)
         protoOptsParser
+      addCommand''
+        SolutionArchitecture
+        ( "Generate a solution architecture document, to kick-start your "
+            <> "solution architecture."
+        )
+        solutionArchitectureCmd
+        docOptsParser
       addCommand''
         Export
         "Generate a single .adl file of your script (prettyprinted)"
@@ -372,6 +380,13 @@ documentationCmd docOpts = do
     forceAllowInvariants :: (HasFSpecGenOpts env) => RIO env a -> RIO env a
     forceAllowInvariants = local (set allowInvariantViolationsL True)
 
+solutionArchitectureCmd :: DocOpts -> RIO Runner ()
+solutionArchitectureCmd docOpts = do
+  (extendWith docOpts . forceAllowInvariants . doOrDie) doGenSolutionArchitecture
+  where
+    forceAllowInvariants :: (HasFSpecGenOpts env) => RIO env a -> RIO env a
+    forceAllowInvariants = local (set allowInvariantViolationsL True)
+
 testCmd :: TestOpts -> RIO Runner ()
 testCmd testOpts =
   extendWith testOpts test
@@ -420,6 +435,7 @@ data Command
   | Population
   | Proofs
   | Proto
+  | SolutionArchitecture
   | Test
   | Validate
 
@@ -434,5 +450,6 @@ instance Show Command where
   show Population = "population"
   show Proofs = "proofs"
   show Proto = "proto"
+  show SolutionArchitecture = "solution-architecture"
   show Test = "test"
   show Validate = "validate"

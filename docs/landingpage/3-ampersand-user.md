@@ -300,6 +300,9 @@ It uses the Flysystem PHP abstraction with a default Local adapter on the Ampers
 **How does the framework bundle a compiler, and how do I use a custom one?**
 The Dockerfile copies a compiler from the `ampersandtarski/ampersand` image, and you can inject your own with `ADD` or `COPY` before the compiler runs. This lets you test against a custom or pre-release compiler. [Learn more →](https://ampersandtarski.github.io/prototype/reference-material/prototype-framework)
 
+**How can other systems connect to my deployed prototype?**
+The compiler writes an OpenAPI 3.0 description of the prototype's REST API to `generics/openapi.json`. A developer can load it into tools such as Swagger UI or Postman, generate a typed client from it, or place it behind an API gateway, and so address the prototype from other systems without reading its source. [Learn more →](../the-tools-we-use/openapi-generation.md)
+
 ### Configuring your application
 
 **What can I configure in `localSettings.php`?**

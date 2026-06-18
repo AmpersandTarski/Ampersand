@@ -189,6 +189,9 @@ The introduction points you straight to the right starting place, whether you're
 **Is there a video showing Ampersand in action?**
 Yes. A recorded session shows you how to build an Atlas step by step, so you can see the tool at work before trying it yourself. [Learn more →](../videos.md)
 
+**Can other software talk to a generated prototype?**
+Besides the user interface and the database, the compiler writes `generics/openapi.json`: an OpenAPI 3.0 description of the prototype's REST API. Standard tools read that file to display the API, generate client code in various languages, or send requests to it, so a prototype can be reached programmatically as well as through its screens. [Learn more →](../the-tools-we-use/openapi-generation.md)
+
 ### What makes it different
 
 **What sets Ampersand apart from other languages?**

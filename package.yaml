@@ -168,6 +168,7 @@ library:
     - Ampersand.Options.Utils
     - Ampersand.Output
     - Ampersand.Output.FSpec2Pandoc
+    - Ampersand.Output.FSpec2PandocSolArch
     - Ampersand.Output.Diagnosis2Xlsx
     - Ampersand.Output.FSpec2SQL
     - Ampersand.Output.PandocAux
@@ -191,6 +192,7 @@ library:
     - Ampersand.Output.ToPandoc.ChapterIntroduction
     - Ampersand.Output.ToPandoc.ChapterNatLangReqs
     - Ampersand.Output.ToPandoc.SharedAmongChapters
+    - Ampersand.Output.ToPandoc.SolutionArchitecture
     - Ampersand.Prototype.GenAngularFrontend
     - Ampersand.Prototype.GenBackend
     - Ampersand.Prototype.GenFrontend
@@ -204,6 +206,9 @@ library:
     - Ampersand.Test.Parser.ParserTest
     - Ampersand.Test.Parser.QuickChecks
     - Ampersand.Test.Regression
+    - Ampersand.Test.RuleTest.Core
+    - Ampersand.Test.RuleTest.SelfCheck
+    - Ampersand.Test.RuleTest.Types
     - MainApps
     - Options.Applicative.Builder.Extra
   generated-exposed-modules:
