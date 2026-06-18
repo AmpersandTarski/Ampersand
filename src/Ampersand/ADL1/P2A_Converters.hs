@@ -1444,14 +1444,39 @@ term2Expr env ci mConstraintCpt term
          STunary _    (_:_:_) -> fatal ("term2Expr: pattern match failure in STunary. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
          STbinary _ _ (_:_:_) -> fatal ("term2Expr: pattern match failure in STbinary. Function signatures yields:\n"<>showOpTree sgnTree<>"\nThis is a bug in the compiler.")
          _ -> -- trace ("term2Expr:\n"<>showOpTree sgnTree <> " at " <> tshow (origin term)) $
-               do finalExpr <- rootExpression sgnTree
+               do rootExpr <- rootExpression sgnTree
+                  -- Final cleanup: refineANY narrows TOP placeholders to concrete concepts,
+                  -- capped by the (concrete) root signature. The inference-time refinement
+                  -- determines each composition's between-concept once, from the operand
+                  -- signatures available at that moment, so a TOP can survive in a
+                  -- subexpression even when the outer signature is concrete (e.g. the V in
+                  -- `expID;I |- V;I;I`). Re-applying refineANY to a fixpoint propagates the
+                  -- concepts that later became known back into such subexpressions.
+                  let finalExpr = if isConcreteSignature (sign rootExpr)
+                                  then refineToFixpoint (sign rootExpr) rootExpr
+                                  else rootExpr
+                  -- Concreteness must hold for the whole expression, not just its outer
+                  -- signature: a TOP/BOT leaking through a subexpression would otherwise
+                  -- crash later (e.g. "No plug found for concept 'TOP'" during plug
+                  -- generation). Checking `concs` turns any residual leak into a proper,
+                  -- user-facing type error here.
                   if isConcreteSignature (sign finalExpr)
+                     && Set.notMember topCpt (concs finalExpr)
+                     && Set.notMember botCpt (concs finalExpr)
                     then pure finalExpr
                     else Errors . pure $ CTXE (origin term) $
                       "Cannot determine a concrete type for expression " <> showP term <> ". " <>
                       "The inferred signature " <> tshow (sign finalExpr) <> " contains TOP or BOT. " <>
                       "Please add an explicit signature."
   where
+    -- | Apply refineANY repeatedly until the expression no longer changes.
+    --   refineANY only ever narrows (replaces TOP by a more specific concept),
+    --   so the number of TOP occurrences strictly decreases until stable; the
+    --   iteration therefore terminates.
+    refineToFixpoint :: Signature -> Expression -> Expression
+    refineToFixpoint sgn e =
+      let e' = refineANY sgn e
+       in if e' == e then e else refineToFixpoint sgn e'
     rootExpression sgnTree =
        case sgnTree of
          STnullary    [ (expr, _, _) ] -> pure expr
