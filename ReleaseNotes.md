@@ -1,5 +1,5 @@
 ﻿# Release notes of Ampersand
-## not yet released
+## v5.6.0
 - [Issue #1417](https://github.com/AmpersandTarski/Ampersand/issues/1417) Refactoring the type checker.
 - **Fixed a `TOP` leak in the refactored type checker**: `term2Expr` now applies `refineANY` as a final cleanup (iterated to a fixpoint) and verifies that the *whole* expression — not just its outer signature — is concrete. Previously a `TOP` placeholder could survive inside a subexpression (e.g. the `V` in `expID;I |- V;I;I`) while the outer signature was concrete, which crashed plug generation with `No plug found for concept 'TOP'`. A residual `TOP`/`BOT` now becomes a clear type error instead of a fatal crash. (Re-enables `disambTestStef.adl`.)
 - **Restored the comparison-operator type check**: comparison operators (`<`, `>`, `<=`, `>=`) are again rejected on concepts whose representation type does not support ordering (e.g. `BOOLEAN`, `BINARY`, `PASSWORD`, `OBJECT`). The check (lost during the type-checker refactor) is reinstated as an independent post-pass over the final typed context, so it cannot be silently dropped by future refactors. (Re-enables `ComparisonTest2.adl`; see issue #1542.)
@@ -25,10 +25,6 @@
 - **Fixed a crash in the Cartesian-product warning**: `findCartesianSubexprs` did not handle `V` on a single concept (`EDcV (ISgn _)`), so `--verbose` builds of scripts containing such a `V` aborted with a non-exhaustive-patterns error. It now treats `V[c*c]` as a Cartesian product unless `c` is `ONE`.
 - **Warnings for oscillation risk (Stage 1)**: The compiler now warns at design time when the ExecEngine's automated rules can oscillate (`Maximum reruns exceeded`). A new module `Ampersand.FSpec.Oscillation` builds a signed, refined rule-level triggering graph and reports each cycle of automated rules that runs through a delete or merge, naming the colliding rules and the relations they collide on — the static twin of the runtime's "Rules fixed in last run" message. Insert-only (monotone) cycles and standalone merge rules are not flagged. The analysis is a sound over-approximation: it aims never to miss a real oscillation but may flag a safe rule set (an EGD-aware precision stage is planned). See `docs/guides/oscillations/README.md`.
 
-## v5.4.3
-- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
-
-## Unreleased
 - Documentation: add a worked student lesson on diagnosing ExecEngine oscillations (`Maximum reruns exceeded`) under `docs/guides/oscillations/`, with a buggy/fixed demo script pair. Linked from the Guides sidebar and the Troubleshooting page.
 - CI: upgrade `actions/checkout` and `actions/setup-node` to v5 (Node.js 24), resolving the Node.js 20 deprecation warning on the runners.
 - Documentation tooling: add a CI hygiene check (`scripts/check-docs-sidebar.js`) that fails on duplicate sidebar ids, broken sidebar references, or internal scratch notes published outside a `_`-prefixed path.
