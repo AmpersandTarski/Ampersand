@@ -85,6 +85,9 @@ dependencies:
   - transformers
   # - typed-process
   - uri-encode
+  - wai # HTTP application interface for `ampersand serve`
+  - warp # HTTP server for `ampersand serve`
+  - http-types # status codes/headers for `ampersand serve`
   - wl-pprint # to be replaced with prettyprinter stuff
   - xlsx
   - yaml

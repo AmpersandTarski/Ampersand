@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -- | The types types that we use in Ghcid
 -- _Acknoledgements_: This is mainly copied from Neil Mitchells ghcid.
@@ -12,6 +14,7 @@ module Ampersand.Daemon.Types
 where
 
 import Ampersand.Basics
+import Data.Aeson (ToJSON (..), Value (String), object, (.=))
 
 -- | Severity of messages
 data Severity = Warning | Error
@@ -60,3 +63,23 @@ isLoading _ = False
 isLoadConfig :: Load -> Bool
 isLoadConfig LoadConfig {} = True
 isLoadConfig _ = False
+
+-- | JSON serialization, so the daemon's diagnostics can be returned over HTTP
+--   (the same payload that a future LSP front-end will use). See D4.
+instance ToJSON Severity where
+  toJSON Warning = String "warning"
+  toJSON Error = String "error"
+
+instance ToJSON Load where
+  toJSON Message {..} =
+    object
+      [ "severity" .= loadSeverity,
+        "file" .= loadFile,
+        "line" .= fst loadFilePos,
+        "col" .= snd loadFilePos,
+        "endLine" .= fst loadFilePosEnd,
+        "endCol" .= snd loadFilePosEnd,
+        "message" .= loadMessage
+      ]
+  toJSON Loading {..} = object ["loading" .= loadFile, "module" .= loadModule]
+  toJSON (LoadConfig f) = object ["config" .= f]
