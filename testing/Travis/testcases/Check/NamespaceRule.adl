@@ -5,5 +5,7 @@ RULE Triviality : I[ONE] = I[ONE]
 ENDPATTERN
 
 ENDCONTEXT
-
-{- The name of a rule is not a proper name. It is quoted. -}
+{-
+   Purpose: This test checks that a trivial rule involving the ONE concept is accepted.
+   Result: Success
+-}

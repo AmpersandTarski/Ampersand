@@ -1,0 +1,11 @@
+CONTEXT FlipTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT FlipTypeMismatchCheck
+{+ This test must fail because meet(B,A) and meet(A,C) do not exist. +}
+
+RELATION r[A*B]
+RELATION result[A*C]
+
+RULE testFlipFail: result = r~
+
+ENDCONTEXT

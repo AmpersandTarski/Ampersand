@@ -24,7 +24,7 @@ RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationN
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
 CLASSIFY FormalAmpersand.RelationName ISA FormalAmpersand.Name
     ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRelationName
-    RULE FormalAmpersand.DelUnusedRelationName LABEL "del unused RelationName" : I[FormalAmpersand.RelationName] |- FormalAmpersand.name~;FormalAmpersand.name
+    RULE FormalAmpersand.DelUnusedRelationName LABEL "del unused RelationName" : I[FormalAmpersand.RelationName] |- FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName]~;FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName]
     MEANING "A RelationName without relation will be removed."
     VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.RelationName;", SRC I )
 
@@ -40,7 +40,7 @@ MEANING "The target of a signature."
 RELATION FormalAmpersand.bind[FormalAmpersand.BindedRelation*FormalAmpersand.Relation][UNI]
 ROLE ExecEngine MAINTAINS FormalAmpersand.bindTotal
 RULE FormalAmpersand.bindTotal : I[FormalAmpersand.BindedRelation] |- FormalAmpersand.bind;FormalAmpersand.bind~
--- VIOLATION ( TXT "The (sub-)term ", SRC showADL, TXT " should have been bound to a relation. ")
+-- VIOLATION ( TXT "The (sub-)term ", SRC FormalAmpersand.showADL, TXT " should have been bound to a relation. ")
 VIOLATION ( TXT "{EX} FormalAmpersand.DelAtom;FormalAmpersand.BindedRelation;", SRC I )
 
 RELATION FormalAmpersand.prop[FormalAmpersand.Relation*FormalAmpersand.Property]

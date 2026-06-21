@@ -1,0 +1,10 @@
+CONTEXT IdentityTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT IdentityTypeCheck
+{+ This test must succeed because identity I is always endomorphic. +}
+
+RELATION result[A*A]
+
+RULE testIdentity: result = I
+
+ENDCONTEXT

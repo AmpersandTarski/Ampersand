@@ -1,0 +1,47 @@
+# This docker-compose file sets up a MariaDB database and the Ampersand development environment.
+# The MariaDB database is available for testing 'ampersand validate' locally.
+
+services:
+  mariadb:
+    image: mariadb:11.5
+    container_name: ampersand-mariadb
+    restart: unless-stopped
+    command: --bind-address=0.0.0.0
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ampersand
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  ampersand-dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/DockerfileUpstream
+    container_name: ampersand-dev
+    volumes:
+      - .:/workspaces/Ampersand
+      - ${HOME}/.ssh:/home/vscode/.ssh:ro
+    working_dir: /workspaces/Ampersand
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      - MYSQL_HOST=mariadb
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=ampersand
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=
+    command: sleep infinity
+
+volumes:
+  mariadb_data:
+    driver: local

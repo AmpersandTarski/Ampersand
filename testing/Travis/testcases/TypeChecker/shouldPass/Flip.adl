@@ -1,0 +1,11 @@
+CONTEXT FlipTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT FlipTypeCheck
+{+ This test must succeed because flip always succeeds (reverses source and target). +}
+
+RELATION r[A*B]
+RELATION result[B*A]
+
+RULE testFlip: result = r~
+
+ENDCONTEXT

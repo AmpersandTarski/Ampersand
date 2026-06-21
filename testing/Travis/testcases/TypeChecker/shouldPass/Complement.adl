@@ -1,0 +1,11 @@
+CONTEXT ComplementTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT ComplementTypeCheck
+{+ This test must succeed because complement always succeeds (no type constraints). +}
+
+RELATION u[A*B]
+RELATION result[A*B]
+
+RULE testComplement: result = -u
+
+ENDCONTEXT

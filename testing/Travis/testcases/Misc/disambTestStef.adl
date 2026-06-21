@@ -1,0 +1,21 @@
+CONTEXT ARM20Test2 IN DUTCH
+--$ Ondertaand pattern geeft een beoogde fout -}
+------------------------------------------------------------
+PATTERN ARM20Test2
+
+RELATION critBF[Criterium*Bedrijfsfunctie] [MAP] PRAGMA "" " wordt gehanteerd binnen "
+CLASSIFY Verwachting ISA Criterium
+RELATION expID[Verwachting*ExpectationID] [MAP] PRAGMA "" "staat in de business bekend als"
+
+RULE expID;I |- V;I;I
+
+-- VIEW Verwachtingen: Verwachting(critBF, expID)
+--$FOUTMELDING voor bovenstaande regel:
+--!Type mismatch for the equality arising at critBF.
+--!The source of I[Verwachting] is Verwachting.
+--!The source of critBF is Criterium.
+--?Fout kan worden 'opgelost' door VIEW Verwachtingen: Verwachting(I[Verwachting];critBF, expID)
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

@@ -7,6 +7,7 @@ where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+-- import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
@@ -37,6 +38,16 @@ evaluateExpSQL fSpec dbNm expr = do
   env <- ask
   let violationsExpr = conjNF env expr
       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
+  {- The following is for debugging purposes. Don't forget to switch on showA in the imports.
+        sqlText = queryAsSQL violationsQuery
+    logInfo ""
+    logInfo $ "=== Original expression: " <> display (showA expr) <> " ==="
+    logInfo $ "=== Normalized (conjNF): " <> display (showA violationsExpr) <> " ==="
+    logInfo $ "=== Generated SQL: ==="
+    logInfo $ display sqlText
+    logInfo "=== END SQL ==="
+    logInfo ""
+  -}
   performQuery dbNm violationsQuery
 
 performQuery ::
@@ -112,7 +123,18 @@ executePHP phpPath = do
             Left msg -> msg
             Right txt -> addLineNumbers . T.lines $ txt
         return "ERROR"
-  _ <- liftIO (readCreateProcess cp "") `catch` errorHandler
+  execResult <- liftIO (readCreateProcess cp "") `catch` errorHandler
+  -- Check if PHP execution failed
+  when (execResult == "ERROR")
+    $ exitWith
+    . PHPExecutionFailed
+    $ [ "PHP execution failed:",
+        "  The PHP interpreter could not execute the script.",
+        "  Possible causes:",
+        "  - PHP is not installed or not in PATH",
+        "  - The generated PHP script has syntax errors",
+        "  - File permissions issue"
+      ]
   result <- readFileUtf8 outputFile
   case result of
     Right content -> do
@@ -129,6 +151,17 @@ addLineNumbers = zipWith (curry withNumber) [0 ..]
   where
     withNumber :: (Int, Text) -> Text
     withNumber (n, t) = "/*" <> T.take (5 - length (show n)) "00000" <> tshow n <> "*/ " <> t
+
+-- | Truncate a list to show only the first and last n elements
+-- If the list has <= 2*n elements, return the whole list
+-- Otherwise, show first n, a separator line, and last n
+truncateMiddle :: Int -> [Text] -> [Text]
+truncateMiddle n xs
+  | length xs <= 2 * n = xs
+  | otherwise =
+      take n xs
+        <> ["... (" <> tshow (length xs - 2 * n) <> " lines omitted) ..."]
+        <> drop (length xs - n) xs
 
 showPHP :: [Text] -> Text
 showPHP phpLines = T.unlines $ ["<?php"] <> phpLines <> ["?>"]
@@ -148,9 +181,10 @@ connectToMySqlServerPHP :: Maybe Text -> [Text]
 connectToMySqlServerPHP mDbName =
   [ "// Try to connect to the MySQL server",
     "global $DB_host,$DB_user,$DB_pass;",
-    "$DB_host='127.0.0.1';",
-    "$DB_user='root';",
-    "$DB_pass='';",
+    "// Read connection parameters from environment variables (for containerized setups) or use defaults",
+    "$DB_host = getenv('MYSQL_HOST') ?: '127.0.0.1';",
+    "$DB_user = getenv('MYSQL_USER') ?: 'root';",
+    "$DB_pass = getenv('MYSQL_PASSWORD') ?: '';",
     ""
   ]
     <> ( case mDbName of
@@ -203,9 +237,9 @@ createTempDatabase fSpec = do
           $ [ "Temp database creation failed! :",
               "The result:",
               result,
-              "The statements:"
+              "The statements (showing first and last 10 lines):"
             ]
-          <> addLineNumbers phpStr
+          <> truncateMiddle 10 (addLineNumbers phpStr)
 
   return (T.null result)
   where

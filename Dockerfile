@@ -56,9 +56,9 @@ RUN /root/.local/bin/ampersand --version
 #            --name devtest \       # name of the container (so you can remove it with `docker rm devtest`)
 #            -v ${pwd}:/scripts  \       # mount the current working directory of your CLI on the container directory /scripts
 #            <your subcommand>      # e.g. check, documentation, proto
-FROM ubuntu
+FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y graphviz
+RUN apt-get update && apt-get install -y --no-install-recommends graphviz && rm -rf /var/lib/apt/lists/*
 
 VOLUME ["/scripts"]
 WORKDIR /scripts

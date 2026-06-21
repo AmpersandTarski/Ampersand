@@ -66,7 +66,7 @@ uppercaseName = arbitrary `suchThat` (firstUppercase . namePartToText1 . localNa
     firstUppercase :: Text1 -> Bool
     firstUppercase (Text1 c _) = isUpper c
 
-makeObj :: ObjectKind -> Gen P_BoxBodyElement
+makeObj :: ObjectKind -> Gen (P_BoxItem TermPrim)
 makeObj objectKind =
   oneof
     $ ( P_BoxItemTerm
@@ -342,7 +342,8 @@ instance Arbitrary TermPrim where
         Patm <$> arbitrary <*> arbitrary <*> arbitrary,
         PVee <$> arbitrary,
         Pfull <$> arbitrary <*> arbitrary <*> arbitrary,
-        PNamedR <$> arbitrary
+        PNamedR <$> arbitrary,
+        PFlipped <$> arbitrary
       ]
 
 instance Arbitrary (PairView (Term TermPrim)) where
@@ -385,14 +386,10 @@ instance Arbitrary (P_Enforce TermPrim) where
   arbitrary =
     P_Enforce
       <$> arbitrary
+      <*> (PNamedR <$> arbitrary) -- Always PNamedR; penfFlipped Bool controls the tilde
       <*> arbitrary
-      `suchThat` isNamedRelation
       <*> arbitrary
       <*> genNonRuleTerm
-    where
-      isNamedRelation :: TermPrim -> Bool
-      isNamedRelation PNamedR {} = True
-      isNamedRelation _ = False
 
 instance Arbitrary EnforceOperator where
   arbitrary =
@@ -489,9 +486,7 @@ instance Arbitrary P_IdentDef where
       <*> arbitrary
       `suchThat` notIsONE
       <*> arbitrary
-
-instance Arbitrary P_IdentSegment where
-  arbitrary = P_IdentExp <$> makeObj IdentSegmentKind
+      `suchThat` notIsRuleTerm
 
 instance Arbitrary P_ViewDef where
   arbitrary =
@@ -589,6 +584,16 @@ notIsONE :: P_Concept -> Bool
 notIsONE cpt = case cpt of
   PCpt {} -> True
   P_ONE -> False
+
+-- notIsRuleTerm :: NonEmpty (Term TermPrim) -> Bool
+notIsRuleTerm :: NonEmpty (Term a) -> Bool
+notIsRuleTerm = all noRule . NE.toList
+  where
+    noRule :: Term a -> Bool
+    noRule trm = case trm of
+      PEqu {} -> False
+      PInc {} -> False
+      _ -> True
 
 safePlainName :: Gen Text1
 safePlainName =

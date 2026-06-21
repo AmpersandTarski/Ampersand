@@ -1,0 +1,30 @@
+CONTEXT Try5 IN ENGLISH
+  CLASSIFY B ISA BorEorA
+  CLASSIFY E ISA BorEorA
+  CLASSIFY A ISA BorEorA
+
+PATTERN Try5
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RELATION u[E*Y]
+RULE Try5: r = s;(t/\u)
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This is an attempt to mislead the type checker, by
+            choosing a different source and target for t and u.
+   Result:
+try5a.adl:11:20 error:
+  Cannot match the source concepts on the left side of the intersection.
+     The source of t is B
+     The source of u is E
+  
+  Type analysis:
+  [B*Y] t[B*Y]/\u[E*Y]
+  [B*Y]     ├── t[B*Y]
+  [E*Y]     └── u[E*Y]
+
+-}

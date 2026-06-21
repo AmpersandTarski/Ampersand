@@ -14,3 +14,10 @@ RULE Try34: scope/\tav[Verplichting*Bedrijfsfunctie] |- tav[Verwachting*Bedrijfs
 ENDPATTERN
 ENDCONTEXT
 {- This file gave type errors on July 11th, 2013. However, the condensed graph proved that there should be no type errors. -}
+{- This file gave validation errors on May 17th, 2026:
+    !             Ampersand-v5.5.6 [issue-#1417-disambiguation:b98826029]
+    Incompatible signatures in intersection: [Verplichting*Bedrijfsfunctie] /\ [Verwachting*Bedrijfsfunctie]
+    CallStack (from HasCallStack):
+      fatal, called at src/Ampersand/Core/AbstractSyntaxTree.hs:1340:35 in ampersand-5.5.6-4b1OKbHb7KG1DSZaH120Gq:Ampersand.Core.AbstractSyntaxTree
+    2026-05-17 10:34:14.732302: [error] ExitFailure 2
+-}

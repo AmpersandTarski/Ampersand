@@ -1,0 +1,14 @@
+CONTEXT LeftResidualISA IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualISA
+{+ This test must succeed because join(A,B) = B exists (A ISA B). +}
+
+CLASSIFY A ISA B
+
+RELATION r[W*B]
+RELATION s[Z*B]
+RELATION result[W*Z]
+
+RULE testLeftResidualISA: result = r/s
+
+ENDCONTEXT

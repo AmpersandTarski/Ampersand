@@ -41,6 +41,7 @@ dependencies:
   - aeson
   - aeson-pretty
   - ansi-terminal
+  - algebraic-graphs
   - base
   # - bytestring
   - casing
@@ -101,7 +102,6 @@ library:
   exposed-modules:
     - Ampersand
     - Ampersand.ADL1
-    - Ampersand.ADL1.Disambiguate
     - Ampersand.ADL1.Expression
     - Ampersand.ADL1.Lattices
     - Ampersand.ADL1.P2A_Converters
@@ -125,11 +125,16 @@ library:
     - Ampersand.Core.ParseTree
     - Ampersand.Core.ShowAStruct
     - Ampersand.Core.ShowPStruct
+    - Ampersand.Diagnosis.ClassifyGraph
+    - Ampersand.Diagnosis.Extract
+    - Ampersand.Diagnosis.PatternGraph
+    - Ampersand.Diagnosis.Types
     - Ampersand.FSpec
     - Ampersand.FSpec.Crud
     - Ampersand.FSpec.FSpec
     - Ampersand.FSpec.FSpecAux
     - Ampersand.FSpec.Motivations
+    - Ampersand.FSpec.Oscillation
     - Ampersand.FSpec.SQL
     - Ampersand.FSpec.ShowHS
     - Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -163,6 +168,7 @@ library:
     - Ampersand.Options.Utils
     - Ampersand.Output
     - Ampersand.Output.FSpec2Pandoc
+    - Ampersand.Output.Diagnosis2Xlsx
     - Ampersand.Output.FSpec2SQL
     - Ampersand.Output.PandocAux
     - Ampersand.Output.Population2Xlsx

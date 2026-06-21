@@ -96,17 +96,16 @@ archi2PContext archiRepoFilename -- e.g. "CArepository.archimate"
 --   and to merge pairs of `the same` relations into one.
 --   It compares name and signature of a relation, because two relations with the same name and signature have the same set of pairs.
 --   Similarly for concepts: two concepts with the same name are the same concept.
-samePop :: P_Population -> P_Population -> Bool
-samePop pop@P_RelPopu {} pop'@P_RelPopu {} =
-  same (p_nmdr pop) (p_nmdr pop')
-  where
-    same nr nr' =
-      case (p_mbSign nr, p_mbSign nr') of
-        (Just sgn, Just sgn') -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
-        _ -> fatal ("Cannot compare partially defined populations of\n" <> tshow nr <> " and\n" <> tshow nr')
-samePop pop@P_CptPopu {} pop'@P_CptPopu {} = p_cpt pop == p_cpt pop'
-samePop _ _ = False
-
+--         samePop :: P_Population -> P_Population -> Bool
+--         samePop pop@P_RelPopu {} pop'@P_RelPopu {} =
+--           same (p_nmdr pop) (p_nmdr pop')
+--           where
+--             same nr nr' =
+--               case (p_mbSign nr, p_mbSign nr') of
+--                 (Just sgn, Just sgn') -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
+--                 _ -> fatal ("Cannot compare partially defined populations of\n" <> tshow nr <> " and\n" <> tshow nr')
+--         samePop pop@P_CptPopu {} pop'@P_CptPopu {} = p_cpt pop == p_cpt pop'
+--         samePop _ _ = False
 sameRel :: P_Relation -> P_Relation -> Bool
 sameRel rel rel' = dec_nm rel == dec_nm rel' && dec_sign rel == dec_sign rel'
 
@@ -121,9 +120,8 @@ archiNameSpace = []
 mkArchiContext :: [ArchiRepo] -> [ArchiGrain] -> Guarded P_Context
 mkArchiContext [archiRepo] pops = do
   let orig = Origin "Somewhere during reading an ArchiMate file."
-  nm <- case try2Name PatternName . text1ToText . archRepoName $ archiRepo of
-    Left msg -> mustBeValidName orig msg
-    Right (nm', _) -> pure nm'
+      -- Use suggestName to ensure the context name satisfies all identifier restrictions
+      (nm, _) = suggestName ContextName (archRepoName archiRepo)
   pure
     PCtx
       { ctx_nm = withNameSpace archiNameSpace nm,
@@ -233,6 +231,20 @@ mkArchiContext [archiRepo] pops = do
       ]
     sortDecls :: [P_Relation] -> [P_Relation] -- assembles P_Relations with the same signature into one
     sortDecls decls = [NE.head cl | cl <- eqClass sameRel decls]
+    -- \| function `samePop` is used to merge concepts with the same name into one concept,
+    --   and to merge pairs of `the same` relations into one.
+    --   It compares name and signature of a relation, because two relations with the same name and signature have the same set of pairs.
+    --   Similarly for concepts: two concepts with the same name are the same concept.
+    samePop :: P_Population -> P_Population -> Bool
+    samePop pop@P_RelPopu {} pop'@P_RelPopu {} =
+      same (p_nmdr pop) (p_nmdr pop')
+      where
+        same nr nr' =
+          case (p_mbSign nr, p_mbSign nr') of
+            (Just sgn, Just sgn') -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
+            _ -> fatal ("Cannot compare partially defined populations of\n" <> tshow nr <> " and\n" <> tshow nr')
+    samePop pop@P_CptPopu {} pop'@P_CptPopu {} = p_cpt pop == p_cpt pop'
+    samePop _ _ = False
 mkArchiContext _ _ = fatal "Something dead-wrong with mkArchiContext."
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.

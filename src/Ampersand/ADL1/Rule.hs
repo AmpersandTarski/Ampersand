@@ -54,11 +54,14 @@ rulefromProp prp rel =
       rrmsg = violMsg prp,
       rrviol = Nothing,
       rrpat = decpat rel,
-      rrkind = Propty prp rel
+      rrkind = Propty prp rel,
+      -- Machine-generated property rule: there is no original (pre-typecheck) term,
+      -- so we record the generated expression instead.
+      rrOriginalTerm = tshow rExpr
     }
   where
     relIdentifier :: Text1
-    relIdentifier = toText1Unsafe $ tshow prp <> "Ð" <> tshow rel
+    relIdentifier = toText1Unsafe $ tshow prp <> "_" <> tshow rel
     showDcl :: Text
     showDcl = tshow rel
     r :: Expression

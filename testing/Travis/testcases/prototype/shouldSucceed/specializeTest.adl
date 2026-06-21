@@ -41,7 +41,7 @@ PURPOSE INTERFACE Gs
 INTERFACE Gs : V[SESSION*G]
 BOX [ name : name
     , r : r
-    , s : s
+    , s : I[G];s
     ]
 
 ENDCONTEXT

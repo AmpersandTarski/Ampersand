@@ -127,11 +127,11 @@ BOX[ "ID" : I[Verplichting]
    , "Afdekking": afdekking
    BOX[ "vvID" : I
       , "bestaande uit:": vvVerwachting[Verwachtingsverzameling*Verwachting]
-      BOX[ gewetensvragen: I[Gewetensvraag]
+      BOX[ gewetensvragen: I[Verwachting];I[Gewetensvraag]
          BOX[ gewetensvraag: I
             , criterium    : critText
             ]
-         , verwachtingen : I[ExterneVerwachting]
+         , verwachtingen : I[Verwachting];I[ExterneVerwachting]
          BOX[ "externe verwachtingen": I
             , criterium    : critText
             ]
@@ -200,8 +200,8 @@ BOX[ "ID" : I[Verwachting]
       ] 
    , "Zit in afdekking van": vvVerwachting~;afdekking~
    , "Zit in verwachtingsverzameling van" : vvVerwachting~;(vvVerplichting/\-afdekking~)
-   BOX[ "Gewetensvragen": I[Gewetensvraag]
-      , "Externe verplichtingen" : I[ExterneVerplichting]
+   BOX[ "Gewetensvragen": I[Verplichting];I[Gewetensvraag]
+      , "Externe verplichtingen" : I[Verplichting];I[ExterneVerplichting]
       ]
    ]
 

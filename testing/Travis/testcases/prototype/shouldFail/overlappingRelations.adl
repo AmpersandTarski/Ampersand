@@ -1,0 +1,38 @@
+CONTEXT MinimalAmbiguity IN ENGLISH
+
+CLASSIFY S ISA G
+
+RELATION r[S*C]
+RELATION r[G*C]
+
+-- Trigger the ambiguity by using the composition in a rule
+RULE testAmbiguity0: I[S] ; r
+RULE testAmbiguity1: I[G] ; r
+MEANING "This should trigger the ambiguous signature error"
+
+ENDCONTEXT
+{-
+With RULE testAmbiguity: I[S] ; r  we get:
+  Ambiguous signatures of the composition of I[S] and r. You might mean one of: 
+      -   I[S] ; r with result [S*C]
+      -   I[S] ; r with result [S*C]
+  
+  Type analysis:
+  [S*C], [S*C] I[S];r[G*C], I[S];r[S*C]
+  [S]              ├── I[S]
+  [G*C], [S*C]     └── r[G*C], r[S*C]
+
+With RULE testAmbiguity: I[G] ; r  we get:
+  Ambiguous signatures of the composition of I[G] and r. You might mean one of: 
+      -   I[G] ; r with result [G*C]
+      -   I[G] ; r with result [S*C]
+  
+  Type analysis:
+  [G*C], [S*C] I[G];r[G*C], I[S];r[S*C]
+  [G]              ├── I[G]
+  [G*C], [S*C]     └── r[G*C], r[S*C]
+
+Note that both ambiguities are very different, even though the ambiguity of r causes both:
+In the first case, I[S] constrains the result, which is [S*C] in both options.
+In the second case, I[G] does not constrain the result, but I is refined to S if r[S*C] is chosen.
+-}

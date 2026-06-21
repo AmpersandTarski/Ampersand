@@ -155,7 +155,7 @@ docOptsParser =
         parseList'
         ( long "graphicFormats"
             <> metavar "FORMAT1,FORMAT2,..."
-            <> value [VCanon, VPng]
+            <> value [VCanon, VPng, VSvg]
             <> showDefault
             <> completeWith (map (T.unpack . tshow) visualFormats)
             <> help

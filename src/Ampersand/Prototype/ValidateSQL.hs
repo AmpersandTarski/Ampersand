@@ -59,19 +59,19 @@ validateRulesSQL fSpec = do
 getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec =
   concat
-    [ getObjExps (name ifc) $ ifcObj ifc
+    [ getObjExps (name ifc) (origin ifc) (ifcObj ifc)
       | ifc <- interfaceS fSpec <> interfaceG fSpec
     ]
   where
-    getObjExps iName objDef =
-      (objExpression objDef, "interface " <> tshow iName)
-        : concatMap (getObjExps iName) (fields objDef)
+    getObjExps iName iOrigin objDef =
+      (objExpression objDef, "interface " <> tshow iName, iOrigin)
+        : concatMap (getObjExps iName iOrigin) (fields objDef)
 
 -- we check the complement of the rule, since that is the term evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp . toList $ vrules fSpec `Set.union` grules fSpec
   where
-    getRuleExp rule = (notCpl (formalExpression rule), "rule " <> fullName rule)
+    getRuleExp rule = (notCpl (formalExpression rule), "rule " <> fullName rule, origin rule)
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Set.union` grules fSpec
@@ -79,7 +79,7 @@ getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Se
     getPairViewExps r = case rrviol r of
       Nothing -> []
       Just (PairView pvsegs) ->
-        [ (expr, "violation view for rule " <> fullName r)
+        [ (expr, "violation view for rule " <> fullName r, origin r)
           | PairViewExp _ _ expr <- NE.toList pvsegs
         ]
 
@@ -87,24 +87,24 @@ getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
   where
     getIdExps identity =
-      [ (objExpression objDef, "identity " <> fullName identity)
-        | IdentityExp objDef <- NE.toList $ identityAts identity
+      [ (objExpr, "identity " <> fullName identity, origin identity)
+        | objExpr <- NE.toList $ identityAts identity
       ]
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
   where
     getViewExps x =
-      [ (expr, "view " <> fullName x)
+      [ (expr, "view " <> fullName x, origin x)
         | ViewExp expr <- fmap vsmLoad (vdats x)
       ]
 
-type ValidationExp = (Expression, Text)
+type ValidationExp = (Expression, Text, Origin)
 
 -- a ValidationExp is an expression together with the place in the context where we
--- obtained it from (e.g. rule/interface/..)
-showVExp :: (Expression, Text) -> Text
-showVExp (expr, orig) = "Origin: " <> orig <> ", term: " <> showA expr
+-- obtained it from (e.g. rule/interface/..) and its origin for navigation
+showVExp :: (Expression, Text, Origin) -> Text
+showVExp (expr, orig, orgn) = "Origin: " <> orig <> " at " <> tshow orgn <> "\n  term: " <> showA expr
 
 -- validate a single term and report the results
 validateExp ::
@@ -116,13 +116,13 @@ validateExp ::
   ) ->
   RIO env (ValidationExp, Bool)
 validateExp fSpec total (vExp, i) = do
-  let (e, _) = vExp
+  let (e, _, _) = vExp
   logSticky . display $ "Validating terms: " <> tshow i <> " of " <> tshow total <> " " <> showA e <> " (" <> tshow e <> ")."
   case vExp of
-    (EDcD {}, _) -> do
+    (EDcD {}, _, _) -> do
       -- skip all simple relations
       return (vExp, True)
-    (expr, orig) -> do
+    (expr, orig, _) -> do
       violationsSQL <- evaluateExpSQL fSpec (tempDbName fSpec) expr
       let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- toList $ pairsInExpr fSpec expr]
       if L.sort violationsSQL == L.sort violationsAmp

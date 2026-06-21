@@ -1,0 +1,12 @@
+CONTEXT DiamondTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT DiamondTypeCheck
+{+ This test must succeed because there is an exact match on B. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testDiamond: result = r<>s
+
+ENDCONTEXT

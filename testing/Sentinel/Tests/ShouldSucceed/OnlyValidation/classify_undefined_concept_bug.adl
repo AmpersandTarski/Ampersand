@@ -1,0 +1,20 @@
+-- Minimaal testprogramma om de bug te reproduceren:
+-- "Concept 'Eis' is not defined" bij installatie van metapopulatie.
+--
+-- De fout treedt op wanneer CLASSIFY verwijst naar een concept (Eis)
+-- dat NIET is gedeclareerd met CONCEPT ... in het actieve model.
+-- De Ampersand-compiler genereert dan wel een lege entry in populations.json
+-- ("concept": "Eis", "atoms": []), maar zet Eis NIET in concepts.json.
+-- De PHP-backend crasht hierop bij Model::getConcept('Eis').
+
+CONTEXT BugReproductie IN DUTCH
+
+-- 'Voorschrift' is wél gedeclareerd:
+CONCEPT Voorschrift "Een generiek voorschrift."
+
+-- 'Eis' is NIET gedeclareerd (geen CONCEPT Eis "..."),
+-- maar wordt hier wél gebruikt in een CLASSIFY-statement.
+-- Dit zou de compiler een foutmelding moeten geven, maar doet het niet.
+CLASSIFY Eis ISA Voorschrift
+
+ENDCONTEXT

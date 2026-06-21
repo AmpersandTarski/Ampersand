@@ -1,0 +1,12 @@
+CONTEXT CartesianProductTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT CartesianProductTypeCheck
+{+ This test must succeed because Cartesian product # always succeeds (no type matching required). +}
+
+RELATION r[A*B]
+RELATION s[D*C]
+RELATION result[A*C]
+
+RULE testCartesianProduct: result = r#s
+
+ENDCONTEXT

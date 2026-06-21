@@ -1,14 +1,14 @@
 {
   "name": "Ampersand 5 devcontainer",
   // "remoteUser": "root",
-  "runArgs": [],
-  "build": {
-    "context": "..",
-    "dockerfile": "Dockerfile"
-  },
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "ampersand-dev",
+  "workspaceFolder": "/workspaces/Ampersand",
   "mounts": [
     "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/,target=/home/vscode/.ssh,readonly"
   ],
+  "postCreateCommand": "ghcup install hls --set recommended || true",
+  // The `|| true` ensures container creation succeeds even if HLS installation fails (e.g., if already installed or ghcup unavailable)
   "postStartCommand": "stack build",
   "customizations": {
     "vscode": {
@@ -28,7 +28,8 @@
         "mhutchie.git-graph",
         "phoityne.phoityne-vscode",
         "redhat.vscode-yaml",
-        "tintinweb.graphviz-interactive-preview"
+        "tintinweb.graphviz-interactive-preview",
+        "saoudrizwan.claude-dev"
       ],
       "settings": {
         "editor.formatOnsave": true,

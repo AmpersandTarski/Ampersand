@@ -308,7 +308,7 @@ You now have a working prototype and the basics of the language. Good next steps
 
 - Add a user interface to your model with the [interfaces tutorial](./tutorial/interfaces.md).
 - Look up any statement you need in the [Syntax of Ampersand](./reference-material/syntax-of-ampersand.md) — keep it open as your companion.
-- Sharpen your skills with the [exercises](./exercises.md), or browse the [examples](./Examples.md) for inspiration.
+- Sharpen your skills with the [exercises](./exercises.md), or browse the [examples](./examples.md) for inspiration.
 - Lost the overview? Return to the [student learning path](./landingpage/2-student.md).
 
 ### Disclaimer

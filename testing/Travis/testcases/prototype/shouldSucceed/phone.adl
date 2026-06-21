@@ -1,0 +1,11 @@
+CONTEXT TypExample IN DUTCH
+
+RELATION reachableBy[Person*PhoneNumber]
+RELATION carrier[CellPhone*Person]
+RELATION number[Phone*PhoneNumber]
+RELATION carrier[PhoneNumber*NetworkProvider]
+RULE carrier~ ; number |- reachableBy
+CLASSIFY CellPhone ISA Phone
+
+
+ENDCONTEXT 

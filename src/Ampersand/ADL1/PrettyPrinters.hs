@@ -138,7 +138,8 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
   pretty (P_Relation nm sign lbl prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack . localNameOf) nm <~> sign <~> lbl
+      <+> (text . T.unpack . localNameOf) nm
+      <> pretty sign <~> lbl
       <+> props
       <+> if null dflts
         then empty
@@ -199,6 +200,7 @@ instance Pretty TermPrim where
     PVee _ -> text "V"
     Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
     PNamedR rel -> pretty rel
+    PFlipped t -> pretty t <> text "~"
 
 instance Pretty PBinOp where
   pretty p = case p of
@@ -208,7 +210,10 @@ instance Pretty PBinOp where
     GreaterThanOrEqual -> text ">="
 
 instance Pretty P_NamedRel where
-  pretty (PNamedRel _ str mpSign) = (text . T.unpack . localNameOf) str <~> mpSign
+  pretty (PNamedRel _ str mpSign) =
+    case mpSign of -- This case statement prevents a space at the right side of the relation name.
+      Nothing -> (text . T.unpack . localNameOf) str
+      Just sgn -> (text . T.unpack . localNameOf) str <> pretty sgn
 
 instance Pretty (PairView TermPrim) where
   pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
@@ -239,9 +244,10 @@ instance Pretty (P_Rule TermPrim) where
         <~\> viol
 
 instance Pretty (P_Enforce TermPrim) where
-  pretty (P_Enforce _ rel op expr) =
+  pretty (P_Enforce _ rel flipped op expr) =
     text "ENFORCE"
       <+> pretty rel
+      <+> (if flipped then text "~" else empty)
       <+> pretty op
         <~> expr
 
@@ -275,7 +281,6 @@ instance Pretty P_Population where
 
 instance Pretty P_Representation where
   pretty (Repr _ cs tt) = text "REPRESENT" <+> listOf1 cs <~> text "TYPE" <+> pretty tt
-  pretty (ImplicitRepr {}) = text ""
 
 instance Pretty TType where
   pretty = text . show
@@ -298,10 +303,9 @@ instance Pretty P_Interface where
       crud Nothing = empty
       crud (Just cruds) = pretty cruds
 
-prettyObject :: ObjectKind -> P_BoxBodyElement -> Doc
+prettyObject :: ObjectKind -> P_BoxItem TermPrim -> Doc
 prettyObject objectKind obj =
-  maybeQuoteLabel
-    (obj_PlainName obj)
+  labelPart
     <+> ( case obj of
             (P_BoxItemTerm _ _ _ ctx mCrud mView msub) -> case objectKind of
               InterfaceKind -> view mView <$> pretty msub
@@ -312,6 +316,10 @@ prettyObject objectKind obj =
               text "TXT" <+> quote str
         )
   where
+    -- Don't output label for interfaces (it's already at the interface level)
+    labelPart = case objectKind of
+      InterfaceKind -> empty
+      _ -> maybeQuoteLabel (obj_PlainName obj)
     crud Nothing = empty
     crud (Just cruds) = pretty cruds
     view :: Maybe Name -> Doc
@@ -349,9 +357,6 @@ instance Pretty (P_SubIfc TermPrim) where
 instance Pretty (P_IdentDf TermPrim) where
   pretty (P_Id _ nm lbl cpt ats) =
     text "IDENT" <~> nm <~> lbl <+> text ":" <~> cpt <+> parens (listOf1 ats)
-
-instance Pretty (P_IdentSegmnt TermPrim) where
-  pretty (P_IdentExp obj) = prettyObject IdentSegmentKind obj
 
 instance Pretty P_ViewDef where
   pretty (P_Vd _ nm lbl cpt isDefault html ats) =

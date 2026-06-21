@@ -2,6 +2,14 @@
 
 ## Purpose
 
+If you read this, we figure you want to:
+
+1. Develop Ampersand models, for purposes of your choosing
+2. Run Ampersand to build an information system, to establish that your model specifies buildable software
+3. Run the system you just generated, so you can work with structured data as specified in your model .
+
+Typically, you may do this on your laptop. The whole thing is designed so you can also run it as a service in a data center or in the cloud.
+
 The purpose of the .devcontainer is to provide a common development environment for the Haskellers among the developers of Ampersand.
 
 ## What is in this directory

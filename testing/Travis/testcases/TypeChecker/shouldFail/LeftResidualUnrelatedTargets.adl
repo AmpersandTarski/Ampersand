@@ -1,0 +1,12 @@
+CONTEXT LeftResidualUnrelatedTargets IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualUnrelatedTargets
+{+ This test must fail because join(A,B) doesn't exist (unrelated target/source). +}
+
+RELATION r[W*A]
+RELATION s[B*Z]
+RELATION result[W*Z]
+
+RULE testLeftResidualUnrelated: result = r/s
+
+ENDCONTEXT

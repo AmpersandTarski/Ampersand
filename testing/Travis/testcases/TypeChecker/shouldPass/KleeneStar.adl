@@ -1,0 +1,11 @@
+CONTEXT KleeneStarTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT KleeneStarTypeCheck
+{+ This test must succeed because u is an endorelation (source = target). +}
+
+RELATION u[A*A]
+RELATION result[A*A]
+
+RULE testKleeneStar: result = u*
+
+ENDCONTEXT

@@ -1,0 +1,39 @@
+CONTEXT InterfaceRefTypeCheckTest IN ENGLISH
+
+-- Test concept hierarchy
+CLASSIFY Dog ISA Animal
+-- Unrelated concept
+CONCEPT Vehicle ""
+
+-- Relations to make interfaces work
+RELATION name[Animal*String] [UNI]
+RELATION brand[Vehicle*String] [UNI]
+
+-- Case 1: Valid - parent has Dog (specific), references interface with Animal (general)
+-- geq Animal Dog = Just True (Animal is more general than Dog)
+-- This should SUCCEED
+INTERFACE Case1Valid FOR User: I[Dog]
+    INTERFACE AnimalInterface
+
+INTERFACE AnimalInterface FOR User: I[Animal] BOX
+    [ "Name" : name ]
+
+-- Case 2: Invalid - parent has Animal (general), references interface with Dog (specific)  
+-- geq Dog Animal = Just False (Dog is more specific than Animal)
+-- This should FAIL with error
+INTERFACE Case2Invalid FOR User: I[Animal]
+    INTERFACE DogInterface
+
+INTERFACE DogInterface FOR User: I[Dog] BOX
+    [ "Name" : name ]
+
+-- Case 3: Unrelated - parent has Animal, references interface with Vehicle (unrelated)
+-- geq Vehicle Animal = Nothing (unrelated concepts)
+-- This should FAIL with error
+INTERFACE Case3Unrelated FOR User: I[Animal]
+    INTERFACE VehicleInterface
+
+INTERFACE VehicleInterface FOR User: I[Vehicle] BOX
+    [ "Brand" : brand ]
+
+ENDCONTEXT

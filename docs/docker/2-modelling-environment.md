@@ -29,4 +29,11 @@ Now you are set to go and tinker with your application.
 
 ### Things that can go wrong
 
-to be done
+* **`docker compose up` cannot bind to a port.** Another program is already using port 80 or 443 (often a local web server). Stop that program, or change the port mapping in the compose file.
+* **`docker compose` fails because docker is not running.** Start Docker Desktop (or the docker daemon) and try again.
+* **"network proxy not found".** You skipped step 7. Run `docker network create proxy` once, then `docker compose up -d` again.
+* **The browser shows nothing at `localhost`.** Check that the containers are actually running with `docker ps`. The first build can take a while; wait until the application container is up.
+* **You see a database error, or the application looks empty.** Make sure you pressed the red install button (step 10) to create and populate the database.
+* **Login or authorization errors against the database.** Verify that the passwords in `.env` match what the application expects and that the `ampersand` database user is authorized.
+
+If your problem is not listed here, see the general [troubleshooting page](../troubleshooting.md).

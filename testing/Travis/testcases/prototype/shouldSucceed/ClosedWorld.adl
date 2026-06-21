@@ -1,0 +1,15 @@
+CONTEXT Try14 IN ENGLISH
+
+PATTERN Try14
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION q[B*C]
+RULE r = -(-s;-q)
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is meant to study the ambiguity of interpretation in terms with complements.
+   Result: Succeeds
+-}

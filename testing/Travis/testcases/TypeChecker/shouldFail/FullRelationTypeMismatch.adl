@@ -1,0 +1,10 @@
+CONTEXT FullRelationTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT FullRelationTypeMismatchCheck
+{+ This test must fail because the target of result[A*A] and the target of V[A*C] do not match. +}
+
+RELATION result[A*A]
+
+RULE testFullFail: result = V[A*C]
+
+ENDCONTEXT

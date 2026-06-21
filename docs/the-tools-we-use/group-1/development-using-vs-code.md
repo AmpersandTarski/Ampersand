@@ -4,9 +4,9 @@ description: >-
   configuration tips.
 ---
 
-# Haskell development using VS Code
+# Using VS Code
 
-This section is about being able to hack around in the ampersand generator. It is written in Haskell, so if you want to contribute, you need to have a development environment set up. You also need to know some of our way of working.  
+This section is about making changes to the Ampersand compiler. It is written in Haskell, so if you want to contribute, you need to have a development environment set up. You also need to know some of our way of working.  
 
 ## Agreements about the development of code
 
@@ -40,15 +40,20 @@ stack exec ormolu -- --mode inplace $(git ls-files '*.hs')
 
 :::
 
-### Devcontainer
+## Devcontainer
 
-We provide a standard developer container to the developers of Ampersand. Documentation about this awesome VScode feature can be found [here](https://code.visualstudio.com/docs/remote/containers).
+Devcontainer are [a VScode feature](https://code.visualstudio.com/docs/remote/containers), which makes settings and extensions readily available in VScode.
+We provide a standard developer container for Ampersand, so compiling and building works out of the box.
+This saves contributors the effort of setting up their development environment.
+In the team, one person who improves the development environment can commit it to Git and share it with team members.
 
-#### How to get started using the .devcontainer stuff
+The devcontainer is written to ensure reproducible development across contributors. The versions of Ubuntu and GHC are consistent with the build containers to prevent build differences between local development and automated testing. The container includes PHP and MariaDB because Ampersand validation tests require it to verify generated prototypes. Code formatting happens automatically on save to enforce the ormolu standard without requiring manual intervention. The container builds the project after startup to catch compilation errors early and populate language server caches for better IDE performance.
 
-Setting up a Haskell environment with awesome tooling has never been as easy as today.
+### How to get started using the .devcontainer stuff
 
-- Make sure you have vscode installed.
+Setting up a Haskell environment in VScode.
+
+- Make sure you have VScode installed.
 - Install the [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) extension pack.
 - Make sure Docker is running.
 - Go to the directory where your Ampersand stuff resides, and type \`code .\`
@@ -64,7 +69,7 @@ The first time, opening the development container will take quite some time. It 
 
 - While you are waiting, you can watch the progress by inspecting the log. There will be a message containing a link to the log file.
 
-<details>
+### Troubleshooting Devcontainer Issues
 
 <summary>What if `Reopen in Container` doesn't appear?</summary>
 
@@ -76,8 +81,19 @@ In this case, you can click on the status bar at the place where the 'remote con
 
 After you clicked, choose the menu-item \`Reopen in container\`
 
-</details>
-
 - After everything is set up, open `Main.hs` . This will trigger the Haskell extension of vscode. Also here, the first time will take a while, because the project is being build. That includes all dependencies of Ampersand. If you want to see what is going on, go to the Output tab and open the dropdown called \`tasks\`. You will find the task building Ampersand:
 
 ![](../assets/image.png)
+
+If the container fails to start with "container is not running" errors:
+
+1. **Check container status**: Run `docker compose ps` to see if containers are running
+2. **View detailed logs**: Check VS Code's "Dev Containers" output panel for error details
+3. **Clean up and rebuild**: 
+   ```bash
+   docker compose down
+   docker compose up -d --build
+   ```
+4. **Verify container connectivity**: Test with `docker exec ampersand-dev whoami`
+
+**Common cause**: The `.devcontainer/DockerfileUpstream` contains an `ENTRYPOINT` directive that conflicts with the `docker-compose.yml` command. The docker-compose file expects to run `sleep infinity` to keep the container alive, but an entrypoint prevents this. Remove or comment out any `ENTRYPOINT` lines in the Dockerfile if present.

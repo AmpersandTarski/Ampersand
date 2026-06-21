@@ -1,0 +1,12 @@
+CONTEXT CompositionTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT CompositionTypeMismatchCheck
+{+ This test must fail because meet(C,A) does not exist.
+   The target of result[A*C] and the target of r[A*B];r[A*B]~ do not match. +}
+
+RELATION r[A*B]
+RELATION result[A*C]
+
+RULE testCompositionFail: result = r;r~
+
+ENDCONTEXT

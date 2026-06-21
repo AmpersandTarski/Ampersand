@@ -97,7 +97,8 @@ instance ToJSON JSONTemplateKeyValue where
   toJSON = amp2Jason
 
 instance JSON FSpec Interfaces where
-  fromAmpersand env fSpec _ = Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
+  fromAmpersand env fSpec _ =
+    Interfaces (map (fromAmpersand env fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
 instance JSON SubInterface JSONSubInterface where
   fromAmpersand env fSpec si =
@@ -186,9 +187,7 @@ instance JSON BoxItem JSONObjectDef where
             ifcobjJSONtxt = Nothing
           }
         where
-          viewToUse = case objmView object of
-            Just nm -> lookupView fSpec nm
-            Nothing -> getDefaultViewForConcept fSpec tgtConcept
+          viewToUse = maybe (getDefaultViewForConcept fSpec tgtConcept) (lookupView fSpec) (objmView object)
           normalizedInterfaceExp = conjNF env $ objExpression object
           (tgtConcept, mEditableDecl) =
             case getExpressionRelation normalizedInterfaceExp of

@@ -1,0 +1,7 @@
+CONTEXT MinimalVandaagBug
+
+POPULATION Vandaag CONTAINS ["VANDAAG"]
+
+RULE Vandaag1dag: I[Vandaag] = "VANDAAG"
+
+ENDCONTEXT

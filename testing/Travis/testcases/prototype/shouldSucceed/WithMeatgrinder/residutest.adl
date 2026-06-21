@@ -12,11 +12,9 @@ PATTERN SelectExprTest
   RELATION t[D*C]
 ENDPATTERN
 
--- I'd like to test this:
--- RULE equiv: (r;s)~\t~ = (t/r;s)~
--- but unfortunately, it does not compile as long as shouldSucceed/Try46.adl doesn't.
--- Therefore, I will test the equivalent RULE equiv3, even though it looks more complicated.
--- RULE equiv3: (-((r;s)~\t~) \/ (t/r;s)~)  /\  (-(t/r;s)~ \/ (r;s)~\t~)
+RULE equiv: (r;s)~\t~ = (t/(r;s))~
+-- RULE equiv3 is equivalent, even though it looks more complicated.
+RULE equiv3: (-((r;s)~\t~) \/ (t/r;s)~)  /\  (-(t/r;s)~ \/ (r;s)~\t~)
 
 RULE equiv4: s~\t~ = (t/s)~
 

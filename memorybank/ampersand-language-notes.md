@@ -150,7 +150,7 @@ Complex type rules involving generalization relationships:
 ### Common Patterns
 - Composition and residuals use similar type checking (`checkIntra`)
 - Boolean operators use different pattern (`checkPeri`) 
-- Identity and complete relations need special handling for `ANY` concept
+- Identity and complete relations need special handling for the `TOP` concept
 - Error messages should be context-specific and helpful
 
 ## Debugging Type Issues

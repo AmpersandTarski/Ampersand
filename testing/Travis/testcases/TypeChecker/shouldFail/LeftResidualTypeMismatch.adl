@@ -1,0 +1,12 @@
+CONTEXT LeftResidualTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualTypeMismatchCheck
+{+ This test must fail because join(B,C) does not exist. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*B]
+
+RULE testLeftResidualFail: result = r/s
+
+ENDCONTEXT

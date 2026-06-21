@@ -164,7 +164,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
           (plain . text . l) (NL "Aantal", EN "Count"),
           (plain . text . l) (NL "Vullingsgraad", EN "Filling degree")
         ]
-        [ [ (plain . text . label) c,
+        [ [ (plain . text . showWlabel fSpec) c,
             meaningOf c
               <> (mconcat . map (amPandoc . explMarkup) . purposesOf fSpec outputLang') c,
             (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c,
@@ -198,7 +198,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             (plain . text . l) (NL "Voorbeelden", EN "Examples"),
             (plain . text . l) (NL "Aantal", EN "Count")
           ]
-          [ [ (plain . text . label) c
+          [ [ (plain . text . showWlabel fSpec) c
             ] -- max 20 voorbeelden van atomen van concept c
               ++ (map (plain . text . showA) . take 20 . Set.toList . atomsInCptIncludingSmaller fSpec) c
               ++ [ (plain . text . tshow . Set.size . atomsInCptIncludingSmaller fSpec) c
@@ -241,7 +241,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
             (plain . text . l) (NL "#uniek", EN "#unique")
           ]
           ( [ [ (plain . text . text1ToText . sqlColumNameToText1 . attSQLColName) attr,
-                (plain . text) ((label . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                (plain . text) ((showWlabel fSpec . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                 (plain . text) (percent (Set.size pairs) n),
                 (plain . text . tshow . Set.size . Set.map apRight) pairs
               ]
@@ -251,7 +251,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                 pairs <- [(pairsInExpr fSpec . attExpr) (attr :: SqlAttribute)]
             ]
               <> [ [ (plain . text . text1ToText . sqlColumNameToText1 . attSQLColName) attr,
-                     (plain . text) ((label . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                     (plain . text) ((showWlabel fSpec . target . attExpr) attr <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                      (plain . text) (percent (Set.size pairs) n),
                      (plain . text . tshow . Set.size . Set.map apRight) pairs
                      -- , (plain . text . tshow) nTgtConcept
@@ -261,7 +261,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                      cpt /= cpt',
                      attr <- attributesOfConcept fSpec cpt',
                      nTgtConcept <- [(Set.size . atomsInCptIncludingSmaller fSpec . target . attExpr) (attr :: SqlAttribute)],
-                     pairs <- [pairsInExpr fSpec (EDcI cpt .:. EEps cpt' (Sign cpt cpt') .:. attExpr attr)]
+                     pairs <- [pairsInExpr fSpec (EDcI cpt .:. attExpr attr)]
                  ]
           )
         <> let asscs =
@@ -278,10 +278,10 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                          (plain . text . l) (NL "Target", EN "Target"),
                          (plain . text . l) (NL "uniek", EN "unique")
                        ]
-                       [ [ (plain . text) (label (source rel) <> "(" <> tshow nSrcConcept <> ")"), -- use "tshow.attType" for the technical type.
+                       [ [ (plain . text) (showWlabel fSpec (source rel) <> "(" <> tshow nSrcConcept <> ")"), -- use "tshow.attType" for the technical type.
                            (plain . text) (percent (Set.size (Set.map apLeft pairs)) nSrcConcept),
                            (plain . text) (label rel <> "(" <> tshow (Set.size pairs) <> ")"),
-                           (plain . text) (label (target rel) <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
+                           (plain . text) (showWlabel fSpec (target rel) <> "(" <> tshow nTgtConcept <> ")"), -- use "tshow.attType" for the technical type.
                            (plain . text) (percent (Set.size (Set.map apRight pairs)) nTgtConcept)
                          ]
                          | Just rel <- map assmdcl asscs,
@@ -327,7 +327,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
         <> mconcat
           [ simpleTable
               [plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D"]
-              [ [ (plainText . label) cncpt,
+              [ [ (plainText . showWlabel fSpec) cncpt,
                   mconcat . map (plainText . label) $ ifcsC,
                   mconcat . map (plainText . label) $ ifcsR,
                   mconcat . map (plainText . label) $ ifcsU,
@@ -424,7 +424,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                             Dutch -> "Dit attribuut verwijst naar een rij in de tabel "
                             English -> "This attribute is a foreign key to "
                         )
-                          <> (text . label) c
+                          <> text (maybe (fullName c) tshow (conceptLabel fSpec c))
                       PlainAttr ->
                         ( case outputLang' of
                             Dutch -> "Dit attribuut implementeert "
@@ -523,44 +523,40 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                       <> bulletList [para $ violation2Inlines env fSpec sgmts]
             ]
 
-primExpr2pandocMath :: Lang -> Expression -> Inlines
-primExpr2pandocMath lang e =
-  case e of
-    (EDcD d) ->
-      case lang of
-        Dutch -> text "de relatie "
-        English -> text "the relation "
-        <> math ((mathLabel . source) d <> " \\rightarrow {" <> mathLabel d <> "} " <> (mathLabel . target) d)
-    (EFlp (EDcD d)) ->
-      case lang of
-        Dutch -> text "de relatie "
-        English -> text "the relation "
-        <> math ((mathLabel . source) d <> " \\leftarrow  {" <> mathLabel d <> "} " <> (mathLabel . target) d)
-    (EIsc (r1, _)) ->
-      let srcTable = case r1 of
-            EDcI c -> c
-            _ -> fatal ("Unexpected term: " <> tshow r1)
-       in case lang of
+    primExpr2pandocMath :: Lang -> Expression -> Inlines
+    primExpr2pandocMath lang e =
+      case e of
+        (EDcD d) ->
+          case lang of
+            Dutch -> text "de relatie "
+            English -> text "the relation "
+            <> math ((mathEscape . showWlabel fSpec . source) d <> " \\rightarrow {" <> (mathEscape . label) d <> "} " <> (mathEscape . showWlabel fSpec . target) d)
+        (EFlp (EDcD d)) ->
+          -- text ()
+          case lang of
+            Dutch -> text "de relatie "
+            English -> text "the relation "
+            <> math ((mathEscape . showWlabel fSpec . source) d <> " \\leftarrow  {" <> (mathEscape . label) d <> "} " <> (mathEscape . showWlabel fSpec . target) d)
+        (EIsc (r1, _)) ->
+          let srcTable = case r1 of
+                EDcI c -> c
+                _ -> fatal ("Unexpected term: " <> tshow r1)
+           in case lang of
+                Dutch -> text "de identiteitsrelatie van "
+                English -> text "the identityrelation of "
+                <> (math . mathEscape . showWlabel fSpec) srcTable
+        (EDcI c) ->
+          case lang of
             Dutch -> text "de identiteitsrelatie van "
             English -> text "the identityrelation of "
-            <> math (mathLabel srcTable)
-    (EDcI c) ->
-      case lang of
-        Dutch -> text "de identiteitsrelatie van "
-        English -> text "the identityrelation of "
-        <> math (mathLabel c)
-    (EEps c _) ->
-      case lang of
-        Dutch -> text "de identiteitsrelatie van "
-        English -> text "the identityrelation of "
-        <> math (mathLabel c)
-    _ -> fatal ("Have a look at the generated Haskell to see what is going on..\n" <> tshow e)
+            <> (math . mathEscape . showWlabel fSpec) c
+        _ -> fatal ("Have a look at the generated Haskell to see what is going on..\n" <> tshow e)
 
-mathLabel :: (Labeled a) => a -> Text
-mathLabel = T.concatMap escape . label
-  where
-    escape :: Char -> Text
-    escape c
-      | c == '\\' = "\\\\"
-      | c `elem` ("#$%^&_{}~" :: String) = "\\" <> T.singleton c
-      | otherwise = T.singleton c
+    mathEscape :: Text -> Text
+    mathEscape = T.concatMap escape
+      where
+        escape :: Char -> Text
+        escape c
+          | c == '\\' = "\\\\"
+          | c `elem` ("#$%^&_{}~" :: String) = "\\" <> T.singleton c
+          | otherwise = T.singleton c

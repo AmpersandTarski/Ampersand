@@ -5,13 +5,18 @@ cabal.sandbox.config
 /dist-newstyle
 .idea
 .ampersand
-Ampersand.archimate.bak
+*.bak
+/testing_with_populations
+copies/
+copies_ou/
+.proto
 
 # key pairs for automated access to GitHub
 *GitHub*
 
 # Disable testresults 
 /testing/Travis/testcases/**/*.proto
+/testing/**/*.docx
 /output
 # Temporarily disable ampersand.cabal (See issue #931)
 # NO LONGER include ampersand.cabal in .gitignore. See https://github.com/commercialhaskell/stack/issues/5210
@@ -26,6 +31,11 @@ BuildInfo_Generated.hs
 ###################
 /.vscode
 *.code-workspace
+
+# AI stuff
+###################
+*.ghci
+*.py
 
 # Compiled source #
 ###################
@@ -58,3 +68,48 @@ miscellaneous/AmpersandBackup.jgfns
 
 # Local history extention of vs-code
 .history
+
+# Docker compose database data
+mariadb_data/
+
+# Ampersand generated files
+MetaModel.adl
+*.json
+
+# Local environment credentials (never commit)
+.env
+
+# Claude's files
+local_config.yaml
+*.py
+*.ghci
+testing_with_populations
+*.sh
+
+# Scratch / werkmateriaal (lokaal houden, niet committen) - expliciet benoemd
+# Analyse-notities (root)
+Adressen kuisen.md
+POPULATION_ENHANCEMENT_SUMMARY.md
+SAME_ERRORS_CHECKLIST.md
+prompts per groep.md
+# Analyse-notities (docs/)
+docs/scenario.xlsx
+# Diagrammen
+Nieuw-LogicalDataModel_Grouped_By_Pattern.gv
+Nieuw-LogicalDataModel_Grouped_By_Pattern.png
+Oud-LogicalDataModel_Grouped_By_Pattern.gv
+Oud-LogicalDataModel_Grouped_By_Pattern.png
+# Haskell scratch
+Sandbox.hs
+DiagnoseCheck.hs
+# ADL demo's
+cart_demo.adl
+cart_a1_demo.adl
+testscript.adl
+# Overig
+validate_tests_analysis.csv
+.proto/
+
+# Nog scratch: testcase, voorlopig niet committen
+testing/Travis/testcases/prototype/shouldSucceed/CartesianTest.adl
+docs/guides/roadmap-matrix.svg

@@ -169,7 +169,7 @@ instance ShowHS TType where
 
 instance ShowHSName Quad where
   showHSName q =
-    haskellIdentifier . fullName1 . prependToPlainName ("quad_" <> (showHSName . qDcl) q <> "Ð") $ (name . qRule) q
+    haskellIdentifier . fullName1 . prependToPlainName ("quad_" <> (showHSName . qDcl) q <> "_") $ (name . qRule) q
 
 instance ShowHS Quad where
   showHS _ indent q =
@@ -731,7 +731,7 @@ instance ShowHS BoxItem where
           ]
 
 instance ShowHS SubInterface where
-  showHS _ _ (InterfaceRef _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n
+  showHS _ _ (InterfaceRef _ _ isLink n) = "InterfaceRef " <> tshow isLink <> " " <> tshow n
   showHS env indent (Box _ x cl objs) = "Box (" <> showHS env indent x <> ") (" <> tshow cl <> ")" <> indent <> "     (" <> showHS env (indent <> "     ") objs <> ")"
 
 instance ShowHS Expression where
@@ -753,13 +753,13 @@ instance ShowHS Expression where
   showHS env indent (EBrk e) = "EBrk (" <> showHS env (indent <> "      ") e <> ")"
   showHS _ _ (EDcD dcl) = "EDcD " <> showHSName dcl
   showHS _ _ (EDcI c) = "EDcI " <> showHSName c
-  showHS _ _ (EBin oper c) = "EBin " <> tshow oper <> showHSName c
-  showHS env _ (EEps i sgn) = "EEps (" <> showHS env "" i <> ") (" <> showHS env "" sgn <> ")"
+  showHS env _ (EBin oper sgn) = "EBin " <> tshow oper <> showHS env "" sgn
   showHS env _ (EDcV sgn) = "EDcV (" <> showHS env "" sgn <> ")"
   showHS _ _ (EMp1 a c) = "EMp1 " <> tshow a <> " " <> showHSName c
 
 instance ShowHS Signature where
-  showHS _ _ sgn = "Sign " <> showHSName (source sgn) <> " " <> showHSName (target sgn)
+  showHS _ _ (Sign src tgt) = "Sign " <> showHSName src <> " " <> showHSName tgt
+  showHS _ _ (ISgn cpt) = "ISgn " <> showHSName cpt
 
 instance ShowHS AClassify where
   showHS _ _ gen =
@@ -769,8 +769,8 @@ instance ShowHS AClassify where
 
 instance ShowHSName Relation where
   showHSName d
-    | decusr d = haskellIdentifier . fullName1 . prependToPlainName ("rel_" <> fullName d <> "Ð" <> fullName (source d) <> "Ð") . name . target $ d -- user defined relations
-    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "Ð" <> fullName (source d) <> "Ð") . name . target $ d -- relations generated per rule
+    | decusr d = haskellIdentifier . fullName1 . prependToPlainName ("rel_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- user defined relations
+    | otherwise = haskellIdentifier . fullName1 . prependToPlainName ("vio_" <> fullName d <> "_" <> fullName (source d) <> "_") . name . target $ d -- relations generated per rule
 
 instance ShowHS Relation where
   showHS env indent d =
@@ -822,7 +822,7 @@ instance ShowHSName A_Concept where
 instance ShowHS A_Concept where
   showHS _ _ c = case c of
     PlainConcept {} -> "PlainConcept " <> fullName c
-    ONE -> "ONE"
+    _ -> "ONE"
 
 instance ShowHSName AProp where
   showHSName Uni = "Uni"

@@ -6,7 +6,7 @@ RELATION r[A * B] [UNI,TOT]
 RELATION s[A * B]
 PURPOSE RULE s1
 {+Rule s1 should be documented with the MEANING, in natural language, without predicate logic.+}
-RULE s1 : s~;-I;s |- -I[B]
+RULE s1 : s~;-I;s |- -I
 MEANING "IF a differs from a' then s(a) differs from s(a')."
 
 RELATION t[A * B]

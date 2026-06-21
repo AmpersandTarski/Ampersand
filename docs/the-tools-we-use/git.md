@@ -58,7 +58,7 @@ Git works from the command prompt. There are however some tools that make life e
 - Install [KDiff3](http://sourceforge.net/projects/kdiff3/files/kdiff3/) to get help in merging conflicts. To avoid KDiff3, you can merge conflicts from your editor or IDE as well.
   - To select KDiff3 in SourceTree, go to SourceTree / Tools / Options / Diff and select KDiff3 for External Diff Tool and Merge Tool.
 - Pin Git Bash to Start menu to use Git from a command line interface.
-- When you use excel-files (\*.xlsx and \*.xls), you can extend git to handle these files properly with [ExcelCompare](https://gist.github.com/PrabhatKJena/0884644ae01a49a9819aebd883e54003). This works for command-line git on Mac. Similar extensions exist for Windows (TBD: which?)
+- When you use excel-files (\*.xlsx and \*.xls), you can extend git to handle these files properly with [ExcelCompare](https://gist.github.com/PrabhatKJena/0884644ae01a49a9819aebd883e54003). This works for command-line git on Mac. ExcelCompare is a Java tool, so it also runs on Windows when Java is installed. A Windows-native alternative is [git-xl](https://github.com/xltrail/git-xl), which ships pre-compiled Windows binaries and makes `git diff` work on Excel workbooks.
 
 ## Configuring Security
 

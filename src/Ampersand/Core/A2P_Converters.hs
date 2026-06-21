@@ -59,6 +59,7 @@ aEnforce2pEnforce (AEnforce orig rel op expr _ _) =
   P_Enforce
     { pos = orig,
       penfRel = PNamedR . aRelation2pNamedRel $ rel,
+      penfFlipped = False,
       penfOp = op,
       penfExpr = aExpression2pTermPrim expr
     }
@@ -165,7 +166,7 @@ aIdentityDef2pIdentityDef iDef =
       ix_name = idName iDef,
       ix_label = idlabel iDef,
       ix_cpt = aConcept2pConcept (idCpt iDef),
-      ix_ats = fmap aIdentitySegment2pIdentSegmnt (identityAts iDef)
+      ix_ats = fmap aExpression2pTermPrim (identityAts iDef)
     }
 
 aRoleRule2pRoleRule :: A_RoleRule -> P_RoleRule
@@ -226,10 +227,17 @@ aSign2pSign sgn =
 aConcept2pConcept :: A_Concept -> P_Concept
 aConcept2pConcept cpt =
   case cpt of
+    PlainConcept {} -> PCpt {p_cptnm = name cpt}
     ONE -> P_ONE
-    PlainConcept {} ->
+    DISJT cs -> toPcpt "><" cs
+    UNION cs -> toPcpt "\\/" cs
+    ISECT cs -> toPcpt "/\\" cs
+  where
+    toPcpt sep cs =
       PCpt
-        { p_cptnm = name cpt
+        { p_cptnm = case try2Name ConceptName (T.intercalate sep . map tshow . toList $ cs) of
+            Left err -> fatal $ "Not a proper concept name: " <> T.intercalate sep (map tshow . toList $ cs) <> ". " <> err
+            Right (nm, _) -> nm
         }
 
 aPurpose2pPurpose :: Purpose -> PPurpose
@@ -261,17 +269,17 @@ aPopulation2pPopulation p =
           p_popas = map aAtomValue2pAtomValue (popas p)
         }
 
-aObjectDef2pObjectDef :: BoxItem -> P_BoxBodyElement
+aObjectDef2pObjectDef :: BoxItem -> P_BoxItem TermPrim
 aObjectDef2pObjectDef x =
   case x of
     BxExpr oDef ->
       P_BoxItemTerm
-        { pos = origin oDef,
-          obj_PlainName = objPlainName oDef,
+        { obj_PlainName = objPlainName oDef,
+          pos = origin oDef,
           obj_lbl = objlbl oDef,
           obj_term = aExpression2pTermPrim (objExpression oDef),
           obj_crud = case objmsub oDef of
-            Just (InterfaceRef _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
+            Just (InterfaceRef _ _ False _) -> Nothing -- Crud specification is not allowed in combination with a reference to an interface.
             _ -> Just $ aCruds2pCruds (objcrud oDef),
           obj_mView = objmView oDef,
           obj_msub = fmap aSubIfc2pSubIfc (objmsub oDef)
@@ -294,13 +302,9 @@ aExpression2pTermPrim expr =
     ELrs (l, r) -> PLrs o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     ERrs (l, r) -> PRrs o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EDia (l, r) -> PDia o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
-    ECps (l, r)
-      | isEEps l -> aExpression2pTermPrim r
-      | isEEps r -> aExpression2pTermPrim l
-      | otherwise -> PCps o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
+    ECps (l, r) -> PCps o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     ERad (l, r) -> PRad o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EPrd (l, r) -> PPrd o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
-    EEps a _ -> aExpression2pTermPrim $ EDcI a
     EKl0 e -> PKl0 o (aExpression2pTermPrim e)
     EKl1 e -> PKl1 o (aExpression2pTermPrim e)
     EFlp e -> PFlp o (aExpression2pTermPrim e)
@@ -308,7 +312,7 @@ aExpression2pTermPrim expr =
     EBrk e -> PBrk o (aExpression2pTermPrim e)
     EDcD dcl -> Prim . PNamedR . PNamedRel (origin dcl) (name dcl) . Just . aSign2pSign . sign $ dcl
     EDcI cpt -> Prim . Pid o . aConcept2pConcept $ cpt
-    EBin oper cpt -> Prim . PBind o oper . aConcept2pConcept $ cpt
+    EBin oper sgn -> Prim . PBind o oper . aConcept2pConcept $ source sgn -- TODO enhance PBind to full signature.
     EDcV sgn -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where
@@ -363,12 +367,6 @@ aPairViewSegment2pPairViewSegment x =
           pvsExp = aExpression2pTermPrim (pvsExp x)
         }
 
-aIdentitySegment2pIdentSegmnt :: IdentitySegment -> P_IdentSegmnt TermPrim
-aIdentitySegment2pIdentSegmnt (IdentityExp oDef) =
-  P_IdentExp
-    { ks_obj = aObjectDef2pObjectDef (BxExpr oDef)
-    }
-
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
   case obj of
@@ -390,51 +388,27 @@ aAtomPair2pAtomPair pr =
     }
 
 aAtomValue2pAtomValue :: AAtomValue -> PAtomValue
-aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in convertion to P-structure"
+aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in conversion to P-structure"
 aAtomValue2pAtomValue val =
-  case aavtyp val of
-    Alphanumeric -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    BigAlphanumeric -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    HugeAlphanumeric -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    Password -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    Binary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    BigBinary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    HugeBinary -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
-    Date -> case val of
-      AAVDate {} ->
-        -- TODO: Needs rethinking. A string or a double?
-        ScriptString o (showValADL val)
-      _ -> fatal "Unexpected combination of value types"
-    DateTime -> case val of
-      AAVDateTime {} ->
-        -- TODO: Needs rethinking. A string or a double?
-        ScriptString o (showValADL val)
-      _ -> fatal "Unexpected combination of value types"
-    Integer -> case val of
-      AAVInteger {} -> XlsxDouble o (fromInteger (aavint val))
-      _ -> fatal "Unexpected combination of value types"
-    Float -> case val of
-      AAVFloat {} -> XlsxDouble o (aavflt val)
-      _ -> fatal "Unexpected combination of value types"
-    Boolean -> case val of
-      AAVBoolean {} -> ComnBool o (aavbool val)
-      _ -> fatal "Unexpected combination of value types"
-    Object -> case val of
-      AAVString {} -> ScriptString o (aavtxt val)
-      _ -> fatal "Unexpected combination of value types"
-    TypeOfOne -> fatal "Unexpected combination of value types"
+  case (aavtyp val, val) of
+    (Alphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
+    (BigAlphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
+    (HugeAlphanumeric, AAVString {}) -> ScriptString o (aavtxt val)
+    (Password, AAVString {}) -> ScriptString o (aavtxt val)
+    (Binary, _) -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (BigBinary, _) -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (HugeBinary, _) -> fatal $ tshow (aavtyp val) <> " cannot be represented in P-structure currently."
+    (Date, AAVDate {}) -> ScriptString o (showValADL val) -- TODO: Needs rethinking. A string or a double?
+    (DateTime, AAVDateTime {}) -> ScriptString o (showValADL val) -- TODO: Needs rethinking. A string or a double?
+    (Integer, AAVInteger {}) -> XlsxDouble o (fromInteger (aavint val))
+    (Float, AAVFloat {}) -> XlsxDouble o (aavflt val)
+    (Boolean, AAVBoolean {}) -> ComnBool o (aavbool val)
+    (Object, AAVString {}) -> ScriptString o (aavtxt val)
+    _ -> fatal ("Unexpected combination of value types in aAtomValue2pAtomValue: val=" <> tshow val <> " and type=" <> tshow (aavtyp val))
   where
     o = Origin $ "Origin is not present in AAtomValue: " <> tshow val
 
-aSubIfc2pSubIfc :: SubInterface -> P_SubInterface
+aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
 aSubIfc2pSubIfc sub =
   case sub of
     Box orig _ heading objs ->
@@ -443,7 +417,7 @@ aSubIfc2pSubIfc sub =
           si_header = heading,
           si_box = map aObjectDef2pObjectDef objs
         }
-    InterfaceRef orig isLinkto str ->
+    InterfaceRef orig _ isLinkto str ->
       P_InterfaceRef
         { pos = orig,
           si_isLink = isLinkto,

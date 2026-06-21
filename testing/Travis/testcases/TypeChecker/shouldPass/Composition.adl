@@ -1,0 +1,12 @@
+CONTEXT CompositionTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT CompositionTypeCheck
+{+ This test must succeed because the types match exactly: meet(B,B) = B exists. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testComposition: result = r;s
+
+ENDCONTEXT

@@ -1,16 +1,30 @@
-CONTEXT Test IN ENGLISH
+CONTEXT Try1 IN ENGLISH
 
-PATTERN Test1
-RELATION r[A*C]
-RELATION s[A*B]
-RELATION t[B*C]
-RELATION t[Q*C]
-RULE Test:r = s;t
+PATTERN Try1
+RELATION r[A*B]
+CLASSIFY A ISA B
+RULE r  |-  (V[A*A]-I[B]) ; r
+RULE r  |-  (V[A*B]-I[B]) ; r
+RULE r  |-  (V[B*A]-I[B]) ; r
+RULE r  |-  (V[B*B]-I[B]) ; r
+RULE r  |-         -I[B]  ; r
 ENDPATTERN
 
 ENDCONTEXT
-
-{-
-   Purpose: This script is a simple correct script with = and ;
+{- 
+   Purpose: to verify that the complement of I[B] is unambiguous (line 10).
    Result: PASS
+
+   Historical note:
+   This file was originally placed in shouldFail because the old Ampersand type checker
+   treated the complement operator (-) as producing a type-unbound expression (similar to V).
+   In that design, -I[B] with CLASSIFY A ISA B was ambiguous, because several
+   universe types were possible: V[A*A]-I[B], V[A*B]-I[B], V[B*A]-I[B], V[B*B]-I[B].
+
+   Design decision (current type checker):
+   The current type checker assigns the complement -e the same type as e itself.
+   Because I[B] has exactly one signature [B*B], its complement -I[B] unambiguously
+   has type [B*B] as well. Within the universe of all declared relations, this is the
+   only valid interpretation, so no ambiguity arises. The user is free to use the
+   explicit forms on lines 6-9 when a different universe is intended.
 -}

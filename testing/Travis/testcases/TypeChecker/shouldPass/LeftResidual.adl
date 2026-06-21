@@ -1,0 +1,12 @@
+CONTEXT LeftResidualTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualTypeCheck
+{+ This test must succeed because meet(B,B) = B exists (exact match on targets). +}
+
+RELATION r[A*B]
+RELATION s[C*B]
+RELATION result[A*C]
+
+RULE testLeftResidual: result = r/s
+
+ENDCONTEXT

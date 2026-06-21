@@ -1,0 +1,11 @@
+CONTEXT RelationalAdditionTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT RelationalAdditionTypeMismatchCheck
+{+ This test must fail because the target of result[A*C] and the target of r!r~ do not match. +}
+
+RELATION r[A*B]
+RELATION result[A*C]
+
+RULE testRelationalAdditionFail: result = r!r~
+
+ENDCONTEXT

@@ -1,0 +1,12 @@
+CONTEXT DifferenceTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT DifferenceTypeMismatchCheck
+{+ This test must fail because difference requires both operands to have the same signature. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testDifferenceFail: result = r - s
+
+ENDCONTEXT

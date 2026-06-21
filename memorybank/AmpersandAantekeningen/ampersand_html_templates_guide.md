@@ -2,7 +2,7 @@
 
 Use templates to transform your basic Ampersand interfaces into professional, interactive user experiences with buttons, dropdowns, tables, forms, and custom layouts that make your applications intuitive and efficient for end users.
 For this purpose, Ampersand lets you create rich user interfaces using pre-built HTML templates and HTML templates of your own.
-You will will learn the template system architecture, use every available template type, and build sophisticated interfaces step by step.
+You will learn the template system architecture, use every available template type, and build sophisticated interfaces step by step.
 
 
 ## 1. Template System Overview
@@ -11,12 +11,18 @@ You will will learn the template system architecture, use every available templa
 
 Ampersand uses three types of templates to generate user interfaces:
 
-1. **BOX Templates** - Structure containers (FORM, TABLE, TABS, etc.). Use these in conjunction with the `BOX` keyword, as in `BOX<FORM>`, `BOX<TABLE>`, `BOX<TABS>, etc., to make the template work for the entire BOX. Note that you specify a BOX template in HTML.
-2. **Atomic Templates** - Display individual data values (text fields, buttons, etc.).
-   For data fields, the Ampersand compiler selects the appropriate atomic template based on the datatype.
-3. **VIEW Templates** - Custom display formats for specific concepts.
-   Use these in conjunction with a term in an interface, as in `project~<ProjectView>`, to apply the view ProjectView to the target of the term `project~`.
-   Note that you specify a VIEW template in Ampersand.
+1. **BOX Templates** structure containers (FORM, TABLE, TABS, etc.). Use them after the `BOX` keyword, enclosed in sharp brackets, as in `BOX<FORM>`, `BOX<TABLE>`, `BOX<TABS>`. (Remember from `INTERFACE` that `BOX` marks the recursive structure of an interface.) A box template defines the layout of the DOM-object associated with the `BOX`, so the template works for the entire BOX. You specify a BOX template in HTML.
+2. **Atomic Templates** display individual data values (text fields, buttons, etc.). The Ampersand compiler knows the type of the field (e.g. ALPHANUMERIC, DATE, INTEGER) and attaches the corresponding atomic template to that field. You don't specify anything in your Ampersand script unless you want to change something.
+3. **VIEW Templates** are custom display formats for a specific concept. Use them in conjunction with a term in an interface, as in `project~<ProjectView>`, to apply the view `ProjectView` to the target of the term `project~`. You specify a VIEW template in Ampersand. For example, to display a person by name:
+   ```Ampersand
+   VIEW Person: Person
+     { first : firstname
+     , space : TXT " "
+     , last  : lastname
+     }
+   ENDVIEW
+   ```
+   Then, inside a term, you apply that view on the right-hand side, as in `manager<Person>`, to apply the view `Person` to the target of the term `manager`. Here the person is displayed by the first name (relation `firstname`), a space, and the last name (relation `lastname`).
 
 Templates communicate with the Angular frontend through **prescribed field names**. These are exact field names that each template expects to find in your interface definition. Using the wrong field name breaks the template.
 
@@ -33,11 +39,14 @@ INTERFACE Name : expr BOX<TEMPLATE attributes>
   ]
 ```
 
-Key points:
-- Template names are case-sensitive: `BOX<FORM>` not `BOX<form>`
-- Prescribed field names must match exactly: `"label"` not `"Label"`
-- CRUD annotations control user permissions
-- You can nest templates inside other templates
+### Key points
+- A template may have attributes.
+  Consult the documentation to know which attributes apply to a template.
+  Using the wrong field name breaks the template.
+- Template names are case-sensitive: `BOX<FORM>` refers to the `FORM` template, which is built-in. `BOX<form>` on the other hand refers to the `form` template, which is not built-in, so you run into an error if you haven't specified it yourself.
+- Prescribed field names must match exactly: `"label"` and `"Label"` are different labels.
+- CRUD annotations control user permissions.
+- You can nest templates inside other templates.
 
 ---
 
@@ -47,7 +56,9 @@ BOX templates structure your interface layout. They organize fields into forms, 
 
 ### 2.1 FORM Template
 
-**Purpose**: Display fields vertically like a traditional form.
+**Purpose**: Use this if, for example, you want your user to fill out a form, or if you want your box to look like a form.
+
+The `FORM` template displays fields vertically. This is the default template for `BOX`es.
 
 **Syntax**:
 ```ampersand
@@ -61,7 +72,7 @@ expr BOX<FORM attributes>
 - `hideOnNoRecords` - Hide entire form when no data exists
 - `hideSubOnNoRecords` - Hide individual fields when they have no data
 - `hideLabels` - Remove field labels
-- `title="Your Title"` - Add form title
+- `title="Your Title"` - Add your own form title
 - `noRootTitle` - Remove auto-generated title for root interfaces
 - `showNavMenu` - Add navigation menu button
 
@@ -78,7 +89,9 @@ INTERFACE EditProject : I[Project] BOX<FORM hideSubOnNoRecords>
 
 ### 2.2 TABLE Template
 
-**Purpose**: Display data in rows and columns like a spreadsheet.
+**Purpose**: Use this template for lists, overviews, tables, and data comparison interfaces.
+
+The `TABLE` template displays data horizontally in rows, very much like a spreadsheet does.
 
 **Syntax**:
 ```ampersand
@@ -111,7 +124,9 @@ INTERFACE ProjectList : "_SESSION";V[SESSION*Project] BOX<TABLE sortable sortBy=
 
 ### 2.3 TABS Template
 
-**Purpose**: Organize related information into separate tabs.
+**Purpose**: Use this template for complex objects with multiple aspects or when screen space is limited.
+
+Organize related information into separate tabs.
 
 **Syntax**:
 ```ampersand
@@ -147,7 +162,9 @@ INTERFACE ProjectDetails : I[Project] BOX<TABS>
 
 ### 2.4 RAW Template
 
-**Purpose**: Display data without styling or editing functionality.
+**Purpose**: Sometimes you want basic HTML, for example for custom styling or embedding your HTML in other systems.
+
+The RAW template displays data without styling or editing functionality.
 
 **Syntax**:
 ```ampersand

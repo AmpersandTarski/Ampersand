@@ -497,7 +497,6 @@ nonSpecialSelectExpr fSpec expr =
                                   c = case map fst esI of
                                     [] -> fatal "This list must not be empty here."
                                     EDcI cpt : _ -> cpt
-                                    EEps cpt _ : _ -> cpt
                                     e : _ -> fatal $ "Unexpected expression: " <> tshow e
                     where
                       --             showComment :: Text -> (Expression, Name) -> Comment
@@ -507,7 +506,6 @@ nonSpecialSelectExpr fSpec expr =
                       isI e =
                         case e of
                           EDcI c -> Just (e, sqlAttConcept fSpec c)
-                          EEps c _ -> Just (e, sqlAttConcept fSpec c)
                           _ -> Nothing
                       nonOptimizedIntersectSelectExpr :: BinQueryExpr
                       nonOptimizedIntersectSelectExpr =
@@ -635,7 +633,7 @@ nonSpecialSelectExpr fSpec expr =
                                   [uName "="]
                                   (Iden [fenceName (i + 1), sourceAlias])
                               )
-                          -- When one or both sides have no fenceTable, that is because of optimation of
+                          -- When one or both sides have no fenceTable, that is because of optimization of
                           -- the SQL statement. Check the code of fenceTable for more details
                           (Just _, Nothing) ->
                             case fenceExpr (i + 1) of
@@ -776,15 +774,15 @@ nonSpecialSelectExpr fSpec expr =
             bseTbl = [sqlConceptTable fSpec c],
             bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [uName "="] (singleton2SQL c val)
           }
-    (EDcV (Sign s t)) ->
-      let (psrc, fsrc) = fun s
-          (ptgt, ftgt) = fun t
+    (EDcV _sgn) ->
+      let (psrc, fsrc) = fun (source expr)
+          (ptgt, ftgt) = fun (target expr)
           fun :: A_Concept -> (Name, Name)
           fun cpt = ((qName . text1ToText . showUnique) plug, (qName . tshow . attSQLColName) att)
             where
               (plug, att) = getConceptTableInfo fSpec cpt
-       in traceComment ["case: (EDcV (Sign s t))"]
-            $ case (s, t) of
+       in traceComment ["case: (EDcV sgn)"]
+            $ case (source expr, target expr) of
               (ONE, ONE) -> one
               (_, ONE) ->
                 BinSelect
@@ -843,6 +841,32 @@ nonSpecialSelectExpr fSpec expr =
                 where
                   first' = uName "fst"
                   secnd = uName "snd"
+      where
+        one :: BinQueryExpr
+        one =
+          BinQEComment
+            [BlockComment "Just ONE"]
+            BinSelect -- select distinct 1 as src, 1 as tgt from (select 1) as a
+              { bseSetQuantifier = SQDefault,
+                bseSrc = theONESingleton,
+                bseTrg = theONESingleton,
+                bseTbl =
+                  [ TRQueryExpr
+                      Select
+                        { qeSetQuantifier = SQDefault,
+                          qeSelectList = [(NumLit "1", Nothing)],
+                          qeFrom = [],
+                          qeWhere = Nothing,
+                          qeGroupBy = [],
+                          qeHaving = Nothing,
+                          qeOrderBy = [],
+                          qeOffset = Nothing,
+                          qeFetchFirst = Nothing
+                        }
+                      `as` uName "ONE"
+                  ],
+                bseWhr = Nothing
+              }
     (EDcI c) -> traceComment ["case: EDcI c"]
       $ case c of
         ONE ->
@@ -874,39 +898,8 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [sqlConceptTable fSpec c],
                   bseWhr = Just (notNull cAtt)
                 }
-    -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
-    (EEps c _) -> traceComment ["case: EEps c _"]
-      $ case c of -- select the population of the most specific concept, which is the source.
-        ONE ->
-          BinSelect
-            { bseSetQuantifier = SQDefault,
-              bseSrc = theONESingleton,
-              bseTrg = theONESingleton,
-              bseTbl = [],
-              bseWhr = Nothing
-            }
-        PlainConcept {} ->
-          let cAtt = Iden [sqlAttConcept fSpec c]
-           in BinSelect
-                { bseSetQuantifier = SQDefault,
-                  bseSrc =
-                    Col
-                      { cTable = [],
-                        cCol = [sqlAttConcept fSpec c],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTrg =
-                    Col
-                      { cTable = [],
-                        cCol = [sqlAttConcept fSpec c],
-                        cAlias = [],
-                        cSpecial = Nothing
-                      },
-                  bseTbl = [sqlConceptTable fSpec c],
-                  bseWhr = Just (notNull cAtt)
-                }
-    (EBin oper c) -> traceComment ["case: EBin oper c "] $ case c of
+        _ -> fatal ("EDcI: unexpected concept type" <> tshow c)
+    (EBin oper sgn) -> traceComment ["case: EBin oper sgn "] $ case source sgn of -- TODO enhance to full signature
       ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
       PlainConcept {} ->
         BinSelect
@@ -941,9 +934,10 @@ nonSpecialSelectExpr fSpec expr =
                   ]
           }
         where
-          theName = sqlAttConcept fSpec c
+          theName = sqlAttConcept fSpec (source sgn) -- TODO enhance for EBin with full signature
           first' = uName "fst"
           secnd = uName "snd"
+      _ -> fatal ("EBin: unexpected signature" <> tshow sgn)
     (EDcD d) -> selectRelation fSpec d
     (EBrk e) -> selectExpr fSpec e
     (ECpl e) ->
@@ -986,6 +980,7 @@ nonSpecialSelectExpr fSpec expr =
           where
             concpt = sqlAttConcept fSpec c
         _ ->
+          -- trace ("\n[TRACE3] ECpl general case (CARTESIAN PRODUCT!). Expression: ECpl (" <> showA e <> ")") $
           traceComment
             ["case: ECpl e"]
             BinSelect
@@ -1149,11 +1144,20 @@ nonSpecialSelectExpr fSpec expr =
               ],
             bseWhr = Nothing
           }
-    (EDif (EDcV _, x)) ->
+    (EDif (EDcV sgn, x)) ->
       traceComment ["case: EDif (EDcV _,x)"]
-        $ selectExpr fSpec (notCpl x)
-    -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
-    -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
+        $ case x of
+          ECpl _ ->
+            -- EDcV - (-y) = y: bestaande aanpak (notCpl verwijdert dubbel complement efficiënt)
+            selectExpr fSpec (notCpl x)
+          _ ->
+            -- x is positief: LEFT JOIN is efficiënter dan NOT EXISTS
+            -- Algebraïsch: V - x = V /\ (-x) = EIsc(V, ECpl x), wat maybeSpecialCase als LEFT JOIN genereert
+            case maybeSpecialCase fSpec (EIsc (EDcV sgn, ECpl x)) of
+              Just q -> q -- efficiënte LEFT JOIN
+              Nothing -> selectExpr fSpec (notCpl x) -- fallback (defensief, kan in theorie niet voorkomen)
+              -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
+              -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l, r) ->
       traceComment ["case: EEqu (l,r) "]
         $ selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
@@ -1241,7 +1245,7 @@ nonSpecialSelectExpr fSpec expr =
                                 ]
                           )
                   }
-          mainSrc = (sqlAttConcept fSpec . target) l -- Note: this 'target' is not an error!!! It is part of the definition of right residu
+          mainSrc = (sqlAttConcept fSpec . target) l -- Note: this 'target' is not an error! It is part of the definition of right residu
           mainTgt = (sqlAttConcept fSpec . target) r
           resLeft = uName "RResLeft"
           resRight = uName "RResRight"
@@ -1617,32 +1621,6 @@ emptySet =
     a = uName "a"
     nothing = uName "nothing"
 
-one :: BinQueryExpr
-one =
-  BinQEComment
-    [BlockComment "Just ONE"]
-    BinSelect -- select distinct 1 as src, 1 as tgt from (select 1) as a
-      { bseSetQuantifier = SQDefault,
-        bseSrc = theONESingleton,
-        bseTrg = theONESingleton,
-        bseTbl =
-          [ TRQueryExpr
-              Select
-                { qeSetQuantifier = SQDefault,
-                  qeSelectList = [(NumLit "1", Nothing)],
-                  qeFrom = [],
-                  qeWhere = Nothing,
-                  qeGroupBy = [],
-                  qeHaving = Nothing,
-                  qeOrderBy = [],
-                  qeOffset = Nothing,
-                  qeFetchFirst = Nothing
-                }
-              `as` uName "ONE"
-          ],
-        bseWhr = Nothing
-      }
-
 theDialect :: Dialect
 theDialect = mysql -- maybe in the future other dialects will be supported.
 
@@ -1774,11 +1752,6 @@ attInBroadQuery fSpec cpt = get
       case expr of
         EBrk e -> get e
         EDcI c ->
-          let (p, a) = getConceptTableInfo fSpec c
-           in if p == broadTable
-                then Just a
-                else Nothing
-        EEps c _ ->
           let (p, a) = getConceptTableInfo fSpec c
            in if p == broadTable
                 then Just a

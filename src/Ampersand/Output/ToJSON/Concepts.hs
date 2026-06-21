@@ -5,6 +5,8 @@
 module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 
 import Ampersand.ADL1
+import qualified Ampersand.Basics.Name as Name
+import Ampersand.Core.AbstractSyntaxTree (largerConcepts, smallerConcepts)
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
@@ -68,19 +70,22 @@ instance ToJSON TableCols where
   toJSON = amp2Jason
 
 instance JSON FSpec Concepts where
-  fromAmpersand env fSpec _ = Concepts (map (fromAmpersand env fSpec) (filter isUsed . toList $ concs fSpec))
+  fromAmpersand env fSpec _ = (Concepts . map (fromAmpersand env fSpec) . filter isUsed . toList . concs) fSpec
     where
       isUsed :: A_Concept -> Bool
-      isUsed cpt = cpt `Set.member` concs (instanceList fSpec :: [Relation])
+      isUsed ONE = True -- ONE is always there, even if not explicitly mentioned in the FSpec.
+      isUsed cpt = cpt `Set.member` (concs (instanceList fSpec :: [Relation]) `Set.union` concs (instanceList fSpec :: [AClassify]))
 
 instance JSON A_Concept Concept where
   fromAmpersand env fSpec cpt =
     Concept
       { cptJSONname = fullName cpt,
-        cptJSONlabel = label cpt,
+        cptJSONlabel = case conceptLabel fSpec cpt of
+          Nothing -> localNameOf cpt
+          Just (Name.Label t) -> t,
         cptJSONtype = tshow . cptTType fSpec $ cpt,
-        cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts (vgens fSpec) $ cpt,
-        cptJSONspecializations = map (text1ToText . idWithoutType') . smallerConcepts (vgens fSpec) $ cpt,
+        cptJSONgeneralizations = map (text1ToText . idWithoutType') . largerConcepts $ cpt,
+        cptJSONspecializations = map (text1ToText . idWithoutType') . smallerConcepts $ cpt,
         cptJSONdirectGens = map (text1ToText . idWithoutType') $ L.nub [g | (s, g) <- fsisa fSpec, s == cpt],
         cptJSONdirectSpecs = map (text1ToText . idWithoutType') $ L.nub [s | (s, g) <- fsisa fSpec, g == cpt],
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
@@ -92,7 +97,7 @@ instance JSON A_Concept Concept where
     where
       hasAsSourceCpt :: Interface -> Bool
       hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
-      cpts = cpt : largerConcepts (vgens fSpec) cpt
+      cpts = cpt : largerConcepts cpt
 
 instance JSON A_Concept TableCols where
   fromAmpersand _ fSpec cpt =
@@ -106,7 +111,7 @@ instance JSON A_Concept TableCols where
           _ -> fatal "All concepts in a typology should be in exactly one table."
       }
     where
-      cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
+      cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
       cptTable = case lookupCpt fSpec cpt of
         [(table, _)] -> table
         [] -> fatal ("Concept `" <> fullName cpt <> "` not found in a table.")

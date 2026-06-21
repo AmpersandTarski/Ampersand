@@ -44,14 +44,15 @@ copyTemplates = do
   logDebug "Start copy templates"
   let tempDir = dirSource env </> "templates"
       toDir = getTemplateDir env
-  logDebug . display $ "  From: " <> T.pack tempDir
+  absTempDir <- liftIO $ makeAbsolute tempDir -- <-- nieuw
+  logDebug . display $ "  From: " <> T.pack absTempDir
   logDebug . display $ "  To:   " <> T.pack toDir
-  tempDirExists <- liftIO $ doesDirectoryExist tempDir
+  tempDirExists <- liftIO $ doesDirectoryExist absTempDir
   if tempDirExists
     then do
-      logDebug $ "Copying project specific templates from " <> display (T.pack tempDir) <> " -> " <> display (T.pack toDir)
-      copyDirRecursively tempDir toDir -- recursively copy all templates
-    else logDebug $ "No project specific templates are copied (there is no such directory " <> display (T.pack tempDir) <> ")"
+      logDebug $ "Copying project-specific templates from " <> display (T.pack absTempDir) <> " -> " <> display (T.pack toDir)
+      copyDirRecursively absTempDir toDir
+    else logDebug $ "No project-specific templates are copied (there is no such directory " <> display (T.pack absTempDir) <> ")"
 
 buildFESpec :: (HasDirPrototype env) => FSpec -> RIO env FESpec
 buildFESpec fSpec = do

@@ -1,0 +1,15 @@
+CONTEXT CompositionISAheteroSubUnrelated IN ENGLISH
+
+PURPOSE CONTEXT CompositionISAheteroSubUnrelated
+{+ This test must fail because meet(A,C) does not exist.
+   A and C are unrelated. +}
+
+CLASSIFY A ISA B
+
+RELATION r[W*A]
+RELATION s[C*Z]
+RELATION result[W*Z]
+
+RULE testCompositionISAFail: result = r;s
+
+ENDCONTEXT

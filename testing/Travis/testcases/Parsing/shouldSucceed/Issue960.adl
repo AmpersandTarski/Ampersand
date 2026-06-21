@@ -1,5 +1,11 @@
 CONTEXT Issue960
 
+CONCEPT Note "A note"
 VIEW Note : Note HTML TEMPLATE "Note.html" ENDVIEW
 
 ENDCONTEXT
+
+{- 
+   Purpose: to check that a simple VIEW definition with a TEMPLATE clause is accepted.
+   Result: Succeed
+-}

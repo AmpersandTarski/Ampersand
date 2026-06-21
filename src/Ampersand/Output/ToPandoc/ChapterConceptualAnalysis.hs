@@ -227,8 +227,8 @@ chpConceptualAnalysis env lev fSpec =
           case rrkind r of
             Identity c ->
               (para . l)
-                ( NL ("Een identiteit op \"" <> label c <> "\" is gedefinieerd, zij het zonder PURPOSE."),
-                  EN ("An identity rule for \"" <> label c <> "\" is defined, albeit without a purpose.")
+                ( NL ("Een identiteit op \"" <> maybe (fullName c) tshow (conceptLabel fSpec c) <> "\" is gedefinieerd, zij het zonder PURPOSE."),
+                  EN ("An identity rule for \"" <> maybe (fullName c) tshow (conceptLabel fSpec c) <> "\" is defined, albeit without a purpose.")
                 )
             _ -> fatal "The result of idRulesOfTheme themeContent has produced a RuleCont whose rrkind is not Identity c."
         caRemainingRelations :: Blocks

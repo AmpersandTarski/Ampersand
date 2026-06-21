@@ -1,0 +1,13 @@
+CONTEXT UnionTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT UnionTypeCheck
+{+ This test must succeed because both operands have signature [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION t[A*C]
+RELATION result[A*C]
+
+RULE testUnion: result = t \/ (r;s)
+
+ENDCONTEXT

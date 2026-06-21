@@ -45,12 +45,14 @@ module Ampersand.FSpec.FSpec
     showSQL,
     substituteReferenceObjectDef,
     violationsOfInvariants,
+    conceptLabelInFSpec,
   )
 where
 
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import qualified Ampersand.Core.AbstractSyntaxTree as AST
 import Ampersand.FSpec.Crud
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -144,20 +146,19 @@ data FSpec = FSpec
     tableContents :: !(PlugSQL -> [[Maybe AAtomValue]]),
     pairsInExpr :: !(Expression -> AAtomPairs),
     applyViolText :: !(Rule -> AAtomPair -> Text),
-    -- | All conjuncts that have process-rule violations.
-    initialConjunctSignals :: ![(Conjunct, AAtomPairs)],
     -- | All invariant rules with violations.
     allViolations :: ![(Rule, AAtomPairs)],
     -- | All expressions in the fSpec
     allExprs :: !Expressions,
     fcontextInfo :: !ContextInfo,
     ftypologies :: ![Typology],
-    typologyOf :: !(A_Concept -> Typology),
     largestConcept :: !(A_Concept -> A_Concept),
     specializationsOf :: !(A_Concept -> [A_Concept]),
     generalizationsOf :: !(A_Concept -> [A_Concept]),
     allEnforces :: ![AEnforce],
-    isSignal :: !(Rule -> Bool)
+    isSignal :: !(Rule -> Bool),
+    -- | Function to get label for a concept from its definition
+    conceptLabel :: !(A_Concept -> Maybe Label)
   }
   deriving (Typeable)
 
@@ -237,13 +238,15 @@ instance Unique APair where
 concDefs :: FSpec -> A_Concept -> [AConceptDef]
 concDefs fSpec c =
   case c of
-    ONE -> []
     PlainConcept {} -> filter isDefinitionOf . conceptDefs $ fSpec
       where
-        isDefinitionOf cdef = name cdef `elem` fmap fst (aliases c)
+        isDefinitionOf cdef = name cdef `elem` Set.toList (aliases c)
+    _ -> []
 
 instance ConceptStructure FSpec where
-  concs = allConcepts . fcontextInfo
+  concs fSpec = case originalContext fSpec of
+    Nothing -> Set.singleton ONE -- In an FSpec derived from a module, we don't have the original context, but we know that ONE is always there.
+    Just ctx -> Set.fromList (ctxcs ctx) `Set.union` Set.singleton ONE
   expressionsIn = allExprs
 
 instance Named FSpec where
@@ -251,6 +254,11 @@ instance Named FSpec where
 
 instance Labeled FSpec where
   mLabel = fsLabel
+
+conceptLabelInFSpec :: FSpec -> A_Concept -> Maybe Label
+conceptLabelInFSpec fSpec cpt = case originalContext fSpec of
+  Nothing -> Nothing
+  Just ctx -> AST.conceptLabel ctx cpt
 
 data Quad = Quad
   { qDcl :: Relation, -- The relation that, when affected, triggers a restore action.
@@ -586,18 +594,16 @@ emptyFSpec nm =
       -- 'tableContents fSpec plug' is used in `Population2Xlsx.hs` for filling a spreadsheet.
       pairsInExpr = fatal "Don't ask for pairs from expressions in the empty FSpec.",
       applyViolText = fatal "Don't ask for the function applyViolText in the empty FSpec.",
-      initialConjunctSignals = [],
-      -- All conjuncts that have process-rule violations.
       allViolations = [],
       -- All invariant rules with violations.
       allExprs = Set.empty,
       -- All expressions in the fSpec
       fcontextInfo = fatal "Don't ask for the original context in the empty FSpec.",
       ftypologies = [],
-      typologyOf = fatal "Don't ask for typologies in the empty FSpec.",
       largestConcept = fatal "Don't ask for the largest concept in the empty FSpec.",
       specializationsOf = fatal "Don't ask for specializations in the empty FSpec.",
       generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec.",
       allEnforces = [],
-      isSignal = fatal "Don't ask for isSignal in an empty FSpec."
+      isSignal = fatal "Don't ask for isSignal in an empty FSpec.",
+      conceptLabel = fatal "Don't ask for concept labels in the empty FSpec."
     }

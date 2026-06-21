@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       # The checkout step is needed since the enforcer relies on local git commands
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: mrkkrp/ormolu-action@v15
         with:

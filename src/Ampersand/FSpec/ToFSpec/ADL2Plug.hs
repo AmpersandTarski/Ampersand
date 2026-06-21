@@ -3,7 +3,6 @@
 
 module Ampersand.FSpec.ToFSpec.ADL2Plug
   ( makeGeneratedSqlPlugs,
-    typologies,
     suitableAsKey,
     attributesOfConcept,
   )
@@ -12,8 +11,8 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree (Guarded (..))
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc.HasClasses
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -41,15 +40,10 @@ attributesOfConcept fSpec c =
 
 -- was : null(Set.fromList [Uni,Inj,Sur]Set.\\properties (attExpr att)) && not (isPropty att)
 
-makeGeneratedSqlPlugs ::
-  (HasFSpecGenOpts env) =>
-  env ->
-  A_Context ->
-  [PlugSQL]
-
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs env context = inspectedCandidateTables
+makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) => env -> A_Context -> [PlugSQL]
+makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE toevoegen is onjuist omdat ONE al in inspectedCandidateTables zit.
   where
     inspectedCandidateTables :: [PlugSQL]
     inspectedCandidateTables
@@ -77,8 +71,8 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           [ "",
             "Please report this as a bug! ",
             "When these fatals are thrown, it is good to know that these sqlnames are disambiguated by adding a gitLikeSha. This is a hash",
-            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough. That is why",
-            "after the generation of the tables this check is done.",
+            "where only the first 7 digits are used. There is a very tiny chance that this disambiguation isn't good enough.",
+            "That is why after the generation of the tables this check is done.",
             "This text is here to help the developer of ampersand to investigate."
           ]
         myShow :: NonEmpty PlugSQL -> [Text]
@@ -105,9 +99,14 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
     candidateTables = map makeTable components
     components :: [(Maybe Typology, [Relation])]
     components =
-      map componentsForTypology (typologies context)
-        <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+      -- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps)
+      comps
       where
+        -- Orphan relations are relations that cause link tables in the database,
+        -- i.e relation that are neither univalent nor injective.
+        comps =
+          map componentsForTypology (multiKernels (ctxInfo context))
+            <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
         componentsForTypology typol =
           (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
         componentsForOrphanRelation rel = (Nothing, [rel])
@@ -115,10 +114,11 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
         relationBelongsToConceptTable :: Typology -> Relation -> Bool
         relationBelongsToConceptTable typol rel =
           case conceptTableOf rel of
+            Just x@(PlainConcept {}) -> aliases x `elem` tyCpts typol
+            Just ONE -> True -- ONE is in every typology, but does not belong to any concept table. However, it has no attributes, so this clause is only here for theorecal completeness.
+            Just _ -> False
             Nothing -> False
-            Just x -> x `elem` tyCpts typol
 
-    repr = representationOf (ctxInfo context)
     allRelationsInContext = toList (relsDefdIn context)
 
     makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
@@ -128,7 +128,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
       (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
       (Just typol, _) -> makeConceptTable typol rels
     allKeyConcepts :: [A_Concept]
-    allKeyConcepts = map tyroot . typologies $ context
+    allKeyConcepts = [cpt | typol <- multiKernels (ctxInfo context), Checked cpt _warning <- [pCpt2aCpt (tyroot typol)]]
+    pCpt2aCpt :: P_Concept -> Guarded A_Concept
+    pCpt2aCpt = conceptMap (ctxInfo context) OriginUnknown
     allLinkTableRelations :: [Relation]
     allLinkTableRelations = concatMap snd . filter (isNothing . fst) $ components
     makeConceptTable :: Typology -> [Relation] -> PlugSQL
@@ -143,17 +145,26 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           mainItem = toConceptOrRelation tableKey
         }
       where
+        allConceptsInTable :: [A_Concept]
         allConceptsInTable =
-          -- All concepts from the typology, orderd from generic to specific
-          reverse $ sortSpecific2Generic (gens context) (tyCpts typol)
-
+          map aliasSetToConcept (tyCpts typol)
+        aliasSetToConcept :: Set.Set Name -> A_Concept
+        aliasSetToConcept aliasSet =
+          -- if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
+          case Set.toList aliasSet of
+            [] -> fatal "Empty alias set in concept table"
+            nm : _
+              | nm == nameOfONE -> ONE
+              | otherwise -> PlainConcept {aliases = aliasSet, typology = typol}
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
           determineSqlName
             (map toConceptOrRelation allKeyConcepts)
             (toConceptOrRelation keyConcept)
         tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
-        tableKey = tyroot typol
+        tableKey = case pCpt2aCpt (tyroot typol) of
+          Checked cpt _warning -> cpt
+          _ -> fatal ("The root of a typology " <> tshow (tyroot typol) <> " should always be a PlainConcept, so this should not happen.")
         conceptLookuptable :: [(A_Concept, SqlAttribute)]
         conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
         dclLookuptable :: [RelStore]
@@ -186,11 +197,11 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = determineSqlName tableScope (toConceptOrRelation cpt),
               attExpr = expr,
-              attType = repr cpt,
+              attType = ctxReprType context cpt,
               attUse =
                 if cpt
                   == tableKey
-                  && repr cpt
+                  && ctxReprType context cpt
                   == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
                   then PrimaryKey cpt
                   else PlainAttr,
@@ -200,18 +211,15 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               attFlipped = False
             }
           where
-            expr =
-              if cpt == tableKey
-                then EDcI cpt
-                else EEps cpt (Sign tableKey cpt)
+            expr = EDcI cpt
         dclAttrib :: Relation -> SqlAttribute
         dclAttrib dcl =
           Att
             { attSQLColName = determineSqlName tableScope (toConceptOrRelation dcl),
               attExpr = dclAttExpression,
-              attType = repr (target dclAttExpression),
+              attType = ctxReprType context (target dclAttExpression),
               attUse =
-                if suitableAsKey . repr . target $ dclAttExpression
+                if suitableAsKey . ctxReprType context . target $ dclAttExpression
                   then ForeignKey (target dclAttExpression)
                   else PlainAttr,
               attNull = not . isTot $ keyToTargetExpr,
@@ -280,9 +288,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Src" else id) . name . source $ codExpr,
               attExpr = domExpr,
-              attType = repr (source domExpr),
+              attType = ctxReprType context (source domExpr),
               attUse =
-                if suitableAsKey . repr . source $ domExpr
+                if suitableAsKey . ctxReprType context . source $ domExpr
                   then ForeignKey (source domExpr)
                   else PlainAttr,
               attNull = False, -- false for link tables
@@ -294,9 +302,9 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
           Att
             { attSQLColName = text1ToSqlName $ fullName1 . (if isEndo dcl then prependToPlainName "Tgt" else id) . name . target $ codExpr,
               attExpr = codExpr,
-              attType = repr (target codExpr),
+              attType = ctxReprType context (target codExpr),
               attUse =
-                if suitableAsKey . repr . target $ codExpr
+                if suitableAsKey . ctxReprType context . target $ codExpr
                   then ForeignKey (target codExpr)
                   else PlainAttr,
               attNull = False, -- false for link tables
@@ -304,6 +312,29 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables
               attUniq = isInj codExpr,
               attFlipped = isStoredFlipped dcl
             }
+    -- tableForONE :: [PlugSQL]
+    -- tableForONE =
+    --   [ TblSQL
+    --       { sqlname = text1ToSqlName (fullName1 ONE),
+    --         attributes = [oneAttribute],
+    --         cLkpTbl = [(ONE, oneAttribute)],
+    --         dLkpTbl = [],
+    --         mainItem = toConceptOrRelation ONE
+    --       }
+    --   ]
+    --   where
+    --     oneAttribute :: SqlAttribute
+    --     oneAttribute =
+    --       Att
+    --         { attSQLColName = text1ToSqlName (fullName1 ONE),
+    --           attExpr = EDcI ONE,
+    --           attType = ctxReprType context ONE, -- = Object
+    --           attUse = PrimaryKey ONE,
+    --           attNull = False,
+    --           attDBNull = False,
+    --           attUniq = True,
+    --           attFlipped = False
+    --         }
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool
@@ -342,19 +373,9 @@ suitableAsKey st =
     Integer -> True
     Float -> False
     Object -> True
-    TypeOfOne -> fatal "ONE has no key at all. does it?"
+    TypeOfOne -> True
 
-typologies :: A_Context -> [Typology]
-typologies context =
-  (multiKernels . ctxInfo $ context)
-    <> [ Typology
-           { tyroot = c,
-             tyCpts = [c]
-           }
-         | c <- toList $ concs context Set.\\ concs (gens context)
-       ]
-
--- | ConceptOrRelation is ment to be things that can end up in a database. It is designed
+-- | ConceptOrRelation is meant to be things that can end up in a database. It is designed
 -- to have Concepts and Relations as instances.
 type ConceptOrRelation = Either A_Concept Relation
 
@@ -363,7 +384,7 @@ instance Named ConceptOrRelation where
   name (Right x) = name x
 
 disambiguatedName :: ConceptOrRelation -> Text1
-disambiguatedName x = toText1Unsafe $ basepart <> "Ð" <> gitLikeSha x
+disambiguatedName x = toText1Unsafe $ basepart <> "_" <> gitLikeSha x
   where
     basepart = case unsnoc firstPart of
       Nothing -> fatal "Impossible to have an empty name."
@@ -392,7 +413,7 @@ instance TableArtefact A_Concept where
 instance TableArtefact Relation where
   toConceptOrRelation = Right
 
-determineSqlName :: [ConceptOrRelation] -> ConceptOrRelation -> SqlName
+determineSqlName :: (HasCallStack) => [ConceptOrRelation] -> ConceptOrRelation -> SqlName
 determineSqlName scope conceptOrRelation =
   text1ToSqlName
     . (if mustBeDisambiguated then disambiguatedName else fullName1)

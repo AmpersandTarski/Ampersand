@@ -41,7 +41,6 @@ import Ampersand.Core.ParseTree
     P_Enforce (..),
     P_IdentDef,
     P_IdentDf (..),
-    P_IdentSegmnt (P_IdentExp),
     P_Markup (P_Markup),
     P_NamedRel (..),
     P_Pattern (..),
@@ -472,13 +471,26 @@ instance JSON.FromJSON (Guarded (P_Rule TermPrim)) where
 parseTerm :: FilePath -> Text -> Guarded (Term TermPrim)
 parseTerm = runParser pTerm
 
+{-
+The following instance accepts JSON like:
+
+```json
+{
+  "relation": "relationName",
+  "operator": "inclusion|subset|sameset",
+  "rhs": "expression text",
+  "flipped": true  // optional, defaults to false
+}
+```
+-}
 instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
   parseJSON val = case val of
     JSON.Object v ->
-      -- todo: if operator = .. then ...
       build
         <$> v
         JSON..: "relation"
+        <*> v
+        JSON..:? "flipped" -- Optional field, defaults to False
         <*> v
         JSON..: "operator"
         <*> v
@@ -488,13 +500,14 @@ instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
         "parsing P_Enforce failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Guarded P_NamedRel -> EnforceOperator -> Text -> Guarded (P_Enforce TermPrim)
-      build gRel oper formexp = do
+      build :: Guarded P_NamedRel -> Maybe Bool -> EnforceOperator -> Text -> Guarded (P_Enforce TermPrim)
+      build gRel mFlipped oper formexp = do
         rel <- gRel
         pure
           $ P_Enforce
             { pos = OriginAtlas,
               penfRel = PNamedR rel,
+              penfFlipped = fromMaybe False mFlipped, -- Defaults to False if not provided
               penfOp = oper,
               penfExpr = case parseTerm ("Json file from Atlas, at a P_enforce `" <> "` expression .") formexp of
                 Errors err -> fatal ("Parse error in " <> formexp <> ":\n   " <> tshow err)
@@ -609,7 +622,7 @@ instance JSON.FromJSON (Guarded P_NamedRel) where
           PNamedRel
             { pos = OriginAtlas,
               p_nrnm = nm, -- name of Relation
-              p_mbSign = sgn -- Sign of relation
+              p_mbSign = sgn -- Signature of of this relation
             }
 
 instance JSON.FromJSON Lang where
@@ -625,14 +638,19 @@ instance JSON.FromJSON (Guarded P_IdentDef) where
         <$> (v JSON..: "name")
         <*> (v JSON..:? "label")
         <*> (v JSON..: "concept")
-        <*> (v JSON..: "ident")
+        <*> (v JSON..: "ident" >>= parseIdentTerm)
     invalid ->
       JSON.prependFailure
         "parsing P_Rule failed, "
         (JSON.typeMismatch "Object" invalid)
     where
-      build :: Text -> Maybe Text -> Guarded P_Concept -> P_IdentSegmnt TermPrim -> (Guarded (P_IdentDf TermPrim))
-      build txt lbl gCpt ident = do
+      parseIdentTerm :: Text -> JSON.Parser (Term TermPrim)
+      parseIdentTerm formexp = case parseTerm ("Json file from Atlas, at an ident expression.") formexp of
+        Errors err -> fail $ T.unpack $ "Parse error in " <> formexp <> ":\n   " <> tshow err
+        Checked term _ -> return term
+
+      build :: Text -> Maybe Text -> Guarded P_Concept -> Term TermPrim -> (Guarded (P_IdentDf TermPrim))
+      build txt lbl gCpt term = do
         nm <- textToNameInJSON IdentName txt
         cpt <- gCpt
         pure
@@ -641,11 +659,8 @@ instance JSON.FromJSON (Guarded P_IdentDef) where
               ix_name = nm,
               ix_label = textToLabelInJSON <$> lbl,
               ix_cpt = cpt,
-              ix_ats = ident NE.:| [] -- NE.NonEmpty (P_IdentSegmnt a)
+              ix_ats = term NE.:| []
             }
-
-instance JSON.FromJSON (P_IdentSegmnt TermPrim) where
-  parseJSON val = P_IdentExp <$> JSON.parseJSON val
 
 instance JSON.FromJSON (P_BoxItem TermPrim) where -- niet in gebruik
   parseJSON val = case val of

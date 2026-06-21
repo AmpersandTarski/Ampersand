@@ -25,7 +25,7 @@ Gebruikers van RAP zijn vooral studenten van de Open Universiteit en geïnteress
 In de [documentatie](https://ampersandtarski.github.io/) vind je alle informatie nodig om het Ampersand project te leren kennen. De RAP applicatie van de Open Universiteit kan gebruikt worden om de applicatie te leren kennen.
 
 Als developer binnen het Ampersand project zul je de applicatie ook lokaal willen draaien. 
-1. [The Tools We Use documentation](https://ampersandtarski.github.io/the-tools-we-use)
+1. [The Tools We Use documentation](../README.md)
 
 De verschillende projecten binnen Ampersand hebben een eigen onboarding.
 

@@ -1,6 +1,8 @@
 CONTEXT Issue862a IN ENGLISH
 PURPOSE CONTEXT Issue862a
-{+This context has a lot of relations with different properties, that are implemented in a single broad table.+}
+{+This context has a lot of relations with different properties, that are implemented in a single broad table.
+  Type errors have been commented out, to show which kinds of things are forbidden.
++}
 
 RELATION father [Person * Person] [UNI]
 RELATION mothersChilds [Female * Person] [INJ] --this relation is the flipped 'mother' relation
@@ -46,27 +48,29 @@ POPULATION husband CONTAINS
     ]
 INTERFACE Persons: V[SESSION*Person] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
-   , husband: husband
-   , wife : husband~]
+--    , husband: husband
+--    , wife : husband~
+   ]
 INTERFACE Males: V[SESSION*Male] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
-   , wife : husband~]
+   , wife : husband~
+   ]
 INTERFACE Females: V[SESSION*Female] cRud BOX <TABLE sortable hideEmptyTable>
    [ persons: I 
    , husband: husband]
    
 INTERFACE Person: I[Person] cRud BOX
-   [ person : I[Person]
-   , isMale : I[Male]
-   , father : father 
+   [ father : father 
+   , person : I[Person]
    , mother : mothersChilds~
-   , husband : husband
-   , wife : husband~
+--    , isMale : I[Male]
+--    , husband : husband
+--    , wife : husband~
    , kidsOfThisFather : father~
-   , kidsOfThisMother : mothersChilds
-   , daughters : (father~;I[Female]) \/ 
-                 (mothersChilds;I[Female])
-   , sons : (father~;I[Male]) \/ 
-            (mothersChilds;I[Male])
+--    , kidsOfThisMother : mothersChilds
+--    , daughters : father~;I[Female]
+                --  \/ mothersChilds;I[Female]
+--    , sons : father~;I[Male]
+            -- \/ (mothersChilds;I[Male
    ]
 ENDCONTEXT

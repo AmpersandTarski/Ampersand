@@ -1,0 +1,34 @@
+CONTEXT Try14 IN ENGLISH
+
+PURPOSE CONTEXT Try14 {+ Test disambiguation algorithm's ability to select the correct relation when multiple relations share the same name but have different signatures. +}
+
+PATTERN Try14
+-- Define three relations with same name but different signatures
+RELATION r[A*B]
+RELATION r[B*C] 
+RELATION r[C*D]
+
+-- Define auxiliary relations for disambiguation context
+RELATION s[X*A]
+RELATION t[D*Y]
+
+-- Rule that should force selection of r[A*B] due to composition constraints
+RULE TestDisambiguation1: result1 = s;r
+RELATION result1[X*B]
+
+-- Rule that should force selection of r[C*D] due to composition constraints  
+RULE TestDisambiguation2: result2 = r;t
+RELATION result2[C*Y]
+
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+Purpose: Test disambiguation algorithm with multiple relations of same name
+- Three relations named 'r' with different signatures: [A*B], [B*C], [C*D]
+- s;r should select r[A*B] because s has target A and only r[A*B] has source A
+- r;t should select r[C*D] because t has source D and only r[C*D] has target D
+- Tests the type system's ability to use composition context for disambiguation
+Result: Should PASS with correct disambiguation
+-}

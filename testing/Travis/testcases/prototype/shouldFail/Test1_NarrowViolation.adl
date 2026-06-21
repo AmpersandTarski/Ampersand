@@ -1,0 +1,12 @@
+CONTEXT Test1NarrowViolation
+-- Test: VIOLATION segment with too narrow expression
+-- Expected: "The Src expression is too narrow" error
+
+CLASSIFY Book ISA Product
+
+RELATION myrel[Book*Book]
+
+RULE testViolation : I[Product] |- myrel
+VIOLATION (SRC I[Book], TGT I[Book])
+
+ENDCONTEXT

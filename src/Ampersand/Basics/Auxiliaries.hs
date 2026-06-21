@@ -15,7 +15,6 @@ module Ampersand.Basics.Auxiliaries
     commaNL,
     liftFst,
     liftSnd,
-    Flippable (..),
     both,
     swap, -- re-export from Data.Tuple.Extra
   )
@@ -140,6 +139,3 @@ commaNL str [a, b] = a <> " " <> str <> " " <> b
 commaNL _ [a] = a
 commaNL str (a : as) = a <> ", " <> commaNL str as
 commaNL _ [] = ""
-
-class Flippable a where
-  flp :: a -> a

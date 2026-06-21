@@ -3,15 +3,18 @@ title: Just curious?
 ---
 
 # Why Ampersand?
-Thank you for being curious. 
+
+Some ideas are worth slowing down for. Here is one: If you know the rules of your business, you have what you need to generate a working information system. It is a large claim with a clean idea underneath, and half the pleasure is seeing how far that idea reaches. If that is the kind of thing that draws you in, read on: this page paints a plain-language picture of what Ampersand is, what sets it apart, and what it is not — enough to decide, in a few minutes, whether it deserves more of your time.
 
 Ampersand automates the development of software for information systems.
 Ampersand is many things:
-* It is a [programming language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can define your own information systems.
+* It is a migration instrument that lets you clean up your data, get rid of spreadsheet administrations, and simplify your business accordingly.
 * It is a way of formalizing domain models to standardize language and produce software at the same time.
 * It is a scientific quest into generative software, making formal theories useful for practitioners.
-* It is a [development environment](https://rap.cs.ou.nl) in which you can make your prototypes.
+* It is a development environment in which production information systems have been built.
+* It is a prototyping environment, that lets you experiment with real users of a future application during its design.
 * It is an [open source project](https://github.com/AmpersandTarski/), driven by enthousiasts without budget.
+* It is a [programming/specification language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can specify your own information systems.
 
 In the Ampersand project,
 we believe in correct data, to help information intensive organizations to prevent mistakes and save them the effort of fixing those mistakes.
@@ -33,7 +36,7 @@ Ampersand can help you with information system development. It helps you to:
 ## Benefits
 Ampersand yields benefits in the process of developing your information systems. It lets you:
 * Free your users from unneccessary constraints, which workflow models can sometimes impose.
-* Be baffled by the precision with which you can formalize legal rules.
+* Be baffled by the precision with which you can formalize rules, even legal rules.
 * Reduce your programming effort by using Ampersand's software generator. Bring complex changes, even when changing your data model, to production faster.
 * Use Ampersand to specify _**your own**_ [_business rules_](http://www.businessrulesgroup.org/brmanifesto/BRManifesto.pdf) to design information systems that comply. It is a lot easier to prove compliance with rules that Ampersand keeps satisfied. This is compliance by design.
 * Gain mathematical _**certainty of compliance**_. Ampersand uses _relation algebra_ to align the IT system to the business, by exploiting its natural language interpretation alongside its technical interpretation as working software. Your claim that business stakeholders understand (solely in natural language) what the computer does (in software) can't be made more convincingly.
@@ -168,4 +171,64 @@ Contributors make pull requests to merge their branch into the main branch.
 This merge also requires a code review by one of the core team members.
 Automatic testing (by GitHub actions) ensures a minimal amount of hygiene.
 We merge only compilable code that passes the regression test.
-## What do you need to use Ampersand?
+## Questions & answers
+
+New to Ampersand and trying to decide whether it's worth a closer look? Here are the questions newcomers ask most, with short answers to help you judge in a few minutes whether Ampersand fits you.
+
+### What Ampersand is, and what it's for
+
+**What is Ampersand, and what can it do for me?**
+Ampersand turns your business rules into a working information system, so you spend your time describing what should be true rather than coding how to enforce it. It's a low-code, rule-based environment for modelling, prototyping and generating software. [Learn more →](./1-interested-visitor.md)
+
+**How do I get started building an information system with Ampersand?**
+You can start in your browser with the web-based RAP4 tool to write, compile and run scripts with nothing to install. The tutorial walks you end to end through a complete Enrollment example. [Learn more →](../tutorial-rap4.md)
+
+**Where should I start reading, given my role or interest?**
+The introduction points you straight to the right starting place, whether you're simply curious, a student, a professional, a scientist or a software engineer, so you skip the parts that don't apply to you. [Learn more →](../intro.md)
+
+**Is there a video showing Ampersand in action?**
+Yes. A recorded session shows you how to build an Atlas step by step, so you can see the tool at work before trying it yourself. [Learn more →](../videos.md)
+
+### What makes it different
+
+**What sets Ampersand apart from other languages?**
+You get correctness built in: Ampersand is declarative, reactive and statically typed, grounded in the formal mathematics of relation algebra, and it uses constraint programming so you can grow your system incrementally. [Learn more →](./1-interested-visitor.md)
+
+**Why is Ampersand declarative rather than imperative?**
+Because you describe an information system by stating its constraints, in any order you like, much as you would in YAML, SQL or Haskell, instead of scripting every step. That lets you focus on what must hold true and leave the sequencing to the tool. [Learn more →](../conceptual/why-declarative.md)
+
+**What's the difference between a declarative and a procedural specification?**
+A declarative spec defines something by the constraints it must satisfy; a procedural one prescribes the ordered steps to produce it. Stating the "what" keeps your specification shorter, clearer and easier to reason about. [Learn more →](../conceptual/why-declarative.md)
+
+**What does it mean that Ampersand is "reactive"?**
+It treats your system as data that changes over time plus rules that must always stay satisfied, and it reacts automatically whenever an event would break one of those rules. The result is data you can trust to stay consistent. [Learn more →](../reactive-programming.md)
+
+**How does Ampersand relate to the Business Rules Manifesto?**
+If you care about business rules as first-class citizens, you'll recognise Ampersand's philosophy: it walks through each article of the manifesto and shows how it realises it, treating rules as declarative constraints kept separate from process. [Learn more →](../why-ampersand/business-rules-in-ampersand.md)
+
+### Is this for me? — expectations, ownership and licensing
+
+**Is Ampersand a silver bullet that solves all my organisation's problems out of the box?**
+No, and it's honest about that: Ampersand offers correct data and fast development to those willing to invest the time to learn it, not an effortless fix. If you're ready to put in that effort, the payoff is real. [Learn more →](../intro.md)
+
+**Who owns Ampersand, and what can it cost me to use it?**
+No one owns it, and it's free: the repositories are licensed under GPLv3 while authors keep their own copyright, so you can use it without paying or asking permission. [Learn more →](../ownership/README.md)
+
+**Under which licence is the documentation published?**
+The documentation is released under a Creative Commons Attribution-ShareAlike 4.0 International licence unless stated otherwise, so you're free to reuse and adapt it as long as you give credit and share alike. [Learn more →](../intro.md)
+
+**How is the project run, and who makes the decisions?**
+Ampersand is a volunteer-driven, non-commercial research project, with a small core team (Stef, Han and Michiel Joosten/Stornebrink) making the decisions and valuing maintainability above all. That tells you what to expect of its pace and priorities. [Learn more →](./1-interested-visitor.md)
+
+### Track record, and how it's built
+
+**What practical results has the Ampersand research produced?**
+It has delivered real-world impact: the RAP tool was built with it, TNO put ten systems into production, and hundreds of students have completed the Rule Based Design course. [Learn more →](../research.md)
+
+**What principles guide the team building Ampersand?**
+The team produces free open-source software, automates its own production, writes for maintainability, and diagnoses issues openly on GitHub before fixing them, so you can see how the project is cared for. [Learn more →](../the-tools-we-use/README.md)
+
+**Which tools does the Ampersand project rely on?**
+Under the hood it draws on Haskell, Stack, Docker, Git, Graphviz, MariaDB, Node.js, Pandoc, VS Code and more, each with a specific role, giving you a clear picture of the toolchain you'd be working with. [Learn more →](../the-tools-we-use/tools-used-in-the-ampersand-project.md)
+
+

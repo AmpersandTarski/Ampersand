@@ -209,7 +209,14 @@ writepandoc' env fSpec thePandoc = liftIO . runIOorExplode $ do
           writerNumberSections = True,
           writerTemplate = Just template,
           writerVariables = defaultWriterVariables env fSpec,
-          writerHTMLMathMethod = MathML
+          writerHTMLMathMethod = MathML,
+          -- The default 'WriterOptions' from Pandoc starts with
+          -- 'emptyExtensions', which causes the Markdown / GFM writer
+          -- to print "[TABLE]" placeholders instead of rendering
+          -- tables (because @pipe_tables@ / @simple_tables@ are off).
+          -- We restore the per-format default extension set so that
+          -- 'simpleTable' produces a real table in every output.
+          writerExtensions = getDefaultExtensions writerName
           --  , writerMediaBag=bag
           --  , writerReferenceDocx=Just docxStyleUserPath
           --  , writerVerbose=optVerbosity
@@ -283,12 +290,6 @@ instance ShowMath Expression where
       showExpr (ELrs (l, r)) = showExpr l <> inMathLeftResidu <> showExpr r
       showExpr (ERrs (l, r)) = showExpr l <> inMathRightResidu <> showExpr r
       showExpr (EDia (l, r)) = showExpr l <> inMathDiamond <> showExpr r
-      showExpr (ECps (EEps i sgn, r))
-        | i == source sgn || i == target sgn = showExpr r
-        | otherwise = showExpr (ECps (EDcI i, r))
-      showExpr (ECps (l, EEps i sgn))
-        | i == source sgn || i == target sgn = showExpr l
-        | otherwise = showExpr (ECps (l, EDcI i))
       showExpr (ECps (l, r)) = showExpr l <> inMathCompose <> showExpr r
       showExpr (ERad (l, r)) = showExpr l <> inMathRelativeAddition <> showExpr r
       showExpr (EPrd (l, r)) = showExpr l <> inMathCartesianProduct <> showExpr r
@@ -299,8 +300,7 @@ instance ShowMath Expression where
       showExpr (EBrk e) = "(" <> showExpr e <> ")"
       showExpr (EDcD d) = inMathText . fullName $ d
       showExpr (EDcI c) = "I_{ \\lbrack " <> (inMathText . fullName) c <> " \\rbrack }"
-      showExpr (EBin oper c) = showMathOper oper <> "_{ \\lbrack " <> (inMathText . fullName) c <> " \\rbrack }"
-      showExpr EEps {} = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
+      showExpr (EBin oper sgn) = showMathOper oper <> "_{ \\lbrack " <> (inMathText . fullName . source) sgn <> "*" <> (inMathText . fullName . target) sgn <> " \\rbrack }"
       showExpr (EDcV sgn) = "V_{ \\lbrack " <> (inMathText . fullName . source) sgn <> "*" <> (inMathText . fullName . target) sgn <> " \\rbrack }"
       showExpr (EMp1 val _) = atomVal2Math val -- "\texttt{"<>show val<>"}"
 

@@ -1,0 +1,11 @@
+CONTEXT RightResidualFlipped IN ENGLISH
+
+PURPOSE CONTEXT RightResidualFlipped
+{+ This test must fail because join(A,B) doesn't exist (unrelated sources). +}
+
+RELATION r[A*B]
+RELATION result[B*B]
+
+RULE testRightResidualFlipped: result = r\r~
+
+ENDCONTEXT

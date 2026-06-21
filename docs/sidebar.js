@@ -128,13 +128,11 @@ module.exports = {
                 'ampersand/the-tools-we-use/building/haskell',
                 'ampersand/the-tools-we-use/building/testing-with-docker-on-your-own-laptop',
                 'ampersand/the-tools-we-use/testing-infrastructure',
-                'ampersand/the-tools-we-use/deploying-rap3-with-azure',
                 'ampersand/the-tools-we-use/deploying-rap3-with-azure/deploying-rap3-with-azure-on-windows-server',
                 'ampersand/the-tools-we-use/deploying-with-kubernetes',
                 'ampersand/the-tools-we-use/functionality-of-rap3/README',
                 'ampersand/the-tools-we-use/git',
                 'ampersand/the-tools-we-use/group-1/development-using-vs-code',
-                'ampersand/the-tools-we-use/klad',
                 'ampersand/the-tools-we-use/making-docker-images',
                 'ampersand/the-tools-we-use/prototype-framework',
                 'ampersand/the-tools-we-use/rap3-student',
@@ -147,6 +145,16 @@ module.exports = {
             label: 'Best practices for Ampersand modellers',
             type: 'doc',
             id: 'ampersand/guides/best-practices'
+        },
+        {
+            label: 'Computing transitive closures',
+            type: 'doc',
+            id: 'ampersand/guides/transitive-closure'
+        },
+        {
+            label: 'Diagnosing oscillations (worked case)',
+            type: 'doc',
+            id: 'ampersand/guides/oscillations/README'
         },
         {
             label: 'Configuring your application',
@@ -214,6 +222,13 @@ module.exports = {
         {
             type: 'doc',
             id: 'ampersand/research'
+        },
+        {
+            label: 'Unpublished research',
+            type: 'category',
+            items: [
+                'ampersand/ongoing-research/making-oscillation-risk-visible',
+            ]
         },
         {
             type: 'doc',

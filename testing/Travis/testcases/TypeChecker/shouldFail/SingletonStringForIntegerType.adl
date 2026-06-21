@@ -1,0 +1,26 @@
+CONTEXT SingletonStringForIntegerType IN ENGLISH
+
+PURPOSE CONTEXT SingletonStringForIntegerType
+{+ Regression test for the bug where using a quoted string singleton (#"0") 
+   as the right-hand side of a product expression, when the target concept is 
+   represented as INTEGER, caused a fatal crash in 'safePSingleton2AAtomVal' 
+   instead of a proper type error.
+   
+   This test must fail with a clear type error:
+   "The target of "0" is Count, which requires representation as integer.
+    However, a string is encountered."
+
+   The fix ensures 'checkSingletonAtomValues' in P2A_Converters catches this 
+   during type-checking and reports it as an ExitFailure 10 user error rather 
+   than a fatal compiler crash.
++}
+
+REPRESENT Count TYPE INTEGER
+
+RELATION score[Person*Count] [UNI]
+
+-- This ENFORCE rule uses #"0" (a ScriptString) but Count requires INTEGER.
+-- The compiler should reject this with a clear type error, not crash.
+ENFORCE score >: (V[Person*Person] - score;score~) #"0"
+
+ENDCONTEXT

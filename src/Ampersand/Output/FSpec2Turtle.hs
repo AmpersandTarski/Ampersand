@@ -54,8 +54,8 @@ fSpec2Graph fSpec = mkRdf shortenedTriples (Just myBaseUrl) myPrefixMappings
     concept2triples cpt =
       [ triple (uri cpt) (unode "rdf:type") (unode "owl:Class"),
         triple (uri cpt) (unode "rdf:type") (unode "owl:NamedIndividual"),
-        --  triple (uri cpt) (unode "skos:prefLabel") (lnode . plainL . label $ cpt),
-        triple (uri cpt) (unode "rdfs:label") (lnode . plainL . label $ cpt)
+        --  triple (uri cpt) (unode "skos:prefLabel") (lnode (plainL (maybe "" tshow (conceptLabel fSpec cpt)))),
+        triple (uri cpt) (unode "rdfs:label") (lnode (plainL (maybe "" tshow (conceptLabel fSpec cpt))))
       ]
         <> [ triple
                (uri cpt)

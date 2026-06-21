@@ -190,7 +190,7 @@ tableSpec2Queries withComment tSpec =
   createTableSql withComment tSpec
     : [ SqlQuerySimple
           ( "CREATE INDEX "
-              <> doubleQuote (tsName tSpec <> "Ð" <> tshow i)
+              <> doubleQuote (tsName tSpec <> "_" <> tshow i)
               <> " ON "
               <> doubleQuote (tsName tSpec)
               <> " ("

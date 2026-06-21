@@ -1,0 +1,15 @@
+CONTEXT LeftResidualComposition IN ENGLISH
+
+PURPOSE CONTEXT LeftResidualComposition
+{+ This test verifies left residual works in composition context. +}
+
+CLASSIFY A ISA B
+
+RELATION r[W*B]
+RELATION s[Z*B]
+RELATION t[X*W]
+RELATION result[X*Z]
+
+RULE testLeftResidualComposition: result = t;(r/s)
+
+ENDCONTEXT

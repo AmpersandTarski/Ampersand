@@ -20,6 +20,9 @@ import Ampersand.ADL1
     P_Context,
     Term,
     TermPrim,
+    ctx_ds,
+    ctx_ifcs,
+    ctx_pops,
     mergeContexts,
   )
 import Ampersand.Basics
@@ -46,7 +49,7 @@ import Ampersand.Input.PreProcessor
     processFlags,
   )
 import Ampersand.Input.SemWeb.Turtle
-import Ampersand.Input.Xslx.XLSX (parseXlsxFile)
+import Ampersand.Input.Xslx.XLSX (XlsxIfcSheet, parseXlsxFile, xlsxIfcSheet2pops)
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
   ( FileKind (FormalAmpersand, PrototypeContext),
@@ -140,22 +143,37 @@ parseThings pcs = do
     --   combine all graphs (if any) into a single P_Context. Then, we
     --   need to merge the contexts, and finally, we can
     --   return the resulting P_Context.
-    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasRunner env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
+    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasRunner env, HasTrimXLSXOpts env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
     finalize (Errors err) = pure (Errors err)
     finalize (Checked results warns) = do
       runner <- Ampersand.Basics.view runnerL
-      let (contexts, graphs) = partitionEithers (map snd results)
+      doTrim <- Ampersand.Basics.view trimXLSXCellsL
+      let (contexts, ifcSheets, graphs) = partitionResults (map snd results)
       triplesCtx <- case graphs of
         [] -> pure Nothing
         h : tl -> do
           let combined = mergeGraphs (h NE.:| tl)
           when (logLevel runner == LevelDebug) (writeRdfTList 0 combined)
           pure (Just $ graph2P_Context combined)
+      -- Resolve the interface-format worksheets against the merged context, where the
+      -- INTERFACE definitions and relations are finally available, and add the resulting
+      -- populations. See 'xlsxIfcSheet2pops'.
+      let withXlsxIfcPops ctxs ws =
+            let merged = bar ctxs
+             in case concat <$> traverse (xlsxIfcSheet2pops doTrim (ctx_ifcs merged) (ctx_ds merged)) ifcSheets of
+                  Errors err -> Errors err
+                  Checked pops ws3 -> Checked merged {ctx_pops = ctx_pops merged <> pops} (ws <> ws3)
       pure $ case triplesCtx of
-        Nothing -> Checked (bar contexts) warns
-        Just (Checked pCtx ws2) -> Checked (bar (contexts <> [pCtx])) (warns <> ws2)
+        Nothing -> withXlsxIfcPops contexts warns
+        Just (Checked pCtx ws2) -> withXlsxIfcPops (contexts <> [pCtx]) (warns <> ws2)
         Just (Errors err) -> Errors err
       where
+        partitionResults :: [SingleFileResult] -> ([P_Context], [XlsxIfcSheet], [RDF TList])
+        partitionResults = foldr step ([], [], [])
+          where
+            step (FromADL c) (cs, ss, gs) = (c : cs, ss, gs)
+            step (FromXlsx c s) (cs, ss, gs) = (c : cs, s <> ss, gs)
+            step (FromGraph g) (cs, ss, gs) = (cs, ss, g : gs)
         bar :: [P_Context] -> P_Context
         bar xs = case xs of
           [] -> fatal "Impossible"
@@ -211,7 +229,13 @@ data ParseCandidate = ParseCandidate
 instance Eq ParseCandidate where
   a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b
 
-type SingleFileResult = Either P_Context (RDF TList)
+-- | The result of parsing a single file. An .xlsx file additionally carries its raw
+--   interface-format worksheets ('XlsxIfcSheet'), which can only be resolved after all
+--   contexts are merged (because the INTERFACE definitions live in sibling .adl files).
+data SingleFileResult
+  = FromADL P_Context
+  | FromXlsx P_Context [XlsxIfcSheet]
+  | FromGraph (RDF TList)
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL ::
@@ -242,7 +266,7 @@ parseSingleADL pc =
       | -- This feature enables the parsing of Excel files, that are prepared for Ampersand.
         extension == ".xlsx" = do
           popFromExcel <- catchInvalidXlsx $ parseXlsxFile (pcFileKind pc) filePath
-          return ((,[]) . fromContext <$> popFromExcel) -- An Excel file does not contain include files
+          return ((\(ctx, sheets) -> (FromXlsx ctx sheets, [])) <$> popFromExcel) -- An Excel file does not contain include files
       | -- This feature enables the parsing of Archimate models in ArchiMate® Model Exchange File Format
         extension == ".archimate" = do
           ctxFromArchi <- archi2PContext filePath -- e.g. "CA repository.xml"
@@ -293,9 +317,9 @@ parseSingleADL pc =
           (ctx, includes) <- gIn
           return (fromContext ctx, includes)
         fromContext :: P_Context -> SingleFileResult
-        fromContext = Left
+        fromContext = FromADL
         fromGraph :: RDF TList -> SingleFileResult
-        fromGraph = Right
+        fromGraph = FromGraph
         include2ParseCandidate :: Include -> RIO env (Guarded ParseCandidate)
         include2ParseCandidate (Include org str defs) = do
           let canonical = myNormalise (takeDirectory filePath </> str)

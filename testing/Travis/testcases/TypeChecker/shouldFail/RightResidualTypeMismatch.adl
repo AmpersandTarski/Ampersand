@@ -1,0 +1,12 @@
+CONTEXT RightResidualTypeMismatchCheck IN ENGLISH
+
+PURPOSE CONTEXT RightResidualTypeMismatchCheck
+{+ This test must fail because the right residual r\s~ requires that the join of source(r) and source(s~) exists. +}
+
+RELATION r[A*B]
+RELATION s[C*B]
+RELATION result[B*C]
+
+RULE testRightResidualFail: result = r\s~
+
+ENDCONTEXT

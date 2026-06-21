@@ -14,7 +14,7 @@ We use a [docker-platform](https://en.wikipedia.org/wiki/Docker\_\(software\)) t
 1. Your Ampersand prototype will run in a [container](https://www.docker.com/resources/what-container), which is a virtual machine.
 2.  The container is started and stopped by `docker-compose`, which uses a[ docker-image](https://docs.docker.com/get-started/#images-and-containers) that is built with your Dockerfile and deployed with your docker-compose.yml file.
 3. [Run](https://docs.docker.com/engine/reference/run/) your image from your [command-line](https://en.wikipedia.org/wiki/Command-line\_interface), using the command `docker-compose up -d`. You can verify that it runs with `docker ps`.
-4. Access your application through your browser, using \<TODO: Which URL?>
+4. Access your application through your browser at [http://localhost](http://localhost). The prototype is served on port 80 by default; if you mapped a different port in `docker-compose.yml`, use that port instead (e.g. `http://localhost:8080`).
 
 Please watch [this video](https://youtu.be/XqHTJfTVnoQ) (8 minutes) to see what Docker does to bring up your Ampersand program as a web application on your own machine.
 

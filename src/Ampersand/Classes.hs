@@ -6,5 +6,5 @@ module Ampersand.Classes
 where
 
 import Ampersand.Classes.ConceptStructure (ConceptStructure (..))
-import Ampersand.Classes.Relational (HasProps (..), Relational (..), isONE, isSESSION)
+import Ampersand.Classes.Relational (HasProps (..), Relational (..), isSESSION)
 import Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity)

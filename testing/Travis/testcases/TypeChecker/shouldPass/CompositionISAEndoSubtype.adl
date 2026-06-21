@@ -1,0 +1,14 @@
+CONTEXT CompositionISAendoSubtype IN ENGLISH
+
+PURPOSE CONTEXT CompositionISAendoSubtype
+{+ This test must succeed because meet(A,A) = A exists (exact match). +}
+
+CLASSIFY A ISA B
+
+RELATION r[A*A]
+RELATION s[A*Z]
+RELATION result[A*Z]
+
+RULE testCompositionISA: result = r;s
+
+ENDCONTEXT

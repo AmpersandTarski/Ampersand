@@ -3,11 +3,11 @@ CONTEXT Issue298 IN DUTCH
 {- This scipt should fail to produce a prototype.
    "thisShouldFail" is not in Even and is not in Odd.
 -}
-RULE ruleOne : I[Natural] |- I[Even] \/ I[Odd]
+RULE ruleOne : I |- I[Even] \/ I[Odd]  -- type derivation must derive I[Natural]
 CLASSIFY Even ISA Natural
 CLASSIFY Odd  ISA Natural
 
-POPULATION Natural CONTAINS ["thisShouldFail" , "one" , "two"]
+POPULATION Natural CONTAINS ["thisShouldFail"]
 POPULATION Even    CONTAINS ["two"]
 POPULATION Odd     CONTAINS ["one"]
 

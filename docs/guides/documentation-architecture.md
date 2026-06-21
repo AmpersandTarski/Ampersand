@@ -31,9 +31,11 @@ The introduction is explicit about one audience it does not serve: someone who h
 
 ## The design choices, and why
 
-Three choices shape the documentation, and one honest principle explains its character.
+Four choices shape the documentation, and one honest principle explains its character.
 
 The first choice is co-location of documentation with code, so that documentation and code evolve and are reviewed together. The second is the audience-first entry, because the readers of Ampersand differ so widely that a single front door would serve none of them well. The third is the Diátaxis organisation, which keeps tutorials, reference, and explanation apart so that each page has one clear job.
+
+The fourth choice is to link **within a repository by relative path to the target file** — for example `../research.md#Publications` — and never by an absolute `https://ampersandtarski.github.io/...` URL that points back into our own site. Relative links survive a move of domain or base path, they let the editor and Docusaurus jump to the actual source file, and they are verified before release: the Docusaurus build runs with `onBrokenLinks: 'throw'` and `scripts/check-docs-links.js` checks them in CI. Write the link to the real file name, including any leading `NN-` number and the `.md` extension (Docusaurus maps it to the clean route); link a folder's `README.md` with its extension too. The deliberate exception is a **cross-repository** link — from this repository into Prototype or RAP. Those use the relative cross-repo form (`../../prototype/...`, `../../../rap/...`) when the target is known, but an absolute URL is acceptable there, because the target lives in another repository and can only be validated once the whole site is assembled; `check-docs-links.js` therefore skips cross-repo links on purpose.
 
 These choices have a history. The documentation began as a GitBook. It was later migrated to Docusaurus, which gave the project per-repository sidebars, a tested build, and the audience-and-Diátaxis structure described above. The migration is the reason the current structure exists in the form it does.
 

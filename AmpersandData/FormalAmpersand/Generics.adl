@@ -2,7 +2,7 @@ CONTEXT FormalAmpersand IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
 {+This context specifies the administration that currently is, and in future will have been, the contents of GENERICS.PHP+}
 
-REPRESENT FormalAmpersand.MySQLQuery TYPE BIGALPHANUMERIC
+-- REPRESENT FormalAmpersand.MySQLQuery TYPE BIGALPHANUMERIC
 
 
 RELATION FormalAmpersand.versionInfo[FormalAmpersand.Context*FormalAmpersand.AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
@@ -23,11 +23,11 @@ RELATION FormalAmpersand.rrviol[FormalAmpersand.Rule*FormalAmpersand.PairView] -
 RELATION FormalAmpersand.segment[FormalAmpersand.PairView*FormalAmpersand.PairViewSegment] [SUR,INJ]
 RELATION FormalAmpersand.sequenceNr[FormalAmpersand.PairViewSegment*FormalAmpersand.SequenceNumber] [UNI,TOT]
 REPRESENT FormalAmpersand.SequenceNumber TYPE INTEGER
--- Unneccessary: RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
+-- Unneccessary: RELATION FormalAmpersand.segmentType[FormalAmpersand.PairViewSegment*FormalAmpersand.PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
 RELATION FormalAmpersand.text[FormalAmpersand.PairViewSegment*FormalAmpersand.String] [UNI] -- IFF segmentType == 'Text'
 RELATION FormalAmpersand.srcOrTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.SourceOrTarget] [UNI] -- 'Src' or 'Tgt'. -- IFF SegmentType == 'Exp'
--- Unneccessary: RELATION expTgt[PairViewSegment*Concept] [UNI] -- IFF SegmentType == 'Exp'
--- Unneccessary for the Atlas: RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary: RELATION FormalAmpersand.expTgt[FormalAmpersand.PairViewSegment*FormalAmpersand.Concept] [UNI] -- IFF SegmentType == 'Exp'
+-- Unneccessary for the Atlas: RELATION expSQL[FormalAmpersand.PairViewSegment*FormalAmpersand.MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 RELATION FormalAmpersand.pvsExp[FormalAmpersand.PairViewSegment*FormalAmpersand.Term] [UNI]
 
 RELATION FormalAmpersand.showADL[FormalAmpersand.PairView*FormalAmpersand.ShowADL] [UNI,TOT] -- Temporary relation to enable first attempt to make the atlas editable. 
@@ -37,13 +37,13 @@ RELATION FormalAmpersand.allConjuncts[FormalAmpersand.Context*FormalAmpersand.Co
 RELATION FormalAmpersand.rcConjunct[FormalAmpersand.Conjunct*FormalAmpersand.Term] [TOT]
 ROLE ExecEngine MAINTAINS FormalAmpersand.conjunctTotal
 RULE FormalAmpersand.conjunctTotal : I[FormalAmpersand.Conjunct] |- FormalAmpersand.rcConjunct;FormalAmpersand.rcConjunct~
--- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a term.")
+-- VIOLATION ( TXT "The conjunct ", SRC FormalAmpersand.showADL, TXT " should have been bound to a term.")
 VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.Conjunct;", SRC I )
 
 RELATION FormalAmpersand.originatesFrom[FormalAmpersand.Conjunct*FormalAmpersand.Rule] -- rule where the conjunct originates from.
 ROLE ExecEngine MAINTAINS FormalAmpersand.originatesFromTotal
 RULE FormalAmpersand.originatesFromTotal : I[FormalAmpersand.Conjunct] |- FormalAmpersand.originatesFrom;FormalAmpersand.originatesFrom~
--- VIOLATION ( TXT "The conjunct ", SRC showADL, TXT " should have been bound to a rule.")
+-- VIOLATION ( TXT "The conjunct ", SRC FormalAmpersand.showADL, TXT " should have been bound to a rule.")
 VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.Conjunct;", SRC I )
 
 --[Roles]--

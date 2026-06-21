@@ -1168,7 +1168,7 @@ Interface template that provides a botton that, when clicked, can set, clear and
 The interface provides means to:
 
 - construct the label (i.e. the text that shows on the button) from fixed texts (i.e. `TXT "some text here"`) as well as valiues of expression. This allows you to create detailed/customized texts on a button.
-- flip, set, and clear (up to 3) property-relations. This allows you to easily create complex state machines, where clicking a single button can flip, set and clear several property-relations simultaneously.
+- flip, set, and clear (up to 3) property-relations. This allows you to create complex state machines, where clicking a single button can flip, set and clear several property-relations simultaneously.
 - specify the color of the button, and a different color for when it is disabled.
 - hide and/or disable the button by specifying an expression (that must be a [PROP]-type).
 - provide a popover text for the button, both when it is enabled and when it is disabled. 
@@ -1392,7 +1392,7 @@ By specifying a markup language, Ampersand interprets the text as specified. If 
 PURPOSE RULE CheckDigitCharacter
 IN ENGLISH MARKDOWN
 {+ This rule enforces the use of a check digit character
-   as described in [ISO 7064](en.wikipedia.org/wiki/ISO/IEC_7064).
+   as described in [ISO 7064](https://en.wikipedia.org/wiki/ISO/IEC_7064).
    This is applicatble to IBAN bank account numbers.
 +}
 ```

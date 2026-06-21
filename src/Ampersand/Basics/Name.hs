@@ -7,12 +7,12 @@ module Ampersand.Basics.Name
     --    mkName,
     MyDotNode,
     mkName,
-    Name,
+    Name (..),
     Named (..),
     nameOfExecEngineRole,
     nameOfONE,
     nameOfSESSION,
-    NamePart,
+    NamePart (..),
     namePartToText,
     namePartToText1,
     NameSpace,
@@ -30,11 +30,10 @@ where
 
 import Ampersand.Basics.Hashing
 import Ampersand.Basics.Prelude
-import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, urlEncode)
+import Ampersand.Basics.String (isSafeIdChar, pascal, text1ToText, toText1Unsafe, unCap, upCap, urlEncode)
 import Ampersand.Basics.Version (fatal)
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text1 as T1
-import RIO.Char
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -120,12 +119,10 @@ try2Name typ txt =
          in reverse (lastPart : namespaceParts)
       where
         handleFirstChar :: Text -> Text
-        handleFirstChar t = case T.uncons t of
-          Nothing -> t
-          Just (h, tl) -> case typ of
-            ConceptName -> T.cons (toUpper h) tl
-            RelationName -> T.cons (toLower h) tl
-            _ -> t
+        handleFirstChar t = case typ of
+          ConceptName -> upCap t -- convert first char to uppercase
+          RelationName -> unCap t -- convert first char to lowercase
+          _ -> t
 
 -- | This function checks if a text is a proper Namepart. There are three possible outcomes:
 --   * Right NamePart. The text is a proper NamePart.
@@ -147,10 +144,10 @@ try2Namepart t = case T.uncons t of
 suggestName :: NameType -> Text1 -> (Name, Maybe Label)
 suggestName typ t =
   case try2Name typ . pascal . text1ToText $ t of
-    Left msg -> fatal $ "suggestName: " <> msg
+    Left msg -> fatal ("suggestName: " <> msg)
     Right (nm, _) ->
       ( nm,
-        if text1ToText t == tshow nm then Nothing else Just . Label . text1ToText $ t
+        if text1ToText t == tshow nm then Nothing else (Just . Label . text1ToText) t
       )
 
 namePartToText :: NamePart -> Text

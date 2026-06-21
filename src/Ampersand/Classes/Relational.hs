@@ -1,8 +1,8 @@
 module Ampersand.Classes.Relational
   ( HasProps (..),
     Relational (..),
+    Flippable (..),
     hasAttributes,
-    isONE,
     isSESSION,
   )
 where
@@ -38,16 +38,12 @@ class Relational r where
 instance HasProps Relation where
   properties = decprps
 
--- | Is the concept the ONE and only? (universal singleton)
-isONE :: A_Concept -> Bool
-isONE ONE = True
-isONE _ = False
-
 isSESSION :: A_Concept -> Bool
 isSESSION cpt =
   case cpt of
-    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fullName1 . fst <$> aliases cpt)
-    ONE -> False
+    -- PlainConcept {} -> toText1Unsafe "SESSION" `elem` ( <$> aliases cpt)
+    PlainConcept {} -> toText1Unsafe "SESSION" `elem` (fmap fullName1 . Set.toList . aliases) cpt
+    _ -> False
 
 hasAttributes ::
   Set.Set P_Relation -> P_Concept -> Bool
@@ -61,15 +57,14 @@ instance HasProps Expression where
   properties expr = case expr of
     EDcD dcl -> properties dcl
     EDcI {} -> Set.fromList [Uni, Tot, Inj, Sur, Sym, Asy, Trn, Rfx]
-    EEps a sgn -> Set.fromList $ [Tot | a == source sgn] ++ [Sur | a == target sgn] ++ [Uni, Inj]
     EDcV sgn ->
       Set.fromList
         $
         -- NOT totaal
         -- NOT surjective
-        [Inj | isONE (source sgn)]
-        ++ [Uni | isONE (target sgn)]
-        ++ [Asy | isEndo sgn, isONE (source sgn)]
+        [Inj | source sgn == ONE]
+        ++ [Uni | target sgn == ONE]
+        ++ [Asy | isEndo sgn, source sgn == ONE]
         ++ [Sym | isEndo sgn]
         ++ [Rfx | isEndo sgn]
         ++ [Trn | isEndo sgn]
@@ -100,8 +95,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EKl1 e -> isTrue e
       EFlp e -> isTrue e
       ECpl e -> isFalse e
-      EDcI c -> isONE c
-      EEps i _ -> isONE i
+      EDcI c -> c == ONE
       EDcV {} -> True
       EBrk e -> isTrue e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, ERad, and EMp1
@@ -121,12 +115,8 @@ instance Relational Expression where -- TODO: see if we can find more property c
       EBrk e -> isFalse e
       _ -> False -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
-  isIdent expr = ( \x ->
-                     if x && (source expr /= target expr)
-                       then fatal $ "Something wrong with isIdent." <> tshow expr
-                       else x
-                 )
-    $ case expr of
+  isIdent expr =
+    case expr of
       EEqu (l, r) -> isIdent (EIsc (EInc (l, r), EInc (r, l))) -- TODO: maybe derive something better?
       EInc (l, r) -> isIdent (EUni (ECpl l, r)) -- TODO: maybe derive something better?
       EIsc (l, r) -> isIdent l && isIdent r
@@ -138,8 +128,7 @@ instance Relational Expression where -- TODO: see if we can find more property c
       ECpl e -> isImin e
       EDcD _ -> False -- was: name dcl == "="
       EDcI {} -> True
-      EEps {} -> False
-      EDcV sgn -> isEndo sgn && isONE (source sgn)
+      EDcV sgn -> isEndo sgn && source sgn == ONE
       EBrk f -> isIdent f
       EFlp f -> isIdent f
       _ -> False -- TODO: find richer answers for ELrs, ERrs, EDia, EPrd, and ERad
@@ -153,7 +142,6 @@ instance Relational Expression where -- TODO: see if we can find more property c
     ECpl e -> isIdent e
     EDcD {} -> False
     EDcI {} -> False
-    EEps {} -> False
     EDcV {} -> False
     EBrk f -> isImin f
     EFlp f -> isImin f
@@ -190,10 +178,6 @@ isTotSur prop expr =
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
     EBin {} -> todo
-    EEps c sgn -> case prop of
-      Tot -> c == source sgn
-      Sur -> c == target sgn
-      _ -> fatal $ "isTotSur must not be called with " <> tshow prop
     EDcV {} -> todo
     EBrk e -> isTotSur prop e
     EMp1 {} -> True
@@ -218,10 +202,24 @@ isUniInj prop expr =
     ERrs _ -> todo
     EDia _ -> todo
     ERad _ -> todo
+    -- TRACE 3 (uitgecommentarieerd: bewezen dat isUniInj correct werkt gegeven de invoer;
+    --           de bug zit in de Relation-instantie die decprps=[] heeft, zie TRACE 2):
+    -- EDcD d ->
+    --   let result = prop `elem` properties d
+    --       relName = fullName d
+    --   in if "rnqpOrganisme" `T.isInfixOf` relName
+    --        then trace
+    --               ( "[TRACE isUniInj] prop=" <> tshow prop
+    --                 <> "  relatie=" <> relName
+    --                 <> "[" <> fullName (source d) <> "*" <> fullName (target d) <> "]"
+    --                 <> "  decprps=" <> tshow (properties d)
+    --                 <> "  -> " <> tshow result
+    --               )
+    --               result
+    --        else result
     EDcD d -> prop `elem` properties d
     EDcI {} -> True
     EBin {} -> todo
-    EEps {} -> True
     EDcV {} -> todo
     EBrk e -> isUniInj prop e
     EMp1 {} -> True

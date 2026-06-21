@@ -1,0 +1,43 @@
+CONTEXT FilteredPicklistExample
+
+REPRESENT Name TYPE ALPHANUMERIC
+REPRESENT Status TYPE ALPHANUMERIC
+
+-- Medewerkers met verschillende statussen
+RELATION naam[Medewerker*Name] [UNI]
+RELATION status[Medewerker*Status] [UNI]
+
+POPULATION naam[Medewerker*Name] CONTAINS
+  [ ("m1", "Jan Jansen")
+  , ("m2", "Piet Peters") 
+  , ("m3", "Marie Bakker")
+  , ("m4", "Klaas Klaasen")
+  , ("m5", "Anna Annasson")
+  ]
+
+POPULATION status[Medewerker*Status] CONTAINS
+  [ ("m1", "actief")
+  , ("m2", "verlof")
+  , ("m3", "actief") 
+  , ("m4", "ontslag")
+  , ("m5", "actief")
+  ]
+
+-- Project waar we alleen actieve medewerkers aan willen toewijzen
+RELATION projectLeid[Project*Medewerker] [UNI]
+
+-- Gewenste filtering: alleen actieve medewerkers
+RELATION actieveMedewerkers[Project*Medewerker]
+ENFORCE actieveMedewerkers := I[Project] ; V[Project*Medewerker] ; (I[Medewerker] /\ status ; "actief" ; status~)
+
+-- Een VIEW met HTML template (huidige syntax voor Object type)
+VIEW ActieveMedewerkerPicklist: Medewerker HTML TEMPLATE "FilteredPicklist.html" ENDVIEW
+
+INTERFACE ProjectMedewerkerToewijzing : I[Project] BOX<FORM>
+  [ "Project ID" : I
+  , "Huidige toewijzing (PROBLEEM: toont ALLE medewerkers)" : projectLeid  -- Dit toont alle 5 medewerkers
+  , "Gewenste filtering (zou ActieveMedewerkerPicklist VIEW moeten gebruiken)" : projectLeid<ActieveMedewerkerPicklist>
+  , "Gewenste filtering (conceptueel)" : actieveMedewerkers cRud  -- Dit zou alleen actieve medewerkers moeten tonen
+  ]
+
+ENDCONTEXT

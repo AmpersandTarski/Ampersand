@@ -5,6 +5,7 @@
 
 module Ampersand.Core.ParseTree
   ( P_Context (..),
+    Flippable (..),
     mergeContexts,
     MetaData (..),
     P_RoleRule (..),
@@ -39,16 +40,12 @@ module Ampersand.Core.ParseTree
     mkPair,
     makePSingleton,
     ObjectKind (..),
-    P_BoxBodyElement,
-    P_SubInterface,
     P_Interface (..),
     P_BoxItem (..),
     P_SubIfc (..),
     P_Cruds (..),
     P_IdentDef,
     P_IdentDf (..),
-    P_IdentSegment,
-    P_IdentSegmnt (..),
     P_ViewDef,
     P_ViewSegment (..),
     ViewHtmlTemplate (..),
@@ -100,16 +97,17 @@ data P_Context = PCtx
     ctx_rs :: ![P_Rule TermPrim],
     -- | The relations defined in this context, outside the scope of patterns
     ctx_ds :: ![P_Relation],
-    -- | The concept definitions defined in this context, outside the scope of patterns
+    -- | The concept definitions from this context, outside the scope of patterns
     ctx_cs :: ![PConceptDef],
-    -- | The identity definitions defined in this context, outside the scope of patterns
+    -- | The identity definitions from this context, outside the scope of patterns
     ctx_ks :: ![P_IdentDef],
-    -- | The MAINTAIN definitions defined in this context, outside the scope of patterns
+    -- | The MAINTAIN definitions from this context, outside the scope of patterns
     ctx_rrules :: ![P_RoleRule],
+    -- | All REPRESENT definitions from this context, outside the scope of patterns
     ctx_reprs :: ![P_Representation],
-    -- | The view definitions defined in this context, outside the scope of patterns
+    -- | The view definitions from this context, outside the scope of patterns
     ctx_vs :: ![P_ViewDef],
-    -- | The gen definitions defined in this context, outside the scope of patterns
+    -- | The gen definitions from this context, outside the scope of patterns
     ctx_gs :: ![PClassify],
     -- | The interfaces defined in this context
     ctx_ifcs :: ![P_Interface],
@@ -153,6 +151,7 @@ data EnforceOperator
 data P_Enforce a = P_Enforce
   { pos :: !Origin,
     penfRel :: !a,
+    penfFlipped :: !Bool,
     penfOp :: !EnforceOperator,
     penfExpr :: !(Term a)
   }
@@ -163,8 +162,8 @@ instance Functor P_Enforce where fmap = fmapDefault
 instance Foldable P_Enforce where foldMap = foldMapDefault
 
 instance Traversable P_Enforce where
-  traverse f (P_Enforce orig rel op expr) =
-    (\r e -> P_Enforce orig r op e)
+  traverse f (P_Enforce orig rel flipped op expr) =
+    (\r e -> P_Enforce orig r flipped op e)
       <$> f rel
       <*> traverse f expr
 
@@ -221,7 +220,7 @@ data P_Pattern = P_Pat
     pt_RRuls :: ![P_RoleRule],
     -- | The concept definitions defined in this pattern
     pt_cds :: ![PConceptDef],
-    -- | The type into which concepts is represented
+    -- | The REPRESENT definitions from this pattern, which bind technical types to concepts
     pt_Reprs :: ![P_Representation],
     -- | The identity definitions defined in this pattern
     pt_ids :: ![P_IdentDef],
@@ -267,7 +266,7 @@ instance Traced P_Pattern where
 data PConceptDef = PConceptDef
   { -- | The position of this definition in the text of the Ampersand source (filename, line number and column number).
     pos :: !Origin,
-    -- | The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
+    -- | The name of the concept for which this is the definition. The corresponding P_Concept is PCpt cdname.
     cdname :: !Name,
     cdlbl :: !(Maybe Label),
     -- | The textual definition of this concept.
@@ -325,7 +324,7 @@ instance Eq PConceptDef where
   a == b = compare a b == EQ
 
 instance Unique PConceptDef where
-  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "Ð" <> tshow x)
+  showUnique cd = fullName1 cd <> toText1Unsafe ("At" <> tshow (typeOf x) <> "_" <> tshow x)
     where
       x = origin cd
 
@@ -353,23 +352,20 @@ data PCDDef
       }
   deriving (Show, Typeable)
 
-data P_Representation
-  = Repr
-      { pos :: !Origin,
-        -- | the concepts
-        reprcpts :: !(NE.NonEmpty P_Concept),
-        -- | the type of the concept the atom is in
-        reprdom :: !TType
-      }
-  | ImplicitRepr
-      { -- | the type of the concept the atom is in
-        reprTerm :: !(Term TermPrim)
-      }
+-- P_Representation binds a technical type to one or more concepts.
+data P_Representation =
+  -- The REPRESENTATION statement in the syntax translates to Repr:
+  Repr
+  { pos :: !Origin,
+    -- | the concepts
+    reprcpts :: !(NE.NonEmpty P_Concept),
+    -- | the type of the concept the atom is in
+    reprdom :: !TType
+  }
   deriving (Show)
 
 instance Traced P_Representation where
   origin Repr {pos = orig} = orig
-  origin r@ImplicitRepr {} = origin (reprTerm r)
 
 data TType
   = Alphanumeric
@@ -594,6 +590,8 @@ mkPair o l r =
       ppRight = r
     }
 
+-- | TermPrim represents the leaves on a term. Ampersand interprets them as relations.
+--   They represent the nullary terms (STnullary).
 data TermPrim
   = -- | identity element without a type
     --   At parse time, there may be zero or one element in the list of concepts.
@@ -621,6 +619,8 @@ data TermPrim
     PBind !Origin !PBinOp !P_Concept
   | -- | a named relation
     PNamedR !P_NamedRel
+  | -- | the flipped primitive
+    PFlipped !TermPrim
   deriving (Show) -- For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel
@@ -699,6 +699,42 @@ instance Traversable Term where
     where
       f = traverse f'
 
+class Flippable a where
+  flp :: a -> a
+
+instance (Flippable a) => Flippable [a] where
+  flp = fmap flp
+
+instance Flippable TermPrim where
+  flp (PI o) = PI o
+  flp (Pid o c) = Pid o c
+  flp (Patm o v mC) = Patm o v mC
+  flp (PVee o) = PVee o
+  flp (Pfull o c1 c2) = Pfull o c2 c1
+  flp t@PBin {} = PFlipped t
+  flp t@PBind {} = PFlipped t
+  flp t@PNamedR {} = PFlipped t
+  flp (PFlipped r) = r
+
+instance (Flippable a) => Flippable (Term a) where
+  flp (Prim a) = Prim (flp a)
+  flp (PEqu o a b) = PEqu o (flp a) (flp b)
+  flp (PInc o a b) = PInc o (flp a) (flp b)
+  flp (PIsc o a b) = PIsc o (flp a) (flp b)
+  flp (PUni o a b) = PUni o (flp a) (flp b)
+  flp (PDif o a b) = PDif o (flp a) (flp b)
+  flp (PLrs o a b) = PLrs o (flp a) (flp b)
+  flp (PRrs o a b) = PRrs o (flp a) (flp b)
+  flp (PDia o a b) = PDia o (flp a) (flp b)
+  flp (PCps o a b) = PCps o (flp a) (flp b)
+  flp (PRad o a b) = PRad o (flp a) (flp b)
+  flp (PPrd o a b) = PPrd o (flp a) (flp b)
+  flp (PKl0 o a) = PKl0 o (flp a)
+  flp (PKl1 o a) = PKl1 o (flp a)
+  flp (PFlp _ a) = a
+  flp (PCpl o a) = PCpl o (flp a)
+  flp (PBrk o a) = PBrk o (flp a)
+
 instance Functor P_SubIfc where fmap = fmapDefault
 
 instance Foldable P_SubIfc where foldMap = foldMapDefault
@@ -729,6 +765,7 @@ instance Traced TermPrim where
     Patm orig _ _ -> orig
     PVee orig -> orig
     Pfull orig _ _ -> orig
+    PFlipped t -> origin t
     PNamedR r -> origin r
     PBin orig _ -> orig
     PBind orig _ _ -> orig
@@ -767,6 +804,13 @@ instance Flippable SrcOrTgt where
   flp Src = Tgt
   flp Tgt = Src
 
+-- | PairView is a construct used to customize how rule violations are displayed to users.
+--   When a rule is violated in Ampersand, the system needs to show meaningful information about the violation.
+--   PairView allows developers to define exactly what information should be shown and how it should be formatted.
+--   In Ampersand ADL code, PairView is used with the VIOLATION keyword at the end of a rule definition.
+--   For example:
+--     RULE ExampleRule: expression1 |- expression2
+--     VIOLATION (TXT "Custom violation display: ", SRC expression3, TXT " conflicts with ", TGT expression4)
 newtype PairView a = PairView {ppv_segs :: NE.NonEmpty (PairViewSegment a)} deriving (Show, Typeable, Eq, Ord, Generic)
 
 instance (Hashable a) => Hashable (PairView a)
@@ -905,7 +949,7 @@ data P_Markup = P_Markup
 
 data P_Population
   = P_RelPopu
-      { p_src :: Maybe P_Concept, -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+      { p_src :: Maybe P_Concept, -- a separate src and tgt instead of "Maybe Signature", such that it is possible to specify only one of these.
         p_tgt :: Maybe P_Concept, -- these src and tgt must be more specific than the P_NamedRel
         pos :: Origin, -- the origin
         p_nmdr :: P_NamedRel, -- the named relation that corresponds with the table which the pairs (p_popps) are stored.
@@ -936,7 +980,7 @@ data P_Interface = P_Ifc
     -- | a list of roles that may use this interface
     ifc_Roles :: ![Role],
     -- | the context term (mostly: I[c])
-    ifc_Obj :: !P_BoxBodyElement,
+    ifc_Obj :: !(P_BoxItem TermPrim),
     pos :: !Origin,
     ifc_Prp :: !Text
   }
@@ -967,8 +1011,6 @@ instance Labeled P_Interface where
 
 instance Traced P_Interface where
   origin P_Ifc {pos = orig} = orig
-
-type P_SubInterface = P_SubIfc TermPrim
 
 data P_SubIfc a
   = P_Box
@@ -1026,8 +1068,6 @@ instance Unique TemplateKeyValue where
 instance Traced TemplateKeyValue where
   origin TemplateKeyValue {pos = orig} = orig
 
-type P_BoxBodyElement = P_BoxItem TermPrim
-
 data ObjectKind = InterfaceKind | SubInterfaceKind {siMaxDepth :: !Int} | IdentSegmentKind | ViewSegmentKind
   deriving (Show)
 
@@ -1048,7 +1088,9 @@ data P_BoxItem a
         obj_msub :: !(Maybe (P_SubIfc a))
       }
   | P_BxTxt
-      { -- | view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+      { -- | This field contains the text after the TXT keyword in an interface, to be displayed to an end user (statically) in the user interface.
+        --   Its purpose could be for example to explain things, to provide brand information or legal information, or to give guidance and instructions.
+        --   This label has no meaning in the Compliant Service Layer (i.e. the back end).
         obj_PlainName :: !(Maybe Text1),
         pos :: !Origin,
         box_txt :: !Text
@@ -1089,7 +1131,7 @@ data P_IdentDf a -- so this is the parametric data-structure
     -- | this term describes the instances of this object, related to their context
     ix_cpt :: !P_Concept,
     -- | the constituent segments of this identity. TODO: refactor to a list of terms
-    ix_ats :: !(NE.NonEmpty (P_IdentSegmnt a))
+    ix_ats :: !(NE.NonEmpty (Term a))
   }
   deriving (Show)
 
@@ -1120,18 +1162,6 @@ instance Foldable P_IdentDf where foldMap = foldMapDefault
 
 instance Traversable P_IdentDf where
   traverse f (P_Id orig nm lbl cpt lst) = P_Id orig nm lbl cpt <$> traverse (traverse f) lst
-
-instance Functor P_IdentSegmnt where fmap = fmapDefault
-
-instance Foldable P_IdentSegmnt where foldMap = foldMapDefault
-
-instance Traversable P_IdentSegmnt where
-  traverse f (P_IdentExp x) = P_IdentExp <$> traverse f x
-
-type P_IdentSegment = P_IdentSegmnt TermPrim
-
-newtype P_IdentSegmnt a = P_IdentExp {ks_obj :: P_BoxItem a}
-  deriving (Eq, Ord, Show)
 
 type P_ViewDef = P_ViewD TermPrim
 

@@ -1,0 +1,15 @@
+CONTEXT CompositionISAheteroSubSuper IN ENGLISH
+
+PURPOSE CONTEXT CompositionISAheteroSubSuper
+{+ This test must succeed because meet(A,B) = A exists.
+   A is a subtype of B, so they share concept A. +}
+
+CLASSIFY A ISA B
+
+RELATION r[W*A]
+RELATION s[B*Z]
+RELATION result[W*Z]
+
+RULE testCompositionISA: result = r;s
+
+ENDCONTEXT

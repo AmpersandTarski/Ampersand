@@ -1,0 +1,13 @@
+CONTEXT IntersectionTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT IntersectionTypeCheck
+{+ This test must succeed because both operands have signature [A*C]. +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION t[A*C]
+RELATION result[A*C]
+
+RULE testIntersection: result = t /\ (r;s)
+
+ENDCONTEXT

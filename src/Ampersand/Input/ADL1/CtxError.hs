@@ -3,18 +3,20 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Redundant bracket" #-}
+-- {-# HLINT ignore "Redundant bracket" #-}
 
 module Ampersand.Input.ADL1.CtxError
-  ( addWarning,
+  ( CtxError (..),
+    Warning,
+    addWarning,
     addWarnings,
-    cannotDisambiguate,
-    CtxError (PE),
     GetOneGuarded (..),
     Guarded (..), -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
     lexerError2CtxError,
     lexerWarning2Warning,
     mkBoxRowsnhWarning,
+    mkCartesianProductWarning,
+    mkOscillationWarning,
     mkCaseProblemWarning,
     mkCrudForRefInterfaceError,
     mkCrudWarning,
@@ -27,6 +29,7 @@ module Ampersand.Input.ADL1.CtxError
     mkIncompatibleInterfaceError,
     mkIncompatibleViewError,
     mkInterfaceMustBeDefinedOnObject,
+    mkInterfaceRefNarrowerError,
     mkInterfaceRefCycleError,
     mkInvalidCRUDError,
     mkInvariantViolationsError,
@@ -37,16 +40,24 @@ module Ampersand.Input.ADL1.CtxError
     mkMultipleTypesInTypologyError,
     mkNoBoxItemsWarning,
     mkOperatorError,
+    mkConceptNotInSchemaError,
+    mkRelationTooNarrowForViewError,
+    mkViewTooSpecificError,
+    mkViewIncompatibleError,
+    mkViewIncomparableError,
+    mkViewExpressionMismatchError,
+    mkConstrainedExpressionTooNarrowError,
     mkOtherAtomInSessionError,
     mkOtherTupleInSessionError,
+    mkSingletonRepresentationError,
     mkParserStateWarning,
     mkRoundTripError,
     mkRoundTripTextError,
     mkSubInterfaceMustBeDefinedOnObject,
     mkTurtleWarning,
-    mkTypeMismatchError,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
+    mkOrphanedRepresentWarning,
     mustBeBound,
     mustBeOrdered,
     mustBeOrderedConcLst,
@@ -54,9 +65,8 @@ module Ampersand.Input.ADL1.CtxError
     mustBeValidName,
     nonMatchingRepresentTypes,
     unexpectedType,
-    uniqueLables,
+    uniqueLabels,
     uniqueNames,
-    Warning,
     whenCheckedM,
   )
 where
@@ -71,9 +81,10 @@ where
 -- HJO: I consider it ill practice to export any Warning constructors as well, for the same reasons as SJC stated above.
 
 import Ampersand.ADL1
-import Ampersand.ADL1.Disambiguate (DisambPrim (..))
+-- import Ampersand.ADL1.Disambiguate (DisambPrim (..))
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree (Type, showWithAliases)
+import Ampersand.Core.A2P_Converters (aExpression2pTermPrim)
+import Ampersand.Core.AbstractSyntaxTree (CtxError (..), Guarded (..), Warning (..), showWithAliases)
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input.ADL1.FilePos ()
@@ -81,63 +92,6 @@ import Ampersand.Input.ADL1.LexerMessage
 import Data.Typeable
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
-import Text.Parsec
-
-data CtxError
-  = CTXE Origin Text -- SJC: I consider it ill practice to export CTXE, see remark at top
-  | PE ParseError
-  | LE LexerError
-  | RoundTripError Text (Either (NonEmpty CtxError) Text) -- The prettyprinted script and either the error given at the script or some descriptive error text.
-
-instance Show CtxError where
-  -- The vscode extension expects errors and warnings
-  -- to be in a standardized format. The show function
-  -- complies to that. If for whatever reason
-  -- this function is changed, please verify
-  -- the proper working of the ampersand-language-extension
-  show err =
-    T.unpack
-      . T.intercalate "\n  "
-      $ [tshow (origin err) <> " error:"]
-      <> ( case err of
-             CTXE _ s -> T.lines s
-             PE e ->
-               -- The first line of a parse error allways contains
-               -- the filename and position of the error. However,
-               -- these are in a wrong format. So we strip the first
-               -- line of the error:
-               case T.lines (tshow e) of
-                 [] -> fatal "Whoh! the impossible just happened! (triggered by a parse error somewhere in your script)"
-                 _ : xs -> xs
-             LE (LexerError _ info) -> T.lines (tshow info)
-             RoundTripError script err' ->
-               ["Roundtrip test failed. Script that was tried:"]
-                 ++ map ("  " <>) (T.lines script)
-                 ++ ["Yields the following error:"]
-                 ++ map ("  " <>) (T.lines $ tshow err')
-         )
-
-data Warning = Warning Origin Text
-
-instance Show Warning where
-  -- The vscode extension expects errors and warnings
-  -- to be in a standardized format. The show function
-  -- complies to that. Iff for whatever reason
-  -- this function is changed, please verify
-  -- the proper working of the ampersand-language-extension
-  show (Warning o msg) =
-    T.unpack
-      . T.intercalate "\n  "
-      $ [tshow o <> " warning: "]
-      <> T.lines msg
-
-instance Traced CtxError where
-  origin (CTXE o _) = o
-  origin (PE perr) =
-    let sourcePos = errorPos perr
-     in FileLoc (FilePos (sourceName sourcePos) (sourceLine sourcePos) (sourceColumn sourcePos)) ""
-  origin (LE (LexerError fp info)) = FileLoc fp (tshow info)
-  origin (RoundTripError _ _) = Origin "File generated by QuickCheck. When you see it in an error, there is something wrong with the parser!"
 
 mkRoundTripError :: Text -> NonEmpty CtxError -> Guarded a
 mkRoundTripError parsestring err =
@@ -172,15 +126,6 @@ mkErrorReadingINCLUDE :: Maybe Origin -> [Text] -> Guarded a
 mkErrorReadingINCLUDE mo msg =
   Errors . pure $ CTXE (fromMaybe (Origin "command line argument") mo) (T.intercalate "\n    " msg)
 
--- mkInvalidTTypeError :: Origin -> P_Representation -> Guarded a
--- mkInvalidTTypeError o repr@ImplicitRepr{} =
---   Errors . pure $ CTXE o msg
---   where
---     msg =
---       T.intercalate "\n"
---         $ [ "The target of "<>tshow (reprTerm repr)<>" has technical type Object"
---           , " because it is used in a subinterface at " <> showFullOrig o]
-
 mkMultipleRepresentTypesError :: ([A_Concept], [(TType, [Origin])]) -> Guarded a
 mkMultipleRepresentTypesError (cpts, tts@((_, o : _) : _)) =
   Errors . pure $ CTXE o msg
@@ -188,8 +133,8 @@ mkMultipleRepresentTypesError (cpts, tts@((_, o : _) : _)) =
     msg =
       T.intercalate "\n"
         $ [ case cpts of
-              [cpt] -> "The Concept " <> (text1ToText . showWithAliases) cpt <> " is representable with multiple types."
-              _ -> "The Concepts " <> (T.intercalate "," . map (text1ToText . showWithAliases)) cpts <> " are representable with multiple types.",
+              [cpt] -> "The Concept " <> showWithAliases cpt <> " is representable with multiple types."
+              _ -> "The Concepts " <> (T.intercalate "," . map showWithAliases) cpts <> " are representable with multiple types.",
             "The following TYPEs are defined for it:"
           ]
         <> fmap showOrigs tts
@@ -210,7 +155,7 @@ mkMultipleTypesInTypologyError tripls =
             "The following concepts are in the same typology, but not all",
             "of them have the same TYPE:"
           ]
-        <> ["  - REPRESENT " <> (text1ToText . showWithAliases) c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
+        <> ["  - REPRESENT " <> showWithAliases c <> " TYPE " <> tshow t <> " at " <> showFullOrig orig | (c, t, origs) <- tripls, orig <- origs]
 
 mkMultipleRootsError :: [A_Concept] -> NE.NonEmpty AClassify -> Guarded a
 mkMultipleRootsError roots gs =
@@ -223,10 +168,10 @@ mkMultipleRootsError roots gs =
             "The following CLASSIFY statements define a typology with multiple root concepts: "
           ]
         <> ["  - " <> showA x <> " at " <> showFullOrig (origin x) | x <- NE.toList gs]
-        <> ["Parhaps you could add the following statements:"]
-        <> ["  CLASSIFY " <> (text1ToText . showWithAliases) cpt <> " ISA " <> rootName | cpt <- roots]
+        <> ["The following concepts do not comply:"]
+        <> ["  Concept " <> showWithAliases cpt <> " has roots " <> rootNames | cpt <- roots]
       where
-        rootName = T.intercalate "Or" . map (text1ToText . showWithAliases) $ roots
+        rootNames = T.intercalate ", " . map showWithAliases $ roots
 
 nonMatchingRepresentTypes :: Origin -> TType -> TType -> Guarded a
 nonMatchingRepresentTypes orig wrongType rightType =
@@ -301,70 +246,6 @@ instance GetOneGuarded Expression (P_NamedRel, (Maybe A_Concept, Maybe A_Concept
           showC Nothing = "???"
           showC (Just tp) = showA tp
 
-mkTypeMismatchError :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
-mkTypeMismatchError o rel sot typ =
-  Errors . pure $ CTXE (origin o) message
-  where
-    message =
-      "The "
-        <> ( case sot of
-               Src -> "source"
-               Tgt -> "target"
-           )
-        <> "("
-        <> tshow typ
-        <> ") for the population pairs "
-        <> "\n  must be more specific or equal to that of the "
-        <> "relation you wish to populate ("
-        <> tshow rel
-        <> (text1ToText . showWithAliases) (sign rel)
-        <> " found at "
-        <> tshow (origin rel)
-        <> ")."
-
-cannotDisambiguate :: TermPrim -> DisambPrim -> Guarded a
-cannotDisambiguate o x = Errors . pure $ CTXE (origin o) message
-  where
-    message =
-      case x of
-        Rel [] -> "A relation is used that is not defined: " <> showP o
-        Rel exprs -> case o of
-          (PNamedR (PNamedRel _ _ Nothing)) ->
-            T.intercalate "\n"
-              $ [ "Cannot disambiguate the relation: " <> showP o,
-                  "  Please add a signature (e.g. [A*B]) to the relation.",
-                  "  Relations you may have intended:"
-                ]
-              <> map (("  " <>) . showA') exprs
-              <> noteIssue980
-          _ ->
-            T.intercalate "\n"
-              $ [ "Cannot disambiguate: " <> showP o,
-                  "  Please add a signature (e.g. [A*B]) to the term.",
-                  "  You may have intended one of these:"
-                ]
-              <> map (("  " <>) . showA') exprs
-              <> noteIssue980
-        Known _ -> fatal "We have a known term, so it is allready disambiguated."
-        _ ->
-          T.intercalate "\n"
-            $ [ "Cannot disambiguate: " <> showP o,
-                "  Please add a signature (e.g. [A*B]) to it."
-              ]
-            <> noteIssue980
-    noteIssue980 =
-      [ "Note: Some cases are not disambiguated fully by design. You can read about",
-        "  this at https://github.com/AmpersandTarski/Ampersand/issues/980#issuecomment-508985676"
-      ]
-
-    showA' :: Expression -> Text
-    showA' e =
-      showA e
-        <> case e of
-          EDcD rel -> " (" <> tshow (origin rel) <> ")"
-          EFlp e' -> showA' e'
-          _ -> ""
-
 -- | Rules, identity statements, view definitions, interfaces, and box labels
 --   need unique names.
 uniqueNames ::
@@ -389,19 +270,22 @@ uniqueNames nameclass = uniqueBy name messageFor
             <> "."
         )
 
-uniqueLables :: Origin -> (a -> Text1) -> [a] -> Guarded ()
-uniqueLables orig toLabel = uniqueBy toLabel (messageFor . fmap toLabel)
+uniqueLabels :: Origin -> (a -> Text1) -> [a] -> Text -> Guarded ()
+uniqueLabels orig toLabel items thing = uniqueBy toLabel (messageFor . fmap toLabel) items
   where
     messageFor :: NonEmpty Text1 -> CtxError
     messageFor x =
       CTXE orig
         . T.intercalate "\n    "
-        $ [ "The label `" <> text1ToText lable <> "` occurs " <> tshow (NE.length x) <> " times",
-            "in the VIEW statement defined at: ",
-            "   " <> tshow orig <> "."
+        $ [ "The label `"
+              <> text1ToText (NE.head x)
+              <> "` occurs "
+              <> tshow (NE.length x)
+              <> " times in the "
+              <> thing
+              <> " defined at: ",
+            tshow orig <> "."
           ]
-      where
-        lable = NE.head x
 
 -- | Helper function to check for uniqueness.
 uniqueBy ::
@@ -516,29 +400,33 @@ mkInterfaceRefCycleError cyclicIfcs =
     showIfc :: Interface -> Text
     showIfc i = "- " <> fullName i <> " at position " <> tshow (origin i)
 
-mkIncompatibleInterfaceError :: P_BoxItem a -> A_Concept -> A_Concept -> Name -> CtxError
-mkIncompatibleInterfaceError objDef expTgt refSrc ref =
-  case objDef of
-    P_BoxItemTerm {} ->
-      CTXE (origin objDef)
-        $ "Incompatible interface reference "
-        <> fullName ref
-        <> " at field "
-        <> maybe "without a label" tshow (obj_PlainName objDef)
-        <> ":\nReferenced interface "
-        <> fullName ref
-        <> " has type "
-        <> (text1ToText . showWithAliases) refSrc
-        <> ", which is not comparable to the target "
-        <> (text1ToText . showWithAliases) expTgt
-        <> " of the term at this field."
-    _ -> fatal "Improper use of mkIncompatibleInterfaceError"
+mkIncompatibleInterfaceError :: Origin -> A_Concept -> A_Concept -> Name -> CtxError
+mkIncompatibleInterfaceError orig expTgt refSrc ref =
+  CTXE orig
+    $ "Incompatible reference to interface "
+    <> fullName ref
+    <> ".\n   It has type "
+    <> showWithAliases refSrc
+    <> ", which is not comparable to the target "
+    <> showWithAliases expTgt
+    <> " of the term at this field."
+
+mkInterfaceRefNarrowerError :: Origin -> Name -> Expression -> A_Concept -> CtxError
+mkInterfaceRefNarrowerError refOrigin ifcName parentExpr ifcConcept =
+  CTXE refOrigin
+    $ "The interface "
+    <> fullName ifcName
+    <> " works on concept "
+    <> showWithAliases ifcConcept
+    <> ", which is narrower (i.e. more specific) than "
+    <> showWithAliases (target parentExpr)
+    <> ". Use an interface with a wider (or equal) interface-concept."
 
 mkMultipleDefaultError :: NE.NonEmpty ViewDef -> CtxError
 mkMultipleDefaultError vds =
   CTXE (origin . NE.head $ vds)
     $ "Multiple default views for concept "
-    <> (text1ToText . showWithAliases) cpt
+    <> showWithAliases cpt
     <> ":"
     <> T.intercalate "\n    " (fmap showViewDef (NE.toList vds))
   where
@@ -586,20 +474,147 @@ mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `" <> showA pr <> "` by populating the relation `" <> showA r <> "`."
 
+-- | Error for when a singleton atom value (e.g. from #"0") cannot be
+--   converted to the required representation type of its concept.
+mkSingletonRepresentationError :: PAtomValue -> A_Concept -> TType -> CtxError
+mkSingletonRepresentationError pav cpt typ =
+  CTXE (origin pav)
+    $ "The target of "
+    <> atomValueText pav
+    <> " is "
+    <> tshow cpt
+    <> ", which requires representation as "
+    <> T.toLower (tshow typ)
+    <> ". However, "
+    <> atomValueKind pav
+    <> " is encountered."
+  where
+    atomValueText :: PAtomValue -> Text
+    atomValueText v = case v of
+      PSingleton _ str _ -> "\"" <> str <> "\""
+      ScriptString _ str -> "\"" <> str <> "\""
+      XlsxString _ str -> "\"" <> str <> "\""
+      ScriptInt _ i -> tshow i
+      ScriptFloat _ f -> tshow f
+      XlsxDouble _ d -> tshow d
+      ComnBool _ b -> tshow b
+      ScriptDate _ d -> tshow d
+      ScriptDateTime _ dt -> tshow dt
+    atomValueKind :: PAtomValue -> Text
+    atomValueKind v = case v of
+      PSingleton {} -> "a singleton string"
+      ScriptString {} -> "a string"
+      XlsxString {} -> "a string"
+      ScriptInt {} -> "an integer"
+      ScriptFloat {} -> "a float"
+      XlsxDouble {} -> "a number"
+      ComnBool {} -> "a boolean"
+      ScriptDate {} -> "a date"
+      ScriptDateTime {} -> "a date/time"
+
+mkConceptNotInSchemaError :: Origin -> Name -> Text -> CtxError
+mkConceptNotInSchemaError orig cptName contextName =
+  CTXE orig
+    $ "Cannot compile "
+    <> contextName
+    <> " because "
+    <> fullName cptName
+    <> " does not occur in a RELATION, CLASSIFY, REPRESENT, or RULE statement."
+
+mkRelationTooNarrowForViewError :: Origin -> Expression -> A_Concept -> CtxError
+mkRelationTooNarrowForViewError orig expr viewConcept =
+  CTXE orig
+    $ "The expression "
+    <> showA expr
+    <> " in the VIEW segment on "
+    <> tshow orig
+    <> " has source "
+    <> (showWithAliases . source) expr
+    <> ", which is too specific for the VIEW concept "
+    <> showWithAliases viewConcept
+    <> "."
+
+mkViewTooSpecificError :: Origin -> P_ViewDef -> Expression -> CtxError
+mkViewTooSpecificError orig vd objExpr =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The VIEW " <> tshow (name vd) <> " is defined for " <> tshow (vd_cpt vd) <> ".",
+        "This is too specific for the target of " <> showA objExpr <> ", which is " <> showA (target objExpr) <> "."
+      ]
+
+mkViewIncompatibleError :: Origin -> A_Concept -> P_ViewDef -> Expression -> CtxError
+mkViewIncompatibleError orig joinCpt vd objExpr =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The VIEW " <> tshow (name vd) <> " is defined for " <> tshow (vd_cpt vd) <> ".",
+        "This is incompatible with the target of " <> showA objExpr <> ", which is " <> showA (target objExpr) <> ", even though both are " <> showA joinCpt <> "."
+      ]
+
+mkViewIncomparableError :: Origin -> P_ViewDef -> Expression -> CtxError
+mkViewIncomparableError orig vd objExpr =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The VIEW " <> tshow (name vd) <> " is defined for " <> tshow (vd_cpt vd) <> ".",
+        "This is unrelated to the target of " <> showA objExpr <> ", which is " <> showA (target objExpr) <> ". These concepts are in different typologies."
+      ]
+
+mkViewExpressionMismatchError :: Origin -> Expression -> A_Concept -> CtxError
+mkViewExpressionMismatchError orig expr viewConcept =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The expression in a VIEW segment has an incompatible type.",
+        "Expression: " <> showA expr,
+        "Expression source: " <> (showWithAliases . source) expr,
+        "VIEW concept: " <> showWithAliases viewConcept,
+        "The source of the expression and the VIEW concept have no ISA relationship.",
+        "The expression source must be equal to or more general than the VIEW concept."
+      ]
+
+mkConstrainedExpressionTooNarrowError :: Origin -> SrcOrTgt -> Expression -> A_Concept -> CtxError
+mkConstrainedExpressionTooNarrowError orig srcOrTgt expr requiredConcept =
+  CTXE orig
+    $ T.intercalate "\n  "
+    $ [ "The " <> tshow srcOrTgt <> " expression is too narrow.",
+        "Expression: " <> showA expr,
+        "Expression " <> tshow srcOrTgt <> ": " <> showWithAliases actualConcept,
+        "Required " <> tshow srcOrTgt <> ": " <> showWithAliases requiredConcept,
+        "Atoms of type "
+          <> showWithAliases requiredConcept
+          <> " that are not "
+          <> showWithAliases actualConcept
+          <> " will be excluded.",
+        "Solution: use "
+          <> tshow srcOrTgt
+          <> " I["
+          <> fullName requiredConcept
+          <> "]"
+          <> " or explicitly "
+          <> tshow srcOrTgt
+          <> " I["
+          <> fullName requiredConcept
+          <> "];I["
+          <> fullName actualConcept
+          <> "] if you want to filter."
+      ]
+  where
+    actualConcept = case srcOrTgt of
+      Src -> source expr
+      Tgt -> target expr
+
 mkInterfaceMustBeDefinedOnObject :: P_Interface -> A_Concept -> TType -> CtxError
 mkInterfaceMustBeDefinedOnObject ifc cpt tt =
   CTXE (origin ifc)
     . T.intercalate "\n  "
     $ [ "The TYPE of the concept for which an INTERFACE is defined must be OBJECT.",
-        "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for interface `" <> fullName ifc <> "`, however is " <> tshow tt <> "."
+        "The TYPE of the concept `" <> showWithAliases cpt <> "`, for interface `" <> fullName ifc <> "`, however is " <> tshow tt <> "."
       ]
 
-mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc (TermPrim, DisambPrim) -> A_Concept -> TType -> CtxError
+mkSubInterfaceMustBeDefinedOnObject :: P_SubIfc TermPrim -> A_Concept -> TType -> CtxError
 mkSubInterfaceMustBeDefinedOnObject x cpt tt =
   CTXE (origin x)
     . T.intercalate "\n  "
     $ [ "The TYPE of the concept for which a " <> tshow boxTemplate <> " is defined must be OBJECT.",
-        "The TYPE of the concept `" <> (text1ToText . showWithAliases) cpt <> "`, for this " <> tshow boxTemplate <> ", however is " <> tshow tt <> "."
+        "The TYPE of the concept `" <> showWithAliases cpt <> "`, for this " <> tshow boxTemplate <> ", however is " <> tshow tt <> "."
       ]
   where
     boxTemplate = btType . si_header $ x
@@ -617,7 +632,7 @@ instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1, c1, e1) = showEC' (p1, c1, showA e1)
 
 showEC' :: (SrcOrTgt, A_Concept, Text) -> Text
-showEC' (p1, c1, e1) = (text1ToText . showWithAliases) c1 <> " (" <> tshow p1 <> " of " <> e1 <> ")"
+showEC' (p1, c1, e1) = showWithAliases c1 <> " (" <> tshow p1 <> " of " <> e1 <> ")"
 
 instance (AStruct declOrExpr, HasSignature declOrExpr) => ErrorConcept (SrcOrTgt, declOrExpr) where
   showEC (p1, e1) =
@@ -642,7 +657,7 @@ mustBeOrdered o a b =
         "  and concept " <> showEC b
       ]
 
-mustBeOrderedLst :: P_SubIfc (TermPrim, DisambPrim) -> Expression -> ObjectDef -> Guarded b
+mustBeOrderedLst :: P_SubIfc TermPrim -> Expression -> ObjectDef -> Guarded b
 mustBeOrderedLst o objExpr ojd =
   (Errors . pure . CTXE (origin o) . T.unlines)
     [ "Type error in BOX",
@@ -651,7 +666,7 @@ mustBeOrderedLst o objExpr ojd =
         <> " (the target of "
         <> showA objExpr
         <> ") with "
-        <> (text1ToText . showWithAliases . source . objExpression) ojd
+        <> (showWithAliases . source . objExpression) ojd
         <> " (the source of: "
         <> (showA . objExpression) ojd
         <> " at "
@@ -667,7 +682,7 @@ mustBeOrderedConcLst o (p1, e1) (p2, e2) cs =
     . T.unlines
     $ [ "Ambiguous type when matching: " <> tshow p1 <> " of " <> showA e1,
         " and " <> tshow p2 <> " of " <> showA e2 <> ".",
-        "  The type can be " <> T.intercalate " or " (map (T.intercalate "/" . map (text1ToText . showWithAliases)) cs),
+        "  The type can be " <> T.intercalate " or " (map (T.intercalate "/" . map showWithAliases) cs),
         "  None of these concepts is known to be the smallest, you may want to add an order between them."
       ]
 
@@ -713,9 +728,6 @@ lexerWarning2Warning :: LexerWarning -> Warning
 lexerWarning2Warning (LexerWarning a b) =
   Warning (FileLoc a "") (T.intercalate "\n" . fmap T.pack $ showLexerWarningInfo b)
 
-instance Traced Warning where
-  origin (Warning o _) = o
-
 mkBoxRowsnhWarning :: Origin -> Warning
 mkBoxRowsnhWarning orig =
   Warning orig
@@ -748,6 +760,116 @@ mkUnusedCptDefWarning :: AConceptDef -> Warning
 mkUnusedCptDefWarning cptDef =
   Warning (origin cptDef) $ "The concept '" <> fullName cptDef <> "' is not used in any relation."
 
+-- | Warning emitted by the Stage-1 oscillation-risk analysis
+--   ('Ampersand.FSpec.Oscillation'). It names the ExecEngine rules that form a
+--   cycle through a non-monotone (delete/merge) edge, and the opposing writes on
+--   which they collide — the static twin of the runtime's
+--   /Maximum reruns exceeded. Rules fixed in last run: .../ message.
+mkOscillationWarning ::
+  -- | Origin to attach the warning to (a rule in the cycle)
+  Origin ->
+  -- | The names of the automated rules in the cycle
+  [Text] ->
+  -- | Descriptions of the non-monotone (negative) edges in the cycle
+  [Text] ->
+  Warning
+mkOscillationWarning orig ruleNames negEdges =
+  Warning orig
+    . T.intercalate "\n    "
+    $ [ "Possible oscillation risk among the ExecEngine rules: "
+          <> T.intercalate ", " ruleNames
+          <> ".",
+        "These automated rules can re-trigger each other in a cycle, and at least one",
+        "repair in that cycle deletes or merges what another repair creates. Such a",
+        "non-monotone cycle may never reach a fixpoint, so the ExecEngine can abort with",
+        "\"Maximum reruns exceeded\" on some populations."
+      ]
+    <> ["Opposing writes:"]
+    <> map ("  - " <>) negEdges
+    <> [ "This is a static over-approximation: a flagged cycle need not oscillate on every",
+         "population, but an insert-only (monotone) cycle is never flagged. See the guide",
+         "docs/guides/oscillations/README.md for how to make the rules jointly satisfiable."
+       ]
+
+-- | Warning emitted when the SQL generator will produce a query that computes
+--   a Cartesian product. The warning shows the rule (or interface) it occurs in,
+--   plus the offending subexpression, both rendered with showP (via
+--   'aExpression2pTermPrim') so they appear in the same notation the user wrote.
+--
+--   When @--verbose@ is active the caller passes a 'Just' for the
+--   'verboseExtras' argument, containing
+--
+--     * the normalized expression that will actually be handed to
+--       'selectExpr' (the SQL generator)
+--     * a human-readable rendering of the generated SQL statement
+--
+--   so the user can see how their term is transformed in three steps
+--   (term2Expr ▸ conjNF ▸ selectExpr).
+mkCartesianProductWarning ::
+  -- | Origin of the rule/object containing the offending expression
+  Origin ->
+  -- | Description of the context (e.g. "RULE foo" or "INTERFACE bar")
+  Text ->
+  -- | The original term, as written by the user, before type checking
+  Text ->
+  -- | The complete (original) expression (output of term2Expr)
+  Expression ->
+  -- | The offending subexpression that forces a Cartesian product
+  Expression ->
+  -- | When --verbose: (normalized expression, pretty SQL)
+  Maybe (Expression, Text) ->
+  Warning
+mkCartesianProductWarning orig context originalTerm fullExpr offending verboseExtras =
+  Warning orig
+    $ T.intercalate "\n    " (basicLines <> tipLines)
+    <> case verboseExtras of
+      Nothing -> ""
+      Just (normalized, sql) ->
+        "\n    " <> T.intercalate "\n    " (verboseLines normalized sql)
+  where
+    basicLines =
+      [ "SQL will compute a Cartesian product for " <> context,
+        "Term: " <> originalTerm,
+        "Term (after type checking): " <> (showP . aExpression2pTermPrim) fullExpr
+        -- , "(reason: " <> _reasonFor offending <> ")"
+      ]
+    -- Pattern-specific advice.  Currently only one situation is recognised:
+    -- a V at the tail of an ECps-chain on the RHS of an inclusion, used as a
+    -- type bridge.  In that case the rule can usually be reformulated on an
+    -- endo-relation, which removes the cross join.
+    tipLines = case (offending, fullExpr) of
+      (EDcV _, EInc (_lhs, rhs))
+        | endsInV rhs ->
+            [ "tip: the V[A*B] sits at the tail of the right-hand side as a",
+              "     type bridge.  Try reformulating the rule on type A*A, e.g.",
+              "         (I[A] /\\ lhs;lhs~) |- r;r~",
+              "     where r;r~ replaces the prefix that precedes the V."
+            ]
+      _ -> []
+    verboseLines normalized _sql =
+      [ "--- verbose ---",
+        "Normalized (as offered to selectExpr):",
+        "  " <> (showP . aExpression2pTermPrim) normalized
+        -- , "Generated SQL:"
+      ]
+    -- <> map ("  " <>) (T.lines sql)
+    _reasonFor e = case e of
+      EDcV _ -> "V[A*B] generates a cross join of two concept tables"
+      EPrd _ -> "the cartesian product operator (#) is rewritten to l;V;r, which uses V"
+      ECpl _ -> "computing the complement requires the full domain V, hence a cross join"
+      ERrs _ -> "the right residual (\\) generates a cross join of two concept tables"
+      ELrs _ -> "the left residual (/) is rewritten via the right residual, which uses a cross join"
+      EDia _ -> "the diamond (<>) is rewritten using residuals, which use cross joins"
+      ERad _ -> "relative addition (!) is rewritten using complement/residuals, which use cross joins"
+      _ -> "this construct introduces a cross join in SQL"
+    -- \| True when the expression is an ECps-chain whose right-most leaf is V.
+    --   Recurses to the right because ECps is right-associative in Ampersand.
+    endsInV :: Expression -> Bool
+    endsInV (ECps (_, r)) = endsInV r
+    endsInV (EBrk e) = endsInV e
+    endsInV (EDcV _) = True
+    endsInV _ = False
+
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =
   Warning OriginUnknown
@@ -756,6 +878,13 @@ mkCaseProblemWarning x y =
       [ "Ampersand is case sensitive. you might have meant that the following are equal:",
         tshow (typeOf x) <> " `" <> fullName x <> "` and `" <> fullName y <> "`."
       ]
+
+mkOrphanedRepresentWarning :: P_Representation -> Warning
+mkOrphanedRepresentWarning (Repr orig cpts _) =
+  Warning orig
+    $ "REPRESENT statement references undefined concept(s): "
+    <> T.intercalate ", " (map fullName (NE.toList cpts))
+    <> ". This statement will be ignored."
 
 mkGenericParserError :: Origin -> Text -> Guarded a
 mkGenericParserError orig msg = Errors . pure $ CTXE orig msg
@@ -772,31 +901,6 @@ addWarnings ws ga =
   case ga of
     Checked a ws' -> Checked a (ws <> ws')
     Errors a -> Errors a
-
-data Guarded a
-  = Errors (NE.NonEmpty CtxError)
-  | Checked a [Warning]
-
---   deriving Show
-
-instance (Eq a) => Eq (Guarded a) where
-  Checked a1 _ == Checked a2 _ = a1 == a2
-  _ == _ = False
-
-instance Functor Guarded where
-  fmap _ (Errors a) = Errors a
-  fmap f (Checked a ws) = Checked (f a) ws
-
-instance Applicative Guarded where
-  pure x = Checked x []
-  (<*>) (Checked f ws) (Checked a ws') = Checked (f a) (ws <> ws')
-  (<*>) (Errors a) (Checked _ _) = Errors a
-  (<*>) (Checked _ _) (Errors b) = Errors b
-  (<*>) (Errors a) (Errors b) = Errors (a <> b)
-
-instance Monad Guarded where
-  (>>=) (Checked a ws) f = addWarnings ws (f a)
-  (>>=) (Errors x) _ = Errors x
 
 -- Shorthand for working with Guarded in a monad
 whenCheckedM :: (Monad m) => m (Guarded a) -> (a -> m (Guarded b)) -> m (Guarded b)

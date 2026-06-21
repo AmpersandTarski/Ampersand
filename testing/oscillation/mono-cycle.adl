@@ -1,0 +1,21 @@
+CONTEXT MonoCycle IN ENGLISH
+-- Negative test for the Stage-1 oscillation analysis.
+-- Two ExecEngine rules form a triggering CYCLE, but both only INSERT.
+-- A purely monotone (insert-only) cycle converges to a least fixpoint
+-- (Knaster-Tarski), so it must NOT be flagged.
+
+RELATION r[A*B]
+RELATION s[A*B]
+
+-- whenever r holds, ensure s holds (insert s)
+ROLE ExecEngine MAINTAINS rImpliesS
+RULE rImpliesS : r |- s
+VIOLATION ( TXT "{EX} InsPair;s;A;", SRC I, TXT ";B;", TGT I )
+
+-- whenever s holds, ensure r holds (insert r)
+ROLE ExecEngine MAINTAINS sImpliesR
+RULE sImpliesR : s |- r
+VIOLATION ( TXT "{EX} InsPair;r;A;", SRC I, TXT ";B;", TGT I )
+
+POPULATION r CONTAINS [ ("a1","b1") ]
+ENDCONTEXT

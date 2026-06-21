@@ -1,21 +1,74 @@
-## Technologies Used
+# Technical Context - Ampersand Development
 
-### Core Framework
-- **Ampersand**: Domain-specific language for rapid prototyping (Haskell-based compiler)
-- **ADL (Ampersand Definition Language)**: Declarative business rule specification
-- **PHP**: Generated backend application runtime
-- **Apache**: Web server for prototype hosting
-- **Angular + TypeScript**: Frontend framework voor generated user interfaces
-- **SCSS**: Styling framework for responsive design
+## Current Development Focus: Haskell Compiler
 
-### AmpersandTarski Ecosystem Stack
+### Ampersand Project Configuration
+- **GHC Version**: 9.6.6
+- **Stack LTS**: 22.39
+- **Build Tool**: Stack (with Cabal as package format)
+- **Language Extensions**: NoImplicitPrelude, OverloadedStrings
+- **Code Quality**: HLint, extensive GHC warnings, IDE integration
+
+### Essential Haskell Development Resources
+
+#### Official Documentation
+- **Haskell.org**: https://www.haskell.org/ - Main entry point, downloads, news
+- **GHC User's Guide**: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/ - Compiler documentation
+- **Stack Guide**: https://docs.haskellstack.org/ - Build tool documentation
+- **Stackage**: https://www.stackage.org/ - Package versions and LTS snapshots
+- **Hackage**: https://hackage.haskell.org/ - Package repository and documentation
+
+#### Core Language Resources
+- **Language Extensions Guide**: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/exts.html
+- **Haskell Wiki**: https://wiki.haskell.org/ - Community knowledge base
+- **GHC Error Index**: https://errors.haskell.org/ - Explanations of compiler errors
+
+#### Build System & IDE Integration
+- **Stack Documentation**: https://docs.haskellstack.org/
+- **LTS 22.39 Package Set**: https://www.stackage.org/lts-22.39
+- **Haskell Language Server (HLS)**: https://haskell-language-server.readthedocs.io/
+- **HLint**: https://github.com/ndmitchell/hlint - Static analysis tool
+
+#### Critical Libraries for Ampersand
+
+**Parsing (Critical for ADL parser)**
+- **parsec**: https://hackage.haskell.org/package/parsec - Parser combinator library
+- **megaparsec**: https://hackage.haskell.org/package/megaparsec - Advanced parser combinators
+- **Parsec Tutorial**: https://wiki.haskell.org/Parsec
+
+**Data Processing & JSON**
+- **aeson**: https://hackage.haskell.org/package/aeson - JSON parsing/encoding
+- **yaml**: https://hackage.haskell.org/package/yaml - YAML support
+- **text**: https://hackage.haskell.org/package/text - Efficient Unicode text
+
+**Document Generation (Ampersand generates documentation)**
+- **pandoc**: https://hackage.haskell.org/package/pandoc - Document conversion
+- **pandoc-types**: https://hackage.haskell.org/package/pandoc-types - Document AST
+- **HStringTemplate**: https://hackage.haskell.org/package/HStringTemplate - String templating
+
+**File Processing**
+- **xlsx**: https://hackage.haskell.org/package/xlsx - Excel file processing
+- **directory**: https://hackage.haskell.org/package/directory - File system operations
+- **filepath**: https://hackage.haskell.org/package/filepath - File path manipulation
+
+## Broader Ampersand Ecosystem Stack
+
+### AmpersandTarski Ecosystem Technologies
 - **Compiler:** Haskell (Ampersand repository, GPL-3.0, 43★)
-- **Framework:** PHP/Angular (prototype repository, MIT, 1★) - **THIS PROJECT**
+- **Framework:** PHP/Angular (prototype repository, MIT, 1★)
 - **Templates:** Shell scripts (project-template repository, 2★)
 - **Analysis:** C# web tool (RAP repository, 4★) 
 - **IDE Support:** TypeScript VS Code extension (5★)
 - **Documentation:** JavaScript/Docusaurus (GitHub Pages)
 - **Examples:** ADL model collection (ampersand-models, 3★)
+
+### Core Framework Technologies
+- **Ampersand**: Domain-specific language for rapid prototyping (Haskell-based compiler)
+- **ADL (Ampersand Definition Language)**: Declarative business rule specification
+- **PHP**: Generated backend application runtime
+- **Apache**: Web server for prototype hosting
+- **Angular + TypeScript**: Frontend framework for generated user interfaces
+- **SCSS**: Styling framework for responsive design
 
 ### Database & Data
 - **MariaDB 10.4**: Primary database with generated schema
@@ -26,124 +79,105 @@
 - **Docker**: Containerization platform
 - **Docker Compose**: Local orchestration
 - **Kubernetes**: Production deployment (optional)
-- **Git**: Version control via Sopra Steria InnerSource
+- **Git**: Version control
 
-## Development Setup
+## Development Setup & Workflows
 
-### Prerequisites
+### Haskell Development Prerequisites
 ```bash
-# Required tools
-docker --version          # Docker Desktop or Engine
-docker compose version    # Compose V2 
-git --version             # Git SCM
+# Required tools for Ampersand compiler development
+stack --version             # Stack build tool
+ghc --version               # GHC compiler 9.6.6
+hlint --version             # Code quality tool
+docker --version            # For integration testing
 ```
 
 ### Environment Configuration
 ```bash
-# Initial setup
-git clone https://innersource.soprasteria.com/stef.joosten/nvwa-fc.git
-cd nvwa-fc
-cp .env.example .env
-
-# Configure .env variables
-MYSQL_ROOT_PASSWORD=<secure_random_password>
-MYSQL_AMPERSAND_PASSWORD=<secure_random_password>
-SERVER_HOST_NAME=localhost
+# Ampersand compiler development
+git clone https://github.com/AmpersandTarski/Ampersand.git
+cd Ampersand
+stack setup                 # Install GHC if needed
+stack build                 # Build Ampersand compiler
+stack test                  # Run test suite
 ```
 
-### Build & Run Workflow
-```bash
-# Development cycle
-docker build project -t ampersand-prototype:latest  # Build container
-docker compose up -d                               # Start services
-docker logs prototype                              # Check build logs
-docker logs prototype-db                          # Check DB logs
+### IDE Setup
+- **VS Code**: With Haskell Language Server extension
+- **DevContainer**: Pre-configured development environment
+- **HLS Integration**: Real-time error checking and code completion
+- **HIE Files**: Generated by -fwrite-ide-info flag
 
-# Access points
-http://localhost        # Prototype application
-http://localhost:8080   # phpMyAdmin interface
+## Performance & Quality Considerations
 
-# Cleanup
-docker compose down     # Stop services
-docker compose down -v # Stop and remove volumes
-```
+### Haskell Compiler Performance
+- **GHC Profiling**: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/profiling.html
+- **Memory Management**: https://wiki.haskell.org/GHC/Memory_Management
+- **Space Leaks**: https://wiki.haskell.org/Memory_leak
 
-### Performance Considerations
-```bash
-# Fast development builds (use smaller datasets)
-# Comment out large Excel files in main.adl:
-# -- INCLUDE "ExportEisen.xlsx"  # 10+ minute compile time
-# Use ExportEisen1-4.xlsx instead for faster iteration
+### Code Quality Tools
+- **HLint**: Style and correctness suggestions
+- **Weeder**: Dead code elimination (using weeder.dhall config)
+- **QuickCheck**: Property-based testing for critical functions
 
-# Memory allocation for large datasets
-docker run --memory="4g" ampersand-prototype:latest
-```
+### Framework Performance (Generated Applications)
+- **Compilation Time**: Large Excel files can require 10+ minutes
+- **Memory Requirements**: Large datasets need 4GB+ RAM during build
+- **Database Performance**: MariaDB with optimized configuration
 
 ## Technical Constraints
 
-### Ampersand Framework Limitations
-- **Compilation Time**: ExportEisen.xlsx requires 10+ minutes compile time
-- **Memory Requirements**: Large Excel files need 4GB+ RAM during build
-- **Schema Generation**: Database schema is auto-generated, no manual optimization
-- **PHP Runtime**: Generated application runs on specific PHP/Apache stack
+### Ampersand Compiler Limitations
+- **GHC Version**: Fixed at 9.6.6 for stability
+- **Stack LTS**: 22.39 provides tested package ecosystem
+- **Language Extensions**: NoImplicitPrelude affects import patterns
+- **Build Dependencies**: Complex Haskell library ecosystem
 
-### Database Constraints
-- **MariaDB Version**: Fixed at 10.4 for Ampersand compatibility
-- **Case Sensitivity**: `--lower-case-table-names=1` required
-- **SQL Mode**: `ANSI,TRADITIONAL` mode enforced
-- **Character Set**: UTF-8 encoding required for international characters
+### Generated Framework Constraints
+- **Database**: MariaDB 10.4 for compatibility
+- **PHP Runtime**: Generated applications use specific PHP/Apache stack
+- **Schema Generation**: Database schema auto-generated, no manual optimization
+- **Memory Usage**: Large Excel imports can be memory-intensive
 
-### Development Constraints
-- **Build Context**: Must build from `project/` directory
-- **File Paths**: All Excel imports relative to ADL script location
-- **Port Conflicts**: Ports 80 and 8080 must be available
-- **Volume Persistence**: Database data stored in Docker volume `db-data`
+## Debugging & Troubleshooting
 
-## Dependencies
+### Haskell Development Issues
+- **GHC Error Index**: https://errors.haskell.org/ - Searchable error explanations
+- **Stack FAQ**: https://docs.haskellstack.org/en/stable/faq/
+- **Type Holes**: Use `_` to see inferred types
+- **Debug.Trace**: For runtime debugging output
 
-### Docker Images
-```yaml
-# Core services
-prototype:
-  build: project/
-  image: ampersand-prototype:latest
+### Common Patterns in Ampersand
+- **Parser Development**: Understanding Parsec error messages
+- **Type Safety**: GADTs for type-safe AST representation
+- **Code Generation**: Template Haskell and QuasiQuotes
+- **Monad Transformers**: Complex error handling with RIO
 
-prototype-db:
-  image: mariadb:10.4
-  
-phpmyadmin:
-  image: phpmyadmin/phpmyadmin:latest
-```
-
-### Data Dependencies
-```
-# Critical import order
-EPPOcodes.xlsx     → Must be first (organism standardization)
-Organismen.xlsx    → After EPPOcodes (organism definitions)
-Producten.xlsx     → After EPPOcodes (product definitions)
-Pleio.xlsx         → After Organismen + Producten (combinations)
-ExportEisen.xlsx   → After all base data (requirements)
-```
-
-### Network Dependencies
-```yaml
-# Docker network
-networks:
-  prototype:
-    # Internal communication between containers
-    # prototype ↔ prototype-db
-    # phpmyadmin ↔ prototype-db
-```
+### Integration Testing
+- **Docker**: Test generated applications in containers
+- **Excel Processing**: Test various Excel import formats
+- **Database Schema**: Validate generated SQL correctness
 
 ## Tool Usage Patterns
 
-### Development Commands
+### Daily Development Commands
 ```bash
-# Quick rebuild cycle
-docker compose down && docker compose up -d --build
+# Haskell development cycle
+stack build --fast                    # Quick compilation
+stack test --fast                     # Run tests
+stack exec ampersand -- --help        # Test CLI
+hlint src/                            # Code quality check
 
-# Database access
-docker exec -it prototype-db mysql -u ampersand -p
+# Integration testing
+docker build . -t ampersand:latest    # Build container
+docker run ampersand:latest examples/Project.adl  # Test compilation
+```
 
-# Log monitoring
-docker compose logs -f prototype     # Application
+### Documentation Generation
+```bash
+# Generate documentation
+stack exec ampersand -- --verbose examples/Project.adl
+stack haddock                         # Generate API docs
+```
+
+This technical context provides comprehensive resources for both Haskell compiler development (current focus) and understanding the broader Ampersand ecosystem that the compiler enables.

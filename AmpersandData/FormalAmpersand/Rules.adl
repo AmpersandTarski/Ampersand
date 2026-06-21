@@ -14,7 +14,7 @@ PATTERN Rules
     RELATION FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] [UNI] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
     MEANING "The name of a rule."
       ROLE ExecEngine MAINTAINS FormalAmpersand.DelUnusedRuleName
-      RULE FormalAmpersand.DelUnusedRuleName LABEL "del unused RuleName" : I[FormalAmpersand.RuleName] |- FormalAmpersand.name~;FormalAmpersand.name
+      RULE FormalAmpersand.DelUnusedRuleName LABEL "del unused RuleName" : I[FormalAmpersand.RuleName] |- FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName]~;FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName]
       MEANING "A RuleName without Rule will be removed."
       VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.RuleName;", SRC I )
     REPRESENT FormalAmpersand.EncodedName TYPE ALPHANUMERIC

@@ -1,0 +1,12 @@
+CONTEXT RightResidualTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT RightResidualTypeCheck
+{+ This test must succeed because there is an exact match on B). +}
+
+RELATION r[A*B]
+RELATION s[B*C]
+RELATION result[A*C]
+
+RULE testRightResidual: result = r~\s
+
+ENDCONTEXT

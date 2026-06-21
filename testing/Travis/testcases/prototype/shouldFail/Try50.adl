@@ -1,0 +1,13 @@
+CONTEXT Try47 IN DUTCH
+
+PATTERN Medewerkers
+CLASSIFY S ISA G
+RELATION r[G*Iets]
+RELATION s[S*S]
+ENDPATTERN
+
+INTERFACE TeValideren : I[G]
+BOX [ iets : s;r ]
+
+{- This should fail because the source of s;r, which is S, is narrower than G. -}
+ENDCONTEXT

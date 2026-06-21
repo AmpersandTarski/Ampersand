@@ -1,0 +1,10 @@
+CONTEXT FullRelationTypeCheck IN ENGLISH
+
+PURPOSE CONTEXT FullRelationTypeCheck
+{+ This test must succeed because V with an explicit signature always succeeds. +}
+
+RELATION result[A*C]
+
+RULE testFull: result = V
+
+ENDCONTEXT

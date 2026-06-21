@@ -52,17 +52,23 @@ It parses all other data using the RELATION approach.
 The benefit of this method is that you do not have to change your spreadsheets when you modify the names of relations in your Ampersand script.
 It is also more readable for third parties because the spreadsheet has a direct correspondence with the field labels of the prototype on your screen.
 
-This method is used to import data from a sheet in a spreadsheet document whenever the title of the sheet is the name of an INTERFACE that you have defined in your script. For example, if your sheet is called `Accounts`, and you have defined:
+This method is used to import data from a sheet in a spreadsheet document whenever the title of the sheet is the name of an INTERFACE that you have defined in your script.
+
+The interface must have `SESSION` as its source concept. The importer always starts from the current session as its entry point, and navigates from there to the atoms it needs to create or update. An interface rooted at a specific atom of another concept — for example `I[Account]` — does not give the importer a starting point, because it would not know which Account atom to start from. An interface rooted at `SESSION` always has a well-defined starting point: the session that is active at the time of the import.
+
+This means you always write import interfaces in the form `"_SESSION";V[SESSION*Concept]`, like this:
 
 ```text
-INTERFACE "Accounts": I[Account] cRud BOX
+INTERFACE "Accounts": "_SESSION";V[SESSION*Account] cRud BOX
    [ "Username": accUserid cRUd
    , "Password": accPassword cRUd
    , "Role": accAllowedRoles cRUd
    ]
 ```
 
-the corresponding sheet in your .xlsx file could look like this:
+Note that you name the interface `"Accounts"` to match the sheet title, and that you start from `"_SESSION"` so the importer can use it.
+
+The corresponding sheet in your .xlsx file looks like this:
 
 | `Account` | `Username` | `Password` | `Role` |
 | :--- | :--- | :--- | :--- |
@@ -71,7 +77,9 @@ the corresponding sheet in your .xlsx file could look like this:
 
 Importing this sheet creates two accounts, one for `peterpan` and another for `dollydot`.
 
-As you can see, the first cell must contain the concept of the INTERFACE (`Account`), and subsequent header fields have the names of the labels in the INTERFACE. You can change the order of the columns, as long as the first column remains as is.
+The first cell in the header row must contain the target concept of the interface (`Account`). The other cells in the header row must contain the labels of the sub-interfaces, exactly as they appear in your INTERFACE definition. You may change the order of the columns, as long as column A always holds the concept name.
+
+A common mistake is to write an interface of the form `I[Account]` instead of `"_SESSION";V[SESSION*Account]`. This causes the error message: `Source concept of interface 'Accounts' must be SESSION in order to be used as import interface.` If you see this message, check that your interface starts with `"_SESSION"`.
 
 ### Using the RELATION approach
 
@@ -94,9 +102,9 @@ You can have blocks on different sheets and you can have multiple blocks on one 
 
 Here is an example of a block:
 
-| `[A]` | `rAA` | `rAB` | `rAC` | `[rAC,]` | `rAC` | `sAB` | `[tAD/]` | `uBA~` |
+| `[A]` | `rAA` | `rAB` | `rAC` | `rAC` | `rAC` | `sAB` | `tAD` | `uBA~` |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `A` | `A` | `B` | `C` | `C` | `C` | `B` | `Delta` | `B` |
+| `A` | `A` | `B` | `C` | `[C,]` | `C` | `B` | `[Delta/]` | `B` |
 | `alfa1` | `alfa1` | `beta1` | `char1` | `char2` | `char3` | `beta2` | `d1/d2` | `beta1` |
 |  | `CMT` |  |  |  |  |  |  | `beta2` |
 | `alfa2` |  | `beta2` |  | `char2` |  |  | `d2/pete/d1` | `beta3` |
@@ -135,9 +143,9 @@ So, assuming that concept A is in the first column of row 2, a relation name r i
 
 9. In any data row, the leftmost cell and the cell underneath a relation are considered a pair in that relation, provided they are not empty. So, the cells in row A together with the cells in a column constitute the contents of the relation specified in the first two rows.
 10. Sometimes, people put multiple values in one cell, separated by a delimiter like comma, semicolon, or whatever.
-    If the second row of a column specifies not only a concept, but also a delimiter, you can handle this situation.
-    The importer recognizes `[rAC,]` as a multi-column, which means that cells can contain multiple values separated by a comma.
-    Similarly, `[tAD/]` means that cells can contain multiple values separated by a slash symbol.
+    To handle this, specify the delimiter in the second header row together with the concept: wrap the concept name in square brackets with the delimiter just before the closing bracket.
+    The importer recognizes `[C,]` as a multi-column, which means that cells in that column can contain multiple values separated by a comma.
+    Similarly, `[Delta/]` means that cells can contain multiple values separated by a slash symbol.
 
 This means that the example is equivalent to the following population specification.
 Note that the importer disregards the cell containing 'CMT':
@@ -178,7 +186,7 @@ POPULATION uBA CONTAINS [ ("beta1"), ("alfa1")
    This allows for dynamic construction of identifiers, precomputation of tables, date adaptations to the date of today, etc.
    Note, however, that Excel has flaws, which cause some functions to misbehave. Always check your results.
    (We know, for example, that functions `VLOOKUP` and `HLOOKUP` have produced errors in the past, so you may avoid such functions.)
-3. If you use '\_NEW' in the first column, the importer generates a new atom that differs from all other atoms. If you use '\_NEW' in a subsequent column on the same row, this stands for the newly generated atom from the first column \(which you can use e.g. to populate property-relations\).
+3. If you use '\_NEW' in the first column, the importer generates a new atom that differs from all other atoms. If you use '\_NEW' in a subsequent column on the same row, this stands for the newly generated atom from the first column \(which you can use e.g. to populate property-relations\). The runtime importer gives each new atom a random identifier. The compile-time importer instead derives a stable identifier from the file, sheet and row, so the same spreadsheet always yields the same population.
 4. It is possible to store all sorts of data in the spreadsheet that will not interfere with the database population. The contents of the following cells is disregarded and can therefore be used for other purposes:
    * cells in a row whose first cell is empty.
    * cells in a column where the cell that specifies the relation name or the TGT concept is empty.
@@ -191,13 +199,30 @@ POPULATION uBA CONTAINS [ ("beta1"), ("alfa1")
    Error messages, validation feedback, or debugging is not yet implemented in the runtime importer, so you get crappy error messages if anything fails.
 
 3. **Differences between the compile-time and run-time importer:**
-   1. The runtime importer does not implement multi-columns yet.
+   The run-time importer now supports multi-columns as well, so both importers handle the block format in the same way. The main remaining difference is in error reporting (see point 2 above).
 
 4. **built-in datatypes:**
-   The importer recognizes the built-in datatypes of spreadsheet: strings, dates, numbers, etc.
-   It transforms these datatypes to Ampersand's built-in datatypes without you noticing it. However, if it expects a different type than your .xlsx-file contains, it gives an error.
-   This documentation must be refined to specify this transformation, so you can understand what happens.
+   The importer recognizes the built-in datatypes of a spreadsheet (text, numbers, booleans, dates) and transforms them to Ampersand's built-in datatypes. The exact rules are described in [Datatype conversion](#datatype-conversion) below. If a cell does not match the type Ampersand expects for that concept, you get an error.
    The error messages in the importers, especially the run-time importer, are yet to be improved to assist in such situations.
+
+## Datatype conversion
+A spreadsheet cell carries its own type: text, a number, or a boolean. Ampersand converts each cell to the [representation type](./reference-material/syntax-of-ampersand) (`REPRESENT`) of the concept it populates. The conversion depends on both the cell's type and the expected Ampersand type:
+
+| Cell in your `.xlsx` | Expected Ampersand type | Result |
+| --- | --- | --- |
+| Text | `ALPHANUMERIC`, `BIGALPHANUMERIC`, `HUGEALPHANUMERIC`, `PASSWORD`, `OBJECT` | used as-is |
+| Text | `BOOLEAN` | parsed (case-insensitive) from `TRUE`/`FALSE`, `YES`/`NO`, `JA`/`NEE`, `WAAR`/`ONWAAR`, `WEL`/`NIET`; anything else is an error |
+| Text | `INTEGER` / `FLOAT` | parsed as a number; non-numeric text is an error |
+| Text | `DATE` / `DATETIME` | error — use a real date cell, not text |
+| Number | `INTEGER` | accepted only when there is no fractional part, otherwise an error |
+| Number | `FLOAT` | used as-is |
+| Number | `DATE` / `DATETIME` | interpreted as an Excel serial date (`DATETIME` is rounded to whole seconds for database compatibility) |
+| Number | `ALPHANUMERIC` (and the other text types), `OBJECT` | rendered to text (a trailing `.0` is dropped, so `34.0` becomes `34`) |
+| Number | `BOOLEAN` | error |
+| Boolean | `BOOLEAN` | used as-is |
+| Boolean | any other type | error |
+
+The `BINARY`, `BIGBINARY` and `HUGEBINARY` types cannot be populated from a spreadsheet. Whitespace around text cells is trimmed by default; use `--no-trim-cellvalues` on the command-line importer to keep it.
 
 ## Design considerations
 Data import has been designed to facilitate the reuse of existing spreadsheets in .xlsx format.

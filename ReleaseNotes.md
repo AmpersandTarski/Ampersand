@@ -1,7 +1,38 @@
 ﻿# Release notes of Ampersand
+## not yet released
+- [Issue #1417](https://github.com/AmpersandTarski/Ampersand/issues/1417) Refactoring the type checker.
+- **Fixed a `TOP` leak in the refactored type checker**: `term2Expr` now applies `refineANY` as a final cleanup (iterated to a fixpoint) and verifies that the *whole* expression — not just its outer signature — is concrete. Previously a `TOP` placeholder could survive inside a subexpression (e.g. the `V` in `expID;I |- V;I;I`) while the outer signature was concrete, which crashed plug generation with `No plug found for concept 'TOP'`. A residual `TOP`/`BOT` now becomes a clear type error instead of a fatal crash. (Re-enables `disambTestStef.adl`.)
+- **Restored the comparison-operator type check**: comparison operators (`<`, `>`, `<=`, `>=`) are again rejected on concepts whose representation type does not support ordering (e.g. `BOOLEAN`, `BINARY`, `PASSWORD`, `OBJECT`). The check (lost during the type-checker refactor) is reinstated as an independent post-pass over the final typed context, so it cannot be silently dropped by future refactors. (Re-enables `ComparisonTest2.adl`; see issue #1542.)
+- **Improved disambiguation in type hierarchy**: This represents a significant improvement to the type checker that resolves a long-standing limitation that was previously marked as "won't fix" due to design constraints.
+- **Enhanced concept lattice completeness**: The `completeLattice` function generates missing meet and join concepts to ensure proper lattice structure. If a set of nodes in the concept graph has a join, the system now guarantees that a corresponding meet concept exists. This is necessary for correct type checking.
+- Enhanced type analysis debugging: Improved `showOpTree` visualization with structured tree formatting using proper indentation and tree-drawing characters for better readability of type analysis results
+- Added logging support to type analysis functions to enable debug-level diagnostic output
+- Added disambiguation algorithm analysis documentation and implementation notes for type system improvements
+- Added new test cases for disambiguation testing (disambTestStef.adl, try14.adl, try17.adl) and overlapping relations testing
+- Added comprehensive memorybank documentation for Cline covering active context, build/deploy processes, product context, project brief, and technical context
+- Added testing infrastructure documentation for contributors
+- Updated .clineignore configuration for better project file management
+- The Ampersand compiler gives a clearer instruction for the "ampersand check" command.
+- Fixed formatting of relation names in verbose output: removed unwanted space between relation name and signature (now displays as `relationName[Signature]` instead of `relationName [Signature]`)
+- **Fixed devcontainer startup issue**: Removed conflicting ENTRYPOINT directive from DockerfileUpstream that prevented containers from starting properly
+- **Enhanced devcontainer documentation**: Added troubleshooting section with diagnostic steps and solutions for container startup failures, plus explanation of configuration choices and reasoning behind devcontainer setup decisions
+- maintenance work for better maintainability.
+- **Warnings for Cartesian products**: The compiler now warns when an expression produces a Cartesian product. The warning includes the original term text so the source location is easy to find.
+- **Optimized normalization**: Improved the performance of `normStep` in the term normalizer.
+- **Diagnosis output**: Added a diagnosis module (`Ampersand.Diagnosis`) and an Excel (`.xlsx`) export of diagnostic results.
+- **Excel importer — INTERFACE approach at compile time**: The compile-time importer now imports a worksheet through an `INTERFACE` whenever the worksheet title equals the interface label, exactly like the runtime importer. Cell A1 holds the target concept and the column headers are sub-interface labels (with the `[label,]` multi-value syntax), each resolving to its editable relation (flipped when the sub-interface uses `~`). Previously such worksheets were silently ignored.
+- **Excel importer — `_NEW` support**: `_NEW` in column A now generates a fresh atom (and `_NEW` in a later column refers to that atom) for both the relation- and interface-approach. The compile-time importer derives a stable identifier from file/sheet/row (the runtime importer uses a random one). Note: `_NEW` was previously treated as a literal atom value.
+- **Fixed a crash in the Cartesian-product warning**: `findCartesianSubexprs` did not handle `V` on a single concept (`EDcV (ISgn _)`), so `--verbose` builds of scripts containing such a `V` aborted with a non-exhaustive-patterns error. It now treats `V[c*c]` as a Cartesian product unless `c` is `ONE`.
+- **Warnings for oscillation risk (Stage 1)**: The compiler now warns at design time when the ExecEngine's automated rules can oscillate (`Maximum reruns exceeded`). A new module `Ampersand.FSpec.Oscillation` builds a signed, refined rule-level triggering graph and reports each cycle of automated rules that runs through a delete or merge, naming the colliding rules and the relations they collide on — the static twin of the runtime's "Rules fixed in last run" message. Insert-only (monotone) cycles and standalone merge rules are not flagged. The analysis is a sound over-approximation: it aims never to miss a real oscillation but may flag a safe rule set (an EGD-aware precision stage is planned). See `docs/guides/oscillations/README.md`.
+
+## v5.4.3
+- [Issue #487](https://github.com/AmpersandTarski/Ampersand/issues/487) bugfix, cases where there are multiple skos:definitions for the same concept.
 
 ## Unreleased
+- Documentation: add a worked student lesson on diagnosing ExecEngine oscillations (`Maximum reruns exceeded`) under `docs/guides/oscillations/`, with a buggy/fixed demo script pair. Linked from the Guides sidebar and the Troubleshooting page.
+- CI: upgrade `actions/checkout` and `actions/setup-node` to v5 (Node.js 24), resolving the Node.js 20 deprecation warning on the runners.
 - Documentation tooling: add a CI hygiene check (`scripts/check-docs-sidebar.js`) that fails on duplicate sidebar ids, broken sidebar references, or internal scratch notes published outside a `_`-prefixed path.
+- Documentation tooling: add `scripts/check-docs-links.js` (CI) that fails on broken intra-repo doc links (including README/index targets written without `.md`) and casing mismatches, plus a `docs-hygiene` workflow that runs the sidebar and link checks on pull requests.
 - Add `CLAUDE.md` with repository conventions (release-notes enforcement, docs publishing branch, internal-notes convention).
 - CI/release: drop the macOS build entirely. GitHub deprecated the macos-13 runner and the Apple-Silicon (macos-14) build was failing; since Ampersand runs under Linux/Docker on macOS anyway, the native macOS binary is no longer built or attached to releases. Prebuilt binaries are now Linux and Windows; on macOS, use Docker or build from source.
 - CI: trigger the build/quality/format workflows from an explicit build-kernel allowlist (`src`, `app`, `AmpersandData`, `outputTemplates`, `testing`, the package/stack files, `Dockerfile`, lint configs) instead of `paths-ignore: docs/**`. Non-build changes (docs, ReleaseNotes, READMEs, workflow files) no longer start a build.
@@ -155,7 +186,7 @@
 - [#1419](https://github.com/AmpersandTarski/Ampersand/issues/1419) added a test, to be activated in the regression after resolving #1419.
 - [#1420](https://github.com/AmpersandTarski/Ampersand/issues/1420) added a test, to be activated in the regression after resolving #1420.
 - [#1421](https://github.com/AmpersandTarski/Ampersand/issues/1421) added easier development through Docker image at dockerhub: [ampersandtarski/ampersand-devcontainer](https://hub.docker.com/repository/docker/ampersandtarski/ampersand-devcontainer/general). Also fixes https://github.com/AmpersandTarski/Ampersand/issues/1359
-- Development of Ampersand generator can now be done with codespaces (Check it out!).
+- Development of Ampersand compiler can now be done with codespaces (Check it out!).
 
 ## v4.7.6 (26 february 2023)
 

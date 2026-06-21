@@ -8,7 +8,7 @@ PATTERN FormalAmpersand.Concepts
     RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,SUR]
 
     ROLE ExecEngine MAINTAINS FormalAmpersand.delUnusedConceptName
-    RULE FormalAmpersand.delUnusedConceptName LABEL "del unused ConceptName" : I[FormalAmpersand.ConceptName] |- FormalAmpersand.name~;FormalAmpersand.name
+    RULE FormalAmpersand.delUnusedConceptName LABEL "del unused ConceptName" : I[FormalAmpersand.ConceptName] |- FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName]~;FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName]
     MEANING "A ConceptName without Concept will be removed."
     VIOLATION ( TXT "{EX} DelAtom;FormalAmpersand.ConceptName;", SRC I )
     

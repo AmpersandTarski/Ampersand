@@ -2,11 +2,11 @@
 
 <!-- Purpose -->
 
-An interface is a component of an information system that exposes functionality and data from a [context](./syntax-of-ampersand#the-context-statement), to let users or information systems interact by creating, reading, updating, and deleting data.
+An interface is a component of an information system that exposes functionality and data from a [context](./syntax-of-ampersand#the-context-statement), to let users or other information systems interact by creating, reading, updating, and deleting data.
 
 ## Description
 
-An interface is a component of an information system. Its life starts when it is deployed and ends when it is pulled back. A typical instance is a user interface based on HTML-CSS that runs in a browser. But an application program interface \(API\) that serves other computers with web interfaces is a perfectly valid instance as well.
+The life of an interface starts when it is deployed and ends when it is pulled back. A typical instance is a user interface based on HTML-CSS that runs in a browser. But an application program interface \(API\) that serves other computers with web interfaces is a perfectly valid instance as well.
 
 The definition of an interface specifies which data is presented to which users. For every different use of the system a different interface can be defined. This may lead to a substantial amount of interfaces for large and complex systems. However, one device will show one interface only at any given moment in time.
 
@@ -190,7 +190,7 @@ We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note th
 
 ### Your own layout and your own widgets \(HTML and CSS\)
 
-You don't have to put up with the [Ampersand built-in layout options](./syntax-of-ampersand#layout-of-interfaces) if they don't suit your purpose. You can change most anything by including your own code snippets. \(to be done...\).
+You don't have to put up with the [Ampersand built-in layout options](./syntax-of-ampersand#layout-of-interfaces) if they don't suit your purpose. You can change most anything by writing your own HTML templates: a **custom BOX template** controls the layout of a box, while a **custom VIEW template** controls how a single atom is displayed. You drop the template file in your project's `templates/` folder and reference it from your script (`BOX<yourtemplate>` or a `HTML TEMPLATE` clause in a `VIEW`). See [Creating Custom BOX Templates](../../prototype/guides/creating-custom-box-templates) and [Creating Custom VIEW Templates](../../prototype/guides/creating-custom-view-templates).
 
 ## CRUD {#CRUD}
 
@@ -268,13 +268,10 @@ A top-level Update or Create are common in my own scripts, e.g. to create an ove
 
 Motivations for CRUD-functionality are found in the [GitHub discussions on CRUD](https://github.com/AmpersandTarski/Ampersand/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Acrud+) functionality.
 
-## Using an interface
+## Creating Custom BOX Templates
 
-On the user screen each atom is displayed in some form as data. If an interface exists for that atom, that is shown to the user as a hyperlink to which you can navigate.
+The Prototype Framework documentation contains detailed reference material on the built-in BOX templates (including `BOX <PROPBUTTON>`) and a guide for creating your own custom templates. See:
 
-When running an application in your browser, you are watching one user interface at any given moment in time. Each hyperlink on your screen represents an atom to which some interface applies. To navigate to that user interface, you click on the hyperlink. You will see the interface being applied solely to the atom you just clicked. To determine the atom\(s\) to which an interface applies, each interface has an _interface term_.
-
-The next sections contain two examples:
-
-- a [client interface](../examples#interfaces-example-client) to allow clients of a web shop to change their name and address and show them status information of their orders;
-- a [login interface](../examples#interfaces-example-login) to demonstrate how to get different interface structures under varying conditions.
+- [Built-in BOX Templates](../../prototype/reference-material/built-in-box-templates) — reference for `PROPBUTTON` and other specialized templates
+- [Creating Custom BOX Templates](../../prototype/guides/creating-custom-box-templates) — step-by-step guide for building new templates
+- [Creating Custom VIEW Templates](../../prototype/guides/creating-custom-view-templates) — guide for building VIEW HTML templates with the rendering pipeline explained
