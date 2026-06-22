@@ -1,0 +1,20 @@
+CONTEXT LongObjectId IN ENGLISH
+{- Regression test for OBJECT atom-identity shortening.
+
+   LongObjectId.xlsx populates `label` with one Thing whose identity is 300 characters long.
+   Thing has TType OBJECT, so the compiler must shorten that identity to 254 characters
+   (<first 243 chars>_<10 hex chars of sha1(id)>, see shortenObjectId / Atom::setId). Without
+   shortening the 300-char id would not fit the VARCHAR(255) column and `ampersand validate`
+   would fail when it populates MariaDB. The rules below force the populated (shortened) Thing
+   identity through the generated SQL, so validate also checks Haskell-vs-SQL agreement on it. -}
+
+REPRESENT Thing TYPE OBJECT
+REPRESENT Name TYPE ALPHANUMERIC
+
+RELATION label[Thing*Name] [UNI]
+INCLUDE "LongObjectId.xlsx"
+
+RULE labelTotalOnPopulated : I[Thing] |- label;label~
+MEANING "Every Thing that occurs in the population has a label."
+
+ENDCONTEXT
