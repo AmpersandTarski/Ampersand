@@ -1813,6 +1813,15 @@ safePSingleton2AAtomVal ci c val =
   where
     typ = reprType ci c
 
+-- | Build the atom value for an OBJECT identity. The textual id is first shortened to stay
+--   unique within 254 characters (see 'shortenObjectId'); the hash is taken over the shortened
+--   text so that equal values share a hash. This is the single point where OBJECT identities are
+--   materialised, analogous to the runtime framework's Atom::setId.
+mkObjectAtomVal :: TType -> Text -> AAtomValue
+mkObjectAtomVal typ str = AAVString (abs . hash $ s) typ s
+  where
+    s = shortenObjectId str
+
 -- SJC: Note about this code:
 -- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError
 -- Ideally, this module would import Ampersand.Input.ADL1.CtxError
@@ -1848,7 +1857,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             BigAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
             HugeAlphanumeric -> Right (AAVString (abs . hash $ str) typ str)
             Password -> Right (AAVString (abs . hash $ str) typ str)
-            Object -> Right (AAVString (abs . hash $ str) typ str)
+            Object -> Right (mkObjectAtomVal typ str)
             _ -> case mval of
               Nothing -> Left (message o str)
               Just x -> unsafePAtomVal2AtomValue typ mCpt x
@@ -1867,7 +1876,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
             Integer -> Left (message o str)
             Float -> Left (message o str)
             TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Right (AAVString (abs . hash $ str) typ str)
+            Object -> Right (mkObjectAtomVal typ str)
         XlsxString o str ->
           case typ of
             Alphanumeric -> Right (AAVString (abs . hash $ str) typ str)
@@ -1902,7 +1911,7 @@ unsafePAtomVal2AtomValue typ mCpt pav =
               Just r -> Right (AAVFloat typ r)
               Nothing -> Left (message o str)
             TypeOfOne -> Left "ONE has a population of it's own, that cannot be modified"
-            Object -> Right (AAVString (abs . hash $ str) typ str)
+            Object -> Right (mkObjectAtomVal typ str)
         ScriptInt o i ->
           case typ of
             Alphanumeric -> Left (message o i)

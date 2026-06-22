@@ -29,8 +29,9 @@ data TestResult = TestResult
 doAllQuickCheckPropertyTests :: (HasLogFunc env) => RIO env Bool
 doAllQuickCheckPropertyTests =
   whileSuccess
-    [ doRoundtripTest
-    -- More tests can be inserted here
+    [ doRoundtripTest,
+      doObjectIdShorteningTest
+      -- More tests can be inserted here
     ]
   where
     whileSuccess :: (HasLogFunc env) => [RIO env TestResult] -> RIO env Bool
@@ -68,6 +69,39 @@ doRoundtripTest = do
           maxShrinks = 50,
           chatty = True
         }
+
+-- | Known-answer test for OBJECT atom-identity shortening. This pins 'shortenObjectId' to the
+--   exact same algorithm as the runtime framework (PrototypeFramework, Atom::setId, OBJECT case),
+--   using the shared vector "a" x 300 -> "a" x 243 <> "_003ef1ba9e". If either side diverges, the
+--   test suite fails. ('ampersand validate' only checks Haskell-vs-SQL agreement within the
+--   compiler, so it cannot catch a hash-digit mismatch against the PHP side; this test does.)
+doObjectIdShorteningTest :: RIO env TestResult
+doObjectIdShorteningTest = do
+  qcResult <- liftIO . quickCheckWithResult stdArgs $ once (conjoin checks)
+  pure
+    TestResult
+      { qcPropName = "Object-id shortening matches the cross-repo contract.",
+        qcIsSuccess = isSuccess qcResult,
+        qcMessage = ["shortenObjectId must stay identical to PrototypeFramework Atom::setId (OBJECT case)."],
+        qcQuickCheckResult = qcResult
+      }
+  where
+    -- Shared known-answer vector with the runtime framework's PHP unit test.
+    knownInput = T.replicate 300 "a"
+    knownExpected = T.replicate 243 "a" <> "_003ef1ba9e"
+    checks :: [Property]
+    checks =
+      [ counterexample "known-answer vector" (shortenObjectId knownInput === knownExpected),
+        counterexample "short id kept verbatim" (shortenObjectId "plain-id" === "plain-id"),
+        counterexample "254 chars kept verbatim" (shortenObjectId (T.replicate 254 "a") === T.replicate 254 "a"),
+        counterexample "result within 254 chars" (T.length (shortenObjectId knownInput) === 254),
+        counterexample
+          "idempotent on shortened result"
+          (shortenObjectId (shortenObjectId knownInput) === shortenObjectId knownInput),
+        counterexample
+          "distinct long ids stay distinct"
+          (shortenObjectId (T.replicate 260 "x" <> "AAA") =/= shortenObjectId (T.replicate 260 "x" <> "BBB"))
+      ]
 
 prop_parserRoundtrip :: P_Context -> Bool
 prop_parserRoundtrip pCtx =

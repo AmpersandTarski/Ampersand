@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.6.0
+version:        5.6.1
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -247,6 +247,9 @@ extra-source-files:
     testing/Travis/testcases/Parsing/shouldSucceed/Issue960.adl
     testing/Travis/testcases/Parsing/shouldSucceed/Issue980.adl
     testing/Travis/testcases/Parsing/shouldSucceed/testinfo.yaml
+    testing/Travis/testcases/Parsing/xlsxLongObjectId/LongObjectId.adl
+    testing/Travis/testcases/Parsing/xlsxLongObjectId/LongObjectId.xlsx
+    testing/Travis/testcases/Parsing/xlsxLongObjectId/testinfo.yaml
     testing/Travis/testcases/Parsing/xlsxParsing/testinfo.yaml
     testing/Travis/testcases/Preprocessor/includes/PreprocTest.adl
     testing/Travis/testcases/Preprocessor/includes/PreprocTestPopulation.adl
@@ -440,7 +443,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
