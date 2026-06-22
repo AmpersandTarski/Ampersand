@@ -17,11 +17,15 @@
 --   * @POST \/check@    {script}    — type-check a full ADL script
 --   * @POST \/translate@{script,term} — type-check a single term in the script's context
 --   * @POST \/fspec@    {dump}      — build the FSpec twin from an Atlas population dump (cap 1)
+--   * @POST \/import@   {dump}      — reconstruct an .adl script from an Atlas population dump (workstream A)
 module Ampersand.Commands.Serve (runServe) where
 
 import Ampersand.Basics
+import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.Daemon.Parser (parseProject)
 import Ampersand.Daemon.Types (Load (..), Severity (..), isMessage)
+import Ampersand.Input.ADL1.CtxError (Guarded (..))
+import Ampersand.Input.AtlasImport (parseJsonFile)
 import Ampersand.Misc.HasClasses
 import Ampersand.Types.Config (ExtendedRunner, HasRunner)
 import qualified Data.Aeson as JSON
@@ -32,6 +36,7 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified RIO.ByteString.Lazy as BL
 import RIO.Directory (removeFile)
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import System.Environment (lookupEnv)
 import System.IO (openTempFile)
@@ -53,7 +58,7 @@ runServe = do
   mPort <- liftIO $ lookupEnv "AMPERSAND_SERVE_PORT"
   let port = fromMaybe 8080 (mPort >>= readMaybe) :: Int
   logInfo $ "Ampersand serve: listening on http://0.0.0.0:" <> display port
-  logInfo "  GET /health | POST /check {script} | POST /translate {script,term} | POST /fspec {dump}"
+  logInfo "  GET /health | POST /check {script} | POST /translate {script,term} | POST /fspec {dump} | POST /import {dump}"
   liftIO $ Warp.run port (waiApp env)
 
 waiApp :: (ServeEnv env) => env -> Wai.Application
@@ -65,6 +70,7 @@ waiApp env req respond = do
     ("POST", ["check"]) -> runRIO env (handleCheck body)
     ("POST", ["translate"]) -> runRIO env (handleTranslate body)
     ("POST", ["fspec"]) -> runRIO env (handleFspec body)
+    ("POST", ["import"]) -> runRIO env (handleImport body)
     _ -> pure $ jsonResp status404 (JSON.object ["error" .= ("not found" :: Text)])
   respond resp
 
@@ -105,12 +111,25 @@ handleTranslate = withDecoded $ \(TranslateReq script term) -> do
   msgs <- checkText ".adl" (spliceProbe script term)
   pure $ resultResp msgs (Just term)
 
+-- | Atlas-import (workstream A): reconstruct an .adl script from an Atlas
+--   population dump. Reuses the compiler's AtlasImport (JSON -> P_Context) and
+--   the pretty-printer (showP). This makes the daemon the single compiler
+--   service for both term-checking (B) and the Atlas-editor round-trip (A).
+handleImport :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
+handleImport = withDecoded $ \(FspecReq dump) -> do
+  result <- withTmpScript ".json" dump parseJsonFile
+  pure $ case result of
+    Checked ctx _ ->
+      jsonResp status200 (JSON.object ["ok" .= True, "adl" .= showP ctx])
+    Errors errs ->
+      jsonResp status200 (JSON.object ["ok" .= False, "diagnostics" .= map tshow (NE.toList errs)])
+
 -- Core ----------------------------------------------------------------------
 
--- | Write @content@ to a unique temp file with extension @ext@, run the
---   daemon parse pipeline on it, and return the resulting messages.
-checkText :: (ServeEnv env) => String -> Text -> RIO env [Load]
-checkText ext content =
+-- | Write @content@ to a unique temp file with extension @ext@, run @action@
+--   on it, and clean up the file afterwards.
+withTmpScript :: String -> Text -> (FilePath -> RIO env a) -> RIO env a
+withTmpScript ext content =
   bracket
     ( do
         (fp, h) <- liftIO $ openTempFile "." ("ampersand-serve" <> ext)
@@ -119,7 +138,12 @@ checkText ext content =
         pure fp
     )
     (\fp -> removeFile fp `catchAny` const (pure ()))
-    (\fp -> filter isMessage . fst <$> parseProject fp)
+
+-- | Type-check @content@ (written as a @ext@ file) via the daemon parse
+--   pipeline and return the resulting messages.
+checkText :: (ServeEnv env) => String -> Text -> RIO env [Load]
+checkText ext content =
+  withTmpScript ext content (\fp -> filter isMessage . fst <$> parseProject fp)
 
 -- | Splice the term into the script as a probe rule, just before the last
 --   @ENDCONTEXT@, so the type-checker reports any error in the term in context.
