@@ -364,6 +364,15 @@ To extend them, follow the liatrio folder layout (common, requests, scenarios, s
 **What does the architecture of a generated application look like?**
 The big picture before you extend it: Ampersand generates a monolithic web application with a stateful database service and a stateless service of interfaces, fronted by an API and an MVC-style front-end. [Learn more →](../reference-material/architecture-of-an-ampersand-application.md)
 
+**Where does the code of a rule end up — Angular, PHP, or the database?**
+None of them as code: the compiler turns each rule into a SQL violation query shipped as data in `generics/conjuncts.json`, which the generic PHP back-end runs against MariaDB. Angular only displays the result. [Learn more →](../reference-material/from-rules-to-running-code.md)
+
+**What are conjuncts and quads, and why does the compiler produce them?**
+A conjunct is the smallest queryable piece of a rule's violation condition, carrying the SQL that finds violations; a quad wires each relation to the conjuncts to recheck when that relation changes. [Learn more →](../reference-material/from-rules-to-running-code.md)
+
+**How does an invariant rule differ from a signal rule at runtime?**
+They share the same violation SQL but differ in outcome: an invariant violation rolls back the transaction, while a signal violation is shown to its assigned role as work to do. [Learn more →](../reference-material/from-rules-to-running-code.md)
+
 **What design principles underlie the Ampersand language?**
 These principles guide what a "good" contribution looks like: Ampersand favours constraints over obligations, reliable relation-algebraic semantics, automated design, and working systems over comprehensive documentation, supporting incremental development. [Learn more →](../reference-material/design-considerations.md)
 
