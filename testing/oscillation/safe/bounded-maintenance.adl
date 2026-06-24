@@ -1,0 +1,22 @@
+CONTEXT BoundedMaintenance IN ENGLISH
+-- Negative test for the ⊆-containment certificate (§6.5). `markFirst` sets
+-- `firstOf` only for an item that is IN a bag and has no predecessor — a subset
+-- of the region `clearWhenEmpty` allows (`itemIn~;V`, i.e. bags that have items).
+-- So inserts land inside the allow-region and deletes land outside it; `firstOf`
+-- converges even though the insert-region and the allow-region are NOT equal,
+-- only `⊆`. This is the Sequence first/last-vs-emptiness shape, and it MUST stay
+-- silent — equality-based certification alone would (wrongly) flag it.
+
+RELATION itemIn[Item*Bag] [UNI]
+RELATION nextIn[Item*Item] [UNI,INJ,IRF]
+RELATION firstOf[Bag*Item]
+
+ROLE ExecEngine MAINTAINS markFirst
+RULE markFirst : itemIn - (nextIn~;itemIn) |- firstOf~
+VIOLATION ( TXT "{EX} InsPair;firstOf;Bag;", TGT I, TXT ";Item;", SRC I )
+
+ROLE ExecEngine MAINTAINS clearWhenEmpty
+RULE clearWhenEmpty : firstOf |- itemIn~;V
+VIOLATION ( TXT "{EX} DelPair;firstOf;Bag;", SRC I, TXT ";Item;", TGT I )
+
+ENDCONTEXT

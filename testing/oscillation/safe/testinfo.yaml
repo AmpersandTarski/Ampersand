@@ -11,6 +11,7 @@
 #   * enforce-assignment.adl    a real `ENFORCE r := expr` statement   (§6.5 refinement b)
 #   * delatom-cleanup.adl       DelAtom orphan cleanup (self-cycle)    (§6.5 refinement a)
 #   * guarded-maintenance.adl   a deleter guarded by a composition     (§6.5 refinement b)
+#   * bounded-maintenance.adl   insert-region ⊆ allow-region (not =)   (§6.5 ⊆-extension)
 testCmds:
   - command: ampersand check --fail-on-oscillation
     exitcode: 0
