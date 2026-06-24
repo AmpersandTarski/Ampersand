@@ -1,0 +1,10 @@
+CONTEXT Issue1533
+
+-- This test succeeds if a prototype is generated and the interface `Landenlijst` displays as an empty box.
+-- I'm not sure whether this test is in the right directory.
+
+RELATION editLand[SESSION*LandCode] [UNI]
+
+INTERFACE Landenlijst : "_SESSION"[SESSION];editLand BOX []
+
+ENDCONTEXT
