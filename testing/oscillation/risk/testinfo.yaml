@@ -1,0 +1,10 @@
+# Regression tests for the oscillation-risk analysis (Ampersand.FSpec.Oscillation):
+# the MUST-OSCILLATE cases. Each script here contains a genuine non-monotone
+# ExecEngine cycle, so `--fail-on-oscillation` must make the run fail with the
+# dedicated oscillation exit code (45). If a future change silences any of these,
+# CI turns red — that is exactly the missed-oscillation regression we must catch.
+#   * insdel-cycle.adl        delete-driven: an InsPair/DelPair pair on one relation
+#   * create-merge-cycle.adl  create-driven: an InsAtom create vs a MrgAtoms merge (FC5)
+testCmds:
+  - command: ampersand check --fail-on-oscillation
+    exitcode: 45

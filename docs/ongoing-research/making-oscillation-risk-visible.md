@@ -456,28 +456,34 @@ self-loop disappears, exactly as it should.
 
 ### 6.4 Validation
 
-Seven scripts were checked with `stack exec ampersand -- check`. The first two are the guide's
-own minimal reproductions; the rest are crafted to probe the refinement and the §6.5 certificate
-and live in `testing/oscillation/` with a `testinfo.yaml`, so the regression suite type-checks
-them on every run.
+The two guide reproductions and nine purpose-built fixtures probe the analysis. The fixtures
+live in two sibling directories under `testing/oscillation/` whose `testinfo.yaml` **asserts the
+verdict via the exit code** (see the box below): `risk/` expects exit 45 (a flagged oscillation),
+`safe/` expects exit 0 (certified convergent).
 
 | Script | Automated rules | Expected | Result |
 | --- | --- | --- | --- |
 | `docs/guides/oscillations/oscillatie-buggy.adl` | `maakOrganisme`, `uniekeCode`, `uniekeNaam` | risk | **risk** — one SCC of all three, naming the `voorkeursNaam`/`eppoCode` collisions |
 | `docs/guides/oscillations/oscillatie-fixed.adl` | same names, code-driven creation + `maakSynoniem` | risk (see note) | **risk** — same SCC |
-| `testing/oscillation/mono-cycle.adl` | two insert-only rules in a cycle | no risk | **silent** |
-| `testing/oscillation/merge-alone.adl` | one `MrgAtoms` uniqueness rule | no risk | **silent** |
-| `testing/oscillation/insdel-cycle.adl` | an `InsPair`/`DelPair` pair on one relation | risk | **risk** — names the `light` collision |
-| `testing/oscillation/delete-only.adl` | a delete-only cycle on `p`/`q` | no risk | **silent** (§6.5, refinement a) |
-| `testing/oscillation/functional-maintenance.adl` | an `R := D` pair and a complementary-guard toggle | no risk | **silent** (§6.5, refinement b) |
+| `testing/oscillation/risk/insdel-cycle.adl` | an `InsPair`/`DelPair` pair on one relation | risk (exit 45) | **risk** — names the `light` collision |
+| `testing/oscillation/risk/create-merge-cycle.adl` | an `InsAtom` create vs a `MrgAtoms` merge (FC5) | risk (exit 45) | **risk** — create↔merge SCC |
+| `testing/oscillation/safe/mono-cycle.adl` | two insert-only rules in a cycle | no risk (exit 0) | **silent** |
+| `testing/oscillation/safe/merge-alone.adl` | one `MrgAtoms` uniqueness rule | no risk (exit 0) | **silent** |
+| `testing/oscillation/safe/delete-only.adl` | a delete-only cycle on `p`/`q` | no risk (exit 0) | **silent** (§6.5, refinement a) |
+| `testing/oscillation/safe/delatom-cleanup.adl` | a `DelAtom` orphan-cleanup self-cycle | no risk (exit 0) | **silent** (§6.5, refinement a) |
+| `testing/oscillation/safe/functional-maintenance.adl` | an `R := D` pair and a complementary-guard toggle | no risk (exit 0) | **silent** (§6.5, refinement b) |
+| `testing/oscillation/safe/enforce-assignment.adl` | a real `ENFORCE r := expr` statement | no risk (exit 0) | **silent** (§6.5, refinement b) |
+| `testing/oscillation/safe/guarded-maintenance.adl` | a deleter guarded by a composition | no risk (exit 0) | **silent** (§6.5, refinement b) |
 
-> **What the regression actually checks.** `testinfo.yaml` runs `ampersand check` and asserts
-> `exitcode: 0`. Oscillation findings are *warnings*, which do not change the exit code, so the
-> suite currently guarantees only that each fixture **type-checks** — it does **not** assert the
-> risk/silent verdict in the "Result" column. Those verdicts were verified by hand for this
-> report. A verdict-level assertion (running the exposed `oscillationWarnings` on each fixture in
-> an HSpec test and comparing against the expected set) is the natural way to lock the table in;
-> it is noted as an open item in §7.
+> **How the regression asserts the verdict.** Oscillation findings are *warnings*, which do not
+> change the exit code, so a plain `ampersand check` (exit 0 on any warning) cannot tell a flagged
+> script from a silent one. The `--fail-on-oscillation` flag closes this: when set, a detected
+> oscillation risk exits with the dedicated code **45** (`OscillationRiskDetected`), while a clean
+> run still exits 0. Each directory's `testinfo.yaml` runs `ampersand check --fail-on-oscillation`
+> and asserts the matching code (45 in `risk/`, 0 in `safe/`). So a change that **silences a real
+> oscillation** (a `risk/` script dropping to exit 0) or **introduces a false positive** (a `safe/`
+> script rising to exit 45) now fails the regression — the verdict, not just type-checking, is
+> machine-checked. The flag is off by default, so normal use is unaffected.
 
 The two negative cases (`mono-cycle`, `merge-alone`) confirm the analysis is not the trivial
 "flag every cycle": the monotone cycle and the standalone merge rule are both correctly left
@@ -529,13 +535,13 @@ active roles feed each other), `D` is not invariant, the certificate does not ap
 and the risk is reported as before. This is exactly local stratification (§1.4, §3.4):
 `R` sits in its own stratum, defined from a lower, invariant one.
 
-*Validation.* Two regression scripts were added under `testing/oscillation/`:
-`delete-only.adl` (a delete-only cycle — silent) and `functional-maintenance.adl`
-(an ENFORCE-style `R := D` pair and a complementary-guard toggle — silent). The
-`insdel-cycle`, `mono-cycle` and `merge-alone` verdicts are unchanged. On the RAP4
-source the oscillation warnings drop from nine to three: the two genuine mutually-recursive
-risks (the `accPersonRef` definition cycle and the session-role web) are still flagged,
-together with one residual (the `Sequence` first/last/empty trio, see §7).
+*Validation.* The regression fixtures (§6.4) now assert the verdict via the exit code:
+`risk/` (the `insdel` and create-merge cycles) must exit 45, `safe/` (mono-cycle, merge-alone,
+delete-only, delatom-cleanup, functional-maintenance, enforce-assignment, guarded-maintenance)
+must exit 0. All eleven pass. On the RAP4 source the oscillation warnings drop from nine to
+three: the two genuine mutually-recursive risks (the `accPersonRef` definition cycle and the
+session-role web) are still flagged, together with one residual (the `Sequence` first/last/empty
+trio, see §7).
 
 *What this is not.* It is not the full EGD-aware weak-acyclicity check of §4; it
 certifies the `R := D` shape (which subsumes every `ENFORCE :=`, the `Determine/Remove`
@@ -568,11 +574,13 @@ relational *containment* reasoning (`D_insert ⊆ D_delete` rather than `D_inser
 4. **Wording and locale.** The warning text is English and points to
    `docs/guides/oscillations/README.md`. Is that the right destination, and is English right
    given the FC5 audience?
-5. **Verdict-level regression (assert, don't just type-check).** The `testing/oscillation/`
-   suite only asserts `exitcode: 0` (§6.4), so a change that flips a fixture's risk/silent
-   verdict — including a regression that *silences a real oscillation* — would pass CI. Wire an
-   HSpec test that calls the exposed `oscillationWarnings` on each fixture and compares the
-   reported rule sets against an expected table, so the validation table is machine-checked.
+5. **Verdict-level regression — done (2026-06-24).** The `testing/oscillation/` suite no longer
+   merely type-checks: the `--fail-on-oscillation` flag (exit code 45) lets the `risk/` and
+   `safe/` directories assert each fixture's verdict through the exit code (§6.4). A change that
+   silences a real oscillation or introduces a false positive now fails CI. *Remaining option:* a
+   finer HSpec test on the exposed `oscillationWarnings` could additionally assert *which rules*
+   are named in each warning, not just that a warning occurs — useful if the report wording or
+   grouping is ever refactored.
 
 ---
 

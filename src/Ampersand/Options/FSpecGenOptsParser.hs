@@ -22,6 +22,7 @@ fSpecGenOptsParser isForDaemon =
     <*> trimXLSXCellsP
     <*> knownRecipeP
     <*> allowInvariantViolationsP
+    <*> failOnOscillationP
   where
     rootsP :: Parser Roots
     rootsP =
@@ -152,6 +153,18 @@ fSpecGenOptsParser isForDaemon =
         )
         mempty
 
+    failOnOscillationP :: Parser Bool
+    failOnOscillationP =
+      boolFlags
+        False
+        "fail-on-oscillation"
+        ( "fail (exit code 45) when the ExecEngine rules carry an oscillation "
+            <> "risk. Off by default (the risk is reported as a warning). Intended "
+            <> "for regression tests that assert the oscillation verdict via the "
+            <> "exit code."
+        )
+        mempty
+
 defFSpecGenOpts :: NonEmpty FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl =
   FSpecGenOpts
@@ -162,5 +175,6 @@ defFSpecGenOpts rootAdl =
       xdefaultCrud = (True, True, True, True),
       xtrimXLSXCells = True,
       xrecipe = Standard,
-      xallowInvariantViolations = False
+      xallowInvariantViolations = False,
+      xfailOnOscillation = False
     }

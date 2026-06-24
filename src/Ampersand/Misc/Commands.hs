@@ -22,6 +22,7 @@ import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
 {-getProgName,-}
 import Ampersand.FSpec (FSpec)
+import Ampersand.FSpec.Oscillation (oscillationWarnings)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
@@ -399,7 +400,12 @@ doOrDie theAction = do
   case mFSpec of
     Checked a ws -> do
       mapM_ (logWarn . displayShow) ws
-      theAction a
+      failOnOsc <- view failOnOscillationL
+      case oscillationWarnings a of
+        oscWs
+          | failOnOsc && not (null oscWs) ->
+              exitWith . OscillationRiskDetected $ concatMap (T.lines . tshow) oscWs
+          | otherwise -> theAction a
     Errors err ->
       exitWith
         . NoValidFSpec

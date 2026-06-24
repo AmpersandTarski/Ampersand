@@ -40,6 +40,8 @@ data AmpersandExit
     InvalidSQLExpression [Text]
   | -- | There are violations of one or more invariants
     InvariantRuleViolated [Text]
+  | -- | The ExecEngine rules carry an oscillation risk and --fail-on-oscillation is set.
+    OscillationRiskDetected [Text]
   | -- | There is no configuration file.
     NoConfigurationFile [Text]
   | -- | While running the daemon, somehow the list of files to watch is empty.
@@ -87,6 +89,8 @@ info x =
       (SE.ExitFailure 30, "ERROR: Invalid SQL Expression" : map ("  " <>) msg)
     InvariantRuleViolated msg ->
       (SE.ExitFailure 40, "ERROR: No prototype generated because of rule violations." : map ("  " <>) msg)
+    OscillationRiskDetected msg ->
+      (SE.ExitFailure 45, "ERROR: oscillation risk detected (--fail-on-oscillation)." : map ("  " <>) msg)
     -- Exit code 50 can be reused. Formerly used for FailedToInstallComposer (php dependencies for prototype framework)
     PHPExecutionFailed msg ->
       (SE.ExitFailure 60, msg)
