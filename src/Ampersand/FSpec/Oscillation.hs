@@ -110,7 +110,7 @@ oscillationWarnings fSpec =
   [ mkOscillationWarning
       (rrfps (NE.head comp))
       (map fullName (NE.toList comp))
-      [ neFrom e <> "'s repair deletes or merges " <> neShared e <> ", which is read by " <> neTo e
+      [ neFrom e <> "'s repair deletes or merges relation " <> neShared e <> ", which is read by " <> neTo e
         | e <- negEdgesOf comp
       ]
     | comp <- riskyComponents
@@ -160,11 +160,68 @@ oscillationWarnings fSpec =
         sccToRules (G.CyclicSCC is) = NE.nonEmpty [r | (i, r) <- indexed, i `elem` is]
         sccToRules (G.AcyclicSCC _) = Nothing -- no cycle ⇒ guaranteed to terminate
 
-    -- A component is risky iff it contains at least one internal negative edge.
+    -- A component is risky iff it can grow the population (otherwise it only
+    -- ever shrinks and terminates by well-founded descent — the delete-only dual
+    -- of Knaster–Tarski) AND it still has an internal negative edge once the
+    -- provably-convergent (functionally maintained) relations are pruned.
     riskyComponents :: [NE.NonEmpty Rule]
-    riskyComponents = [comp | comp <- components, not (null (negEdgesOf comp))]
+    riskyComponents = [comp | comp <- components, isRisky comp]
 
-    -- Internal negative edges of a component, rendered for the report.
+    isRisky :: NE.NonEmpty Rule -> Bool
+    isRisky comp = hasPositiveWrite comp && not (null (negEdgesOf comp))
+
+    -- Rule indices that make up a component.
+    idxInComp :: NE.NonEmpty Rule -> [Int]
+    idxInComp comp = [i | (i, r) <- indexed, r `elem` comp]
+
+    writesOf :: Int -> [Write]
+    writesOf i = fromMaybe [] (lookup i writesByIdx)
+
+    -- All relation names written (any sign) by the rules of a component.
+    writtenRelsOf :: NE.NonEmpty Rule -> Set.Set Text
+    writtenRelsOf comp =
+      Set.fromList [nm | i <- idxInComp comp, WriteRel _ nm _ _ <- writesOf i]
+
+    -- Does any rule in the component perform a monotone (insert/grow) write? A
+    -- component without one only deletes/merges, so the population strictly
+    -- decreases and the repair loop always terminates — it is never a risk.
+    hasPositiveWrite :: NE.NonEmpty Rule -> Bool
+    hasPositiveWrite comp =
+      not (null [() | i <- idxInComp comp, WriteRel Pos _ _ _ <- writesOf i])
+
+    -- Relations the component maintains *functionally*: written by at least one
+    -- inserter and one deleter, where every writer pins the relation to the SAME
+    -- relation-free definition D, and D is invariant within the component (no
+    -- component rule writes a relation occurring in D). Such a relation is
+    -- computed as @R := D@: the inserters force @R ⊇ D@, the deleters force
+    -- @R ⊆ D@, and because D never changes the two bounds meet in one pass. The
+    -- opposing writes on it therefore cannot oscillate, so its triggering edges
+    -- are pruned before the risk test. This certifies ENFORCE-style maintenance
+    -- and complementary-guard toggles as convergent at compile time, while the
+    -- invariance condition keeps genuine mutual recursion (a relation defined
+    -- from another relation that the same component rewrites) correctly flagged.
+    benignRelsOf :: NE.NonEmpty Rule -> Set.Set Text
+    benignRelsOf comp =
+      Set.fromList
+        [ rnm
+          | rnm <- Set.toList written,
+            let writers =
+                  [(Pos, ruleAt i) | i <- is, hasWrite Pos rnm i]
+                    <> [(Neg, ruleAt i) | i <- is, hasWrite Neg rnm i],
+            any ((== Pos) . fst) writers,
+            any ((== Neg) . fst) writers,
+            Just (d : rest) <- [traverse (\(s, r) -> solveBound s rnm r) writers],
+            all (eqExpr d) rest,
+            rnm `Set.notMember` relNames d,
+            Set.null (relNames d `Set.intersection` written)
+        ]
+      where
+        is = idxInComp comp
+        written = writtenRelsOf comp
+        hasWrite sgn nm i = not (null [() | WriteRel s n _ _ <- writesOf i, s == sgn, n == nm])
+
+    -- Internal negative edges of a component, with the convergent (functionally
+    -- maintained) relations pruned, rendered for the report.
     negEdgesOf :: NE.NonEmpty Rule -> [NegEdge]
     negEdgesOf comp =
       L.nubBy
@@ -172,9 +229,11 @@ oscillationWarnings fSpec =
         [ NegEdge (fullName (ruleAt i)) (fullName (ruleAt j)) shared
           | (i, j, Neg, shared) <- edges,
             ruleAt i `elem` comp,
-            ruleAt j `elem` comp
+            ruleAt j `elem` comp,
+            shared `Set.notMember` benign
         ]
       where
+        benign = benignRelsOf comp
         sameEdge a b = (neFrom a, neTo a, neShared a) == (neFrom b, neTo b, neShared b)
 
     ruleAt :: Int -> Rule
@@ -188,7 +247,7 @@ oscillationWarnings fSpec =
 --   edge sign (= the write's sign) and a description for every match.
 triggerOf :: Write -> Map.Map Relation (Set.Set Sign) -> [(Sign, Text)]
 triggerOf (WriteRel sgn nm mSrc mTgt) pol =
-  [ (sgn, "relation " <> nm)
+  [ (sgn, nm)
     | (rel, signs) <- Map.toList pol,
       matchesRel rel,
       sgn `Set.member` signs
@@ -325,3 +384,72 @@ relationPolarities expr =
       EMp1 {} -> []
       where
         bothSigns x = go Pos x <> go Neg x
+
+-- * Convergence certificate (functional maintenance)
+
+-- | Recursively drop every @EBrk@, so two expressions that differ only in
+--   bracketing compare equal.
+unBrkDeep :: Expression -> Expression
+unBrkDeep e = case e of
+  EBrk e' -> unBrkDeep e'
+  EEqu (a, b) -> EEqu (unBrkDeep a, unBrkDeep b)
+  EInc (a, b) -> EInc (unBrkDeep a, unBrkDeep b)
+  EIsc (a, b) -> EIsc (unBrkDeep a, unBrkDeep b)
+  EUni (a, b) -> EUni (unBrkDeep a, unBrkDeep b)
+  EDif (a, b) -> EDif (unBrkDeep a, unBrkDeep b)
+  ELrs (a, b) -> ELrs (unBrkDeep a, unBrkDeep b)
+  ERrs (a, b) -> ERrs (unBrkDeep a, unBrkDeep b)
+  EDia (a, b) -> EDia (unBrkDeep a, unBrkDeep b)
+  ECps (a, b) -> ECps (unBrkDeep a, unBrkDeep b)
+  ERad (a, b) -> ERad (unBrkDeep a, unBrkDeep b)
+  EPrd (a, b) -> EPrd (unBrkDeep a, unBrkDeep b)
+  EKl0 e' -> EKl0 (unBrkDeep e')
+  EKl1 e' -> EKl1 (unBrkDeep e')
+  EFlp e' -> EFlp (unBrkDeep e')
+  ECpl e' -> ECpl (unBrkDeep e')
+  EDcD {} -> e
+  EDcI {} -> e
+  EBin {} -> e
+  EDcV {} -> e
+  EMp1 {} -> e
+
+-- | Equality of expressions, ignoring bracketing.
+eqExpr :: Expression -> Expression -> Bool
+eqExpr a b = unBrkDeep a == unBrkDeep b
+
+-- | The names of the relations occurring in an expression.
+relNames :: Expression -> Set.Set Text
+relNames = Set.map fullName . bindedRelationsIn
+
+-- | Solve a writer of relation @rnm@ for the relation-free definition @D@ that it
+--   pins @rnm@ to, or 'Nothing' when the rule is not of a shape we can certify.
+--   The caller certifies @rnm@ when every writer agrees on one relation-free,
+--   component-invariant @D@. Soundness rests on a per-pair argument: if every
+--   inserter only adds @rnm@-pairs inside @D@ and every deleter only removes
+--   @rnm@-pairs outside @D@, then no pair is ever both added and removed, so
+--   @rnm@ converges (D-pairs grow monotonically, ¬D-pairs shrink monotonically).
+--
+--     * Inserter @D |- rnm@ adds only within @D@                         ⇒ bound @D = a@.
+--     * Deleter  @a |- D@ (any antecedent, @D@ relation-free) deletes only
+--       within @a - D ⊆ ¬D@, whatever the guard @a@                      ⇒ bound @D = c@.
+--     * Deleter in the equivalent disjointness form @a |- I - rnm@ resp.
+--       @a |- -rnm@ deletes only outside @I - a@ resp. @-a@              ⇒ bound @I - a@ / @-a@.
+solveBound :: Sign -> Text -> Rule -> Maybe Expression
+solveBound sgn rnm rule =
+  case unBrkDeep (formalExpression rule) of
+    EInc (a, c) -> case sgn of
+      -- inserter @D |- rnm@  ⇒  rnm ⊇ D
+      Pos -> if isRel c then Just a else Nothing
+      Neg
+        -- deleter @a |- D@ with D relation-free  ⇒  rnm ⊆ D (guard a irrelevant)
+        | rnm `Set.notMember` relNames c -> Just c
+        -- deleter @a |- I - rnm@  ⇒  rnm ⊆ I - a
+        | EDif (i@(EDcI _), r') <- c, isRel r' -> Just (EDif (i, a))
+        -- deleter @a |- -rnm@  ⇒  rnm ⊆ -a
+        | ECpl r' <- c, isRel r' -> Just (ECpl a)
+        | otherwise -> Nothing
+    _ -> Nothing
+  where
+    isRel e = case e of
+      EDcD d -> fullName d == rnm
+      _ -> False

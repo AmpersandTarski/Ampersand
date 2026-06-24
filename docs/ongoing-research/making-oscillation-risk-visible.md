@@ -443,7 +443,63 @@ this discriminator. Stage 1 honestly reports "I cannot rule out an oscillation h
 will downgrade it to "safe". This matches the staged design and the undecidability result: a
 sound over-approximation must over-flag, and Stage 2 is where the false positive is removed.
 
+## 6.5 Stage 2 (partial) — a sound convergence certificate (2026-06-23)
+
+Two sound refinements were added to `Ampersand.FSpec.Oscillation`, both pruning
+false positives *before* the risk test of §6.1. Each is a sufficient condition for
+termination, so soundness (no missed oscillation, requirement (3)) is preserved.
+
+**(a) Delete-only components terminate.** A strongly-connected component whose
+rules perform *no* monotone (insert/grow) write only ever shrinks the population.
+The state space under set inclusion is finite and the combined repair operator is
+monotone *decreasing*, so it reaches a fixpoint by well-founded descent — the exact
+dual of the Knaster–Tarski argument that §1.4 gives for insert-only cycles. Such a
+component is no longer flagged, even though every edge in it is negative. (`MrgAtoms`
+counts as a positive write, so a component containing a merge is *not* delete-only
+and stays subject to the full test.)
+
+**(b) Functionally maintained relations converge.** A relation `R` that is written
+by at least one inserter and one deleter is *functionally maintained* when there is
+a relation-free expression `D`, **invariant within the component** (no component rule
+writes a relation occurring in `D`), such that every inserter has the form `D |- R`
+(so it only ever adds `R`-pairs inside `D`) and every deleter allows `R` exactly on
+`D` (so it only ever removes `R`-pairs outside `D`; the deleter's guard is irrelevant
+to soundness). The per-pair argument is decisive: `D`-pairs are only inserted, ¬`D`-pairs
+are only deleted, so no pair is ever both inserted and deleted and `R` converges. The
+opposing writes on such an `R` cannot oscillate, so its triggering edges are pruned.
+Deleters written in the equivalent disjointness forms `a |- I - R` and `a |- -R` are
+solved to the bounds `I - a` and `-a` respectively, so complementary-guard toggles
+(e.g. `visible := I - invisible`) are certified as well.
+
+The **invariance condition is what keeps genuine recursion flagged**: when `R`'s
+definition `D` mentions a relation that the same component also rewrites (e.g. SIAM's
+mutually-defined `accPerson`/`accPersonRef`, or the session-role web where allowed and
+active roles feed each other), `D` is not invariant, the certificate does not apply,
+and the risk is reported as before. This is exactly local stratification (§1.4, §3.4):
+`R` sits in its own stratum, defined from a lower, invariant one.
+
+*Validation.* Two regression scripts were added under `testing/oscillation/`:
+`delete-only.adl` (a delete-only cycle — silent) and `functional-maintenance.adl`
+(an ENFORCE-style `R := D` pair and a complementary-guard toggle — silent). The
+`insdel-cycle`, `mono-cycle` and `merge-alone` verdicts are unchanged. On the RAP4
+source the oscillation warnings drop from nine to three: the two genuine mutually-recursive
+risks (the `accPersonRef` definition cycle and the session-role web) are still flagged,
+together with one residual (the `Sequence` first/last/empty trio, see §7).
+
+*What this is not.* It is not the full EGD-aware weak-acyclicity check of §4; it
+certifies the `R := D` shape (which subsumes every `ENFORCE :=`, the `Determine/Remove`
+idiom, and complementary-guard toggles) but not yet patterns that need genuine
+relational *containment* reasoning (`D_insert ⊆ D_delete` rather than `D_insert = D_delete`).
+
 ## 7. Open questions for the next session
+
+0. **Containment-based maintenance (the remaining §6.5 false positive).** The
+   `Sequence` first/last/empty trio is safe for a containment reason: the first/last
+   inserter adds `seqFirstItem`/`seqLastItem` only where the sequence is non-empty,
+   which is *a subset of* the region the emptiness rule allows. The current certificate
+   requires the inserter and deleter bounds to be *equal*; extending it to a sound,
+   syntactic `⊆` check (e.g. structural sub-term containment) would certify this class
+   too. Worth doing, but it widens the proof obligation — hence deferred.
 
 1. **Bare-atom triggering (the §6.3 soundness gap).** Should Stage 1 also model the trigger
    where a freshly created atom violates a rule phrased on `I[C]`/`V` with no relation pair

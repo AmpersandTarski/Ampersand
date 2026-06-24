@@ -90,6 +90,8 @@ extra-source-files:
     outputTemplates/default.xwiki
     outputTemplates/default.zimwiki
     outputTemplates/README.md
+    testing/oscillation/delete-only.adl
+    testing/oscillation/functional-maintenance.adl
     testing/oscillation/insdel-cycle.adl
     testing/oscillation/merge-alone.adl
     testing/oscillation/mono-cycle.adl
