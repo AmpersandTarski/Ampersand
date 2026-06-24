@@ -1,4 +1,6 @@
 ﻿# Release notes of Ampersand
+## Unreleased
+- Added a regression test for [issue #1533](https://github.com/AmpersandTarski/Ampersand/issues/1533) (empty-`BOX` interface): `testing/Travis/testcases/Misc/Issue1533.adl` checks that a script with an empty `BOX []` interface compiles without type or population errors.
 ## v5.6.1
 - **Object identities are kept unique within 254 characters**: an OBJECT atom identity longer than 254 characters is now deterministically shortened to `<first 243 chars>_<10 hex chars of sha1(id)>`. This applies to every OBJECT atom (script population, `INCLUDE`d spreadsheets, and the runtime importers), so generated population never overflows the `VARCHAR(255)` database column and distinct identities stay distinct. The algorithm is byte-for-byte identical to the runtime prototype framework's `Atom::setId`, so a compile-time-imported object atom and the same atom created at runtime map to the same database row. A known-answer test pins the shared vector, and a `validate` regression test (`testing/Travis/testcases/Parsing/xlsxLongObjectId`) checks the spreadsheet importer end-to-end.
 ## v5.6.0
