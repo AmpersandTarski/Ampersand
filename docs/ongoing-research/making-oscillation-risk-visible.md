@@ -37,7 +37,7 @@ The same phenomenon — a repair loop that may never reach a fixpoint — has be
 independently in four communities. Each gives Ampersand a precise name for one facet of
 the ExecEngine.
 
-### 1.1 The ExecEngine repair loop *is* the chase
+### 1.1 The ExecEngine repair loop *extends* the chase
 
 The closest formal match is the **chase** from database dependency theory. The chase is a
 fixpoint procedure that repeatedly enforces dependencies on an instance, inserting tuples
@@ -57,6 +57,23 @@ The FC5 case is textbook: the create-rule `eppoCodeMaaktOrganisme` is an existen
 of the chase**. This matters because chase termination is the single most-studied version
 of our question, and crucially it is studied **data-independently**: the standard criteria
 guarantee termination *for every instance* [@Fagin2005DataExchange].
+
+**A caveat that shapes the whole analysis.** The match is an *extension*, not an identity:
+the chase only ever *adds* and *equates*; it never retracts. Ampersand's `DelPair`/`DelAtom`
+have "no standard analogue" (last table row) precisely because the chase has none. This
+matters because the two kinds of `{EX}` give rise to **two distinct non-termination causes**:
+
+* **create-driven** non-termination — a generating dependency (`InsAtom`/`NewStruct`, possibly
+  with `MrgAtoms`) keeps inventing fresh atoms (the FC5 loop). This is the *chase's* own
+  termination problem, and the tool for it is chase acyclicity (§3.2);
+* **delete-driven** oscillation — a `Del`/`Mrg` repair undoes what another repair created, so
+  the combined operator is non-monotone (the `insdel` loop, RAP's role web). The chase *cannot*
+  exhibit this; the right tool is the **monotonicity/stratification** view of §1.4 / §3.4.
+
+Keeping these apart matters later: the implemented Stage 1 (§6) and its convergence certificate
+(§6.5) target the *delete-driven* class, while the create-driven class is the subject of the
+still-future weak-acyclicity work (§4, §7). Conflating them is the easiest way to misread what
+the analysis does and does not guarantee.
 
 ### 1.2 The ExecEngine is also an active (ECA) rule system
 
@@ -136,6 +153,15 @@ signatures:
 A useful analysis must detect the cycle *and* its polarity, because a purely positive
 (monotone) cycle still converges by Knaster–Tarski and must **not** be flagged — otherwise
 the analysis drowns the user in false alarms.
+
+> **Scope of the soundness guarantee (as currently implemented).** Requirement (3) — never
+> miss a real oscillation — is met **for the delete-driven class** (§1.1): every cycle whose
+> non-termination would come from opposing `Ins`/`Del` writes is either flagged or provably
+> convergent. It is **not yet met for the create-driven class**: a rule re-triggered purely by
+> the *existence* of a freshly created atom (e.g. `I[C] |- r` repaired by `InsAtom;C`) is not
+> modelled (§6.3), so such an existential, chase-style non-termination can currently be reported
+> "safe" — a known false negative. Closing it is exactly the weak-acyclicity work of §4/§7.
+> Until then, read "safe" as "safe against delete-driven oscillation".
 
 ---
 
@@ -264,18 +290,33 @@ to scale [@Baralis1996Modularization].
 language), it is cheap, and with the sign refinement it already separates the dangerous
 non-monotone cycles from the harmless monotone ones. Its known weakness is false positives.
 
-**Stage 2 — EGD-aware position-level acyclicity (precision layer).**
-For each rule cycle Stage 1 flags, run a weak-acyclicity / local-stratification check on the
-underlying TGD/EGD encoding, with `MrgAtoms` treated as a first-class EGD
+**Stage 2 — precision layer (two independent sub-goals).** Stage 1's only weakness is false
+positives, and they have two distinct causes (§1.1), each needing its own tool. It is clearest
+to treat Stage 2 as two separable pieces:
+
+*Stage 2a — convergence certificate for the delete-driven class (implemented, see §6.5).* The
+opposing-write cycles Stage 1 flags are mostly benign maintenance: a relation kept equal to a
+definition (`ENFORCE :=`, the `Determine`/`Remove` idiom, complementary-guard toggles) or a
+delete-only cleanup. These converge for a *stratification* reason, not a value-flow one
+[@Apt1988DeclarativeKnowledge], so they are certified with a signed, relation-level argument
+(delete-only ⇒ well-founded descent; `R := D` with `D` invariant ⇒ per-pair convergence). No
+value-flow modelling is needed; this is why it shipped first after Stage 1.
+
+*Stage 2b — EGD-aware position-level acyclicity for the create-driven class (future).* For the
+cycles that remain, run a weak-acyclicity / local-stratification check on the underlying
+TGD/EGD encoding, with `MrgAtoms` treated as a first-class EGD
 [@Fagin2005DataExchange; @Greco2011StratificationCriteria; @Calautti2016EGDChaseTermination].
 If the cycle is weakly acyclic (no fresh value flows around it), **downgrade** it from
-"risk" to "safe," removing the false alarm. This is exactly the FC5 discriminator: the
-create→merge cycle is *not* weakly acyclic because the merge's EGD feeds a fresh organism
-back into the create rule's antecedent.
+"risk" to "safe." This is the FC5 discriminator: the create→merge cycle is *not* weakly acyclic
+because the merge's EGD feeds a fresh organism back into the create rule's antecedent. The same
+machinery closes the §6.3 soundness gap (existential `InsAtom` triggering), so 2b is both a
+precision *and* a soundness improvement for the create-driven class.
 
-*Why second:* it directly attacks Stage 1's only real weakness and targets the
-create-vs-merge interaction that caused both FC5 oscillations, but it costs more to build
-(value-flow modelling), so it is worth adding only after Stage 1 proves the concept.
+*Why this split:* the two sub-goals attack different false positives (resp. different missed
+oscillations) and rest on different theory; 2a is cheap and rule-level, 2b needs value-flow
+modelling. Conflating them (the earlier framing of "Stage 2 = weak acyclicity") hides that the
+delete-driven false positives — the bulk of what RAP and SIAM hit — are already addressable
+without the heavier value-flow machinery.
 
 **Stage 3 (optional, research) — Critical-pair confluence and native saturation.**
 For rule sets that pass termination but where *order-independence* matters, add critical-pair
@@ -415,18 +456,34 @@ self-loop disappears, exactly as it should.
 
 ### 6.4 Validation
 
-Five scripts were checked with `stack exec ampersand -- check`. The first two are the guide's
-own minimal reproductions; the last three are crafted to probe the refinement and live in
-`testing/oscillation/` with a `testinfo.yaml`, so the regression suite type-checks them on
-every run.
+The two guide reproductions and nine purpose-built fixtures probe the analysis. The fixtures
+live in two sibling directories under `testing/oscillation/` whose `testinfo.yaml` **asserts the
+verdict via the exit code** (see the box below): `risk/` expects exit 45 (a flagged oscillation),
+`safe/` expects exit 0 (certified convergent).
 
 | Script | Automated rules | Expected | Result |
 | --- | --- | --- | --- |
 | `docs/guides/oscillations/oscillatie-buggy.adl` | `maakOrganisme`, `uniekeCode`, `uniekeNaam` | risk | **risk** — one SCC of all three, naming the `voorkeursNaam`/`eppoCode` collisions |
 | `docs/guides/oscillations/oscillatie-fixed.adl` | same names, code-driven creation + `maakSynoniem` | risk (see note) | **risk** — same SCC |
-| `testing/oscillation/mono-cycle.adl` | two insert-only rules in a cycle | no risk | **silent** |
-| `testing/oscillation/merge-alone.adl` | one `MrgAtoms` uniqueness rule | no risk | **silent** |
-| `testing/oscillation/insdel-cycle.adl` | an `InsPair`/`DelPair` pair on one relation | risk | **risk** — names the `light` collision |
+| `testing/oscillation/risk/insdel-cycle.adl` | an `InsPair`/`DelPair` pair on one relation | risk (exit 45) | **risk** — names the `light` collision |
+| `testing/oscillation/risk/create-merge-cycle.adl` | an `InsAtom` create vs a `MrgAtoms` merge (FC5) | risk (exit 45) | **risk** — create↔merge SCC |
+| `testing/oscillation/safe/mono-cycle.adl` | two insert-only rules in a cycle | no risk (exit 0) | **silent** |
+| `testing/oscillation/safe/merge-alone.adl` | one `MrgAtoms` uniqueness rule | no risk (exit 0) | **silent** |
+| `testing/oscillation/safe/delete-only.adl` | a delete-only cycle on `p`/`q` | no risk (exit 0) | **silent** (§6.5, refinement a) |
+| `testing/oscillation/safe/delatom-cleanup.adl` | a `DelAtom` orphan-cleanup self-cycle | no risk (exit 0) | **silent** (§6.5, refinement a) |
+| `testing/oscillation/safe/functional-maintenance.adl` | an `R := D` pair and a complementary-guard toggle | no risk (exit 0) | **silent** (§6.5, refinement b) |
+| `testing/oscillation/safe/enforce-assignment.adl` | a real `ENFORCE r := expr` statement | no risk (exit 0) | **silent** (§6.5, refinement b) |
+| `testing/oscillation/safe/guarded-maintenance.adl` | a deleter guarded by a composition | no risk (exit 0) | **silent** (§6.5, refinement b) |
+
+> **How the regression asserts the verdict.** Oscillation findings are *warnings*, which do not
+> change the exit code, so a plain `ampersand check` (exit 0 on any warning) cannot tell a flagged
+> script from a silent one. The `--fail-on-oscillation` flag closes this: when set, a detected
+> oscillation risk exits with the dedicated code **45** (`OscillationRiskDetected`), while a clean
+> run still exits 0. Each directory's `testinfo.yaml` runs `ampersand check --fail-on-oscillation`
+> and asserts the matching code (45 in `risk/`, 0 in `safe/`). So a change that **silences a real
+> oscillation** (a `risk/` script dropping to exit 0) or **introduces a false positive** (a `safe/`
+> script rising to exit 45) now fails the regression — the verdict, not just type-checking, is
+> machine-checked. The flag is off by default, so normal use is unaffected.
 
 The two negative cases (`mono-cycle`, `merge-alone`) confirm the analysis is not the trivial
 "flag every cycle": the monotone cycle and the standalone merge rule are both correctly left
@@ -443,7 +500,63 @@ this discriminator. Stage 1 honestly reports "I cannot rule out an oscillation h
 will downgrade it to "safe". This matches the staged design and the undecidability result: a
 sound over-approximation must over-flag, and Stage 2 is where the false positive is removed.
 
+## 6.5 Stage 2a — a sound convergence certificate for the delete-driven class (2026-06-23)
+
+Two sound refinements were added to `Ampersand.FSpec.Oscillation`, both pruning
+false positives *before* the risk test of §6.1. Each is a sufficient condition for
+termination, so soundness (no missed oscillation, requirement (3)) is preserved.
+
+**Stage 2a, refinement (a) — delete-only components terminate.** A strongly-connected component whose
+rules perform *no* monotone (insert/grow) write only ever shrinks the population.
+The state space under set inclusion is finite and the combined repair operator is
+monotone *decreasing*, so it reaches a fixpoint by well-founded descent — the exact
+dual of the Knaster–Tarski argument that §1.4 gives for insert-only cycles. Such a
+component is no longer flagged, even though every edge in it is negative. (`MrgAtoms`
+counts as a positive write, so a component containing a merge is *not* delete-only
+and stays subject to the full test.)
+
+**Stage 2a, refinement (b) — functionally maintained relations converge.** A relation `R` that is written
+by at least one inserter and one deleter is *functionally maintained* when there is
+a relation-free expression `D`, **invariant within the component** (no component rule
+writes a relation occurring in `D`), such that every inserter has the form `D |- R`
+(so it only ever adds `R`-pairs inside `D`) and every deleter allows `R` exactly on
+`D` (so it only ever removes `R`-pairs outside `D`; the deleter's guard is irrelevant
+to soundness). The per-pair argument is decisive: `D`-pairs are only inserted, ¬`D`-pairs
+are only deleted, so no pair is ever both inserted and deleted and `R` converges. The
+opposing writes on such an `R` cannot oscillate, so its triggering edges are pruned.
+Deleters written in the equivalent disjointness forms `a |- I - R` and `a |- -R` are
+solved to the bounds `I - a` and `-a` respectively, so complementary-guard toggles
+(e.g. `visible := I - invisible`) are certified as well.
+
+The **invariance condition is what keeps genuine recursion flagged**: when `R`'s
+definition `D` mentions a relation that the same component also rewrites (e.g. SIAM's
+mutually-defined `accPerson`/`accPersonRef`, or the session-role web where allowed and
+active roles feed each other), `D` is not invariant, the certificate does not apply,
+and the risk is reported as before. This is exactly local stratification (§1.4, §3.4):
+`R` sits in its own stratum, defined from a lower, invariant one.
+
+*Validation.* The regression fixtures (§6.4) now assert the verdict via the exit code:
+`risk/` (the `insdel` and create-merge cycles) must exit 45, `safe/` (mono-cycle, merge-alone,
+delete-only, delatom-cleanup, functional-maintenance, enforce-assignment, guarded-maintenance)
+must exit 0. All eleven pass. On the RAP4 source the oscillation warnings drop from nine to
+three: the two genuine mutually-recursive risks (the `accPersonRef` definition cycle and the
+session-role web) are still flagged, together with one residual (the `Sequence` first/last/empty
+trio, see §7).
+
+*What this is not.* It is not the full EGD-aware weak-acyclicity check of §4; it
+certifies the `R := D` shape (which subsumes every `ENFORCE :=`, the `Determine/Remove`
+idiom, and complementary-guard toggles) but not yet patterns that need genuine
+relational *containment* reasoning (`D_insert ⊆ D_delete` rather than `D_insert = D_delete`).
+
 ## 7. Open questions for the next session
+
+0. **Containment-based maintenance (the remaining §6.5 false positive).** The
+   `Sequence` first/last/empty trio is safe for a containment reason: the first/last
+   inserter adds `seqFirstItem`/`seqLastItem` only where the sequence is non-empty,
+   which is *a subset of* the region the emptiness rule allows. The current certificate
+   requires the inserter and deleter bounds to be *equal*; extending it to a sound,
+   syntactic `⊆` check (e.g. structural sub-term containment) would certify this class
+   too. Worth doing, but it widens the proof obligation — hence deferred.
 
 1. **Bare-atom triggering (the §6.3 soundness gap).** Should Stage 1 also model the trigger
    where a freshly created atom violates a rule phrased on `I[C]`/`V` with no relation pair
@@ -461,6 +574,13 @@ sound over-approximation must over-flag, and Stage 2 is where the false positive
 4. **Wording and locale.** The warning text is English and points to
    `docs/guides/oscillations/README.md`. Is that the right destination, and is English right
    given the FC5 audience?
+5. **Verdict-level regression — done (2026-06-24).** The `testing/oscillation/` suite no longer
+   merely type-checks: the `--fail-on-oscillation` flag (exit code 45) lets the `risk/` and
+   `safe/` directories assert each fixture's verdict through the exit code (§6.4). A change that
+   silences a real oscillation or introduces a false positive now fails CI. *Remaining option:* a
+   finer HSpec test on the exposed `oscillationWarnings` could additionally assert *which rules*
+   are named in each warning, not just that a warning occurs — useful if the report wording or
+   grouping is ever refactored.
 
 ---
 

@@ -62,6 +62,8 @@ class HasFSpecGenOpts a where
   recipeL = fSpecGenOptsL . lens xrecipe (\x y -> x {xrecipe = y})
   allowInvariantViolationsL :: Lens' a Bool
   allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x {xallowInvariantViolations = y})
+  failOnOscillationL :: Lens' a Bool
+  failOnOscillationL = fSpecGenOptsL . lens xfailOnOscillation (\x y -> x {xfailOnOscillation = y})
 
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -292,7 +294,9 @@ data FSpecGenOpts = FSpecGenOpts
     -- | Which recipe for generating code?
     xrecipe :: !Recipe,
     -- | Should invariant violations be ignored?
-    xallowInvariantViolations :: !Bool
+    xallowInvariantViolations :: !Bool,
+    -- | Should a detected ExecEngine oscillation risk make the run fail (non-zero exit)?
+    xfailOnOscillation :: !Bool
   }
   deriving (Show)
 
@@ -310,7 +314,8 @@ instance HasOptions FSpecGenOpts where
       ),
       ("--[no-]trim-cellvalues", tshow $ xtrimXLSXCells opts),
       ("--build-recipe", tshow $ xrecipe opts),
-      ("--ignore-invariant-violations", tshow $ xallowInvariantViolations opts)
+      ("--ignore-invariant-violations", tshow $ xallowInvariantViolations opts),
+      ("--fail-on-oscillation", tshow $ xfailOnOscillation opts)
     ]
 
 data FSpecFormat

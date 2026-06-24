@@ -1,0 +1,16 @@
+# Regression tests for the oscillation-risk analysis (Ampersand.FSpec.Oscillation):
+# the MUST-CONVERGE cases (false positives to be excluded). Each script forms a
+# cycle that the analysis must certify as convergent, so even with
+# `--fail-on-oscillation` the run must succeed (exit 0). If a future change starts
+# flagging any of these, CI turns red — catching a precision regression that would
+# drown modellers in false alarms.
+#   * mono-cycle.adl            monotone (insert-only) cycle           (Knaster-Tarski)
+#   * merge-alone.adl           a standalone MrgAtoms uniqueness rule  (monotonicity refinement)
+#   * delete-only.adl           a delete-only cycle                    (§6.5 refinement a)
+#   * functional-maintenance.adl  hand-written R := D pair + toggle    (§6.5 refinement b)
+#   * enforce-assignment.adl    a real `ENFORCE r := expr` statement   (§6.5 refinement b)
+#   * delatom-cleanup.adl       DelAtom orphan cleanup (self-cycle)    (§6.5 refinement a)
+#   * guarded-maintenance.adl   a deleter guarded by a composition     (§6.5 refinement b)
+testCmds:
+  - command: ampersand check --fail-on-oscillation
+    exitcode: 0

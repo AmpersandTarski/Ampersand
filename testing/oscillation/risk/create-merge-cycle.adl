@@ -1,0 +1,26 @@
+CONTEXT CreateMergeCycle IN ENGLISH
+-- Positive test for the oscillation analysis: the create-vs-merge (FC5) class.
+-- `makeItem` invents a fresh Item for every source label without one (a create);
+-- `uniqueCode` merges two Items that share a code (an EGD). The merge re-routes
+-- `code`/`name`, which feeds a label back into the create rule's antecedent, so
+-- the two repairs undo each other and the loop may never settle. This MUST be
+-- flagged: with --fail-on-oscillation the run fails (exit 45).
+
+RELATION src[Label*Code]                 -- the "spreadsheet": label -> code
+RELATION name[Item*Label] [UNI,INJ]
+RELATION code[Item*Code] [UNI]
+
+-- Label-driven creation: make an Item per label that is not yet a preferred name.
+ROLE ExecEngine MAINTAINS makeItem
+RULE makeItem : src - name~;V[Item*Code] |- name~;I[Item];code
+VIOLATION ( TXT "{EX} InsAtom;Item"
+          , TXT "{EX} InsPair;name;Item;_NEW;Label;", SRC I[Label]
+          , TXT "{EX} InsPair;code;Item;_NEW;Code;", TGT I )
+
+-- Merge per code: two Items with the same code are the same.
+ROLE ExecEngine MAINTAINS uniqueCode
+RULE uniqueCode : code;code~ |- I[Item]
+VIOLATION ( TXT "{EX} MrgAtoms;Item;", SRC I, TXT ";Item;", TGT I )
+
+POPULATION src CONTAINS [ ("alpha","X1") ; ("beta","X1") ]
+ENDCONTEXT
