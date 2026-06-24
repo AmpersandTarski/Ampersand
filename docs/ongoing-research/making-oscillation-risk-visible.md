@@ -456,7 +456,7 @@ self-loop disappears, exactly as it should.
 
 ### 6.4 Validation
 
-The two guide reproductions and nine purpose-built fixtures probe the analysis. The fixtures
+The two guide reproductions and ten purpose-built fixtures probe the analysis. The fixtures
 live in two sibling directories under `testing/oscillation/` whose `testinfo.yaml` **asserts the
 verdict via the exit code** (see the box below): `risk/` expects exit 45 (a flagged oscillation),
 `safe/` expects exit 0 (certified convergent).
@@ -474,6 +474,7 @@ verdict via the exit code** (see the box below): `risk/` expects exit 45 (a flag
 | `testing/oscillation/safe/functional-maintenance.adl` | an `R := D` pair and a complementary-guard toggle | no risk (exit 0) | **silent** (§6.5, refinement b) |
 | `testing/oscillation/safe/enforce-assignment.adl` | a real `ENFORCE r := expr` statement | no risk (exit 0) | **silent** (§6.5, refinement b) |
 | `testing/oscillation/safe/guarded-maintenance.adl` | a deleter guarded by a composition | no risk (exit 0) | **silent** (§6.5, refinement b) |
+| `testing/oscillation/safe/bounded-maintenance.adl` | insert-region `⊆` allow-region (not `=`) | no risk (exit 0) | **silent** (§6.5, ⊆-extension) |
 
 > **How the regression asserts the verdict.** Oscillation findings are *warnings*, which do not
 > change the exit code, so a plain `ampersand check` (exit 0 on any warning) cannot tell a flagged
@@ -543,20 +544,32 @@ three: the two genuine mutually-recursive risks (the `accPersonRef` definition c
 session-role web) are still flagged, together with one residual (the `Sequence` first/last/empty
 trio, see §7).
 
-*What this is not.* It is not the full EGD-aware weak-acyclicity check of §4; it
-certifies the `R := D` shape (which subsumes every `ENFORCE :=`, the `Determine/Remove`
-idiom, and complementary-guard toggles) but not yet patterns that need genuine
-relational *containment* reasoning (`D_insert ⊆ D_delete` rather than `D_insert = D_delete`).
+*Containment, not just equality (2026-06-24).* The certificate was generalised from
+"every bound is the same `D`" to the weaker, still-sound obligation it actually needs:
+there is a relation-free, component-invariant `D` with every inserter's **insert-region
+`⊆ D`** and every deleter's **allow-region `⊇ D`**. We never materialise `D`; we check the
+equivalent pairwise `insert-region ⊆ allow-region` with a sound, deliberately incomplete
+syntactic test `subExpr` (reflexivity; `A - X ⊆ A`; `A ∩ X ⊆ A`; `A ∪ X ⊆ B` iff both;
+`A ⊆ B ∪ X`; `A ⊆ B;V` / `V;B` and `A ⊆ B*`/`B⁺` since each only grows `B`; converse
+congruence). Equality is the special case `insert-region = D = allow-region`. The `⊆` test
+additionally certifies *bounded* maintenance — e.g. the `Sequence` first/last items, which
+are set only for a non-empty sequence (`itemInSeq - …`), a subset of the region the
+emptiness rule allows (`itemInSeq~;V`). On the RAP4 source this clears that residual, taking
+the warnings from nine to two; the two that remain are the genuine mutually-recursive risks
+(the `accPersonRef` definition cycle and the session-role web), whose bounds mention a
+relation the same component rewrites, so invariance fails and they stay flagged — correctly.
+
+*What this is still not.* It is not the full EGD-aware weak-acyclicity check of §4 (§2b):
+it reasons about delete-driven convergence, not about freshly invented atoms. The
+create-driven class (existential `InsAtom`, the FC5 loop) remains the subject of §2b.
 
 ## 7. Open questions for the next session
 
-0. **Containment-based maintenance (the remaining §6.5 false positive).** The
-   `Sequence` first/last/empty trio is safe for a containment reason: the first/last
-   inserter adds `seqFirstItem`/`seqLastItem` only where the sequence is non-empty,
-   which is *a subset of* the region the emptiness rule allows. The current certificate
-   requires the inserter and deleter bounds to be *equal*; extending it to a sound,
-   syntactic `⊆` check (e.g. structural sub-term containment) would certify this class
-   too. Worth doing, but it widens the proof obligation — hence deferred.
+0. **Containment-based maintenance — done (2026-06-24).** The `Sequence` first/last/empty
+   trio is now certified: the certificate checks `insert-region ⊆ allow-region` with a sound
+   syntactic `subExpr`, not just bound equality (see §6.5). Regression fixture
+   `safe/bounded-maintenance.adl` locks it in. *Remaining option:* `subExpr` is intentionally
+   incomplete; add lemmas only as real models demand them, keeping each one provably sound.
 
 1. **Bare-atom triggering (the §6.3 soundness gap).** Should Stage 1 also model the trigger
    where a freshly created atom violates a rule phrased on `I[C]`/`V` with no relation pair
