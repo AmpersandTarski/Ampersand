@@ -34,7 +34,7 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 | <roleRule\>                                | a statement that makes a role responsible for satisfying a rule                                  | ✅      | ✅      |
 | [<enforce\>](#the-enforce-statement)       | a statement to declare an automatic enforcement rule                                             | ✅      | ✅      |
 | [<ident\>](#the-ident-statement)           | a declaration of an identity rule on a concept                                                   | ✅      | ✅      |
-| <viewDef\>                                 | a statement for presenting facts in a readable sentence                                          | ✅      | ✅      |
+| [<viewDef\>](#the-view-statement)          | a statement that defines how atoms of a concept are presented, instead of their internal id      | ✅      | ✅      |
 | [<purpose\>](#the-purpose-statement)       | a statement to describe the purpose of a pattern or a pattern element                            | ✅      | ✅      |
 | [<population\>](#the-population-statement) | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
 | [<interface\>](#the-interface-statement)   | a unit of code that can be run independently and specifies interaction with a user or a computer | ✅      | ❌      |
@@ -635,6 +635,66 @@ Note that
 
 - in case every `e` is univalent but not total, you should use the `IDENT` statement \(or the rule that it implements\), because that also works when an `e` is not populated.
 
+## The VIEW statement
+#### Purpose
+
+A `VIEW` defines how the atoms of a concept are presented to a user. Every atom has an internal identifier, which the runtime generates. These identifiers are meaningless to users \(e.g. `Rule_1a2b3c` or a long hash\). A `VIEW` replaces that identifier with a human-readable representation, such as a name, a signature, or a composed sentence.
+
+:::tip Design principle: never show internal identifiers
+Internal atom identifiers are an implementation detail. Showing them in a user interface is confusing at best and a data-leak at worst. **In a production interface, every concept whose atoms are visible to users should have a `DEFAULT` view that renders a readable representation.** Reserve raw identifiers for debugging or educational purposes only.
+
+Wherever the prototype shows a meaningless key \(an "ugly id"\), the cause is a concept without a default `VIEW`. The cure is to add one, for example `VIEW Rule : Rule(name)`.
+:::
+
+#### Syntax
+
+There are two equivalent notations. The compact \(legacy\) notation is always a default view:
+
+```text
+`VIEW` (<label> `:`)? <Concept> `(` <segment> (`,` <segment>)* `)`
+```
+
+The extended notation adds the `DEFAULT` keyword, optional segment labels, and the option to render through an HTML template:
+
+```text
+`VIEW` (<label> `:`)? <Concept> `DEFAULT`? (`{` <segment> (`,` <segment>)* `}`)? (`HTML` `TEMPLATE` <filename>)? `ENDVIEW`
+
+<segment> ::= (<label> `:`)? <term>
+            | (<label> `:`)? `TXT` <text>
+```
+
+where:
+
+- `<label>` after `VIEW` is the name of the view. A concept may have at most one `DEFAULT` view, plus any number of additional named views.
+- `<Concept>` is the concept whose atoms the view presents. The source of every `<term>` in a segment must be `<Concept>`; this is enforced by the type system.
+- A `<segment>` contributes one piece of the presentation: either the target atoms of a `<term>` \(typically a `name`/`label` relation\), or a literal `TXT` string. Segments are concatenated in order.
+- `DEFAULT` marks the view as the one used automatically wherever atoms of `<Concept>` appear without an explicitly named view. The compact notation is `DEFAULT` implicitly.
+- `HTML TEMPLATE <filename>` renders the atom through a [custom VIEW template](../../prototype/guides/creating-custom-view-templates) instead of plain text.
+
+#### Semantics
+
+- The **default view** of a concept is applied automatically: in interface fields, in box headers, in `LINKTO` links, and in dropdown selections. Adding a default view therefore removes ugly ids everywhere at once, without touching any `INTERFACE`.
+- A **named \(non-default\) view** is used only where it is referenced explicitly, e.g. as `someTerm <ViewName>` in an interface field, or as the view of an [object/value dropdown](#OBJECTDROPDOWN).
+- A view is applied per atom. If a segment's relation is not populated for a given atom, that segment contributes nothing, so make sure the relation you use as a label is populated \(ideally `[UNI]` and `[TOT]`\) for the atoms that will be shown.
+
+#### Examples
+
+```text
+VIEW Concept  : Concept(name)                              -- default view: show the concept's name
+VIEW Rule     : Rule(name)
+VIEW Relation : Relation(name)                             -- removes ugly ids for relations
+VIEW PersonView : Person(firstName, TXT " ", lastName)    -- a composed sentence
+VIEW Account  : Account DEFAULT { "uid" : accUserid } ENDVIEW
+VIEW PersonEmail : Person                                 -- a named (non-default) view,
+   { email : personEmail } HTML TEMPLATE "View-Email.html" ENDVIEW   -- used as: someTerm <PersonEmail>
+```
+
+#### Good practice
+
+- Give every user-visible concept a `DEFAULT` view. A good default representation is the concept's name, a relation's name plus its signature, or another short, unique, human-readable property.
+- Use a label relation that is populated for the atoms you display. An unpopulated label relation yields a blank field, which is as confusing as an ugly id.
+- Keep raw identifiers out of production interfaces. If you need them for debugging, put them in a separate interface that is restricted to a developer role.
+
 ## The POPULATION statement
 
 #### Purpose
@@ -1222,6 +1282,7 @@ You don't have to put up with the [Ampersand built-in layout options](#layout-of
 ### Atomic templates (i.e. interface leaves)
 
 #### OBJECT
+The atomic template for a leaf whose target is an object \(a non-scalar concept\). It renders each atom through the concept's `DEFAULT` [VIEW](#the-view-statement) if one exists. If the concept has no default view, the template falls back to the atom's internal identifier — the "ugly id". Define a default `VIEW` for the concept to show a readable representation instead.
 
 #### ALPHANUMERIC, BIGALPHANUMERIC, HUGEALPHANUMERIC
 
