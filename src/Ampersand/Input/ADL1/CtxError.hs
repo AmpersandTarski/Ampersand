@@ -770,26 +770,16 @@ mkOscillationWarning ::
   Origin ->
   -- | The names of the automated rules in the cycle
   [Text] ->
-  -- | Descriptions of the non-monotone (negative) edges in the cycle
-  [Text] ->
   Warning
-mkOscillationWarning orig ruleNames negEdges =
+mkOscillationWarning orig ruleNames =
   Warning orig
     . T.intercalate "\n    "
-    $ [ "Possible oscillation risk among the ExecEngine rules: "
+    $ [ "Oscillation risk: the ExecEngine rules "
           <> T.intercalate ", " ruleNames
-          <> ".",
-        "These automated rules can re-trigger each other in a cycle, and at least one",
-        "repair in that cycle deletes or merges what another repair creates. Such a",
-        "non-monotone cycle may never reach a fixpoint, so the ExecEngine can abort with",
-        "\"Maximum reruns exceeded\" on some populations."
+          <> " can keep undoing each other's repairs, so on some populations the",
+        "ExecEngine never settles and aborts with \"Maximum reruns exceeded\".",
+        "See https://ampersandtarski.github.io/ampersand/guides/oscillations"
       ]
-    <> ["Opposing writes:"]
-    <> map ("  - " <>) negEdges
-    <> [ "This is a static over-approximation: a flagged cycle need not oscillate on every",
-         "population, but an insert-only (monotone) cycle is never flagged. See the guide",
-         "docs/guides/oscillations/README.md for how to make the rules jointly satisfiable."
-       ]
 
 -- | Warning emitted when the SQL generator will produce a query that computes
 --   a Cartesian product. The warning shows the rule (or interface) it occurs in,
