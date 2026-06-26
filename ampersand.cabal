@@ -679,6 +679,7 @@ library
       Ampersand.Test
       Ampersand.Test.Express.ExpressParserTest
       Ampersand.Test.IFC.IFCBinderTest
+      Ampersand.Test.IFC.IFCRegressionTest
       Ampersand.Test.IFC.IFCWiringTest
       Ampersand.Test.Parser.ArbitraryTree
       Ampersand.Test.Parser.ParserTest

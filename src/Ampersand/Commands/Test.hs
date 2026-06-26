@@ -12,6 +12,7 @@ import Ampersand.Basics
 import Ampersand.Misc.HasClasses (HasTestOpts (..))
 import Ampersand.Test.Express.ExpressParserTest (expressParserTest)
 import Ampersand.Test.IFC.IFCBinderTest (ifcBinderTest)
+import Ampersand.Test.IFC.IFCRegressionTest (ifcRegressionTest)
 import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
@@ -25,7 +26,14 @@ test = do
   expressTest
   ifcBinderTest'
   ifcWiringTest'
+  ifcRegressionTest'
   regressionTest
+
+ifcRegressionTest' :: (HasRunner env) => RIO env ()
+ifcRegressionTest' = do
+  success <- ifcRegressionTest
+  unless success $
+    exitWith (SomeTestsFailed ["IFC end-to-end regression test failed!"])
 
 ifcBinderTest' :: (HasRunner env) => RIO env ()
 ifcBinderTest' = do
