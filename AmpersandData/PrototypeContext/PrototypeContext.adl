@@ -11,8 +11,8 @@ CONTEXT PrototypeContext IN ENGLISH
   INCLUDE "Roles.adl"
 
   RELATION PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role]
-  RELATION PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role]
-  
+  RELATION PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role] [UNI] -- A session has at most ONE active role at any moment.
+
   RULE PrototypeContext.ActiveRoles LABEL "Active roles MUST be a subset of allowed roles" : -- This rule is required for the access control mechanism.
      PrototypeContext.sessionActiveRoles |- PrototypeContext.sessionAllowedRoles           -- It ensures that only allowed roles can be activated.
   
