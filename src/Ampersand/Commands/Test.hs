@@ -12,12 +12,20 @@ import Ampersand.Basics
 import Ampersand.Misc.HasClasses (HasTestOpts (..))
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
+import Ampersand.Test.Step.StepParserTest (stepParserTest)
 import Ampersand.Types.Config (HasRunner)
 
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
 test = do
   parserRoundtripTest
+  stepReaderTest
   regressionTest
+
+stepReaderTest :: (HasRunner env) => RIO env ()
+stepReaderTest = do
+  success <- stepParserTest
+  unless success $
+    exitWith (SomeTestsFailed ["STEP/Part-21 reader test failed!"])
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do

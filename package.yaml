@@ -160,6 +160,8 @@ library:
     - Ampersand.Input.ADL1.ParsingLib
     - Ampersand.Input.Parsing
     - Ampersand.Input.PreProcessor
+    - Ampersand.Input.Step.Parser
+    - Ampersand.Input.Step.Types
     - Ampersand.Input.Xslx.XLSX
     - Ampersand.Misc.Commands
     - Ampersand.Misc.HasClasses
@@ -203,6 +205,7 @@ library:
     - Ampersand.Test.Parser.ParserTest
     - Ampersand.Test.Parser.QuickChecks
     - Ampersand.Test.Regression
+    - Ampersand.Test.Step.StepParserTest
     - MainApps
     - Options.Applicative.Builder.Extra
   generated-exposed-modules:
