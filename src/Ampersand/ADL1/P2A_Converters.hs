@@ -75,8 +75,14 @@ warnUnusedConcepts ctx = addWarnings warnings $ pure ()
     warnings =
       [ mkUnusedCptDefWarning cDef
         | cDef <- L.nub $ ctxcds ctx <> concatMap ptcds (ctxpats ctx),
-          acdcpt cDef `notElem` (concs . relsDefdIn $ ctx)
+          acdcpt cDef `notElem` usedConcepts
       ]
+    -- A concept counts as "used" when it occurs in a relation OR in a
+    -- generalisation (CLASSIFY ... ISA / IS). Concepts that only structure the
+    -- type hierarchy are intentional, so they must not trigger an unused-concept
+    -- warning.
+    usedConcepts :: A_Concepts
+    usedConcepts = concs (relsDefdIn ctx) `Set.union` concs (ctxgs ctx)
 
 checkInterfaceCycles :: A_Context -> Guarded ()
 checkInterfaceCycles ctx =
