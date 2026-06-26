@@ -67,6 +67,12 @@ Truth has an exact, context-relative meaning you can reason with: a pair in a re
 **What key features set Ampersand apart from other languages?**
 For comparison against your own work, the distinguishing combination is: declarative, reactive, statically typed, formal (relation algebra), and constraint-programming-driven for incremental development. [Learn more →](./1-interested-visitor.md)
 
+**How does a rule's meaning become something the running system can enforce?**
+The denotation of a rule is compiled into a SQL query that returns its violations; each relation change is wired to the conjuncts it can break — an Event–Condition–Action structure called a *quad* — so the generic back-end runs only those queries. [Learn more →](../reference-material/from-rules-to-running-code.md)
+
+**Is there a correctness guarantee that the runtime checks exactly the right rules after a change?**
+Yes: the affected-conjunct selection is proved to retrieve exactly the conjuncts a change can violate — no missed violations, no wasted checks — with the typology reasoning residing solely in the compiler. The note also weighs how far the argument is, and is not, linear-logic-shaped. [Learn more →](../reference-material/from-rules-to-running-code.md#part-iii--do-the-compiler-and-the-back-end-agree)
+
 ### Research, publications & results
 
 **Where can I find the research papers and results produced by the Ampersand team?**
@@ -94,6 +100,9 @@ An honest open problem for interdisciplinary research: legal jargon and the scar
 
 **How does an Ampersand application handle security concerns such as access control, encryption, and injection?**
 The documentation is candid about scope, which matters if you assess deployments: access control comes via SIAM/ROLE or the platform, there is no built-in encryption or injection protection, and remaining OWASP-style risks are discussed per topic. [Learn more →](../reusing-available-modules.md)
+
+**Could rule enforcement run inside the database as ECA triggers instead of in the back-end?**
+Only for the monotone, insert-only subset: deferred commit-time semantics, iterative repair, oscillation, and signal reporting all block a general move to MariaDB triggers, so the realistic gain is batching detection into a single round trip. [Learn more →](../reference-material/from-rules-to-running-code.md#part-ii--under-the-hood)
 
 **Where should I start reading the documentation as a researcher?**
 The introduction routes you by role, so as a scientist you are pointed straight to the theory, publications, and results rather than the user-facing material. [Learn more →](../intro.md)

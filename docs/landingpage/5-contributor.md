@@ -373,6 +373,12 @@ A conjunct is the smallest queryable piece of a rule's violation condition, carr
 **How does an invariant rule differ from a signal rule at runtime?**
 They share the same violation SQL but differ in outcome: an invariant violation rolls back the transaction, while a signal violation is shown to its assigned role as work to do. [Learn more →](../reference-material/from-rules-to-running-code.md)
 
+**Why is rule enforcement done in the PHP back-end and not in the database?**
+MariaDB has no deferred (commit-time) triggers, repair is an iterative PHP loop with oscillation risk, signals are post-commit reports rather than constraints, and rich violation messages would be lost — so only a monotone subset could ever move to triggers. [Learn more →](../reference-material/from-rules-to-running-code.md#part-ii--under-the-hood)
+
+**How do the compiler and back-end agree on which rules to re-check after a change?**
+The compiler ships a precomputed concept/relation → conjunct index with the typology closure already applied; the back-end only marks the bare concept or relation it touched and unions the lists. The correspondence is proved exact, so the two sides cannot drift. [Learn more →](../reference-material/from-rules-to-running-code.md#part-iii--do-the-compiler-and-the-back-end-agree)
+
 **What design principles underlie the Ampersand language?**
 These principles guide what a "good" contribution looks like: Ampersand favours constraints over obligations, reliable relation-algebraic semantics, automated design, and working systems over comprehensive documentation, supporting incremental development. [Learn more →](../reference-material/design-considerations.md)
 
