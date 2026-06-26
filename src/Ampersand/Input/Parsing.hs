@@ -43,6 +43,11 @@ import Ampersand.Input.ADL1.Parser
 import Ampersand.Input.ADL1.ParsingLib
 import Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
 import Ampersand.Input.AtlasImport
+import Ampersand.Input.IFC.IFCAnalyze
+  ( defaultSchemaName,
+    fileSchemaName,
+    ifc2PContextFromTexts,
+  )
 import Ampersand.Input.PreProcessor
   ( PreProcDefine,
     preProcess,
@@ -52,7 +57,7 @@ import Ampersand.Input.SemWeb.Turtle
 import Ampersand.Input.Xslx.XLSX (XlsxIfcSheet, parseXlsxFile, xlsxIfcSheet2pops)
 import Ampersand.Misc.HasClasses
 import Ampersand.Prototype.StaticFiles_Generated
-  ( FileKind (FormalAmpersand, PrototypeContext),
+  ( FileKind (FormalAmpersand, IFCSchemas, PrototypeContext),
     getStaticFileContent,
   )
 import Ampersand.Runners (logLevel)
@@ -287,6 +292,20 @@ parseSingleADL pc =
           case mfileContents of
             Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
             Right fileContents -> return $ (,[]) . fromGraph <$> parseTurtle fileContents
+      | -- This feature enables reading IFC (STEP/Part-21) files. Note that the .ifc
+        -- extension is overloaded: Ampersand also uses it for interface scripts. We
+        -- discriminate on the Part-21 magic header ("ISO-10303-21"); only then do we
+        -- treat the file as IFC. Anything else falls through to ordinary ADL parsing.
+        extension == ".ifc" = do
+          mfileContents <- readFileUtf8Lenient filePath
+          case mfileContents of
+            Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
+            Right fileContents
+              | isStepFile fileContents -> do
+                  ctxFromIfc <- parseIfcStep filePath fileContents
+                  logInfo (display (T.pack filePath) <> " has been interpreted as an IFC (STEP/Part-21) file.")
+                  return ((,[]) . fromContext <$> ctxFromIfc) -- An IFC file does not contain include files
+              | otherwise -> parseAsAdl fileContents
       | otherwise = do
           mFileContents <-
             case pcFileKind pc of
@@ -298,20 +317,48 @@ parseSingleADL pc =
                 readFileUtf8Lenient filePath
           case mFileContents of
             Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
-            Right fileContents ->
-              let -- TODO: This should be cleaned up. Probably better to do all the file reading
-                  --       first, then parsing and typechecking of each module, building a tree P_Contexts
-                  meat :: Guarded (SingleFileResult, [Include])
-                  meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= guardedFromContext . parseCtx filePath . T.pack
-                  proces :: Guarded (SingleFileResult, [Include]) -> RIO env (Guarded (SingleFileResult, [ParseCandidate]))
-                  proces (Errors err) = pure (Errors err)
-                  proces (Checked (ctxts, includes) ws) =
-                    addWarnings ws . foo <$> mapM include2ParseCandidate includes
-                    where
-                      foo :: [Guarded ParseCandidate] -> Guarded (SingleFileResult, [ParseCandidate])
-                      foo xs = (ctxts,) <$> sequence xs
-               in proces meat
+            Right fileContents -> parseAsAdl fileContents
       where
+        -- | Parse already-read text as an ordinary ADL script (with INCLUDEs).
+        parseAsAdl :: Text -> RIO env (Guarded (SingleFileResult, [ParseCandidate]))
+        parseAsAdl fileContents =
+          let -- TODO: This should be cleaned up. Probably better to do all the file reading
+              --       first, then parsing and typechecking of each module, building a tree P_Contexts
+              meat :: Guarded (SingleFileResult, [Include])
+              meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= guardedFromContext . parseCtx filePath . T.pack
+              proces :: Guarded (SingleFileResult, [Include]) -> RIO env (Guarded (SingleFileResult, [ParseCandidate]))
+              proces (Errors err) = pure (Errors err)
+              proces (Checked (ctxts, includes) ws) =
+                addWarnings ws . foo <$> mapM include2ParseCandidate includes
+                where
+                  foo :: [Guarded ParseCandidate] -> Guarded (SingleFileResult, [ParseCandidate])
+                  foo xs = (ctxts,) <$> sequence xs
+           in proces meat
+        -- | A Part-21 (STEP/IFC) file starts with the @ISO-10303-21@ magic token.
+        isStepFile :: Text -> Bool
+        isStepFile t = "ISO-10303-21" `T.isPrefixOf` T.stripStart (stripBomText t)
+        stripBomText :: Text -> Text
+        stripBomText t = fromMaybe t (T.stripPrefix "\xFEFF" t)
+        -- | Bind an IFC (STEP) file to its EXPRESS schema (chosen via the
+        -- FILE_SCHEMA header, default IFC4X3_ADD2) and produce a P_Context. The
+        -- schema is loaded from the statically bundled IFCSchemas resource.
+        parseIfcStep :: FilePath -> Text -> RIO env (Guarded P_Context)
+        parseIfcStep fp ifcText = do
+          let schemaName = fromMaybe defaultSchemaName (fileSchemaName ifcText)
+              schemaFile = T.unpack schemaName <> ".exp"
+          case getStaticFileContent IFCSchemas schemaFile of
+            Just cont ->
+              pure $ ifc2PContextFromTexts (T.pack fp) ifcText (decodeUtf8 cont)
+            Nothing ->
+              -- Unknown schema name: fall back to the default schema if possible.
+              case getStaticFileContent IFCSchemas (T.unpack defaultSchemaName <> ".exp") of
+                Just cont ->
+                  pure $ ifc2PContextFromTexts (T.pack fp) ifcText (decodeUtf8 cont)
+                Nothing ->
+                  pure $
+                    mkErrorReadingINCLUDE
+                      (pcOrigin pc)
+                      ["No bundled EXPRESS schema found for " <> schemaName <> " (looked for " <> T.pack schemaFile <> ")."]
         guardedFromContext :: Guarded (P_Context, [Include]) -> Guarded (SingleFileResult, [Include])
         guardedFromContext gIn = do
           (ctx, includes) <- gIn

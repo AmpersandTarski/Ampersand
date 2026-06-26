@@ -18,6 +18,7 @@ extra-source-files:
   - ReleaseNotes.md
   - AmpersandData/FormalAmpersand/*
   - AmpersandData/PrototypeContext/*
+  - AmpersandData/IFCSchemas/*
   - outputTemplates/*
   - testing/**/*
 
@@ -206,6 +207,7 @@ library:
     - Ampersand.Test
     - Ampersand.Test.Express.ExpressParserTest
     - Ampersand.Test.IFC.IFCBinderTest
+    - Ampersand.Test.IFC.IFCWiringTest
     - Ampersand.Test.Parser.ArbitraryTree
     - Ampersand.Test.Parser.ParserTest
     - Ampersand.Test.Parser.QuickChecks

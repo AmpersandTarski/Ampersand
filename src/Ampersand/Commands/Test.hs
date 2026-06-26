@@ -12,6 +12,7 @@ import Ampersand.Basics
 import Ampersand.Misc.HasClasses (HasTestOpts (..))
 import Ampersand.Test.Express.ExpressParserTest (expressParserTest)
 import Ampersand.Test.IFC.IFCBinderTest (ifcBinderTest)
+import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
 import Ampersand.Test.Step.StepParserTest (stepParserTest)
@@ -23,6 +24,7 @@ test = do
   stepReaderTest
   expressTest
   ifcBinderTest'
+  ifcWiringTest'
   regressionTest
 
 ifcBinderTest' :: (HasRunner env) => RIO env ()
@@ -30,6 +32,12 @@ ifcBinderTest' = do
   success <- ifcBinderTest
   unless success $
     exitWith (SomeTestsFailed ["IFC binder test failed!"])
+
+ifcWiringTest' :: (HasRunner env) => RIO env ()
+ifcWiringTest' = do
+  success <- ifcWiringTest
+  unless success $
+    exitWith (SomeTestsFailed ["IFC wiring test failed!"])
 
 stepReaderTest :: (HasRunner env) => RIO env ()
 stepReaderTest = do

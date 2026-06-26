@@ -50,6 +50,9 @@ extra-source-files:
     AmpersandData/PrototypeContext/PrototypeContext.adl
     AmpersandData/PrototypeContext/PrototypeContext.docadl
     AmpersandData/PrototypeContext/Roles.adl
+    AmpersandData/IFCSchemas/IFC2X3_TC1.exp
+    AmpersandData/IFCSchemas/IFC4.exp
+    AmpersandData/IFCSchemas/IFC4X3_ADD2.exp
     outputTemplates/default.asciidoc
     outputTemplates/default.asciidoctor
     outputTemplates/default.commonmark
@@ -239,7 +242,9 @@ extra-source-files:
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/meatgrinder/Issue1484.adl
+    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
+    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -408,6 +413,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Issue855.adl
     testing/Travis/testcases/prototype/shouldSucceed/MultipleDeclaredRules.adl
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1.adl
+    testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/README.md
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/phone.adl
@@ -477,11 +483,15 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440_generated_pop.json
     testing/Travis/testcases/Simple/Delivery.adl
     testing/Travis/testcases/Simple/DeliverySimple.adl
     testing/Travis/testcases/Simple/DeliverySimple.css
@@ -669,6 +679,7 @@ library
       Ampersand.Test
       Ampersand.Test.Express.ExpressParserTest
       Ampersand.Test.IFC.IFCBinderTest
+      Ampersand.Test.IFC.IFCWiringTest
       Ampersand.Test.Parser.ArbitraryTree
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks

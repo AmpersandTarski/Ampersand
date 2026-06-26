@@ -50,39 +50,48 @@
 module Ampersand.Input.IFC.IFCAnalyze
   ( ifc2PContext,
     ifc2PContextWithSchema,
+    ifc2PContextFromTexts,
+    fileSchemaName,
     defaultSchemaPath,
+    defaultSchemaName,
   )
 where
 
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError
-import Ampersand.Input.Express.Parser (parseExpressFile)
+import Ampersand.Input.Express.Parser (parseExpress, parseExpressFile)
 import Ampersand.Input.Express.Schema
-import Ampersand.Input.Step.Parser (parseStepFile)
+import Ampersand.Input.Step.Parser (parseStepFile, parseStepText)
 import Ampersand.Input.Step.Types
+import qualified Data.Text as DT
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
--- | Default EXPRESS schema used when no schema is supplied. Proper static
--- bundling plus @FILE_SCHEMA@-header selection is WP4; here we fall back to the
--- IFC4.3 schema on the author's machine (handoff §6), skipped if absent (see the
--- test). WP4 replaces this with a bundled resource.
+-- | Default EXPRESS schema /name/ used when an @.ifc@ file has no @FILE_SCHEMA@
+-- header (handoff WP4: "fall back to IFC4X3_ADD2").
+defaultSchemaName :: Text
+defaultSchemaName = "IFC4X3_ADD2"
+
+-- | Default EXPRESS schema /path/ on the author's machine (handoff §6). Used only
+-- by 'ifc2PContext', the path-based entry point kept for the WP3 test. The
+-- compiler dispatch (WP4) instead bundles the schemas statically and calls
+-- 'ifc2PContextFromTexts'.
 defaultSchemaPath :: FilePath
 defaultSchemaPath =
   "/Users/stef/Library/CloudStorage/GoogleDrive-stefjoosten1@gmail.com/"
     <> "Mijn Drive/cloudDrive/Rijksvastgoedbedrijf/BIM/bronnen/ifc-schemas/IFC4.3/IFC4X3_ADD2.exp"
 
 -- | Read an @.ifc@ file and produce a 'P_Context', using 'defaultSchemaPath' for
--- the EXPRESS schema. Analogous to @archi2PContext@.
+-- the EXPRESS schema. Analogous to @archi2PContext@. Kept for the WP3 test; the
+-- compiler dispatch uses 'ifc2PContextFromTexts' with a bundled schema instead.
 ifc2PContext :: FilePath -> RIO env (Guarded P_Context)
 ifc2PContext = ifc2PContextWithSchema defaultSchemaPath
 
--- | Like 'ifc2PContext', but with an explicit EXPRESS schema path. WP4 chooses the
--- path from the @FILE_SCHEMA@ header and a bundled resource; WP3 keeps it explicit.
+-- | Like 'ifc2PContext', but with an explicit EXPRESS schema path.
 ifc2PContextWithSchema :: FilePath -> FilePath -> RIO env (Guarded P_Context)
 ifc2PContextWithSchema schemaPath ifcPath = do
   eInsts <- parseStepFile ifcPath
@@ -95,6 +104,43 @@ ifc2PContextWithSchema schemaPath ifcPath = do
     mkErr fp msg =
       Errors . pure $
         CTXE (Origin ("While reading " <> T.pack fp)) msg
+
+-- | Pure binder over in-memory texts: the @.ifc@ content and the EXPRESS schema
+-- content. This is the entry point the compiler dispatch (WP4) uses, supplying the
+-- schema from a statically bundled resource. Keeping it pure (no 'RIO') keeps the
+-- module testable and free of I/O assumptions.
+ifc2PContextFromTexts ::
+  -- | a label for error origins (e.g. the @.ifc@ file path)
+  Text ->
+  -- | the @.ifc@ (STEP/Part-21) file content
+  Text ->
+  -- | the EXPRESS (@.exp@) schema content
+  Text ->
+  Guarded P_Context
+ifc2PContextFromTexts label ifcText schemaText =
+  case (parseStepText ifcText, parseExpress (T.unpack label) (T.unpack schemaText)) of
+    (Left errs, _) -> mkErr (T.unlines errs)
+    (_, Left err) -> mkErr (T.pack err)
+    (Right insts, Right schema) -> mkIfcContext schema insts
+  where
+    mkErr msg = Errors . pure $ CTXE (Origin ("While reading " <> label)) msg
+
+-- | Extract the schema name from an @.ifc@ file's @FILE_SCHEMA(('NAME'))@ header.
+-- Returns 'Nothing' when no such header is present, so the caller can fall back to
+-- 'defaultSchemaName'. Matches the first single-quoted token after @FILE_SCHEMA@.
+fileSchemaName :: Text -> Maybe Text
+fileSchemaName txt =
+  let afterKw = snd (DT.breakOn "FILE_SCHEMA" headPart)
+   in if T.null afterKw
+        then Nothing
+        else
+          let afterQuote = T.drop 1 (snd (T.break (== '\'') afterKw))
+              nm = T.takeWhile (/= '\'') afterQuote
+           in if T.null nm then Nothing else Just nm
+  where
+    -- Only look in the header part (before the DATA section) to stay cheap and
+    -- avoid matching a stray occurrence inside the data.
+    headPart = fst (DT.breakOn "DATA" txt)
 
 --------------------------------------------------------------------------------
 -- Binding: positional args -> named attribute pairs
