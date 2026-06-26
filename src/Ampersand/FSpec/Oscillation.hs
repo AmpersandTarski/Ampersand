@@ -110,9 +110,6 @@ oscillationWarnings fSpec =
   [ mkOscillationWarning
       (rrfps (NE.head comp))
       (map fullName (NE.toList comp))
-      [ neFrom e <> "'s repair deletes or merges relation " <> neShared e <> ", which is read by " <> neTo e
-        | e <- negEdgesOf comp
-      ]
     | comp <- riskyComponents
   ]
   where
@@ -215,8 +212,8 @@ oscillationWarnings fSpec =
         [ rnm
           | rnm <- Set.toList written,
             Just insBounds <- [traverse (solveBound Pos rnm . ruleAt) [i | i <- is, hasWrite Pos rnm i]],
-            Just delBounds <- [traverse (solveBound Neg rnm . ruleAt) [i | i <- is, hasWrite Neg rnm i]],
             not (null insBounds),
+            Just delBounds <- [traverse (solveBound Neg rnm . ruleAt) [i | i <- is, hasWrite Neg rnm i]],
             not (null delBounds),
             all boundOk (insBounds <> delBounds),
             and [subExpr ins del | ins <- insBounds, del <- delBounds]

@@ -985,6 +985,21 @@ transformersPrototypeContext fSpec =
         "PrototypeContext.NavMenuItem",
         [] -- TODO
       ),
+      ( "PrototypeContext.isSubItemOfPlus", -- maintained at runtime (Warshall), empty at generation
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.NavMenuItem",
+        []
+      ),
+      ( "PrototypeContext.isSubItemOfStar", -- maintained at runtime, empty at generation
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.NavMenuItem",
+        []
+      ),
+      ( "PrototypeContext.isSubItemOfCopy", -- scratch for TransitiveClosure, empty at generation
+        "PrototypeContext.NavMenuItem",
+        "PrototypeContext.NavMenuItem",
+        []
+      ),
       ( "PrototypeContext.isVisible",
         "PrototypeContext.NavMenuItem",
         "PrototypeContext.NavMenuItem",
