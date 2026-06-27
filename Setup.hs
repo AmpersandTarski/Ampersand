@@ -158,6 +158,8 @@ data FileKind
     FormalAmpersand
   | -- | The adl script files for the prototype context
     PrototypeContext
+  | -- | The EXPRESS (.exp) schema files used by the IFC reader (IFC2x3, IFC4, IFC4.3)
+    IFCSchemas
   deriving (Show, Eq, Bounded, Enum)
 
 generateStaticFileModule :: IO ()
@@ -204,7 +206,8 @@ generateStaticFileModule = do
       pandocTemplatesFiles <- readStaticFiles PandocTemplates "." -- templates for several PANDOC output types
       formalAmpersandFiles <- readStaticFiles FormalAmpersand "." -- meta information about Ampersand
       systemContextFiles <- readStaticFiles PrototypeContext "." -- Context for prototypes that Ampersand generates.
-      return $ mkStaticFileModule $ pandocTemplatesFiles <> formalAmpersandFiles <> systemContextFiles
+      ifcSchemaFiles <- readStaticFiles IFCSchemas "." -- EXPRESS (.exp) schemas for the IFC reader.
+      return $ mkStaticFileModule $ pandocTemplatesFiles <> formalAmpersandFiles <> systemContextFiles <> ifcSchemaFiles
 
     readStaticFiles :: FileKind -> FilePath -> IO [(FileKind, Entry)]
     readStaticFiles fkind fileOrDirPth = do
@@ -236,6 +239,7 @@ generateStaticFileModule = do
           PandocTemplates -> "outputTemplates"
           FormalAmpersand -> "AmpersandData/FormalAmpersand"
           PrototypeContext -> "AmpersandData/PrototypeContext"
+          IFCSchemas -> "AmpersandData/IFCSchemas"
 
     mkStaticFileModule :: [(FileKind, Entry)] -> Text
     mkStaticFileModule xs =
@@ -271,7 +275,7 @@ generateStaticFileModule = do
         "import qualified RIO.ByteString.Lazy as BL",
         "import qualified RIO.Text as T",
         "",
-        "data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext deriving (Show, Eq)",
+        "data FileKind = PandocTemplates | FormalAmpersand | PrototypeContext | IFCSchemas deriving (Show, Eq)",
         "data StaticFile = SF FileKind Archive",
         "",
         "getStaticFileContent :: FileKind -> FilePath -> Maybe B.ByteString",
