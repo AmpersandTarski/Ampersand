@@ -80,9 +80,12 @@ warnUnusedConcepts ctx = addWarnings warnings $ pure ()
     -- A concept counts as "used" when it occurs in a relation OR in a
     -- generalisation (CLASSIFY ... ISA / IS). Concepts that only structure the
     -- type hierarchy are intentional, so they must not trigger an unused-concept
-    -- warning.
+    -- warning. Generalisations live both at context level (ctxgs) and inside
+    -- patterns (ptgns), so both are taken into account.
     usedConcepts :: A_Concepts
-    usedConcepts = concs (relsDefdIn ctx) `Set.union` concs (ctxgs ctx)
+    usedConcepts =
+      concs (relsDefdIn ctx)
+        `Set.union` concs (ctxgs ctx <> concatMap ptgns (ctxpats ctx))
 
 checkInterfaceCycles :: A_Context -> Guarded ()
 checkInterfaceCycles ctx =
