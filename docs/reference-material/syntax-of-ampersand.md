@@ -670,6 +670,17 @@ where:
 - A `<segment>` contributes one piece of the presentation: either the target atoms of a `<term>` \(typically a `name`/`label` relation\), or a literal `TXT` string. Segments are concatenated in order.
 - `DEFAULT` marks the view as the one used automatically wherever atoms of `<Concept>` appear without an explicitly named view. The compact notation is `DEFAULT` implicitly.
 - `HTML TEMPLATE <filename>` renders the atom through a [custom VIEW template](../../prototype/guides/creating-custom-view-templates) instead of plain text.
+- `ENDVIEW` closes the extended notation. It is **required** whenever you use the extended notation \(i.e. whenever you write `DEFAULT`, the `{ … }` segment block, or `HTML TEMPLATE`\). The compact notation has no `ENDVIEW`.
+
+:::caution Forgetting `ENDVIEW` gives a misleading error
+The parser tries the extended notation first and silently falls back to the compact \(legacy\) notation if it does not match. So when you use `DEFAULT` or `{ … }` but forget the closing `ENDVIEW`, the extended notation fails to parse and the error is reported against the *legacy* grammar — which expects `(` and does not know `DEFAULT`. You then get a confusing message such as:
+
+```text
+unexpected keyword "DEFAULT", expecting symbol '('
+```
+
+even though `DEFAULT` is perfectly valid. The cure is to close the view with `ENDVIEW` \(and to wrap the segments in `{ … }`, not `( … )`\). For example, `VIEW Account : Account DEFAULT { uid : accUserid }` fails this way, whereas `VIEW Account : Account DEFAULT { uid : accUserid } ENDVIEW` is accepted.
+:::
 
 #### Semantics
 
