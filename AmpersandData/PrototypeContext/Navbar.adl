@@ -38,23 +38,26 @@ CONTEXT PrototypeContext IN ENGLISH
     RELATION PrototypeContext.navItemRoles[PrototypeContext.NavMenuItem*PrototypeContext.Role]
         MEANING "A navbar item is accessible for a role"
 
-    -- Add/remove menu items based on interface roles
-    ROLE ExecEngine MAINTAINS PrototypeContext.AddNavItemRolesInterfaces
-    RULE PrototypeContext.AddNavItemRolesInterfaces LABEL "Add navItemRoles for interfaces" : PrototypeContext.ifc;PrototypeContext.ifcRoles |- PrototypeContext.navItemRoles
-    VIOLATION (TXT "{EX}InsPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
+    -- navItemRoles is fully derived: a menu item is accessible for a role iff that
+    -- item, or any item below it in the isSubItemOf tree, has an interface the role
+    -- may use (ifc;ifcRoles). We materialise the reflexive-transitive closure of
+    -- isSubItemOf with the Warshall ExecEngine function (monotone, so it converges)
+    -- and assign navItemRoles from it. This replaces four insert/delete rules that
+    -- maintained navItemRoles recursively (navItemRoles defined from navItemRoles),
+    -- a non-monotone cycle that could oscillate ("Maximum reruns exceeded").
+    RELATION PrototypeContext.isSubItemOfPlus[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem]
+        MEANING "Transitive closure of isSubItemOf."
+    RELATION PrototypeContext.isSubItemOfStar[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem]
+        MEANING "Reflexive-transitive closure of isSubItemOf."
+    RELATION PrototypeContext.isSubItemOfCopy[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem]
+        MEANING "Scratch relation for the TransitiveClosure ExecEngine function."
 
-    ROLE ExecEngine MAINTAINS PrototypeContext.RemoveNavItemRolesInterfaces
-    RULE PrototypeContext.RemoveNavItemRolesInterfaces LABEL "Remove navItemRoles for interfaces" : (I /\ PrototypeContext.ifc;PrototypeContext.ifc~);PrototypeContext.navItemRoles |- PrototypeContext.ifc;PrototypeContext.ifcRoles
-    VIOLATION (TXT "{EX}DelPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
+    ROLE ExecEngine MAINTAINS PrototypeContext.ComputeIsSubItemOfClosure
+    RULE PrototypeContext.ComputeIsSubItemOfClosure LABEL "Compute transitive closure of isSubItemOf" : PrototypeContext.isSubItemOf = PrototypeContext.isSubItemOfCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;PrototypeContext.isSubItemOf;PrototypeContext.NavMenuItem;PrototypeContext.isSubItemOfCopy;PrototypeContext.isSubItemOfPlus")
 
-    -- Add/remove parent menu items if needed
-    ROLE ExecEngine MAINTAINS PrototypeContext.AddNavItemRolesParentItems
-    RULE PrototypeContext.AddNavItemRolesParentItems LABEL "Add navItemRoles for parent items" : PrototypeContext.isSubItemOf~;PrototypeContext.navItemRoles |- PrototypeContext.navItemRoles
-    VIOLATION (TXT "{EX}InsPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
-
-    ROLE ExecEngine MAINTAINS PrototypeContext.RemoveNavItemRolesParentItems
-    RULE PrototypeContext.RemoveNavItemRolesParentItems LABEL "Remove navItemRoles for parent items" : (I /\ PrototypeContext.isSubItemOf~;PrototypeContext.isSubItemOf);PrototypeContext.navItemRoles |- PrototypeContext.isSubItemOf~;PrototypeContext.navItemRoles
-    VIOLATION (TXT "{EX}DelPair;PrototypeContext.navItemRoles;PrototypeContext.NavMenuItem;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
+    ENFORCE PrototypeContext.isSubItemOfStar := PrototypeContext.isSubItemOfPlus \/ I
+    ENFORCE PrototypeContext.navItemRoles := PrototypeContext.isSubItemOfStar~;PrototypeContext.ifc;PrototypeContext.ifcRoles
     
     --[NAV MENUS]----------------------------------------------------------------------------------
     CONCEPT PrototypeContext.NavMenu ""

@@ -110,9 +110,6 @@ oscillationWarnings fSpec =
   [ mkOscillationWarning
       (rrfps (NE.head comp))
       (map fullName (NE.toList comp))
-      [ neFrom e <> "'s repair deletes or merges " <> neShared e <> ", which is read by " <> neTo e
-        | e <- negEdgesOf comp
-      ]
     | comp <- riskyComponents
   ]
   where
@@ -160,11 +157,77 @@ oscillationWarnings fSpec =
         sccToRules (G.CyclicSCC is) = NE.nonEmpty [r | (i, r) <- indexed, i `elem` is]
         sccToRules (G.AcyclicSCC _) = Nothing -- no cycle ⇒ guaranteed to terminate
 
-    -- A component is risky iff it contains at least one internal negative edge.
+    -- A component is risky iff it can grow the population (otherwise it only
+    -- ever shrinks and terminates by well-founded descent — the delete-only dual
+    -- of Knaster–Tarski) AND it still has an internal negative edge once the
+    -- provably-convergent (functionally maintained) relations are pruned.
     riskyComponents :: [NE.NonEmpty Rule]
-    riskyComponents = [comp | comp <- components, not (null (negEdgesOf comp))]
+    riskyComponents = [comp | comp <- components, isRisky comp]
 
-    -- Internal negative edges of a component, rendered for the report.
+    isRisky :: NE.NonEmpty Rule -> Bool
+    isRisky comp = hasPositiveWrite comp && not (null (negEdgesOf comp))
+
+    -- Rule indices that make up a component.
+    idxInComp :: NE.NonEmpty Rule -> [Int]
+    idxInComp comp = [i | (i, r) <- indexed, r `elem` comp]
+
+    writesOf :: Int -> [Write]
+    writesOf i = fromMaybe [] (lookup i writesByIdx)
+
+    -- All relation names written (any sign) by the rules of a component.
+    writtenRelsOf :: NE.NonEmpty Rule -> Set.Set Text
+    writtenRelsOf comp =
+      Set.fromList [nm | i <- idxInComp comp, WriteRel _ nm _ _ <- writesOf i]
+
+    -- Does any rule in the component perform a monotone (insert/grow) write? A
+    -- component without one only deletes/merges, so the population strictly
+    -- decreases and the repair loop always terminates — it is never a risk.
+    hasPositiveWrite :: NE.NonEmpty Rule -> Bool
+    hasPositiveWrite comp =
+      not (null [() | i <- idxInComp comp, WriteRel Pos _ _ _ <- writesOf i])
+
+    -- Relations the component maintains *functionally*: written by at least one
+    -- inserter and one deleter such that there is a relation-free, component-
+    -- invariant set @D@ with every inserter's insert-region inside @D@ and every
+    -- deleter's allow-region containing @D@. Then no @R@-pair is ever both
+    -- inserted and deleted (inserts land in @D@, deletes land outside @D@), so
+    -- @R@ converges by a per-pair argument and its triggering edges are pruned.
+    --
+    -- We do not materialise @D@; we check the equivalent pairwise obligation
+    -- @insertRegion ⊆ allowRegion@ for every (inserter, deleter) pair, with a
+    -- sound (incomplete) syntactic @subExpr@. Equality of bounds is the special
+    -- case @D = insertRegion = allowRegion@ (ENFORCE :=, Determine/Remove,
+    -- complementary-guard toggles); the @⊆@ test additionally certifies bounded
+    -- maintenance such as the Sequence first/last vs. emptiness rules, where a
+    -- first/last item is only ever set for a non-empty sequence — a subset of the
+    -- region the emptiness rule allows.
+    --
+    -- Every bound must be relation-free in @R@ and component-invariant (no
+    -- component rule writes a relation occurring in it). That invariance is what
+    -- keeps genuine mutual recursion (a relation defined from another relation the
+    -- same component rewrites) correctly flagged — local stratification.
+    benignRelsOf :: NE.NonEmpty Rule -> Set.Set Text
+    benignRelsOf comp =
+      Set.fromList
+        [ rnm
+          | rnm <- Set.toList written,
+            Just insBounds <- [traverse (solveBound Pos rnm . ruleAt) [i | i <- is, hasWrite Pos rnm i]],
+            not (null insBounds),
+            Just delBounds <- [traverse (solveBound Neg rnm . ruleAt) [i | i <- is, hasWrite Neg rnm i]],
+            not (null delBounds),
+            all boundOk (insBounds <> delBounds),
+            and [subExpr ins del | ins <- insBounds, del <- delBounds]
+        ]
+      where
+        is = idxInComp comp
+        written = writtenRelsOf comp
+        hasWrite sgn nm i = not (null [() | WriteRel s n _ _ <- writesOf i, s == sgn, n == nm])
+        -- a bound is usable only if it is relation-free in nothing the component
+        -- rewrites (so it stays fixed while the cycle repairs)
+        boundOk b = Set.null (relNames b `Set.intersection` written)
+
+    -- Internal negative edges of a component, with the convergent (functionally
+    -- maintained) relations pruned, rendered for the report.
     negEdgesOf :: NE.NonEmpty Rule -> [NegEdge]
     negEdgesOf comp =
       L.nubBy
@@ -172,9 +235,11 @@ oscillationWarnings fSpec =
         [ NegEdge (fullName (ruleAt i)) (fullName (ruleAt j)) shared
           | (i, j, Neg, shared) <- edges,
             ruleAt i `elem` comp,
-            ruleAt j `elem` comp
+            ruleAt j `elem` comp,
+            shared `Set.notMember` benign
         ]
       where
+        benign = benignRelsOf comp
         sameEdge a b = (neFrom a, neTo a, neShared a) == (neFrom b, neTo b, neShared b)
 
     ruleAt :: Int -> Rule
@@ -188,7 +253,7 @@ oscillationWarnings fSpec =
 --   edge sign (= the write's sign) and a description for every match.
 triggerOf :: Write -> Map.Map Relation (Set.Set Sign) -> [(Sign, Text)]
 triggerOf (WriteRel sgn nm mSrc mTgt) pol =
-  [ (sgn, "relation " <> nm)
+  [ (sgn, nm)
     | (rel, signs) <- Map.toList pol,
       matchesRel rel,
       sgn `Set.member` signs
@@ -325,3 +390,102 @@ relationPolarities expr =
       EMp1 {} -> []
       where
         bothSigns x = go Pos x <> go Neg x
+
+-- * Convergence certificate (functional maintenance)
+
+-- | Recursively drop every @EBrk@, so two expressions that differ only in
+--   bracketing compare equal.
+unBrkDeep :: Expression -> Expression
+unBrkDeep e = case e of
+  EBrk e' -> unBrkDeep e'
+  EEqu (a, b) -> EEqu (unBrkDeep a, unBrkDeep b)
+  EInc (a, b) -> EInc (unBrkDeep a, unBrkDeep b)
+  EIsc (a, b) -> EIsc (unBrkDeep a, unBrkDeep b)
+  EUni (a, b) -> EUni (unBrkDeep a, unBrkDeep b)
+  EDif (a, b) -> EDif (unBrkDeep a, unBrkDeep b)
+  ELrs (a, b) -> ELrs (unBrkDeep a, unBrkDeep b)
+  ERrs (a, b) -> ERrs (unBrkDeep a, unBrkDeep b)
+  EDia (a, b) -> EDia (unBrkDeep a, unBrkDeep b)
+  ECps (a, b) -> ECps (unBrkDeep a, unBrkDeep b)
+  ERad (a, b) -> ERad (unBrkDeep a, unBrkDeep b)
+  EPrd (a, b) -> EPrd (unBrkDeep a, unBrkDeep b)
+  EKl0 e' -> EKl0 (unBrkDeep e')
+  EKl1 e' -> EKl1 (unBrkDeep e')
+  EFlp e' -> EFlp (unBrkDeep e')
+  ECpl e' -> ECpl (unBrkDeep e')
+  EDcD {} -> e
+  EDcI {} -> e
+  EBin {} -> e
+  EDcV {} -> e
+  EMp1 {} -> e
+
+-- | The names of the relations occurring in an expression.
+relNames :: Expression -> Set.Set Text
+relNames = Set.map fullName . bindedRelationsIn
+
+-- | Solve a writer of relation @rnm@ for a relation-free bound, or 'Nothing' when
+--   the rule is not of a shape we can certify. For an inserter the bound is the
+--   *insert-region* (where it may add @rnm@-pairs); for a deleter it is the
+--   *allow-region* (where @rnm@-pairs may remain — the deleter only removes pairs
+--   outside it). The caller certifies @rnm@ when every insert-region is contained
+--   in every allow-region (so inserts and deletes never meet on a pair).
+--
+--     * Inserter @a |- rnm@   adds only within @a@                  ⇒ insert-region @a@.
+--     * Inserter @a |- rnm~@  adds only within @a~@                 ⇒ insert-region @a~@.
+--     * Deleter  @a |- D@ (any antecedent, @D@ relation-free) removes
+--       only within @a - D ⊆ ¬D@, whatever the guard @a@            ⇒ allow-region @D = c@.
+--     * Deleter in the disjointness form @a |- I - rnm@ resp. @a |- -rnm@
+--       removes only outside @I - a@ resp. @-a@                     ⇒ allow-region @I - a@ / @-a@.
+solveBound :: Sign -> Text -> Rule -> Maybe Expression
+solveBound sgn rnm rule =
+  case unBrkDeep (formalExpression rule) of
+    EInc (a, c) -> case sgn of
+      Pos
+        -- inserter @a |- rnm@   ⇒  inserts ⊆ a
+        | isRel c -> Just a
+        -- inserter @a |- rnm~@  ⇒  inserts(rnm) ⊆ a~
+        | EFlp r' <- c, isRel r' -> Just (EFlp a)
+        | otherwise -> Nothing
+      Neg
+        -- deleter @a |- D@ with D relation-free  ⇒  rnm ⊆ D (guard a irrelevant)
+        | rnm `Set.notMember` relNames c -> Just c
+        -- deleter @a |- I - rnm@  ⇒  rnm ⊆ I - a
+        | EDif (i@(EDcI _), r') <- c, isRel r' -> Just (EDif (i, a))
+        -- deleter @a |- -rnm@  ⇒  rnm ⊆ -a
+        | ECpl r' <- c, isRel r' -> Just (ECpl a)
+        | otherwise -> Nothing
+    _ -> Nothing
+  where
+    isRel e = case e of
+      EDcD d -> fullName d == rnm
+      _ -> False
+
+-- | A sound, deliberately incomplete syntactic test for relation-algebra
+--   inclusion: @subExpr a b@ returns 'True' only when @a ⊆ b@ holds on every
+--   population. It is used to certify that an insert-region sits inside a
+--   deleter's allow-region. Each rule is a monotonicity lemma; the test never
+--   claims an inclusion it cannot justify (false stays the safe default).
+subExpr :: Expression -> Expression -> Bool
+subExpr lhs rhs = go (unBrkDeep lhs) (unBrkDeep rhs)
+  where
+    go a b
+      | a == b = True -- reflexivity
+      | otherwise = shrinkLeft a b || growRight a b || structural a b
+    -- the left side can only get smaller
+    shrinkLeft a b = case a of
+      EDif (a1, _) -> go a1 b -- a1 - x ⊆ b   if a1 ⊆ b
+      EIsc (a1, a2) -> go a1 b || go a2 b -- a1 /\ a2 ⊆ b if either side is
+      EUni (a1, a2) -> go a1 b && go a2 b -- a1 \/ a2 ⊆ b if both sides are
+      _ -> False
+    -- the right side can only get bigger
+    growRight a b = case b of
+      EUni (b1, b2) -> go a b1 || go a b2 -- a ⊆ b1 \/ b2 if a ⊆ either
+      ECps (b1, EDcV _) -> go a b1 -- a ⊆ b1;V  since b1 ⊆ b1;V
+      ECps (EDcV _, b1) -> go a b1 -- a ⊆ V;b1  since b1 ⊆ V;b1
+      EKl0 b1 -> go a b1 -- a ⊆ b1*   since b1 ⊆ b1*
+      EKl1 b1 -> go a b1 -- a ⊆ b1+   since b1 ⊆ b1+
+      _ -> False
+    -- congruences that preserve inclusion
+    structural a b = case (a, b) of
+      (EFlp a1, EFlp b1) -> go a1 b1 -- a1~ ⊆ b1~  if a1 ⊆ b1
+      _ -> False

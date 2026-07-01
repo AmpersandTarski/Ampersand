@@ -1,0 +1,15 @@
+CONTEXT DelAtomCleanup IN ENGLISH
+-- Negative test: orphan cleanup with DelAtom (the SURversion pattern). The rule
+-- demands every Version to have a Document; a violating (orphan) Version is
+-- removed with DelAtom. Deleting an atom is a negative write and the rule reads
+-- `versionOf` (which the delete shrinks), so it is a non-monotone self-cycle.
+-- But it only ever deletes: the population strictly shrinks and the loop
+-- terminates by well-founded descent. This MUST stay silent (§6.5 refinement a).
+
+RELATION versionOf[Version*Document] [UNI]
+
+ROLE ExecEngine MAINTAINS "no orphan version"
+RULE "no orphan version" : I[Version] |- versionOf;versionOf~
+VIOLATION ( TXT "{EX} DelAtom;Version;", SRC I )
+
+ENDCONTEXT

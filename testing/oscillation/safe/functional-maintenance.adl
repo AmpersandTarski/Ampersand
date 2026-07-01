@@ -1,0 +1,36 @@
+CONTEXT FunctionalMaintenance IN ENGLISH
+-- Negative test for the Stage-1 oscillation analysis (convergence certificate).
+-- Two insert/delete pairs that each maintain a relation as R := D for a
+-- definition D that the cycle never rewrites. Although each pair forms a
+-- non-monotone cycle (one rule inserts R, the other deletes R), it converges:
+-- the inserter only adds R-pairs inside D, the deleter only removes R-pairs
+-- outside D, so no pair is ever both added and removed. These MUST NOT be
+-- flagged (they are the ENFORCE-style "Determine/Remove" pattern and the
+-- complementary-guard toggle that pervade SIAM/RAP).
+
+--[Functional maintenance: sessionUserid := sessionAccount;accUserid]--
+RELATION sessionAccount[Session*Account] [UNI]
+RELATION accUserid[Account*Userid] [UNI]
+RELATION sessionUserid[Session*Userid] [UNI]
+
+ROLE ExecEngine MAINTAINS "Determine the Userid"
+RULE "Determine the Userid" : sessionAccount;accUserid |- sessionUserid
+VIOLATION ( TXT "{EX} InsPair;sessionUserid;Session;", SRC I, TXT ";Userid;", TGT I )
+
+ROLE ExecEngine MAINTAINS "Remove the Userid"
+RULE "Remove the Userid" : sessionUserid |- sessionAccount;accUserid
+VIOLATION ( TXT "{EX} DelPair;sessionUserid;Session;", SRC I, TXT ";Userid;", TGT I )
+
+--[Complementary-guard toggle: visible := I - invisible]--
+RELATION invisible[Item*Item] [PROP]
+RELATION visible[Item*Item] [PROP]
+
+ROLE ExecEngine MAINTAINS "Show when not invisible"
+RULE "Show when not invisible" : I[Item] - invisible |- visible
+VIOLATION ( TXT "{EX} InsPair;visible;Item;", SRC I, TXT ";Item;", TGT I )
+
+ROLE ExecEngine MAINTAINS "Hide when invisible"
+RULE "Hide when invisible" : invisible |- I[Item] - visible
+VIOLATION ( TXT "{EX} DelPair;visible;Item;", SRC I, TXT ";Item;", TGT I )
+
+ENDCONTEXT

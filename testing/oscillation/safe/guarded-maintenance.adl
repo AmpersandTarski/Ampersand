@@ -1,0 +1,24 @@
+CONTEXT GuardedMaintenance IN ENGLISH
+-- Negative test: functional maintenance whose deleter carries a guard (the
+-- SIAM `sessionPersonRef` pattern). `determine` keeps `sRef ⊇ sAccount;aRef`;
+-- `clear` removes an `sRef` pair only where the session is a user AND the pair
+-- is no longer derivable (`isUser;sRef |- sAccount;aRef`). The deleter's
+-- antecedent mentions `sRef`, but its *allowed region* is still `sAccount;aRef`,
+-- so it only ever removes pairs outside that definition — the guard is
+-- irrelevant to convergence. This MUST stay silent (§6.5 refinement b), and it
+-- checks that the certificate tolerates a composition-guarded deleter.
+
+RELATION sAccount[Session*Account] [UNI]
+RELATION aRef[Account*Ref] [UNI]
+RELATION sRef[Session*Ref] [UNI]
+RELATION isUser[Session*Session] [PROP]
+
+ROLE ExecEngine MAINTAINS "determine sRef"
+RULE "determine sRef" : sAccount;aRef |- sRef
+VIOLATION ( TXT "{EX} InsPair;sRef;Session;", SRC I, TXT ";Ref;", TGT I )
+
+ROLE ExecEngine MAINTAINS "clear sRef"
+RULE "clear sRef" : isUser;sRef |- sAccount;aRef
+VIOLATION ( TXT "{EX} DelPair;sRef;Session;", SRC I, TXT ";Ref;", TGT I )
+
+ENDCONTEXT

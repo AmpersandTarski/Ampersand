@@ -1,0 +1,22 @@
+CONTEXT DeleteOnly IN ENGLISH
+-- Negative test for the Stage-1 oscillation analysis (delete-only refinement).
+-- Two rules form a triggering cycle through negative (delete) edges: deleting
+-- from `p` grows the violation of the rule on `q` and vice versa. But neither
+-- rule ever inserts, so the population strictly shrinks and the repair loop
+-- terminates by well-founded descent (the delete-only dual of Knaster-Tarski).
+-- This MUST NOT be flagged, even though every edge in the cycle is negative.
+
+RELATION p[A*A]
+RELATION q[A*A]
+
+ROLE ExecEngine MAINTAINS "p needs q"
+RULE "p needs q" : p |- q
+VIOLATION ( TXT "{EX} DelPair;p;A;", SRC I, TXT ";A;", TGT I )
+
+ROLE ExecEngine MAINTAINS "q needs p"
+RULE "q needs p" : q |- p
+VIOLATION ( TXT "{EX} DelPair;q;A;", SRC I, TXT ";A;", TGT I )
+
+POPULATION p CONTAINS [ ("a1","a2") ]
+POPULATION q CONTAINS [ ("a2","a3") ]
+ENDCONTEXT

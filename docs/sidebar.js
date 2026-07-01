@@ -79,6 +79,11 @@ module.exports = {
             id: 'ampersand/reference-material/architecture-of-an-ampersand-application'
         },
         {
+            label: 'From rules to running code',
+            type: 'doc',
+            id: 'ampersand/reference-material/from-rules-to-running-code'
+        },
+        {
             label: 'Preprocessor',
             type: 'doc',
             id: 'ampersand/reference-material/the-preprocessor'

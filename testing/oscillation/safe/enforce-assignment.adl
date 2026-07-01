@@ -1,0 +1,15 @@
+CONTEXT EnforceAssignment IN ENGLISH
+-- Negative test: a real `ENFORCE r := expr` statement. The compiler lowers it to
+-- an insert rule (`expr |- r`) and a delete rule (`r |- expr`) maintained by the
+-- ExecEngine — a non-monotone cycle on `r`. But it computes `r := expr` for an
+-- `expr` the cycle never rewrites, so it converges. This MUST stay silent, which
+-- also checks that the certificate fires for the ENFORCE syntax itself, not only
+-- for the hand-written Determine/Remove idiom.
+
+RELATION worksFor[Person*Company] [UNI]
+RELATION locatedIn[Company*City] [UNI]
+RELATION basedIn[Person*City] [UNI]
+
+ENFORCE basedIn := worksFor;locatedIn
+
+ENDCONTEXT

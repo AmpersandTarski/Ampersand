@@ -150,6 +150,9 @@ Use box terms that are non-empty only under the desired condition, combined with
 **What does each letter in a CRUD annotation like `cRud` mean?**
 `C` is create, `R` is read, `U` is update, `D` is delete — uppercase allows the operation and lowercase denies it. This compact notation gives you fine control over what users can do. [Learn more →](https://ampersandtarski.github.io/prototype/reference-material/frontend-components)
 
+**Why does my prototype show cryptic codes instead of names, and how do I fix it?**
+Without a VIEW, the prototype displays each atom's internal identifier (an "ugly id"); add a default view such as `VIEW Concept : Concept(name)` and it shows the readable name instead. One line removes those codes everywhere the concept appears. [Learn more →](../reference-material/syntax-of-ampersand#the-view-statement)
+
 ### Installing & running your model
 
 **How do I install Ampersand on my own computer?**
