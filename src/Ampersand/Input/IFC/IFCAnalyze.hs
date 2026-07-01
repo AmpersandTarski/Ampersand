@@ -102,8 +102,9 @@ ifc2PContextWithSchema schemaPath ifcPath = do
     (Right insts, Right schema) -> mkIfcContext schema insts
   where
     mkErr fp msg =
-      Errors . pure $
-        CTXE (Origin ("While reading " <> T.pack fp)) msg
+      Errors
+        . pure
+        $ CTXE (Origin ("While reading " <> T.pack fp)) msg
 
 -- | Pure binder over in-memory texts: the @.ifc@ content and the EXPRESS schema
 -- content. This is the entry point the compiler dispatch (WP4) uses, supplying the
@@ -117,13 +118,13 @@ ifc2PContextFromTexts ::
   -- | the EXPRESS (@.exp@) schema content
   Text ->
   Guarded P_Context
-ifc2PContextFromTexts label ifcText schemaText =
-  case (parseStepText ifcText, parseExpress (T.unpack label) (T.unpack schemaText)) of
+ifc2PContextFromTexts srcName ifcText schemaText =
+  case (parseStepText ifcText, parseExpress (T.unpack srcName) (T.unpack schemaText)) of
     (Left errs, _) -> mkErr (T.unlines errs)
     (_, Left err) -> mkErr (T.pack err)
     (Right insts, Right schema) -> mkIfcContext schema insts
   where
-    mkErr msg = Errors . pure $ CTXE (Origin ("While reading " <> label)) msg
+    mkErr msg = Errors . pure $ CTXE (Origin ("While reading " <> srcName)) msg
 
 -- | Extract the schema name from an @.ifc@ file's @FILE_SCHEMA(('NAME'))@ header.
 -- Returns 'Nothing' when no such header is present, so the caller can fall back to
@@ -185,7 +186,7 @@ bindInstance schema inst =
             | otherwise = [warnArity nArgs nAttrs]
           bounds =
             [ Bound owner a (siId inst) v
-              | ((owner, a), v) <- zip attrs (siArgs inst)
+            | ((owner, a), v) <- zip attrs (siArgs inst)
             ]
        in (bounds, arityWarn)
   where
@@ -272,31 +273,31 @@ mkIfcContext schema insts =
     -- Used entity types (instances whose type is known) -> their atoms.
     knownInsts =
       [ (pascalKey, siId i)
-        | i <- insts,
-          Just pascalKey <- [Map.lookup (T.toUpper (siType i)) upperIdx]
+      | i <- insts,
+        Just pascalKey <- [Map.lookup (T.toUpper (siType i)) upperIdx]
       ]
     upperIdx = schemaUpperIndex schema
 
     typeAtoms :: Map Text [Text]
     typeAtoms =
-      Map.map (L.nub . reverse) $
-        Map.fromListWith (<>) [(t, [a]) | (t, a) <- knownInsts]
+      Map.map (L.nub . reverse)
+        $ Map.fromListWith (<>) [(t, [a]) | (t, a) <- knownInsts]
 
     -- 2. Relation pairs, deduplicated (relations are sets).
     relPairs :: Map RelKey [(Text, Text)]
     relPairs =
-      Map.map (L.nub . reverse) $
-        Map.fromListWith (<>) $
-          [ (key, [(bId b, tgtAtom)])
-            | b <- bounds,
-              let key =
-                    RelKey
-                      { rkName = atName (bAttr b),
-                        rkOwner = bOwner b,
-                        rkTarget = targetConcept (atTarget (bAttr b))
-                      },
-              elemV <- flattenValue (bVal b),
-              Just tgtAtom <- [atomText elemV]
+      Map.map (L.nub . reverse)
+        $ Map.fromListWith (<>)
+        $ [ (key, [(bId b, tgtAtom)])
+          | b <- bounds,
+            let key =
+                  RelKey
+                    { rkName = atName (bAttr b),
+                      rkOwner = bOwner b,
+                      rkTarget = targetConcept (atTarget (bAttr b))
+                    },
+            elemV <- flattenValue (bVal b),
+            Just tgtAtom <- [atomText elemV]
           ]
 
     usedRelKeys = Map.keys relPairs
@@ -308,31 +309,17 @@ mkIfcContext schema insts =
     -- close over supertype chains
     sliceTypes = closeSupertypes withOwners
 
-    -- SELECTs that occur as a relation target (kept as concepts, NOT as ISA).
-    usedSelects =
-      Set.fromList
-        [ rkTarget k
-          | k <- usedRelKeys,
-            isSelectType schema (rkTarget k)
-        ]
-
     -- 4. CLASSIFY edges: only genuine single-inheritance supertype edges within
     --    the slice. SELECTs are deliberately NOT turned into ISA (design choice).
     classifyEdges :: [(Text, Text)]
     classifyEdges =
       L.nub
         [ (sub, sup)
-          | sub <- Set.toList sliceTypes,
-            Just ent <- [Map.lookup sub (esEntities schema)],
-            Just sup <- [enSupertype ent],
-            sub /= sup
+        | sub <- Set.toList sliceTypes,
+          Just ent <- [Map.lookup sub (esEntities schema)],
+          Just sup <- [enSupertype ent],
+          sub /= sup
         ]
-
-    -- Concepts that need to exist: slice entity types + used select concepts +
-    -- relation targets (so primitive/value concepts are introduced too).
-    allTargets = Set.fromList (map rkTarget usedRelKeys)
-    sliceConcepts =
-      Set.unions [sliceTypes, usedSelects, allTargets]
 
     closeSupertypes :: Set Text -> Set Text
     closeSupertypes = go Set.empty . Set.toList
@@ -353,13 +340,13 @@ mkIfcContext schema insts =
             specific = mkConcept sub,
             generics = mkConcept sup NE.:| []
           }
-        | (sub, sup) <- classifyEdges
+      | (sub, sup) <- classifyEdges
       ]
 
     pRelations :: [P_Relation]
     pRelations =
       [ mkRelation k
-        | k <- usedRelKeys
+      | k <- usedRelKeys
       ]
 
     pRelPops :: [P_Population]
@@ -369,9 +356,9 @@ mkIfcContext schema insts =
             p_tgt = Nothing,
             pos = orig,
             p_nmdr = relNamedRel k,
-            p_popps = map mkPair pairs
+            p_popps = map mkPPair pairs
           }
-        | (k, pairs) <- Map.toList relPairs
+      | (k, pairs) <- Map.toList relPairs
       ]
 
     pCptPops :: [P_Population]
@@ -381,13 +368,11 @@ mkIfcContext schema insts =
             p_cpt = mkConcept t,
             p_popas = map mkAtomValue atoms
           }
-        | (t, atoms) <- Map.toList typeAtoms
+      | (t, atoms) <- Map.toList typeAtoms
       ]
 
     -- Concept membership for select/target concepts is implied by the relation
     -- population; we only emit explicit type membership for entity instances.
-    _ = sliceConcepts -- documents the full concept set (used for clarity)
-
     context =
       PCtx
         { ctx_nm = ifcContextName (esName schema),
@@ -445,19 +430,12 @@ mkIfcContext schema insts =
     relNamedRel :: RelKey -> P_NamedRel
     relNamedRel k = PNamedRel orig (relationName (rkName k)) (Just (relSign k))
 
-    mkPair :: (Text, Text) -> PAtomPair
-    mkPair (x, y) =
+    mkPPair :: (Text, Text) -> PAtomPair
+    mkPPair (x, y) =
       PPair orig (ScriptString orig x) (ScriptString orig y)
 
     mkAtomValue :: Text -> PAtomValue
     mkAtomValue a = ScriptString orig a
-
--- | True if the named type is a SELECT in the schema.
-isSelectType :: ExpressSchema -> Text -> Bool
-isSelectType schema t =
-  case Map.lookup t (esTypes schema) of
-    Just (TSelect _) -> True
-    _ -> False
 
 -- | Context name derived from the schema name (e.g. @IFC4X3_ADD2@).
 ifcContextName :: Text -> Name

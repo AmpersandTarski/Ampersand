@@ -70,8 +70,13 @@ ifcRegressionTest = do
       outcomes <- mapM checkExample files
       let fails = [(f, msgs) | (f, Failed msgs) <- outcomes]
           nPass = length [() | (_, Passed) <- outcomes]
-      logInfo . display $
-        "IFC regression: " <> tshow nPass <> "/" <> tshow (length files) <> " examples pass end-to-end."
+      logInfo
+        . display
+        $ "IFC regression: "
+        <> tshow nPass
+        <> "/"
+        <> tshow (length files)
+        <> " examples pass end-to-end."
       mapM_ reportFailure fails
       if null fails
         then do

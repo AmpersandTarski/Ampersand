@@ -199,6 +199,7 @@ extra-source-files:
     testing/StillUnsupported/try.xlsx
     testing/Travis/README.md
     testing/Travis/testcases/Archimate/ArchiMetaModel.adl
+    testing/Travis/testcases/Archimate/MetaModel.adl
     testing/Travis/testcases/Archimate/repositoryumcu.archimate
     testing/Travis/testcases/Archimate/testinfo.yaml
     testing/Travis/testcases/Bugs/Bug_ANY_in_violation_view.adl
@@ -243,12 +244,18 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/Issue1275-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/Issue1275.adl
+    testing/Travis/testcases/FuncSpec/Issue1275.docx
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml
+    testing/Travis/testcases/FuncSpec/testIssue1183-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
+    testing/Travis/testcases/FuncSpec/testIssue1183.docx
+    testing/Travis/testcases/FuncSpec/testPredLogic-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
+    testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/meatgrinder/Issue1484.adl
     testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
@@ -278,6 +285,7 @@ extra-source-files:
     testing/Travis/testcases/Misc/FraakTest2.adl
     testing/Travis/testcases/Misc/Hello.adl
     testing/Travis/testcases/Misc/Issue1499.adl
+    testing/Travis/testcases/Misc/Issue1533.adl
     testing/Travis/testcases/Misc/Kernmodel.adl
     testing/Travis/testcases/Misc/test_enforce_bug.adl
     testing/Travis/testcases/Misc/testinfo.yaml
@@ -495,6 +503,7 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
+    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml

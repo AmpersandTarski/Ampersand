@@ -102,7 +102,8 @@ wallExtrusionSanity = do
     -- #303 = IFCWALL('0DWgwt6o1FOx7466fPk$jl', #56, $, $, $, #306, #318, $, $)
     wall303 insts = case find "#303" insts of
       Just i ->
-        siType i == "IFCWALL"
+        siType i
+          == "IFCWALL"
           && case siArgs i of
             (SVStr g : _) -> g == "0DWgwt6o1FOx7466fPk$jl"
             _ -> False
@@ -111,7 +112,8 @@ wallExtrusionSanity = do
     -- #2 = IFCCARTESIANPOINT((0.0, 0.0, 0.0))
     point2 insts = case find "#2" insts of
       Just i ->
-        siType i == "IFCCARTESIANPOINT"
+        siType i
+          == "IFCCARTESIANPOINT"
           && case siArgs i of
             [SVList xs] -> xs == [SVReal 0.0, SVReal 0.0, SVReal 0.0]
             _ -> False

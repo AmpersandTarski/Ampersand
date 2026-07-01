@@ -45,10 +45,10 @@ ifcWiringTest = do
   -- The schema must be bundled for any of this to work.
   case getStaticFileContent IFCSchemas (T.unpack defaultSchemaName <> ".exp") of
     Nothing -> do
-      logError $
-        "IFC wiring test: bundled schema "
-          <> display defaultSchemaName
-          <> ".exp not found in the IFCSchemas resource."
+      logError
+        $ "IFC wiring test: bundled schema "
+        <> display defaultSchemaName
+        <> ".exp not found in the IFCSchemas resource."
       pure False
     Just schemaBytes -> do
       let schemaText = decodeUtf8 schemaBytes
@@ -66,16 +66,22 @@ runWiring defaultSchemaText = do
   results <- mapM (checkOne defaultSchemaText) files
   let fails = [f | (f, False) <- results]
       passes = [f | (f, True) <- results]
-  logInfo . display $
-    "IFC wiring: " <> tshow (length passes) <> "/" <> tshow (length results)
-      <> " type-check from the bundled schema."
+  logInfo
+    . display
+    $ "IFC wiring: "
+    <> tshow (length passes)
+    <> "/"
+    <> tshow (length results)
+    <> " type-check from the bundled schema."
   if null fails
     then do
       logInfo "✅ Passed: IFC wiring (end-to-end from bundled schema, no external .exp)."
       pure True
     else do
-      logError . display $
-        "❗ IFC wiring failures: " <> T.intercalate ", " (map (T.pack . takeFileName) fails)
+      logError
+        . display
+        $ "❗ IFC wiring failures: "
+        <> T.intercalate ", " (map (T.pack . takeFileName) fails)
       pure False
 
 -- | Bind one example using the bundled schema (selected by its FILE_SCHEMA header)
@@ -90,8 +96,8 @@ checkOne defaultSchemaText fp = do
       let schemaText = case fileSchemaName ifcText of
             Just nm
               | nm /= defaultSchemaName ->
-                  maybe defaultSchemaText decodeUtf8 $
-                    getStaticFileContent IFCSchemas (T.unpack nm <> ".exp")
+                  maybe defaultSchemaText decodeUtf8
+                    $ getStaticFileContent IFCSchemas (T.unpack nm <> ".exp")
             _ -> defaultSchemaText
       case ifc2PContextFromTexts (T.pack fp) ifcText schemaText of
         Errors _ -> pure (fp, False)

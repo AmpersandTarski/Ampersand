@@ -331,7 +331,7 @@ pEntitySections :: Parser ([Text], [Text])
 pEntitySections = go [] []
   where
     go ws' is' =
-      ( do keyword "WHERE"; rs <- many1 pRawRule; go (ws' <> rs) is')
+      (do keyword "WHERE"; rs <- many1 pRawRule; go (ws' <> rs) is')
         <|> (do keyword "INVERSE"; rs <- many1 pRawRule; go ws' (is' <> rs))
         <|> (do keyword "DERIVE"; _ <- many1 pRawRule; go ws' is')
         <|> (do keyword "UNIQUE"; _ <- many1 pRawRule; go ws' is')

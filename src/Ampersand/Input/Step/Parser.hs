@@ -13,6 +13,7 @@
 module Ampersand.Input.Step.Parser
   ( parseStepText,
     parseStepFile,
+
     -- * Lower-level helpers (exposed for testing)
     stripComments,
     dataSection,
@@ -202,9 +203,12 @@ parseValue tok0
 -- | True for an enumeration token: @.SOMETHING.@ (at least one char between the dots).
 isEnum :: Text -> Bool
 isEnum t =
-  "." `T.isPrefixOf` t
-    && "." `T.isSuffixOf` t
-    && T.length t > 2
+  "."
+    `T.isPrefixOf` t
+    && "."
+    `T.isSuffixOf` t
+    && T.length t
+    > 2
 
 -- | Strip surrounding single quotes and unescape @''@ → @'@.
 unquoteString :: Text -> Text

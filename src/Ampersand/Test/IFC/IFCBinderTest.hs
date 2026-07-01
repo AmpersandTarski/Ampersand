@@ -48,9 +48,9 @@ ifcBinderTest = do
   dirThere <- doesDirectoryExist examplesDir
   if not schemaThere
     then do
-      logWarn $
-        "Skipping IFC binder test: EXPRESS schema not found at "
-          <> display (T.pack defaultSchemaPath)
+      logWarn
+        $ "Skipping IFC binder test: EXPRESS schema not found at "
+        <> display (T.pack defaultSchemaPath)
       pure True
     else
       if not dirThere
@@ -67,23 +67,33 @@ runOverExamples = do
   let passes = [f | (f, True) <- results]
       fails = [f | (f, False) <- results]
       failNames = map takeFileName fails
-  logInfo . display $
-    "IFC binder: " <> tshow (length passes) <> " type-checked, "
-      <> tshow (length fails)
-      <> " failed ("
-      <> T.intercalate ", " (map T.pack failNames)
-      <> ")."
+  logInfo
+    . display
+    $ "IFC binder: "
+    <> tshow (length passes)
+    <> " type-checked, "
+    <> tshow (length fails)
+    <> " failed ("
+    <> T.intercalate ", " (map T.pack failNames)
+    <> ")."
   -- Acceptance: every example must type-check. The SELECT-as-relation design makes
   -- all 45 pass (the handoff's predicted pixel-texture failure does not occur; see
   -- the module header). Any failure is therefore a real regression.
   if null fails
     then do
-      logInfo . display $
-        "✅ Passed: IFC binder (" <> tshow (length passes) <> "/" <> tshow (length results) <> " type-check)."
+      logInfo
+        . display
+        $ "✅ Passed: IFC binder ("
+        <> tshow (length passes)
+        <> "/"
+        <> tshow (length results)
+        <> " type-check)."
       pure True
     else do
-      logError . display $
-        "❗ IFC type-check failures: " <> T.intercalate ", " (map T.pack failNames)
+      logError
+        . display
+        $ "❗ IFC type-check failures: "
+        <> T.intercalate ", " (map T.pack failNames)
       pure False
 
 -- | Type-check one example. 'True' when the resulting 'P_Context' type-checks.

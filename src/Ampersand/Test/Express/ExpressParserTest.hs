@@ -17,9 +17,9 @@ where
 import Ampersand.Basics
 import Ampersand.Input.Express.Parser (parseExpressFile)
 import Ampersand.Input.Express.Schema
+import RIO.Directory (doesFileExist)
 import qualified RIO.Map as Map
 import qualified RIO.Text as T
-import RIO.Directory (doesFileExist)
 
 -- | Root of the IFC EXPRESS schemas on the author's machine (handoff §6).
 schemaRoot :: FilePath
@@ -56,18 +56,21 @@ test43 = withSchema "IFC4.3" ifc43 $ \schema -> do
       nTyp = Map.size (esTypes schema)
   logInfo $ "IFC4.3: " <> display nEnt <> " entities, " <> display nTyp <> " types."
   let countOk =
-        esName schema == "IFC4X3_ADD2"
-          && nEnt == 876
-          && nTyp == 436
-  unless countOk $
-    logError $
-      "IFC4.3 counts off: name="
-        <> display (esName schema)
-        <> " entities="
-        <> display nEnt
-        <> " (expected 876) types="
-        <> display nTyp
-        <> " (expected 436)"
+        esName schema
+          == "IFC4X3_ADD2"
+          && nEnt
+          == 876
+          && nTyp
+          == 436
+  unless countOk
+    $ logError
+    $ "IFC4.3 counts off: name="
+    <> display (esName schema)
+    <> " entities="
+    <> display nEnt
+    <> " (expected 876) types="
+    <> display nTyp
+    <> " (expected 436)"
   wallOk <- checkWall schema
   pure (countOk && wallOk)
 
@@ -78,7 +81,7 @@ checkWall :: (HasLogFunc env) => ExpressSchema -> RIO env Bool
 checkWall schema = do
   let actual =
         [ (atName a, atTarget a, atOptional a, isJust (atAggregate a))
-          | a <- fullAttrs schema "IfcWall"
+        | a <- fullAttrs schema "IfcWall"
         ]
   if actual == expectedWall
     then do
@@ -109,15 +112,15 @@ expectedWall =
 -- not error (handoff: "parses also IFC4 and IFC2x3 without crashing").
 sanityParse :: (HasLogFunc env) => Text -> FilePath -> RIO env Bool
 sanityParse lbl fp = withSchema lbl fp $ \schema -> do
-  logInfo $
-    display lbl
-      <> ": "
-      <> display (Map.size (esEntities schema))
-      <> " entities, "
-      <> display (Map.size (esTypes schema))
-      <> " types (name "
-      <> display (esName schema)
-      <> ")."
+  logInfo
+    $ display lbl
+    <> ": "
+    <> display (Map.size (esEntities schema))
+    <> " entities, "
+    <> display (Map.size (esTypes schema))
+    <> " types (name "
+    <> display (esName schema)
+    <> ")."
   pure True
 
 -- | Parse a schema file, skipping (with success) if the file is absent.

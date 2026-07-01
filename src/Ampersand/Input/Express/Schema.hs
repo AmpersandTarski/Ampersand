@@ -23,7 +23,6 @@ where
 
 import Ampersand.Basics
 import qualified RIO.Map as Map
-import RIO.Text (Text)
 
 -- | A whole EXPRESS schema.
 data ExpressSchema = ExpressSchema
@@ -115,11 +114,11 @@ targetConcept t = Map.findWithDefault t t primConcept
 fullAttrs :: ExpressSchema -> Text -> [Attr]
 fullAttrs schema = go []
   where
-    go seen name
-      | name `elem` seen = [] -- guard against cyclic supertypes
+    go seen entName
+      | entName `elem` seen = [] -- guard against cyclic supertypes
       | otherwise =
-          case Map.lookup name (esEntities schema) of
+          case Map.lookup entName (esEntities schema) of
             Nothing -> []
             Just ent ->
-              maybe [] (go (name : seen)) (enSupertype ent)
+              maybe [] (go (entName : seen)) (enSupertype ent)
                 <> enAttrs ent

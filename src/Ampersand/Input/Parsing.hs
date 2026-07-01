@@ -297,7 +297,7 @@ parseSingleADL pc =
         -- discriminate on the Part-21 magic header ("ISO-10303-21"); only then do we
         -- treat the file as IFC. Anything else falls through to ordinary ADL parsing.
         extension == ".ifc" = do
-          mfileContents <- readFileUtf8Lenient filePath
+          mfileContents <- readFileContents
           case mfileContents of
             Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
             Right fileContents
@@ -307,19 +307,25 @@ parseSingleADL pc =
                   return ((,[]) . fromContext <$> ctxFromIfc) -- An IFC file does not contain include files
               | otherwise -> parseAsAdl fileContents
       | otherwise = do
-          mFileContents <-
-            case pcFileKind pc of
-              Just fileKind ->
-                case getStaticFileContent fileKind filePath of
-                  Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
-                  Nothing -> fatal ("Statically included " <> tshow fileKind <> " files. \n  Cannot find `" <> T.pack filePath <> "`.")
-              Nothing ->
-                readFileUtf8Lenient filePath
+          mFileContents <- readFileContents
           case mFileContents of
             Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) err
             Right fileContents -> parseAsAdl fileContents
       where
-        -- | Parse already-read text as an ordinary ADL script (with INCLUDEs).
+        -- \| Read the file's contents, honouring 'pcFileKind': internal (statically
+        -- bundled) files come from the embedded archive, external files from disk.
+        -- Both the .ifc branch and the ordinary ADL branch use this, so an internal
+        -- interface script such as PrototypeContext's @Interfaces.ifc@ is still found
+        -- by the installed binary, which has no source tree on disk.
+        readFileContents =
+          case pcFileKind pc of
+            Just fileKind ->
+              case getStaticFileContent fileKind filePath of
+                Just cont -> return (Right . stripBom . decodeUtf8 $ cont)
+                Nothing -> fatal ("Statically included " <> tshow fileKind <> " files. \n  Cannot find `" <> T.pack filePath <> "`.")
+            Nothing ->
+              readFileUtf8Lenient filePath
+        -- \| Parse already-read text as an ordinary ADL script (with INCLUDEs).
         parseAsAdl :: Text -> RIO env (Guarded (SingleFileResult, [ParseCandidate]))
         parseAsAdl fileContents =
           let -- TODO: This should be cleaned up. Probably better to do all the file reading
@@ -334,12 +340,12 @@ parseSingleADL pc =
                   foo :: [Guarded ParseCandidate] -> Guarded (SingleFileResult, [ParseCandidate])
                   foo xs = (ctxts,) <$> sequence xs
            in proces meat
-        -- | A Part-21 (STEP/IFC) file starts with the @ISO-10303-21@ magic token.
+        -- \| A Part-21 (STEP/IFC) file starts with the @ISO-10303-21@ magic token.
         isStepFile :: Text -> Bool
         isStepFile t = "ISO-10303-21" `T.isPrefixOf` T.stripStart (stripBomText t)
         stripBomText :: Text -> Text
         stripBomText t = fromMaybe t (T.stripPrefix "\xFEFF" t)
-        -- | Bind an IFC (STEP) file to its EXPRESS schema (chosen via the
+        -- \| Bind an IFC (STEP) file to its EXPRESS schema (chosen via the
         -- FILE_SCHEMA header, default IFC4X3_ADD2) and produce a P_Context. The
         -- schema is loaded from the statically bundled IFCSchemas resource.
         parseIfcStep :: FilePath -> Text -> RIO env (Guarded P_Context)
@@ -355,8 +361,8 @@ parseSingleADL pc =
                 Just cont ->
                   pure $ ifc2PContextFromTexts (T.pack fp) ifcText (decodeUtf8 cont)
                 Nothing ->
-                  pure $
-                    mkErrorReadingINCLUDE
+                  pure
+                    $ mkErrorReadingINCLUDE
                       (pcOrigin pc)
                       ["No bundled EXPRESS schema found for " <> schemaName <> " (looked for " <> T.pack schemaFile <> ")."]
         guardedFromContext :: Guarded (P_Context, [Include]) -> Guarded (SingleFileResult, [Include])
