@@ -274,6 +274,9 @@ Name it `Box-{TEMPLATENAME}.html` and place it in `frontend/src/app/generated/.t
 **Where do the UI HTML templates live, and how do I override them for one project?**
 Built-in templates are in `frontend/src/app/generated/.templates/`; drop your own copies in that project's `templates/` folder to override the built-ins for that project only. This lets you customise one app without affecting others. [Learn more →](https://ampersandtarski.github.io/prototype/FAQ)
 
+**Why does my interface show internal ids instead of readable names, and how do I prevent it?**
+Give each user-visible concept a default VIEW, e.g. `VIEW Person : Person(name)`; without one the prototype falls back to the atom's internal identifier (an "ugly id"). Defining default views keeps those codes out of your production screens. [Learn more →](../reference-material/syntax-of-ampersand#the-view-statement)
+
 **What is a VIEW template, and how does it differ from a BOX template?**
 A VIEW controls how a single atom renders by mapping relations to named slots, while a BOX controls how a container lays out multiple fields. Reach for a VIEW when you want to change how one thing looks, not the layout around it. [Learn more →](https://ampersandtarski.github.io/prototype/guides/creating-custom-view-templates)
 
