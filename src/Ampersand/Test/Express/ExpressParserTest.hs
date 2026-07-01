@@ -81,7 +81,7 @@ checkWall :: (HasLogFunc env) => ExpressSchema -> RIO env Bool
 checkWall schema = do
   let actual =
         [ (atName a, atTarget a, atOptional a, isJust (atAggregate a))
-        | a <- fullAttrs schema "IfcWall"
+          | a <- fullAttrs schema "IfcWall"
         ]
   if actual == expectedWall
     then do

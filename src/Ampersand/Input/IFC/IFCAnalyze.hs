@@ -186,7 +186,7 @@ bindInstance schema inst =
             | otherwise = [warnArity nArgs nAttrs]
           bounds =
             [ Bound owner a (siId inst) v
-            | ((owner, a), v) <- zip attrs (siArgs inst)
+              | ((owner, a), v) <- zip attrs (siArgs inst)
             ]
        in (bounds, arityWarn)
   where
@@ -273,8 +273,8 @@ mkIfcContext schema insts =
     -- Used entity types (instances whose type is known) -> their atoms.
     knownInsts =
       [ (pascalKey, siId i)
-      | i <- insts,
-        Just pascalKey <- [Map.lookup (T.toUpper (siType i)) upperIdx]
+        | i <- insts,
+          Just pascalKey <- [Map.lookup (T.toUpper (siType i)) upperIdx]
       ]
     upperIdx = schemaUpperIndex schema
 
@@ -289,15 +289,15 @@ mkIfcContext schema insts =
       Map.map (L.nub . reverse)
         $ Map.fromListWith (<>)
         $ [ (key, [(bId b, tgtAtom)])
-          | b <- bounds,
-            let key =
-                  RelKey
-                    { rkName = atName (bAttr b),
-                      rkOwner = bOwner b,
-                      rkTarget = targetConcept (atTarget (bAttr b))
-                    },
-            elemV <- flattenValue (bVal b),
-            Just tgtAtom <- [atomText elemV]
+            | b <- bounds,
+              let key =
+                    RelKey
+                      { rkName = atName (bAttr b),
+                        rkOwner = bOwner b,
+                        rkTarget = targetConcept (atTarget (bAttr b))
+                      },
+              elemV <- flattenValue (bVal b),
+              Just tgtAtom <- [atomText elemV]
           ]
 
     usedRelKeys = Map.keys relPairs
@@ -315,10 +315,10 @@ mkIfcContext schema insts =
     classifyEdges =
       L.nub
         [ (sub, sup)
-        | sub <- Set.toList sliceTypes,
-          Just ent <- [Map.lookup sub (esEntities schema)],
-          Just sup <- [enSupertype ent],
-          sub /= sup
+          | sub <- Set.toList sliceTypes,
+            Just ent <- [Map.lookup sub (esEntities schema)],
+            Just sup <- [enSupertype ent],
+            sub /= sup
         ]
 
     closeSupertypes :: Set Text -> Set Text
@@ -340,13 +340,13 @@ mkIfcContext schema insts =
             specific = mkConcept sub,
             generics = mkConcept sup NE.:| []
           }
-      | (sub, sup) <- classifyEdges
+        | (sub, sup) <- classifyEdges
       ]
 
     pRelations :: [P_Relation]
     pRelations =
       [ mkRelation k
-      | k <- usedRelKeys
+        | k <- usedRelKeys
       ]
 
     pRelPops :: [P_Population]
@@ -358,7 +358,7 @@ mkIfcContext schema insts =
             p_nmdr = relNamedRel k,
             p_popps = map mkPPair pairs
           }
-      | (k, pairs) <- Map.toList relPairs
+        | (k, pairs) <- Map.toList relPairs
       ]
 
     pCptPops :: [P_Population]
@@ -368,7 +368,7 @@ mkIfcContext schema insts =
             p_cpt = mkConcept t,
             p_popas = map mkAtomValue atoms
           }
-      | (t, atoms) <- Map.toList typeAtoms
+        | (t, atoms) <- Map.toList typeAtoms
       ]
 
     -- Concept membership for select/target concepts is implied by the relation
