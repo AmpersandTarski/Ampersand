@@ -112,6 +112,48 @@ Here is a summary of the things you do.
 
 ## Formalize concepts and relations
 
+Once you have an informal picture of the domain, you reconstruct its language as **concepts** and **relations**. This section is a practical instruction for *harvesting* concepts from your sources and *testing* whether a candidate is really a concept.
+
+### Harvesting candidate concepts
+
+Read your authoritative sources (do not just search them) and collect the nouns that denote things in the domain. For each candidate, note where you found it and write two or three **basic sentences** — facts about two individual atoms — that use it. If you cannot phrase a single fact about two individual things, the candidate is probably a general statement, not a concept.
+
+### The TIPI test
+
+A concept is a *set of atoms*. Before you accept a candidate, ask the four **TIPI** control questions (a Dutch mnemonic: *Telbaar, Instantieerbaar, Permanent, Identificeerbaar* — countable, instantiable, permanent, identifiable):
+
+| Criterion | Control question | Reject when… |
+| --- | --- | --- |
+| **T** — countable | Can you count its atoms? | It names a mass, not countable things — e.g. *water*. Choose a countable meaning such as *body of water* ("the IJsselmeer"). |
+| **I** — instantiable | Which atoms does your concept have? Give examples. | The candidate is *itself* an instance — e.g. *Amsterdam*, *King Willem-Alexander*. These are atoms of *City*, *Person*. |
+| **P** — permanent | Do its atoms stay in this concept forever? | Membership can change — a *Student* may become an *Employee*. Then model `Person` with relations `student` and `employee`. A name can change, so it is a relation `name[City*Name]`, not the concept *Amsterdam*. |
+| **I** — identifiable | Can you tell its atoms apart? | Atoms are indistinguishable (countable but not identifiable, like identical coins). Attach a label to make them identifiable. |
+
+A further rule: a concept must **not represent the context** itself. If the whole system already concerns one association `PHV`, then `PHV` *is* the context, not a concept within it.
+
+When a candidate fails **Permanent** or **Instantiable**, it is usually a **relation** or an attribute, not a concept. The right choice often depends on context — always ask *"in which context?"*.
+
+### Reusing an existing standard
+
+If your domain already has an authoritative vocabulary (a standard such as IFC, a registry, or a law), match each validated concept **semantically** to that standard — the same notion may carry a different name — and adopt the standard's name and definition. Copy definitions verbatim from the source, but trim passages that describe the standard's internal machinery rather than the business meaning. Invent nothing, and omit a definition where the source is silent.
+
+### Q&A
+
+**Q: Is *Amsterdam* a concept?**
+A: No. *Amsterdam* is itself an instance, so it is not instantiable (saying "34 Amsterdams" is meaningless). It is an atom of the concept *City*. Being a proper name is, by itself, not a reason — proper names can be perfectly good atoms.
+
+**Q: Is *Student* a concept?**
+A: It depends on the context. If a student can later become an employee, *Student* is not permanent — model `Person` with a relation `student`. If, in your context, "once a student, always a student", then *Student* may be a concept.
+
+**Q: Is *water* a concept?**
+A: Not as a flowing mass — it is not countable. Choose a countable meaning, such as *body of water* ("the IJsselmeer", "the North Sea"), which is countable and identifiable.
+
+**Q: A candidate is countable and identifiable, but I cannot make instances of it. Concept or not?**
+A: Not a concept. All four TIPI criteria must hold. If you cannot instantiate it, it is either an instance itself or a statement about the context.
+
+**Q: In `lastName[Person*Name]`, should *Name* be a concept?**
+A: Yes — names are countable, instantiable, permanent and identifiable. That a *person's* name can change does not threaten the concept *Name*; it means the **relation** `lastName` may change, which is exactly why it is a relation and not a permanent property of *Person*.
+
 ## Use and maintain the model
 
 ## Drawing boundaries
