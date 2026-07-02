@@ -136,7 +136,8 @@ openApiDoc env fSpec =
               "operationId" .= ("get" <> alnum nm),
               "summary" .= ("Read interface \"" <> label ifc <> "\" (root concept: " <> rootName <> ")."),
               "description"
-                .= ( "Ampersand INTERFACE " <> nm
+                .= ( "Ampersand INTERFACE "
+                       <> nm
                        <> ". Only readable (R) fields appear; write rights are PATCH/DELETE/POST and per-field x-crud."
                    ),
               "parameters" .= (pathParams <> queryParams),
@@ -146,23 +147,23 @@ openApiDoc env fSpec =
               "x-ampersand-roles" .= roles
             ]
         patchO =
-          object $
-            [ "tags" .= ([ctxName] :: [Text]),
-              "operationId" .= ("patch" <> alnum nm),
-              "summary" .= ("Update \"" <> label ifc <> "\" via JSON-Patch operations."),
-              "description"
-                .= ( "Array of patch operations; the allowed op per field follows x-crud (U -> replace/add/remove, C -> create)." ::
-                       Text
-                   )
-            ]
+          object
+            $ [ "tags" .= ([ctxName] :: [Text]),
+                "operationId" .= ("patch" <> alnum nm),
+                "summary" .= ("Update \"" <> label ifc <> "\" via JSON-Patch operations."),
+                "description"
+                  .= ( "Array of patch operations; the allowed op per field follows x-crud (U -> replace/add/remove, C -> create)." ::
+                         Text
+                     )
+              ]
             <> ["parameters" .= pathParams | hasParam]
             <> [ "requestBody"
-                .= object
-                  [ "required" .= True,
-                    "content" .= object ["application/json" .= object ["schema" .= ref "Patch"]]
-                  ],
-              "responses" .= responses200 "Patch result." "WriteResult"
-            ]
+                   .= object
+                     [ "required" .= True,
+                       "content" .= object ["application/json" .= object ["schema" .= ref "Patch"]]
+                     ],
+                 "responses" .= responses200 "Patch result." "WriteResult"
+               ]
         deleteO =
           object
             [ "tags" .= ([ctxName] :: [Text]),
@@ -173,8 +174,8 @@ openApiDoc env fSpec =
             ]
         methods =
           ("get" .= getO)
-            : [ "patch" .= patchO | hasU || hasC ]
-              <> [ "delete" .= deleteO | hasD && hasParam ]
+            : ["patch" .= patchO | hasU || hasC]
+              <> ["delete" .= deleteO | hasD && hasParam]
 
     -- ---- read schema ----------------------------------------------------
     readSchema :: ObjectDef -> Value
