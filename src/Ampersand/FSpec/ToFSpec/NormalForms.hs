@@ -1106,11 +1106,14 @@ tceDerivRules pCpt2aCpt =
       "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]", --  Absorption
       "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]", --  Absorption
       "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]", --  Absorption
-      "r[A*A]* = r[A*A];r[A*A]*",
-      "r[A*A]* = r[A*A]*;r[A*A]",
-      "r[A*A]+ = r[A*A];r[A*A]+",
-      "r[A*A]+ = r[A*A]+;r[A*A]",
-      "I[A]\\/r[A*A]+ = r[A*A]*"
+      -- The Kleene unfoldings need their base term: without it they are unsound
+      -- (at r = {} the naive law r* = r;r* gives {} = Id). Each law below is a
+      -- machine-checked lemma in proofs/kleene/KleeneReduction.thy (issue #1635).
+      "r[A*A]* = I[A]\\/r[A*A];r[A*A]*", --  rStar_def_law
+      "r[A*A]* = I[A]\\/r[A*A]*;r[A*A]", --  rStar_def_law_right
+      "r[A*A]+ = r[A*A]\\/r[A*A];r[A*A]+", --  rPlus_def_law
+      "r[A*A]+ = r[A*A]\\/r[A*A]+;r[A*A]", --  rPlus_def_law_right
+      "I[A]\\/r[A*A]+ = r[A*A]*" --  rStar_eq_Id_un_rPlus
     ]
 
 {-

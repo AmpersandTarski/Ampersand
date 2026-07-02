@@ -1,0 +1,7 @@
+session Ampersand_Kleene = HOL +
+  (* timeout bounds wall-clock per session build: a looping tactic is killed.
+     Keep threads low to bound CPU/memory. Build:  isabelle build -D .  *)
+  options [document = false, timeout = 1200, threads = 1]
+  theories
+    KleeneReduction
+    IncrementalDelete
