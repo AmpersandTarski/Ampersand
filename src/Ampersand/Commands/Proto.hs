@@ -22,7 +22,7 @@ import qualified RIO.Text as T
 
 -- | Builds a prototype of the current project.
 proto ::
-  (Show env, HasRunner env, HasFSpecGenOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env) =>
+  (Show env, HasRunner env, HasFSpecGenOpts env, HasDirPrototype env, HasGenerateFrontend env, HasGenerateBackend env, HasGenerateMetamodel env, HasGenerateOpenAPI env) =>
   FSpec ->
   RIO env ()
 proto fSpec = do
