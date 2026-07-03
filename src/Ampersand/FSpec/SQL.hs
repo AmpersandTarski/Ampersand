@@ -461,8 +461,8 @@ nonSpecialSelectExpr fSpec expr =
                               optimizedIntersectSelectExpr :: BinQueryExpr
                               optimizedIntersectSelectExpr =
                                 BinQEComment
-                                  [ BlockComment "Optimized intersection:",
-                                    BlockComment $ "   Expression: " <> (showA . foldr (./\.) hexprs $ tlexprs)
+                                  [ safeBlockComment "Optimized intersection:",
+                                    safeBlockComment $ "   Expression: " <> (showA . foldr (./\.) hexprs $ tlexprs)
                                   ]
                                   --    <>map (showComment "esI") esI
                                   --    <>map (showComment "esR") esR
@@ -1222,7 +1222,7 @@ nonSpecialSelectExpr fSpec expr =
                       ],
                     bseWhr =
                       Just
-                        . VEComment [BlockComment $ "Left hand side: " <> showA l]
+                        . VEComment [safeBlockComment $ "Left hand side: " <> showA l]
                         $ selectNotExists
                           (lCode `as` lhs)
                           ( Just
@@ -1231,7 +1231,7 @@ nonSpecialSelectExpr fSpec expr =
                                     (Iden [resLeft, mainSrc])
                                     [uName "="]
                                     (Iden [lhs, targetAlias]),
-                                  VEComment [BlockComment $ "Right hand side: " <> showA r]
+                                  VEComment [safeBlockComment $ "Right hand side: " <> showA r]
                                     $ selectNotExists
                                       (rCode `as` rhs)
                                       ( Just
@@ -1282,12 +1282,27 @@ nonSpecialSelectExpr fSpec expr =
     singleton2SQL cpt singleton =
       atomVal2InSQL (safePSingleton2AAtomVal (fcontextInfo fSpec) cpt singleton)
 
+-- | A block comment whose text cannot terminate the comment early. A term
+--   like  r*  followed by  /\  pretty-prints as "*/\": the "*/" would end
+--   the comment and corrupt the surrounding query (caught by
+--   `ampersand validate` on testing/Travis/testcases/Kleene/semantics).
+safeBlockComment :: Text -> Comment
+safeBlockComment = BlockComment . escapeCommentEnd
+
+-- "*/" cannot occur in the result: every occurrence becomes "* /".
+escapeCommentEnd :: Text -> Text
+escapeCommentEnd = T.pack . go . T.unpack
+  where
+    go ('*' : '/' : rest) = '*' : ' ' : '/' : go rest
+    go (c : rest) = c : go rest
+    go [] = []
+
 traceExprComment :: Expression -> [Text] -> BinQueryExpr -> BinQueryExpr
 traceExprComment expr caseStr =
   BinQEComment
-    $ map BlockComment caseStr
-    <> [ BlockComment $ "   Expression: " <> showA expr,
-         BlockComment $ "   Signature : " <> tshow (sign expr)
+    $ map safeBlockComment caseStr
+    <> [ safeBlockComment $ "   Expression: " <> showA expr,
+         safeBlockComment $ "   Signature : " <> tshow (sign expr)
        ]
 
 atomVal2InSQL :: AAtomValue -> ScalarExpr
@@ -1788,10 +1803,10 @@ theONESingleton =
     }
 
 commentBlockSQL :: [Text] -> [Text]
-commentBlockSQL xs =
-  case xs of
+commentBlockSQL raw =
+  case map escapeCommentEnd raw of -- "*/" inside a comment would end it early
     [] -> []
-    h : tl -> map (\cmmnt -> "/* " <> cmmnt <> " */") $ [hbar] <> map addSpaces xs <> [hbar]
+    xs@(h : tl) -> map (\cmmnt -> "/* " <> cmmnt <> " */") $ [hbar] <> map addSpaces xs <> [hbar]
       where
         hbar = T.replicate maxLength "-"
         addSpaces str = str <> T.replicate (T.length hbar - T.length str) " "
