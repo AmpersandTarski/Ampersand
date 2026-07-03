@@ -1027,12 +1027,16 @@ nonSpecialSelectExpr fSpec expr =
                 <> (tshow . target $ e)
             theClosedWorldExpression = EDcV (sign e)
     EKl0 e ->
+      -- r* = I \/ r+  (lemma rStar_eq_Id_un_rPlus, proofs/kleene/KleeneReduction.thy).
+      -- The identity part is essential: translating r* as r UNION r+ yields just r+,
+      -- which misses the diagonal (caught by `ampersand validate` on Kleene/semantics).
+      -- The type checker guarantees source e == target e, so EDcI is well-typed here.
       traceComment
-        ["case: EKl0 expr -- (Kleene star)"]
+        ["case: EKl0 expr -- (Kleene star), as I[" <> fullName (source e) <> "] \\/ expr+"]
         BinQueryExprSetOp
           { bseSetQuantifier = Distinct,
             bcqeOper = Union,
-            bcqe0 = selectExpr fSpec e,
+            bcqe0 = selectExpr fSpec (EDcI (source e)),
             bcqe1 = selectExpr fSpec (EKl1 e)
           }
     EKl1 e ->
