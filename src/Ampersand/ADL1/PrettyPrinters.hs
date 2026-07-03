@@ -178,6 +178,7 @@ instance (Pretty a) => Pretty (Term a) where
     -- level 5
     PKl0 _ t -> post t "*"
     PKl1 _ t -> post t "+"
+    PKl2 _ t -> post t "%"
     PFlp _ t -> post t "~"
     PCpl _ t -> pre t " -" -- a double dash can happen when combined with PDif, therefore the extra space
     -- level 6

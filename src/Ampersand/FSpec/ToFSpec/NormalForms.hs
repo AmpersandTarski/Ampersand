@@ -780,6 +780,7 @@ dRule pCpt2aCpt term0 = case term0 of
                   trm -> [trm]
             PKl0 _ e -> RKl0 (term2rTerm e)
             PKl1 _ e -> RKl1 (term2rTerm e)
+            PKl2 o e -> term2rTerm (PDif o e (PCps o e (PKl1 o e))) -- r% = r-(r;r+), lemma rRed_def_law
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
             Prim (PFlipped trm) -> RFlp (term2rTerm (Prim trm))

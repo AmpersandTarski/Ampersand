@@ -119,3 +119,14 @@ MEANING "A task cannot depend on itself, directly or indirectly."
 ```
 
 The rule `"No circular dependencies"` uses `dependsOnPlus` to detect cycles. When it is violated, the task listed in the violation depends on itself through a chain of dependencies. The reflexive closure `rStar` is not needed here; `dependsOnPlus` alone is sufficient because a cycle shows up as a pair `(a, a)` in `dependsOnPlus`.
+
+## The transitive reduction `r%`
+
+Since the `%` operator, Ampersand also offers the *transitive reduction*: `r%` keeps only the pairs that no longer path already provides — the Hasse diagram of `r`. It is syntactic sugar for `r - (r;r+)`, so everything on this page about computing `r+` applies to `r%` as well.
+
+The reduction is meaningful for acyclic relations only: every pair on a cycle has a longer alternative path, so it disappears from `r%`. Guard acyclicity with a rule, in the same style as `"No circular dependencies"` above:
+
+```ampersand
+RULE acyclicR : r+ /\ I |- -V
+MEANING "r stays acyclic, the scope in which r% is the transitive reduction."
+```

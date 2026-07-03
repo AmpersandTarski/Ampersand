@@ -664,6 +664,8 @@ data Term a
     PKl0 !Origin !(Term a)
   | -- | Transitive closure      +  (Kleene plus)
     PKl1 !Origin !(Term a)
+  | -- | Transitive reduction    %  (desugars to r-(r;r+), lemma rRed_def_law)
+    PKl2 !Origin !(Term a)
   | -- | conversion (flip, wok)  ~
     PFlp !Origin !(Term a)
   | -- | Complement
@@ -693,6 +695,7 @@ instance Traversable Term where
       PPrd o a b -> PPrd o <$> f a <*> f b
       PKl0 o a -> PKl0 o <$> f a
       PKl1 o a -> PKl1 o <$> f a
+      PKl2 o a -> PKl2 o <$> f a
       PFlp o a -> PFlp o <$> f a
       PCpl o a -> PCpl o <$> f a
       PBrk o a -> PBrk o <$> f a
@@ -731,6 +734,7 @@ instance (Flippable a) => Flippable (Term a) where
   flp (PPrd o a b) = PPrd o (flp a) (flp b)
   flp (PKl0 o a) = PKl0 o (flp a)
   flp (PKl1 o a) = PKl1 o (flp a)
+  flp (PKl2 o a) = PKl2 o (flp a) -- sound: red (r~) = (red r)~, lemma red_converse
   flp (PFlp _ a) = a
   flp (PCpl o a) = PCpl o (flp a)
   flp (PBrk o a) = PBrk o (flp a)
@@ -792,6 +796,7 @@ instance (Traced a) => Traced (Term a) where
     PPrd orig _ _ -> orig
     PKl0 orig _ -> orig
     PKl1 orig _ -> orig
+    PKl2 orig _ -> orig
     PFlp orig _ -> orig
     PCpl orig _ -> orig
     PBrk orig _ -> orig
