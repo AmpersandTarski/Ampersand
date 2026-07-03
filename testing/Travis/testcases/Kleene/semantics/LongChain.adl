@@ -1,0 +1,39 @@
+CONTEXT KleeneLongChain IN ENGLISH
+
+PURPOSE CONTEXT KleeneLongChain MARKDOWN
+{+ A 25-node chain n01 -> n02 -> ... -> n25. The closure holds 300 pairs and
+   needs 24 levels of recursion in the WITH RECURSIVE evaluation - deep enough
+   to expose off-by-one or depth-limit mistakes, small enough to stay fast.
+   A chain contains no shortcuts, so its transitive reduction is the chain
+   itself: r% = r is an exact, cheap full-extension check. End-to-end
+   reachability (n01,n25) requires all 24 steps to compose.
++}
+
+RELATION r[Node*Node]
+POPULATION r CONTAINS
+  [ ("n01","n02"), ("n02","n03"), ("n03","n04"), ("n04","n05")
+  , ("n05","n06"), ("n06","n07"), ("n07","n08"), ("n08","n09")
+  , ("n09","n10"), ("n10","n11"), ("n11","n12"), ("n12","n13")
+  , ("n13","n14"), ("n14","n15"), ("n15","n16"), ("n16","n17")
+  , ("n17","n18"), ("n18","n19"), ("n19","n20"), ("n20","n21")
+  , ("n21","n22"), ("n22","n23"), ("n23","n24"), ("n24","n25") ]
+
+RELATION expectedReach[Node*Node]
+MEANING "The endpoints: reachable only through all 24 intermediate steps."
+POPULATION expectedReach CONTAINS [ ("n01","n25") ]
+
+RULE endToEnd        : expectedReach |- r+
+RULE redIsBase       : r% = r
+RULE plusUnfoldLeft  : r+ = r \/ r;r+
+RULE plusUnfoldRight : r+ = r \/ r+;r
+RULE starLaw         : r* = I[Node] \/ r+
+RULE acyclicR        : r+ /\ I[Node] |- -V[Node*Node]
+
+INTERFACE LongChain : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"  : I[Node]  cRud
+   , "rPlus" : r+       cRud
+   , "rRed"  : r%       cRud
+   ]
+
+ENDCONTEXT
