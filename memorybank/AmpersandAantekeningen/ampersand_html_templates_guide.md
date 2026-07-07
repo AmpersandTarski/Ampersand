@@ -1,20 +1,33 @@
-# Ampersand HTML Templates: Complete User Guide
+# Ampersand HTML Templates: User Guide
 
-Use templates to transform your basic Ampersand interfaces into professional, interactive user experiences with buttons, dropdowns, tables, forms, and custom layouts that make your applications intuitive and efficient for end users.
-For this purpose, Ampersand lets you create rich user interfaces using pre-built HTML templates and HTML templates of your own.
-You will learn the template system architecture, use every available template type, and build sophisticated interfaces step by step.
+Use templates to turn a plain Ampersand interface into a professional, interactive
+user experience with tables, forms, tabs, dropdowns and buttons.
+This guide describes the templates that the current Angular Prototype Framework
+actually supports, and how to use them from your `.adl` script.
 
+> **Ground truth.** The attributes below are the ones the shipped `Box-*.html`
+> templates and their Angular components honour. The Ampersand compiler passes
+> *any* attribute you write straight through to the template, so a misspelled or
+> obsolete attribute compiles without error but has **no effect**. When in doubt,
+> check the template files under `frontend/src/app/generated/.templates/` in the
+> Prototype Framework.
 
 ## 1. Template System Overview
 
-### How Templates Work
+Ampersand uses three kinds of templates to generate a user interface:
 
-Ampersand uses three types of templates to generate user interfaces:
-
-1. **BOX Templates** structure containers (FORM, TABLE, TABS, etc.). Use them after the `BOX` keyword, enclosed in sharp brackets, as in `BOX<FORM>`, `BOX<TABLE>`, `BOX<TABS>`. (Remember from `INTERFACE` that `BOX` marks the recursive structure of an interface.) A box template defines the layout of the DOM-object associated with the `BOX`, so the template works for the entire BOX. You specify a BOX template in HTML.
-2. **Atomic Templates** display individual data values (text fields, buttons, etc.). The Ampersand compiler knows the type of the field (e.g. ALPHANUMERIC, DATE, INTEGER) and attaches the corresponding atomic template to that field. You don't specify anything in your Ampersand script unless you want to change something.
-3. **VIEW Templates** are custom display formats for a specific concept. Use them in conjunction with a term in an interface, as in `project~<ProjectView>`, to apply the view `ProjectView` to the target of the term `project~`. You specify a VIEW template in Ampersand. For example, to display a person by name:
-   ```Ampersand
+1. **BOX templates** structure a container (`FORM`, `TABLE`, `TABS`, …). Use them
+   after the `BOX` keyword, in sharp brackets: `BOX<FORM>`, `BOX<TABLE>`,
+   `BOX<TABS>`. A BOX template defines the layout of the whole box. BOX templates
+   are written in HTML and shipped with the framework.
+2. **Atomic templates** display a single value (a text field, checkbox, date
+   picker, …). The compiler knows the type of a leaf field from its `REPRESENT`
+   statement and attaches the matching atomic template automatically. You write
+   nothing extra.
+3. **VIEW templates** are custom display formats for a concept. You apply a view
+   inside a term, as in `manager<Person>`, to display the target of `manager`
+   through the view `Person`:
+   ```ampersand
    VIEW Person: Person
      { first : firstname
      , space : TXT " "
@@ -22,13 +35,8 @@ Ampersand uses three types of templates to generate user interfaces:
      }
    ENDVIEW
    ```
-   Then, inside a term, you apply that view on the right-hand side, as in `manager<Person>`, to apply the view `Person` to the target of the term `manager`. Here the person is displayed by the first name (relation `firstname`), a space, and the last name (relation `lastname`).
 
-Templates communicate with the Angular frontend through **prescribed field names**. These are exact field names that each template expects to find in your interface definition. Using the wrong field name breaks the template.
-
-### Basic Syntax Pattern
-
-All templates follow this pattern:
+### Syntax pattern
 
 ```ampersand
 INTERFACE Name : expr BOX<TEMPLATE attributes>
@@ -40,250 +48,136 @@ INTERFACE Name : expr BOX<TEMPLATE attributes>
 ```
 
 ### Key points
-- A template may have attributes.
-  Consult the documentation to know which attributes apply to a template.
-  Using the wrong field name breaks the template.
-- Template names are case-sensitive: `BOX<FORM>` refers to the `FORM` template, which is built-in. `BOX<form>` on the other hand refers to the `form` template, which is not built-in, so you run into an error if you haven't specified it yourself.
-- Prescribed field names must match exactly: `"label"` and `"Label"` are different labels.
-- CRUD annotations control user permissions.
+
+- Template names are case-sensitive: `BOX<FORM>` uses the built-in `FORM`
+  template; `BOX<form>` looks for a custom template named `form` and errors if you
+  did not supply one.
+- Some templates require **prescribed field names** (exact labels the template
+  looks for, e.g. `"label"`, `"property"`, `"selectFrom"`). Using the wrong name
+  breaks the template.
+- CRUD annotations control what the user may do.
 - You can nest templates inside other templates.
 
 ---
 
 ## 2. BOX Templates
 
-BOX templates structure your interface layout. They organize fields into forms, tables, tabs, or custom layouts.
+| Template | Purpose | Attributes / prescribed fields |
+| --- | --- | --- |
+| `FORM` | vertical form layout (default) | none |
+| `TABLE` | tabular layout, one row per atom | `sortable`, `sortBy`, `order` |
+| `TABS` | one tab per sub interface | none |
+| `RAW` | plain `<div>`s, no styling or editing | none |
+| `PROPBUTTON` | button that sets/clears/toggles a property | fields `label`, `property`; attribute `action` |
+| `FILTEREDDROPDOWN` | filterable dropdown, create-on-the-fly | fields `selectFrom`, `setRelation` |
+| `SELECT` | plain select list | fields `selectFrom`, `setRelation` |
 
-### 2.1 FORM Template
+### 2.1 FORM
 
-**Purpose**: Use this if, for example, you want your user to fill out a form, or if you want your box to look like a form.
+The default BOX template. It displays one form per target atom, with each sub
+interface on its own line (a vertical layout). It has **no attributes**.
 
-The `FORM` template displays fields vertically. This is the default template for `BOX`es.
-
-**Syntax**:
 ```ampersand
-expr BOX<FORM attributes>
-  [ "Field 1" : field1expr cRud
-  , "Field 2" : field2expr cRud
-  ]
-```
-
-**Available Attributes**:
-- `hideOnNoRecords` - Hide entire form when no data exists
-- `hideSubOnNoRecords` - Hide individual fields when they have no data
-- `hideLabels` - Remove field labels
-- `title="Your Title"` - Add your own form title
-- `noRootTitle` - Remove auto-generated title for root interfaces
-- `showNavMenu` - Add navigation menu button
-
-**Example**:
-```ampersand
-INTERFACE EditProject : I[Project] BOX<FORM hideSubOnNoRecords>
+INTERFACE EditProject : I[Project] BOX<FORM>
   [ "Project Name" : projectName cRUd
-  , "Description" : description cRud
-  , "Start Date" : startDate cRud
+  , "Description"  : description cRud
+  , "Start Date"   : startDate cRud
   ]
 ```
 
-**When to use**: For data entry forms, detail views, and editing interfaces.
+### 2.2 TABLE
 
-### 2.2 TABLE Template
+Displays data as a table: one row per target atom, one column per sub interface.
 
-**Purpose**: Use this template for lists, overviews, tables, and data comparison interfaces.
+**Attributes**:
 
-The `TABLE` template displays data horizontally in rows, very much like a spreadsheet does.
+- `sortable` — make column headers clickable so the user can sort. Only applies to
+  univalent fields.
+- `sortBy="Column Label"` — the column the table is sorted by initially. Use
+  together with `sortable`.
+- `order="asc"` or `order="desc"` — the initial sort direction (`asc` is the
+  default). Use together with `sortBy`.
 
-**Syntax**:
-```ampersand
-expr BOX<TABLE attributes>
-  [ "Column 1" : col1expr cRud
-  , "Column 2" : col2expr cRud
-  ]
-```
-
-**Available Attributes**:
-- `hideOnNoRecords` - Hide table when no data exists
-- `noHeader` - Remove column headers
-- `title="Your Title"` - Add table title
-- `noRootTitle` - Remove auto-generated title
-- `sortable` - Make columns clickable for sorting
-- `sortBy="column name"` - Default sort column
-- `order="asc"` or `order="desc"` - Default sort direction
-- `showNavMenu` - Add navigation menu button
-
-**Example**:
 ```ampersand
 INTERFACE ProjectList : "_SESSION";V[SESSION*Project] BOX<TABLE sortable sortBy="Project Name">
   [ "Project Name" : projectName cRud
-  , "Status" : status cRud
-  , "Team Size" : teamMembers;teamMembers~ cRud
+  , "Status"       : status cRud
+  , "Team Size"    : teamMembers;teamMembers~ cRud
   ]
 ```
 
-**When to use**: For lists, overviews, and data comparison interfaces.
+### 2.3 TABS
 
-### 2.3 TABS Template
+Organises the sub interfaces into tabs; one tab is shown at a time. Best used with
+a univalent interface term, because a full tab set is shown per target atom. It has
+**no attributes**.
 
-**Purpose**: Use this template for complex objects with multiple aspects or when screen space is limited.
-
-Organize related information into separate tabs.
-
-**Syntax**:
-```ampersand
-expr BOX<TABS attributes>
-  [ "Tab 1" : tab1expr cRud BOX<FORM>
-      [ "Field" : fieldexpr cRud ]
-  , "Tab 2" : tab2expr cRud BOX<TABLE>
-      [ "Column" : colexpr cRud ]
-  ]
-```
-
-**Available Attributes**:
-- `title="Your Title"` - Add title above tabs
-- `noRootTitle` - Remove auto-generated title
-- `hideOnNoRecords` - Hide tabs when no data exists
-- `hideSubOnNoRecords` - Hide individual tabs when they have no data
-
-**Example**:
 ```ampersand
 INTERFACE ProjectDetails : I[Project] BOX<TABS>
   [ "General" : I cRud BOX<FORM>
-      [ "Name" : projectName cRud
+      [ "Name"        : projectName cRud
       , "Description" : description cRud
       ]
   , "Team" : teamMembers cRud BOX<TABLE>
       [ "Employee" : I cRud
-      , "Role" : role cRud
+      , "Role"     : role cRud
       ]
   ]
 ```
 
-**When to use**: For complex objects with multiple aspects or when screen space is limited.
+### 2.4 RAW
 
-### 2.4 RAW Template
+Renders each sub interface inside plain `<div>` elements, without styling or
+editing functionality. Use it when you supply your own layout or embed the output
+elsewhere. It has **no attributes**.
 
-**Purpose**: Sometimes you want basic HTML, for example for custom styling or embedding your HTML in other systems.
-
-The RAW template displays data without styling or editing functionality.
-
-**Syntax**:
 ```ampersand
-expr BOX<RAW attributes>
+expr BOX<RAW>
   [ "Field" : fieldexpr cRud
   ]
 ```
-
-**Available Attributes**:
-- `form` - Use simple form structure (default)
-- `table` - Use simple table structure
-
-**When to use**: For read-only displays, custom styling, or embedding in other systems.
 
 ---
 
 ## 3. Atomic Templates
 
-Atomic templates display individual data values. Ampersand automatically selects the appropriate template based on your concept's `REPRESENT` statement.
+Atomic templates render leaf fields automatically, based on the concept's
+`REPRESENT` type. You do not select them yourself.
 
-### 3.1 ALPHANUMERIC, BIGALPHANUMERIC, HUGEALPHANUMERIC
+| `REPRESENT … TYPE` | Widget |
+| --- | --- |
+| `ALPHANUMERIC` | single-line text input |
+| `BIGALPHANUMERIC` | multi-line textarea |
+| `HUGEALPHANUMERIC` | large textarea |
+| `BOOLEAN` | checkbox |
+| `DATE` | date picker |
+| `DATETIME` | date/time picker |
+| `INTEGER` | integer input |
+| `FLOAT` | number input |
+| `PASSWORD` | masked password input |
+| *(no `REPRESENT`; an object)* | `OBJECT` — see below |
 
-**Purpose**: Display and edit text values.
+`TYPEOFONE` is a special atomic template for the singleton `ONE` atom; you rarely
+need it.
 
-**Auto-selected for**:
-```ampersand
-REPRESENT ConceptName TYPE ALPHANUMERIC
-```
+### OBJECT
 
-**Display**: Single-line text input (ALPHANUMERIC), multi-line textarea (BIGALPHANUMERIC), large textarea (HUGEALPHANUMERIC)
-
-### 3.2 BOOLEAN
-
-**Purpose**: Display and edit true/false values.
-
-**Auto-selected for**:
-```ampersand
-REPRESENT ConceptName TYPE BOOLEAN
-```
-
-**Display**: Checkbox
-
-### 3.3 DATE, DATETIME
-
-**Purpose**: Display and edit date/time values.
-
-**Auto-selected for**:
-```ampersand
-REPRESENT ConceptName TYPE DATE
-REPRESENT ConceptName TYPE DATETIME
-```
-
-**Display**: Date picker (DATE), date/time picker (DATETIME)
-
-### 3.4 INTEGER, FLOAT
-
-**Purpose**: Display and edit numeric values.
-
-**Auto-selected for**:
-```ampersand
-REPRESENT ConceptName TYPE INTEGER
-REPRESENT ConceptName TYPE FLOAT
-```
-
-**Display**: Number input field with appropriate validation
-
-### 3.5 PASSWORD
-
-**Purpose**: Display and edit sensitive text.
-
-**Auto-selected for**:
-```ampersand
-REPRESENT ConceptName TYPE PASSWORD
-```
-
-**Display**: Password input field (masked text)
-
-### 3.6 OBJECT
-
-**Purpose**: Display and edit references to other objects.
-
-**Auto-selected for**: Concepts without a `REPRESENT` statement
-
-**Display**: Shows object identifier with navigation link if interface exists
-
-**Special Features**:
-- **Create-and-add functionality**: Users can type new values directly into the dropdown and create new objects on-the-fly
-- **Filtered dropdowns**: Options exclude already selected items and support search filtering
-- **Uni vs Non-Uni behavior**: Univalent relations show single dropdown, non-univalent show multiple selection interface
-- **Remove vs Delete**: Remove disconnects the relation, Delete removes the object entirely
-
-**Usage Requirements**:
-- Set the `tgtResourceType` attribute to specify the target concept type
-- Ensure target concept has appropriate interfaces for navigation
-- Consider setting a meaningful `placeholder` text for better user experience
-
-**Example with create functionality**:
-```ampersand
-RELATION projectLead[Project*Person] [UNI]
-
-INTERFACE ProjectDetails : I[Project] BOX<FORM>
-  [ "Project Name" : projectName cRud
-  , "Project Lead" : projectLead cRud  -- Users can type new person names and create them
-  ]
-```
-
-When users type a name that doesn't exist in the dropdown, they can press Enter or click the + button to create a new Person object and immediately assign it to the project.
+For a leaf whose target is an object (a concept without a `REPRESENT` statement),
+Ampersand renders each atom through the concept's `DEFAULT` VIEW if one exists. If
+there is no default view, it falls back to the atom's internal identifier (the
+"ugly id"). Define a `DEFAULT` VIEW for the concept to show a readable label. When
+the field is editable, the object field also offers navigation to an interface for
+the target concept, if one exists.
 
 ---
 
-## 4. VIEW Templates
+## 4. Built-in VIEW Templates
 
-VIEW templates create custom display formats for specific concepts. You define them separately and reference them in interfaces.
+VIEW templates create custom display formats for a concept. You reference them from
+a term or attach them with a `HTML TEMPLATE` clause on a `VIEW`.
 
-### 4.1 FILEOBJECT
+### 4.1 FILEOBJECT — upload and download files
 
-**Purpose**: Upload and download files.
-
-**Required Setup**:
 ```ampersand
 IDENT FileObjectName: FileObject (filePath)
 RELATION filePath[FileObject*FilePath] [UNI,TOT]
@@ -297,461 +191,159 @@ VIEW FileObject: FileObject DEFAULT
   } HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
 ```
 
-**Usage in Interface**:
-```ampersand
-INTERFACE DocumentManager : I[Document] BOX<FORM>
-  [ "Title" : title cRud
-  , "File" : attachment <FileObject> cRud
-  ]
-```
+### 4.2 LINKTO — navigate to another interface
 
-**When to use**: For document management, file attachments, and file upload/download functionality.
-
-### 4.2 LINKTO
-
-**Purpose**: Create navigation links to other interfaces.
-
-**Syntax**:
 ```ampersand
 "label" : expr LINKTO INTERFACE "InterfaceName"
 ```
 
-**Example**:
+`expr`'s target concept must match the source concept of the referenced interface.
+
 ```ampersand
 INTERFACE ProjectList : "_SESSION";V[SESSION*Project] BOX<TABLE>
   [ "Project Name" : projectName cRud
-  , "Edit" : I LINKTO INTERFACE "EditProject"
-  ]
-
-INTERFACE EditProject : I[Project] BOX<FORM>
-  [ "Name" : projectName cRud
-  , "Description" : description cRud
+  , "Edit"         : I LINKTO INTERFACE "EditProject"
   ]
 ```
 
-**When to use**: For navigation between interfaces, creating edit links, and building hierarchical interfaces.
+### 4.3 PROPERTY — a property as a checkbox
 
-### 4.3 PROPERTY
-
-**Purpose**: Display boolean properties in a specialized format.
-
-**Auto-selected for**: Relations with `[PROP]` constraint.
-
-**Example**:
-```ampersand
-RELATION isActive[Project*Project] [PROP]
-
-INTERFACE ProjectStatus : I[Project] BOX<FORM>
-  [ "Project Name" : projectName cRud
-  , "Active" : isActive cRud
-  ]
-```
-
-### 4.4 STRONG
-
-**Purpose**: Display text in bold formatting.
-
-**Usage**: Applied automatically to specific VIEW definitions or can be used in custom VIEWs.
-
-### 4.5 URL
-
-**Purpose**: Display clickable web links.
-
-**Auto-selected for**: Concepts representing URLs.
-
-**Example**:
-```ampersand
-REPRESENT WebsiteURL TYPE ALPHANUMERIC
-
-INTERFACE CompanyInfo : I[Company] BOX<FORM>
-  [ "Company Name" : name cRud
-  , "Website" : website cRud  -- Displays as clickable link
-  ]
-```
+The built-in VIEW template for a `[PROP]` relation. It renders the property as a
+boolean (a checkbox), so the user sees and edits a true/false value.
 
 ---
 
 ## 5. Dropdown Templates
 
-Dropdown templates create selection lists for choosing from predefined options.
+Dropdowns populate a relation from a selectable set. Both dropdown templates use the
+same two **prescribed field names**:
 
-### 5.1 OBJECTDROPDOWN
+- `"selectFrom"` — the term whose target atoms the user may choose from.
+- `"setRelation"` — the relation that is filled with the chosen atom. If the
+  relation is `[UNI]`, a newly selected atom replaces the current value; otherwise
+  selected atoms are added.
 
-**Purpose**: Select from a list of objects (concepts without REPRESENT statements).
+> These templates replace the former `OBJECTDROPDOWN` and `VALUEDROPDOWN`
+> templates. The prescribed field names are `selectFrom` and `setRelation`
+> (camelCase), not the old `selectfrom`/`setrelation`.
 
-**Prescribed Field Names**:
-- `"selectfrom"` - Expression defining available options
-- `"setrelation"` - Relation to populate when user selects
-- `"instruction"` - Placeholder text when nothing selected
-- `"selectflag"` - Property relation that toggles when object selected
-- `"deselectflag"` - Property relation that toggles when nothing selected
+### 5.1 FILTEREDDROPDOWN
 
-**Syntax**:
+A dropdown the user can filter by typing. When the typed value does not exist yet,
+the user can create a new target atom on the fly.
+
 ```ampersand
-expr cRud BOX<OBJECTDROPDOWN>
-  [ "selectfrom" : optionsExpr cRud <ObjectView>
-  , "setrelation" : targetRelation cRUd
-  , "instruction" : TXT "Choose an option"
-  , "selectflag" : selectedFlag cRUd
-  , "deselectflag" : deselectedFlag cRUd
-  ]
-```
-
-**Example**:
-```ampersand
-RELATION projectLead[Project*Person] [UNI]
-RELATION isAssigned[Person*Person] [PROP]
-
 INTERFACE AssignProjectLead : I[Project] BOX<FORM>
   [ "Project Name" : projectName cRud
-  , "Assign Leader" : I cRud BOX<OBJECTDROPDOWN>
-      [ "selectfrom" : V[Project*Person] cRud
-      , "setrelation" : projectLead cRUd
-      , "instruction" : TXT "Select project leader"
-      , "selectflag" : projectLead;isAssigned cRUd
+  , "Assign Leader" : I cRud BOX<FILTEREDDROPDOWN>
+      [ "selectFrom"  : V[Project*Person]
+      , "setRelation" : projectLead cRUd
       ]
   ]
 ```
 
-**When to use**: For selecting employees, categories, or any objects from a predefined list.
+### 5.2 SELECT
 
-### 5.2 VALUEDROPDOWN
+The same behaviour through a plain (non-filtering) select list.
 
-**Purpose**: Select from a list of values (concepts with REPRESENT statements).
-
-**Prescribed Field Names**: Same as OBJECTDROPDOWN but for value-type concepts.
-
-**Syntax**:
 ```ampersand
-expr cRud BOX<VALUEDROPDOWN>
-  [ "selectfrom" : optionsExpr cRud <ValueView>
-  , "setrelation" : targetRelation cRUd
-  , "instruction" : TXT "Choose a value"
-  , "selectflag" : selectedFlag cRUd
-  , "deselectflag" : deselectedFlag cRUd
+"Priority" : I cRud BOX<SELECT>
+  [ "selectFrom"  : V[Task*Priority]
+  , "setRelation" : taskPriority cRUd
   ]
 ```
 
-**Example**:
-```ampersand
-REPRESENT Priority TYPE ALPHANUMERIC
-RELATION taskPriority[Task*Priority] [UNI]
+---
 
-INTERFACE EditTask : I[Task] BOX<FORM>
+## 6. PROPBUTTON
+
+`PROPBUTTON` renders a button that changes a single property-relation (a relation
+that is `[PROP,UNI]`) when clicked.
+
+**Prescribed fields**:
+
+- `"label"` — the text on the button.
+- `"property"` — the `[PROP,UNI]` relation the button changes. Its CRUD annotation
+  must allow Update (capital `U`).
+
+**Attribute**:
+
+- `action="toggle"` (default) flips the property; `action="set"` always makes it
+  true; `action="clear"` always makes it false.
+
+```ampersand
+RELATION isCompleted[Task] [PROP,UNI]
+
+INTERFACE TaskList : "_SESSION";V[SESSION*Task] cRud BOX<TABLE>
   [ "Task Name" : taskName cRud
-  , "Priority" : I cRud BOX<VALUEDROPDOWN>
-      [ "selectfrom" : V[Task*Priority] cRud
-      , "setrelation" : taskPriority cRUd
-      , "instruction" : TXT "Select priority level"
+  , "Status"    : I cRud BOX<PROPBUTTON>
+      [ "label"    : TXT "Mark Complete"
+      , "property" : isCompleted cRUd
       ]
   ]
 ```
 
-**When to use**: For selecting from predefined text values, status codes, or enumerated options.
+> The current built-in `PROPBUTTON` supports only `label`, `property` and `action`.
+> Older attributes such as `color`, `popovertext`, `hide`, `disabled`, and the
+> multi-relation `fliprop*`/`setprop*`/`clrprop*` fields are no longer honoured. For
+> richer buttons, write a custom BOX template.
 
 ---
 
-## 6. Advanced Templates
+## 7. A Combined Example
 
-### 6.1 PROPBUTTON Template
-
-**Purpose**: Create interactive buttons that can set, clear, or flip property relations.
-
-**Prescribed Field Names**:
-- `"label"`, `"label1"`, `"label2"`, `"label3"` - Button text components
-- `"property"` - Property relation to flip (backward compatible)  
-- `"fliprop1"`, `"fliprop2"`, `"fliprop3"` - Property relations to flip
-- `"setprop1"`, `"setprop2"`, `"setprop3"` - Property relations to set (make true)
-- `"clrprop1"`, `"clrprop2"`, `"clrprop3"` - Property relations to clear (make false)
-- `"color"` - Button color (primary, secondary, success, warning, danger, info, light, dark)
-- `"hide"` - Expression to hide button when true
-- `"disabled"` - Expression to disable button when true
-- `"disabledcolor"` - Button color when disabled
-- `"popovertext"` - Tooltip text when enabled
-- `"disabledpopovertext"` - Tooltip text when disabled
-
-**Syntax**:
 ```ampersand
-expr cRud BOX<PROPBUTTON>
-  [ "label" : TXT "Button Text"
-  , "property" : propRelation cRUd
-  , "color" : TXT "primary"
-  , "hide" : hideCondition cRud
-  , "disabled" : disableCondition cRud
-  , "popovertext" : TXT "Click to activate"
-  ]
-```
-
-**Example**:
-```ampersand
-RELATION isApproved[Document*Document] [PROP]
-RELATION isRejected[Document*Document] [PROP]
-RELATION canApprove[Document*Document] [PROP]
-
-INTERFACE DocumentReview : I[Document] BOX<FORM>
-  [ "Document Title" : title cRud
-  , "Approve" : I cRud BOX<PROPBUTTON>
-      [ "label" : TXT "Approve Document"
-      , "setprop1" : isApproved cRUd
-      , "clrprop1" : isRejected cRUd
-      , "color" : TXT "success"
-      , "hide" : isApproved cRud
-      , "disabled" : (I - canApprove) cRud
-      , "popovertext" : TXT "Approve this document"
-      , "disabledpopovertext" : TXT "You don't have approval rights"
-      ]
-  , "Reject" : I cRud BOX<PROPBUTTON>
-      [ "label" : TXT "Reject Document"
-      , "setprop1" : isRejected cRUd
-      , "clrprop1" : isApproved cRUd
-      , "color" : TXT "danger"
-      , "hide" : isRejected cRud
-      ]
-  ]
-```
-
-**When to use**: For workflow buttons, status changes, approval processes, and interactive state management.
-
----
-
-## 7. Template Tutorials
-
-### 7.1 Building a Project Management Interface
-
-This tutorial combines multiple templates to create a complete project management system.
-
-**Step 1: Define the data model**
-```ampersand
-CONCEPT Project "A project with team members and tasks"
-CONCEPT Person "A person who can work on projects"
-CONCEPT Task "A work item within a project"
+CONCEPT Project ""
+CONCEPT Person ""
 
 RELATION projectName[Project*ProjectName] [UNI,TOT]
 RELATION teamMember[Project*Person]
 RELATION projectLead[Project*Person] [UNI]
-RELATION taskTitle[Task*TaskTitle] [UNI,TOT]
-RELATION taskProject[Task*Project] [UNI,TOT]
-RELATION taskAssignee[Task*Person] [UNI]
-RELATION isCompleted[Task*Task] [PROP]
-RELATION isActive[Project*Project] [PROP]
+RELATION isActive[Project] [PROP,UNI]
+REPRESENT ProjectName TYPE ALPHANUMERIC
 
-REPRESENT ProjectName, TaskTitle TYPE ALPHANUMERIC
-```
-
-**Step 2: Create the main project overview**
-```ampersand
-INTERFACE ProjectOverview : "_SESSION";V[SESSION*Project] BOX<TABLE sortable>
-  [ "Project" : projectName cRud
-  , "Status" : isActive cRud
+INTERFACE ProjectOverview : "_SESSION";V[SESSION*Project] cRud BOX<TABLE sortable>
+  [ "Project"   : projectName cRud
   , "Team Size" : teamMember;teamMember~ cRud
-  , "Tasks" : taskProject~;taskProject cRud
-  , "Edit" : I LINKTO INTERFACE "EditProject"
+  , "Active"    : I cRud BOX<PROPBUTTON>
+      [ "label"    : TXT "Toggle Active"
+      , "property" : isActive cRUd
+      ]
+  , "Edit"      : I LINKTO INTERFACE "EditProject"
   ]
-```
 
-**Step 3: Create the project detail interface with tabs**
-```ampersand
-INTERFACE EditProject : I[Project] BOX<TABS>
+INTERFACE EditProject : I[Project] cRud BOX<TABS>
   [ "General" : I cRud BOX<FORM>
       [ "Project Name" : projectName cRUd
-      , "Project Lead" : projectLead cRud
-      , "Activate" : I cRud BOX<PROPBUTTON>
-          [ "label" : TXT "Activate Project"
-          , "property" : isActive cRUd
-          , "color" : TXT "success"
-          , "hide" : isActive cRud
+      , "Project Lead" : I cRud BOX<FILTEREDDROPDOWN>
+          [ "selectFrom"  : V[Project*Person]
+          , "setRelation" : projectLead cRUd
           ]
       ]
   , "Team" : teamMember cRud BOX<TABLE>
       [ "Team Member" : I cRud
-      , "Remove" : I cRud BOX<PROPBUTTON>
-          [ "label" : TXT "Remove"
-          , "color" : TXT "danger"
-          ]
-      ]
-  , "Tasks" : taskProject~ cRud BOX<TABLE>
-      [ "Task" : taskTitle cRud
-      , "Assignee" : taskAssignee cRud
-      , "Complete" : I cRud BOX<PROPBUTTON>
-          [ "label" : TXT "Mark Complete"
-          , "property" : isCompleted cRUd
-          , "color" : TXT "success"
-          , "hide" : isCompleted cRud
-          ]
-      ]
-  ]
-```
-
-**Step 4: Add team member assignment interface**
-```ampersand
-INTERFACE AssignTeamMember : I[Project] BOX<FORM>
-  [ "Project" : projectName cRud
-  , "Add Team Member" : I cRud BOX<OBJECTDROPDOWN>
-      [ "selectfrom" : V[Project*Person] cRud
-      , "setrelation" : teamMember cRUd
-      , "instruction" : TXT "Select team member to add"
-      ]
-  ]
-```
-
-### 7.2 Combining Dropdown and PROPBUTTON Templates
-
-This example shows how to create a task assignment workflow:
-
-```ampersand
-RELATION taskStatus[Task*TaskStatus] [UNI]
-RELATION canAssign[Task*Task] [PROP]
-REPRESENT TaskStatus TYPE ALPHANUMERIC
-
-INTERFACE TaskAssignment : I[Task] BOX<FORM>
-  [ "Task Title" : taskTitle cRud
-  , "Assign To" : I cRud BOX<OBJECTDROPDOWN>
-      [ "selectfrom" : taskProject;teamMember cRud
-      , "setrelation" : taskAssignee cRUd
-      , "instruction" : TXT "Choose assignee"
-      ]
-  , "Set Status" : I cRud BOX<VALUEDROPDOWN>
-      [ "selectfrom" : V[Task*TaskStatus] cRud
-      , "setrelation" : taskStatus cRUd
-      , "instruction" : TXT "Select status"
-      ]
-  , "Start Task" : I cRud BOX<PROPBUTTON>
-      [ "label" : TXT "Start Working"
-      , "setprop1" : canAssign cRUd
-      , "color" : TXT "primary"
-      , "disabled" : (I - taskAssignee;taskAssignee~) cRud
-      , "popovertext" : TXT "Begin work on this task"
-      , "disabledpopovertext" : TXT "Task must be assigned first"
       ]
   ]
 ```
 
 ---
 
-## 8. Troubleshooting Guide
+## 8. Troubleshooting
 
-### 8.1 Common Template Errors
+**Template not found or ignored.**
+Check the name and casing: `BOX<FORM>`, not `BOX<form>` or `expr FORM [...]`.
+Remember that an unknown *attribute* does not error — it is simply ignored.
 
-**Error**: Template not found or not working
-**Cause**: Incorrect template name or missing BOX keyword
-**Solution**: Check template name spelling and ensure you use `BOX<TEMPLATENAME>`
+**PROPBUTTON does nothing.**
+The property relation must be `[PROP,UNI]`, the field names must be exactly
+`"label"` and `"property"`, and the property's CRUD must include a capital `U`.
 
-```ampersand
--- Wrong:
-expr FORM [ ... ]
-expr BOX<form> [ ... ]
+**Dropdown shows no options.**
+Use the exact field names `"selectFrom"` and `"setRelation"` (camelCase).
 
--- Correct:
-expr BOX<FORM> [ ... ]
-```
+**Table sorting does not work.**
+Add the `sortable` attribute, and remember it applies only to univalent fields.
 
-**Error**: Fields not displaying in PROPBUTTON
-**Cause**: Wrong prescribed field names
-**Solution**: Use exact field names as documented
-
-```ampersand
--- Wrong:
-BOX<PROPBUTTON>
-  [ "text" : TXT "Click me"      -- Should be "label"
-  , "prop" : myProperty cRUd     -- Should be "property"
-  ]
-
--- Correct:
-BOX<PROPBUTTON>
-  [ "label" : TXT "Click me"
-  , "property" : myProperty cRUd
-  ]
-```
-
-**Error**: Dropdown not showing options
-**Cause**: Missing required prescribed field names
-**Solution**: Include both "selectfrom" and "setrelation" fields
-
-```ampersand
--- Wrong:
-BOX<OBJECTDROPDOWN>
-  [ "options" : V[Project*Person] cRud  -- Should be "selectfrom"
-  ]
-
--- Correct:
-BOX<OBJECTDROPDOWN>
-  [ "selectfrom" : V[Project*Person] cRud
-  , "setrelation" : projectLead cRUd
-  ]
-```
-
-### 8.2 CRUD Permission Issues
-
-**Problem**: Users can't edit fields that should be editable
-**Solution**: Check CRUD annotations - use uppercase for allowed operations
-
-```ampersand
--- Wrong: User can't update
-"Field Name" : fieldExpr crud
-
--- Correct: User can update  
-"Field Name" : fieldExpr cRUd
-```
-
-**Problem**: Users see fields they shouldn't access
-**Solution**: Use lowercase CRUD letters to restrict access
-
-```ampersand
--- Hide field completely:
-"Sensitive Data" : sensitiveField c
-
--- Show but don't allow editing:
-"Read Only" : readOnlyField cRud
-```
-
-### 8.3 Template Attribute Problems
-
-**Problem**: Table sorting not working
-**Solution**: Add `sortable` attribute and ensure fields are univalent
-
-```ampersand
--- Wrong: No sortable attribute
-BOX<TABLE>
-
--- Correct: Sortable table
-BOX<TABLE sortable>
-```
-
-**Problem**: Form hiding when it shouldn't
-**Solution**: Check `hideOnNoRecords` attribute usage
-
-```ampersand
--- This hides the entire form when no data:
-BOX<FORM hideOnNoRecords>
-
--- This only hides individual empty fields:
-BOX<FORM hideSubOnNoRecords>
-```
-
-### 8.4 Debugging Template Issues
-
-**Step 1**: Verify template name spelling and case
-**Step 2**: Check all prescribed field names against documentation  
-**Step 3**: Validate CRUD annotations for permissions
-**Step 4**: Ensure relations exist and have correct signatures
-**Step 5**: Test with minimal example to isolate the issue
-
-### 8.5 Best Practices
-
-1. **Use descriptive field labels**: Make interface purpose clear to users
-2. **Apply consistent CRUD patterns**: Follow same permission logic throughout your application
-3. **Test with different data states**: Empty data, single records, multiple records
-4. **Combine templates thoughtfully**: Don't mix too many different templates in one interface
-5. **Document custom templates**: If you create custom templates, document their prescribed field names
-
----
-
-## Reference Materials
-
-For complete syntax reference and additional examples, see:
-- [Ampersand Syntax Reference](#) - Complete language syntax
-- [Template Attribute Reference](#) - All available template attributes  
-- [CRUD Annotation Guide](#) - Permission system details
-- [Interface Examples Collection](#) - More complex interface patterns
-
-This guide covers the essential templates and patterns for building rich Ampersand interfaces. Start with basic FORM and TABLE templates, then gradually incorporate advanced features like PROPBUTTON and dropdown templates as your application requirements grow.
+**A field is not editable.**
+CRUD letters are case-sensitive: use a capital `U` to allow updating
+(`fieldExpr cRUd`), lowercase to forbid it.

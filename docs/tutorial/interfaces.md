@@ -106,7 +106,7 @@ BOX<TABLE>
 
 Notice the effect that these changes have on the user interface.
 
-![Example of formatting by COLS, ROWS, or TABS](../assets/InterfaceAlphaBoardFormatted.jpg)
+![Example of formatting by TABLE, FORM, or TABS](../assets/InterfaceAlphaBoardFormatted.jpg)
 
 Notice the following features:\
 1\. The keyword `BOX <TABS>` turns the box into a layout with tabs.\
@@ -119,8 +119,8 @@ So far you have seen how the `BOX` keyword controls the *layout* of an interface
 
 - **Box templates** decide how a box and its sub-boxes are arranged. You have already met `BOX <FORM>` (the default, one field per row), `BOX <TABLE>` (a tabular layout) and `BOX <TABS>` (tabbed sub-boxes). A few more are available:
   - `BOX <RAW>` shows the same data without styling or extra functionality, handy when you supply your own layout.
-  - `BOX <PROPBUTTON>` renders a button that sets, clears or flips one or more property-relations when clicked.
-  - `BOX <OBJECTDROPDOWN>` and `BOX <VALUEDROPDOWN>` let the user pick from a dropdown to populate a relation (use `OBJECTDROPDOWN` for objects, `VALUEDROPDOWN` for values that have a `REPRESENT` type).
+  - `BOX <PROPBUTTON>` renders a button that sets, clears or toggles a `[PROP,UNI]` property-relation when clicked.
+  - `BOX <FILTEREDDROPDOWN>` lets the user pick from a filterable dropdown to populate a relation (and create a new target atom on the fly). `BOX <SELECT>` offers the same through a plain select list.
 - **Atomic templates** render the leaf fields (the box items that show a single value). Ampersand picks the right *widget* automatically from the concept's type: a text field for alphanumeric values, a number field, a date picker for dates, a checkbox for booleans, and so on.
 - **View templates** are used when a box item refers to a user-defined `VIEW` (for example `pl <PersonEmail>`), so you can control exactly how an atom is shown.
 
@@ -138,6 +138,6 @@ After finishing your assignment, you have learned:
 - to predict which data items an interface applies to, if you know which pairs are in an interface term.
 - to predict which data items are displayed, if you know which pairs are in a field term.
 - to explain which atoms are used in a sub-interface.
-- to understand what the keywords `TABS`, `COLS`, and `ROWS` do to your display.
+- to understand what the keywords `TABS`, `TABLE`, and `FORM` do to your display.
 
   More than one interface may apply to the same atom. That gives you a choice on runtime to which interface you want to navigate. If no interface applies, that atom is not navigable.
