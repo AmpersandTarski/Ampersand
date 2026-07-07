@@ -1,0 +1,46 @@
+CONTEXT KleeneChainShortcut IN ENGLISH
+
+PURPOSE CONTEXT KleeneChainShortcut MARKDOWN
+{+ The canonical Kleene fixture (issue #1651): a chain a->b->c->d, a branch
+   b->e, and a redundant shortcut a->c. The exact extensions of r+ and r% are
+   pinned with expected populations, and the proven laws must hold. Running
+   under `ampersand validate` cross-checks the Haskell evaluator against the
+   generated SQL for every term below.
++}
+
+RELATION r[Node*Node]
+POPULATION r CONTAINS
+  [ ("a","b"), ("b","c"), ("c","d"), ("b","e"), ("a","c") ]
+
+RELATION expectedPlus[Node*Node]
+MEANING "The extension r+ must have: r plus (a,d), (a,e), (b,d)."
+POPULATION expectedPlus CONTAINS
+  [ ("a","b"), ("b","c"), ("c","d"), ("b","e"), ("a","c")
+  , ("a","d"), ("a","e"), ("b","d") ]
+
+RELATION expectedRed[Node*Node]
+MEANING "The extension r% must have: r minus the shortcut (a,c)."
+POPULATION expectedRed CONTAINS
+  [ ("a","b"), ("b","c"), ("c","d"), ("b","e") ]
+
+RULE plusExact       : r+ = expectedPlus
+RULE redExact        : r% = expectedRed
+RULE plusUnfoldLeft  : r+ = r \/ r;r+
+RULE plusUnfoldRight : r+ = r \/ r+;r
+RULE starLaw         : r* = I[Node] \/ r+
+RULE redDefinition   : r% = r - (r;r+)
+RULE redPreserves    : (r%)+ = r+
+RULE redInBase       : r% |- r
+RULE baseInPlus      : r |- r+
+RULE acyclicR        : r+ /\ I[Node] |- -V[Node*Node]
+
+INTERFACE Kleene : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"  : I[Node]  cRud
+   , "r"     : r        cRud
+   , "rStar" : r*       cRud
+   , "rPlus" : r+       cRud
+   , "rRed"  : r%       cRud
+   ]
+
+ENDCONTEXT

@@ -1,0 +1,53 @@
+CONTEXT KleeneCycles IN ENGLISH
+
+PURPOSE CONTEXT KleeneCycles MARKDOWN
+{+ Cyclic graphs are where naive closure algorithms fail to terminate and
+   where the transitive reduction collapses. Population: a 2-cycle {a,b},
+   a 3-cycle {c,d,e}, a self-loop f, and a tail g entering the 2-cycle.
+
+   Expected semantics:
+   * r+ is the full relation on each strongly connected component, plus the
+     reachability of the tail: 16 pairs, pinned exactly below.
+   * r% is EMPTY: every edge on (or into) a cycle has a longer alternative
+     path, so `r - (r;r+)` drops all of them. This pins the documented scope
+     of r% (meaningful for acyclic relations only).
+   * r* = I \/ r+ still holds, cycles or not.
++}
+
+RELATION r[Node*Node]
+POPULATION r CONTAINS
+  [ ("a","b"), ("b","a")
+  , ("c","d"), ("d","e"), ("e","c")
+  , ("f","f")
+  , ("g","a") ]
+
+RELATION expectedPlus[Node*Node]
+MEANING "Full closure: SCC {a,b} squared, SCC {c,d,e} squared, (f,f), and g's reach."
+POPULATION expectedPlus CONTAINS
+  [ ("a","a"), ("a","b"), ("b","a"), ("b","b")
+  , ("c","c"), ("c","d"), ("c","e")
+  , ("d","c"), ("d","d"), ("d","e")
+  , ("e","c"), ("e","d"), ("e","e")
+  , ("f","f")
+  , ("g","a"), ("g","b") ]
+
+RELATION expectedLoops[Node*Node]
+MEANING "Exactly the atoms on a cycle appear on the diagonal of r+; g does not."
+POPULATION expectedLoops CONTAINS
+  [ ("a","a"), ("b","b"), ("c","c"), ("d","d"), ("e","e"), ("f","f") ]
+
+RULE plusExact  : r+ = expectedPlus
+RULE redEmpty   : r% |- -V[Node*Node]
+RULE loopsExact : I[Node] /\ r+ = expectedLoops
+RULE starLaw    : r* = I[Node] \/ r+
+RULE plusUnfold : r+ = r \/ r;r+
+
+INTERFACE Cycles : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"  : I[Node]  cRud
+   , "rStar" : r*       cRud
+   , "rPlus" : r+       cRud
+   , "rRed"  : r%       cRud
+   ]
+
+ENDCONTEXT

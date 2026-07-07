@@ -1,0 +1,33 @@
+CONTEXT KleeneDiamond IN ENGLISH
+
+PURPOSE CONTEXT KleeneDiamond MARKDOWN
+{+ A diamond a->b->d, a->c->d with an explicit shortcut a->d. The pair (a,d)
+   has THREE witnesses (via b, via c, and directly), so dropping the shortcut
+   must not depend on which witness an algorithm finds first. The base
+   relation is transitively closed, so r+ = r: closure must not invent pairs.
++}
+
+RELATION r[Node*Node]
+POPULATION r CONTAINS
+  [ ("a","b"), ("a","c"), ("b","d"), ("c","d"), ("a","d") ]
+
+RELATION expectedRed[Node*Node]
+MEANING "The reduction drops exactly the shortcut (a,d); both arms remain."
+POPULATION expectedRed CONTAINS
+  [ ("a","b"), ("a","c"), ("b","d"), ("c","d") ]
+
+RULE plusIsBase   : r+ = r
+RULE redExact     : r% = expectedRed
+RULE redPreserves : (r%)+ = r+
+RULE starLaw      : r* = I[Node] \/ r+
+RULE acyclicR     : r+ /\ I[Node] |- -V[Node*Node]
+
+INTERFACE Diamond : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"  : I[Node]  cRud
+   , "rStar" : r*       cRud
+   , "rPlus" : r+       cRud
+   , "rRed"  : r%       cRud
+   ]
+
+ENDCONTEXT

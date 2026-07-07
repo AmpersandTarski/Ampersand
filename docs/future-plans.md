@@ -109,23 +109,15 @@ If only the user of an Ampersand prototype could edit data as easily as in a spr
 
 This feature is [discussed on github](https://github.com/AmpersandTarski/Ampersand/issues/1166).
 
-## Kleene operators `+` and `*`.
-To increase the expressive power of Ampersand, we would like to expand the language to include terms of the form `<term>+` and `<term>*`.
+## Kleene operators `+`, `*`, and transitive reduction `%`
 
-In order to do this, we must precompile rules that contain a Kleene operator to rules without such operators.
-This is possible by introducing a new relation and a new rule for every term `t*`.
-Assuming that the term `t` has type `[A*B]`,
-the compiler must add the following code:
-```Ampersand
-RELATION rel-t-plus[A*B]
-RELATION rel-t-plus[A*B]
-RELATION rel-t-minus[A*B]
-ENFORCE rel-t-plus >: t;rel-t-plus
-ENFORCE rel-t-star >: I\/rel-t-plus
-ENFORCE
-```
-Then, the compiler must substitute every occurrence of `t+` by `rel-t-plus`
-and every occurrence of `t*` by `rel-t-star`.
-
-This solution has one problem: if `t` shrinks, even by one pair, `rel-t-plus`
-and `rel-t-star` must be made empty.
+An implementation plan for the Kleene operators — including the transitive
+reduction `r%` (added as pure sugar for `r - (r;r+)`) — is consolidated on
+[issue #1651](https://github.com/AmpersandTarski/Ampersand/issues/1651).
+In brief: closures in rules (RULE, ENFORCE) get a *maintained* hidden relation
+(insertion extends the stored closure; deletion re-derives, by Warshall or the
+proved incremental formula); closures in interfaces and views are computed
+*on demand* with a recursive SQL query, unless a maintained relation with the
+answer already exists. The semantics is machine-checked in `proofs/kleene/`.
+The earlier sketch that stood here proposed `ENFORCE rel-t-plus >: t;rel-t-plus`,
+which misses the base term `t`; the sound unfoldings are in the plan.

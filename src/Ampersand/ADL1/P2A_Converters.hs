@@ -1722,6 +1722,15 @@ term2Expr env ci mConstraintCpt term =
               case endoSigns of
                 [] -> mkVerboseTypeError env o sgnTree ("Kleene plus (+) requires an endomorphic relation (source must equal target).\n  Expression: " <> showP e <> "\n  Available signatures: " <> T.intercalate ", " [tshow sgn | (_, sgn, _) <- opSigns sgnTree])
                 _ -> return (STunary sgnTree endoSigns)
+            PKl2 o e -> do
+              -- Transitive reduction is pure sugar: r% = r - (r;r+), the machine-checked
+              -- lemma rRed_def_law in proofs/kleene/KleeneReduction.thy. Desugar here, so
+              -- no construct reaches the A-structure or the SQL generator (issue #1651).
+              sgnTree <- signatures mConstraint e
+              let endoSigns = [(EDif (expr, ECps (expr, EKl1 expr)), sgn, trm) | (expr, sgn, _) <- opSigns sgnTree, source sgn == target sgn]
+              case endoSigns of
+                [] -> mkVerboseTypeError env o sgnTree ("Transitive reduction (%) requires an endomorphic relation (source must equal target).\n  Expression: " <> showP e <> "\n  Available signatures: " <> T.intercalate ", " [tshow sgn | (_, sgn, _) <- opSigns sgnTree])
+                _ -> return (STunary sgnTree endoSigns)
             PCpl _ e -> do
               sgnTree <- signatures mConstraint e
               return (STunary sgnTree [(ECpl expr, sgn, trm) | (expr, sgn, _) <- opSigns sgnTree])

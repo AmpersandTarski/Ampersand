@@ -52,6 +52,7 @@ instance PConceptStructure (Term TermPrim) where
   pConcs (PPrd _ a b) = pConcs a `Set.union` pConcs b
   pConcs (PKl0 _ e) = pConcs e
   pConcs (PKl1 _ e) = pConcs e
+  pConcs (PKl2 _ e) = pConcs e
   pConcs (PFlp _ e) = pConcs e
   pConcs (PCpl _ e) = pConcs e
   pConcs (PBrk _ e) = pConcs e

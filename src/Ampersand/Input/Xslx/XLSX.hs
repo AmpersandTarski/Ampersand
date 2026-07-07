@@ -948,6 +948,7 @@ termTarget t = case t of
   PFlp _ e -> termSource e
   PKl0 _ e -> termTarget e
   PKl1 _ e -> termTarget e
+  PKl2 _ e -> termTarget e
   _ -> Nothing
 
 termSource :: Term TermPrim -> Maybe P_Concept
@@ -958,6 +959,7 @@ termSource t = case t of
   PFlp _ e -> termTarget e
   PKl0 _ e -> termSource e
   PKl1 _ e -> termSource e
+  PKl2 _ e -> termSource e
   _ -> Nothing
 
 primTarget :: TermPrim -> Maybe P_Concept
