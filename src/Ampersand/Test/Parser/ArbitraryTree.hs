@@ -325,6 +325,7 @@ genTerm infixLevel treeDepth =
         -- level 5: pTrm5
         [ PKl0 <$> arbitrary <*> gen 6,
           PKl1 <$> arbitrary <*> gen 6,
+          PKl2 <$> arbitrary <*> gen 6,
           PFlp <$> arbitrary <*> gen 6,
           PCpl <$> arbitrary <*> gen 6
         ],

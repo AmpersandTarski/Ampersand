@@ -1,0 +1,43 @@
+CONTEXT KleeneCombinedOperators IN ENGLISH
+
+PURPOSE CONTEXT KleeneCombinedOperators MARKDOWN
+{+ Kleene operators applied to COMPOUND terms and stacked on each other.
+   Base: r = {(x,y)}, q = {(y,z)}, so r \/ q is the chain x -> y -> z.
+
+   Stressed here:
+   * closure of a union term: (r \/ q)+ pinned exactly;
+   * reduction of a compound term: (r \/ q)% = r \/ q (a chain is reduced);
+   * converse commutes with closure and with reduction - the reduction case
+     is lemma red_converse in proofs/kleene/KleeneReduction.thy;
+   * stacked closures: (s*)* = s*, (s+)* = s*, (s*)+ = s* - nested
+     WITH RECURSIVE evaluation in SQL.
++}
+
+RELATION r[Node*Node]
+POPULATION r CONTAINS [ ("x","y") ]
+
+RELATION q[Node*Node]
+POPULATION q CONTAINS [ ("y","z") ]
+
+RELATION expectedPlus[Node*Node]
+MEANING "The closure of the union of r and q on the chain x -> y -> z."
+POPULATION expectedPlus CONTAINS
+  [ ("x","y"), ("y","z"), ("x","z") ]
+
+RULE unionPlusExact      : (r \/ q)+ = expectedPlus
+RULE unionRedIsBase      : (r \/ q)% = r \/ q
+RULE converseAfterPlus   : ((r \/ q)~)+ = ((r \/ q)+)~
+RULE converseAfterRed    : ((r \/ q)~)% = ((r \/ q)%)~
+RULE starIdempotent      : ((r \/ q)*)* = (r \/ q)*
+RULE plusOfStar          : ((r \/ q)*)+ = (r \/ q)*
+RULE starOfPlus          : ((r \/ q)+)* = (r \/ q)*
+
+INTERFACE Combined : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"      : I[Node]      cRud
+   , "unionPlus" : (r \/ q)+    cRud
+   , "unionStar" : (r \/ q)*    cRud
+   , "unionRed"  : (r \/ q)%    cRud
+   ]
+
+ENDCONTEXT

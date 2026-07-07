@@ -244,18 +244,30 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/Session.adl
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
-    testing/Travis/testcases/FuncSpec/Issue1275-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/Issue1275.adl
     testing/Travis/testcases/FuncSpec/Issue1275.docx
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml
-    testing/Travis/testcases/FuncSpec/testIssue1183-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
     testing/Travis/testcases/FuncSpec/testIssue1183.docx
-    testing/Travis/testcases/FuncSpec/testPredLogic-diagnosis.xlsx
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
     testing/Travis/testcases/FuncSpec/testPredLogic.docx
+    testing/Travis/testcases/Kleene/README.md
+    testing/Travis/testcases/Kleene/semantics/ChainShortcut.adl
+    testing/Travis/testcases/Kleene/semantics/CombinedOperators.adl
+    testing/Travis/testcases/Kleene/semantics/Cycles.adl
+    testing/Travis/testcases/Kleene/semantics/Diamond.adl
+    testing/Travis/testcases/Kleene/semantics/EmptyRelation.adl
+    testing/Travis/testcases/Kleene/semantics/LongChain.adl
+    testing/Travis/testcases/Kleene/semantics/testinfo.yaml
+    testing/Travis/testcases/Kleene/typecheck/shouldFail/KleenePlusNonEndo.adl
+    testing/Travis/testcases/Kleene/typecheck/shouldFail/kleeneReductionNonEndo.adl
+    testing/Travis/testcases/Kleene/typecheck/shouldFail/KleeneStarNonEndo.adl
+    testing/Travis/testcases/Kleene/typecheck/shouldFail/testinfo.yaml
+    testing/Travis/testcases/Kleene/typecheck/shouldPass/KleenePlus.adl
+    testing/Travis/testcases/Kleene/typecheck/shouldPass/KleeneStar.adl
+    testing/Travis/testcases/Kleene/typecheck/shouldPass/testinfo.yaml
     testing/Travis/testcases/meatgrinder/Issue1484.adl
     testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
@@ -530,8 +542,6 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldFail/IdentityTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/IntersectionTypeMismatch.adl
     testing/Travis/testcases/TypeChecker/shouldFail/Issue_1531.adl
-    testing/Travis/testcases/TypeChecker/shouldFail/KleenePlusNonEndo.adl
-    testing/Travis/testcases/TypeChecker/shouldFail/KleeneStarNonEndo.adl
     testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualFlipped.adl
     testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualNested.adl
     testing/Travis/testcases/TypeChecker/shouldFail/LeftResidualTypeMismatch.adl
@@ -557,8 +567,6 @@ extra-source-files:
     testing/Travis/testcases/TypeChecker/shouldPass/FullRelation.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Identity.adl
     testing/Travis/testcases/TypeChecker/shouldPass/Intersection.adl
-    testing/Travis/testcases/TypeChecker/shouldPass/KleenePlus.adl
-    testing/Travis/testcases/TypeChecker/shouldPass/KleeneStar.adl
     testing/Travis/testcases/TypeChecker/shouldPass/LeftResidual.adl
     testing/Travis/testcases/TypeChecker/shouldPass/LeftResidualComposition.adl
     testing/Travis/testcases/TypeChecker/shouldPass/LeftResidualComposition2.adl

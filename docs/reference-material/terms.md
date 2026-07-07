@@ -45,15 +45,17 @@ V <type>?
 
 ## `Operators`
 
-The operators come in families. We advise novices to study only the rule operators, boolean operators and relational operators. There is a wealth of things you can express with just these operators. The residual operators seem harder to learn and the Kleene operators are not fully implemented yet. You can click the hyperlink to navigate to the semantics of each family.
+The operators come in families. We advise novices to study only the rule operators, boolean operators and relational operators. There is a wealth of things you can express with just these operators. The residual operators seem harder to learn. You can click the hyperlink to navigate to the semantics of each family.
 
-| Family                                       |                   binary operators | binding power |         unary operators | binding power |
-| -------------------------------------------- | ---------------------------------: | ------------- | ----------------------: | ------------- |
-| rules                                        |            $$=$$ and $$\subseteq$$ | 1 (weakest)   |                         |               |
+| Family                                       |                   binary operators | binding power |             unary operators | binding power |
+| -------------------------------------------- | ---------------------------------: | ------------- | --------------------------: | ------------- |
+| rules                                        |            $$=$$ and $$\subseteq$$ | 1 (weakest)   |                             |               |
 | [boolean](#boolean-operators-in-logic)       |      $$\cup$$, $$\cap$$, and $$-$$ | 2             | $\overline{x}$ | prefix        |
-| [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |         $$\smallsmile$$ | postfix       |
-| [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                         |               |
-| Kleene                                       |                                    |               |         $$∗$$ and $$+$$ | postfix       |
+| [relational](#relational-operators-in-logic) | $$;$$, $$\times$$, and $$\dagger$$ | 4             |             $$\smallsmile$$ | postfix       |
+| [residual](#residual-operators-in-logic)     |   $$\backslash$$, $$/$$, and $$♢$$ | 3             |                             |               |
+| Kleene                                       |                                    |               | $$∗$$, $$+$$, and $$\%$$ | postfix       |
+
+The Kleene family works on endorelations (source equals target): `r*` is the reflexive-transitive closure (zero or more steps), `r+` the transitive closure (one or more steps), and `r%` the transitive reduction — it drops every pair that a longer path already provides, so it is syntactic sugar for `r - (r;r+)`. The reduction is meaningful for relations without cycles; every pair on a cycle has a longer alternative path and therefore disappears from `r%`. To guard acyclicity, declare `RULE acyclicR : r+ /\ I |- -V`.
 
 ## Brackets
 

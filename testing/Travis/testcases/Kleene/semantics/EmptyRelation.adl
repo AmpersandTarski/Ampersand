@@ -1,0 +1,29 @@
+CONTEXT KleeneEmptyRelation IN ENGLISH
+
+PURPOSE CONTEXT KleeneEmptyRelation MARKDOWN
+{+ The empty relation is the classic counterexample to the unsound law
+   r* = r;r* (which would make r* empty). The sound semantics gives
+   r* = I even when r has no pairs at all. Node gets its atoms from a helper
+   relation and an explicit concept population (including an isolated atom).
++}
+
+RELATION r[Node*Node]      -- deliberately unpopulated
+
+RELATION anchor[Node*Node] -- provides atoms a and b
+POPULATION anchor CONTAINS [ ("a","b") ]
+
+POPULATION Node CONTAINS [ "c" ] -- an isolated atom; must appear in r* too
+
+RULE starIsId  : r* = I[Node]
+RULE plusEmpty : r+ |- -V[Node*Node]
+RULE redEmpty  : r% |- -V[Node*Node]
+
+INTERFACE Empty : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"  : I[Node]  cRud
+   , "rStar" : r*       cRud
+   , "rPlus" : r+       cRud
+   , "rRed"  : r%       cRud
+   ]
+
+ENDCONTEXT

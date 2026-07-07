@@ -1152,7 +1152,7 @@ pTrm4 =
              <$> rightAssociate PPrd (toText1Unsafe "#") pTrm5
          )
 
---- Trm5 ::= '-'* Trm6 ('~' | '*' | '+')*
+--- Trm5 ::= '-'* Trm6 ('~' | '*' | '+' | '%')*
 pTrm5 :: AmpParser (Term TermPrim)
 -- TODO: Separate into prefix and postfix top-level functions
 pTrm5 =
@@ -1164,6 +1164,7 @@ pTrm5 =
           ( (pOperator . toText1Unsafe) "~"
               <|> (pOperator . toText1Unsafe) "*"
               <|> (pOperator . toText1Unsafe) "+"
+              <|> (pOperator . toText1Unsafe) "%"
           )
       )
   where
@@ -1171,6 +1172,7 @@ pTrm5 =
     f ms pe ((Text1 '~' _, _) : ps) = let x = f ms pe ps in PFlp (origin x) x -- the type checker requires that the origin of x is equal to the origin of its converse.
     f ms pe ((Text1 '*' _, orig) : ps) = PKl0 orig (f ms pe ps) -- e*  Kleene closure (star)
     f ms pe ((Text1 '+' _, orig) : ps) = PKl1 orig (f ms pe ps) -- e+  Kleene closure (plus)
+    f ms pe ((Text1 '%' _, orig) : ps) = PKl2 orig (f ms pe ps) -- e%  transitive reduction
     f (_ : _ : ms) pe ps = f ms pe ps -- -e  complement     (unary minus)
     f ((_, orig) : ms) pe ps = let x = f ms pe ps in PCpl orig x -- the type checker requires that the origin of x is equal to the origin of its complement.
     f _ pe _ = pe
