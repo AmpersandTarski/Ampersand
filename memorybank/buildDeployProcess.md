@@ -163,7 +163,7 @@ grep -A 50 "allStaticFiles" src/Ampersand/Prototype/StaticFiles_Generated.hs
 **Exclusions:** Changes only to `docs/` directory skip CI
 
 **Matrix Testing:**
-- Ubuntu 22.04 (Linux)
+- Ubuntu 24.04 (Linux)
 - macOS-14 
 - Windows 2022
 - Docker build
