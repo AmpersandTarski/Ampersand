@@ -989,6 +989,7 @@ pInterfaceIsAPI :: AmpParser Bool
 pInterfaceIsAPI = (toText1Unsafe "API" ==) <$> pInterfaceKey
 
 --- Transactional ::= 'TRANSACTIONAL'?
+
 -- | An interface may be prefixed with the keyword TRANSACTIONAL, opting it in
 --   to optimistic, invariant-guarded (buffered save/cancel) editing. See issue #1658.
 pTransactional :: AmpParser Bool
