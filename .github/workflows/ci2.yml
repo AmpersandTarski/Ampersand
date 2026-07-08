@@ -28,7 +28,7 @@ on:
 jobs:
   build-and-test-docker:
     name: Build with Docker
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
@@ -55,11 +55,13 @@ jobs:
         run: docker push ${DOCKER_AMPERSAND_IMAGE}:latest
 
   build-and-test-ubuntu:
-    name: Build and test on ubuntu-22.04 🏗 🧪
-    runs-on: ubuntu-22.04
+    name: Build and test on ubuntu-24.04 🏗 🧪
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v5
+      - name: Install system libraries 🧰
+        run: sudo apt-get update && sudo apt-get install -y libbz2-dev
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:

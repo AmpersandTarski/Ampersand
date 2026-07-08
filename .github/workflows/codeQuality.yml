@@ -28,7 +28,7 @@ on:
 jobs:
   hlint:
     name: Hlint - Check for code sanity
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       # Needed to upload results to GitHub code scanning.
       security-events: write
@@ -39,10 +39,12 @@ jobs:
         uses: haskell-actions/hlint-scan@v1
   weeder:
     name: Weeder - Check dead code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v5
+      - name: Install system libraries 🧰
+        run: sudo apt-get update && sudo apt-get install -y libbz2-dev
       - name: Build the project 🌿🌿🌿
         uses: freckle/stack-action@v5
         with:
