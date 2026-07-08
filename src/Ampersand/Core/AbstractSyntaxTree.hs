@@ -821,6 +821,8 @@ instance Hashable AClassify where
 data Interface = Ifc
   { -- | is this interface of type API?
     ifcIsAPI :: !Bool,
+    -- | is this interface declared TRANSACTIONAL? (optimistic, invariant-guarded editing)
+    ifcIsTransactional :: !Bool,
     -- | The name of the interface
     ifcname :: !Name,
     ifclbl :: !(Maybe Label),

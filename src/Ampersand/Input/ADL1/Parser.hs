@@ -802,11 +802,12 @@ pViewDefLegacy =
           pos = orig
         }
 
---- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
+--- Interface ::= 'TRANSACTIONAL'? 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: AmpParser P_Interface
 pInterface =
   build
     <$> currPos
+    <*> pTransactional
     <*> pInterfaceIsAPI
     <*> pNameWithOptionalLabel InterfaceName
     <*> pMaybe pRoles
@@ -818,6 +819,7 @@ pInterface =
     build ::
       Origin ->
       Bool ->
+      Bool ->
       (Name, Maybe Label) ->
       Maybe (NE.NonEmpty Role) ->
       Term TermPrim ->
@@ -825,9 +827,10 @@ pInterface =
       Maybe Name ->
       P_SubIfc TermPrim ->
       P_Interface
-    build p isAPI (nm, lbl) roles ctx mCrud mView sub =
+    build p isTransactional isAPI (nm, lbl) roles ctx mCrud mView sub =
       P_Ifc
         { ifc_IsAPI = isAPI,
+          ifc_IsTransactional = isTransactional,
           ifc_Name = nm,
           ifc_lbl = lbl,
           ifc_Roles = maybe [] NE.toList roles,
@@ -984,6 +987,12 @@ pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") 
 
 pInterfaceIsAPI :: AmpParser Bool
 pInterfaceIsAPI = (toText1Unsafe "API" ==) <$> pInterfaceKey
+
+--- Transactional ::= 'TRANSACTIONAL'?
+-- | An interface may be prefixed with the keyword TRANSACTIONAL, opting it in
+--   to optimistic, invariant-guarded (buffered save/cancel) editing. See issue #1658.
+pTransactional :: AmpParser Bool
+pTransactional = isJust <$> pMaybe (pKey (toText1Unsafe "TRANSACTIONAL"))
 
 --- Population ::= 'POPULATION' (NamedRel 'CONTAINS' Content | ConceptName 'CONTAINS' '[' ValueList ']')
 

@@ -209,6 +209,7 @@ aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
   P_Ifc
     { ifc_IsAPI = ifcIsAPI ifc,
+      ifc_IsTransactional = ifcIsTransactional ifc,
       ifc_Name = name ifc,
       ifc_lbl = ifclbl ifc,
       ifc_Roles = ifcRoles ifc,

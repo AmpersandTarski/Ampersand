@@ -48,11 +48,11 @@ This chapter gives the formal syntax of interfaces for the purpose of reference.
 An interface specification has the following structure. It is identical for user interfaces (`INTERFACE`) and application programming interfaces (`API`).
 
 ```
-INTERFACE <name> <forRoles>? : <term> <crud>? <view>? <subinterface>?
-API       <name> <forRoles>? : <term> <crud>? <view>? <subinterface>?
+TRANSACTIONAL? INTERFACE <name> <forRoles>? : <term> <crud>? <view>? <subinterface>?
+TRANSACTIONAL? API       <name> <forRoles>? : <term> <crud>? <view>? <subinterface>?
 ```
 
-The name of an interface must be unique within the context. The term defines the atoms to which the interface can be applied. The (optional) crud annotation constrains the possible interactions a user can do. The (optional) views determine what the interface will look like. If no view is specified, the interface will look like the screenshot above. Finally the sub-interface contains all the contents, i.e. the fields, field names and the constraints on them.
+The name of an interface must be unique within the context. The term defines the atoms to which the interface can be applied. The (optional) crud annotation constrains the possible interactions a user can do. The (optional) views determine what the interface will look like. If no view is specified, the interface will look like the screenshot above. Finally the sub-interface contains all the contents, i.e. the fields, field names and the constraints on them. The (optional) keyword `TRANSACTIONAL` marks the interface for [transactional editing](#transactional-interfaces).
 
 The hierarchy of boxes in an interface comes from the following (recursive) syntax of `<subinterface>`.
 
@@ -191,6 +191,40 @@ We have discussed the `FORM`, `TABLE`, and `TABS` layout options. Please note th
 ### Your own layout and your own widgets \(HTML and CSS\)
 
 You don't have to put up with the [Ampersand built-in layout options](./syntax-of-ampersand#layout-of-interfaces) if they don't suit your purpose. You can change most anything by writing your own HTML templates: a **custom BOX template** controls the layout of a box, while a **custom VIEW template** controls how a single atom is displayed. You drop the template file in your project's `templates/` folder and reference it from your script (`BOX<yourtemplate>` or a `HTML TEMPLATE` clause in a `VIEW`). See [Creating Custom BOX Templates](../../prototype/guides/creating-custom-box-templates) and [Creating Custom VIEW Templates](../../prototype/guides/creating-custom-view-templates).
+
+## Transactional interfaces {#transactional-interfaces}
+
+An interface may be declared **transactional** by writing the keyword `TRANSACTIONAL` in front of `INTERFACE` (or `API`):
+
+```
+TRANSACTIONAL INTERFACE EditBooking FOR Clerk : I[Booking]
+  [ "Guest"     : booking_guest    CRUd
+  , "Room"      : booking_room      CRUd
+  , "Check-in"  : booking_checkin   CRUd
+  , "Check-out" : booking_checkout  CRUd
+  ]
+```
+
+A transactional interface behaves as a single **optimistic transaction**:
+
+1. Entering the interface opens a transaction. Every field edit is **buffered**, not committed straight away.
+2. The transaction may be committed only when **all invariants hold**. Saving is blocked as long as any invariant rule is violated by the buffered state.
+3. **Save** commits the whole buffer **atomically**. After a successful commit the data is definitive, so ordinary `RULE`/`ENFORCE` maintenance applies to it as usual.
+4. **Cancel** discards the buffer (a rollback); navigating away without saving rolls back as well.
+5. Only invariants gate the commit. Process and signal rules behave as usual.
+
+Because the choice lives in the model, a transactional interface stays transactional wherever it is reused — including as a sub-interface via `LINKTO`:
+
+```
+INTERFACE Bookings FOR Clerk : I[SESSION]
+  [ "My bookings" : sessionBookings BOX<TABLE>
+      [ "When" : booking_period
+      , "Edit" : I[Booking] LINKTO INTERFACE EditBooking   -- opens transactionally
+      ]
+  ]
+```
+
+The compiler records the flag in the generated `interfaces.json` (as `isTransactional`), from which the prototype framework drives the transactional edit mode: a distinct accent border with an always-visible **Save** and **Cancel**. **Save** is disabled while any invariant is violated; hovering it then shows the concrete violation messages.
 
 ## CRUD {#CRUD}
 

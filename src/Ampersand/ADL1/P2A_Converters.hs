@@ -984,6 +984,7 @@ pCtx2aCtx
             return
               Ifc
                 { ifcIsAPI = ifc_IsAPI pIfc,
+                  ifcIsTransactional = ifc_IsTransactional pIfc,
                   ifcname = name pIfc,
                   ifclbl = mLabel pIfc,
                   ifcRoles = ifc_Roles pIfc,

@@ -287,8 +287,9 @@ instance Pretty TType where
   pretty = text . show
 
 instance Pretty P_Interface where
-  pretty (P_Ifc isAPI nm lbl roles obj _ _) =
-    text (if isAPI then "API " else "INTERFACE ")
+  pretty (P_Ifc isAPI isTransactional nm lbl roles obj _ _) =
+    text (if isTransactional then "TRANSACTIONAL " else "")
+      <> text (if isAPI then "API " else "INTERFACE ")
       <~> nm
       <~> lbl
       <+> iroles

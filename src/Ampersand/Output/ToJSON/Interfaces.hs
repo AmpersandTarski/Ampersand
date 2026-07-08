@@ -15,7 +15,8 @@ data JSONInterface = JSONInterface
   { ifcJSONname :: Text,
     ifcJSONlabel :: Text,
     ifcJSONifcObject :: JSONObjectDef,
-    ifcJSONisAPI :: Bool
+    ifcJSONisAPI :: Bool,
+    ifcJSONisTransactional :: Bool
   }
   deriving (Generic, Show)
 
@@ -138,7 +139,8 @@ instance JSON Interface JSONInterface where
       { ifcJSONname = fullName interface,
         ifcJSONlabel = label interface,
         ifcJSONifcObject = fromAmpersand env fSpec (BxExpr $ ifcObj interface),
-        ifcJSONisAPI = ifcIsAPI interface
+        ifcJSONisAPI = ifcIsAPI interface,
+        ifcJSONisTransactional = ifcIsTransactional interface
       }
 
 instance JSON Cruds JSONCruds where

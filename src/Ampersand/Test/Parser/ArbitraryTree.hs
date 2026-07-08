@@ -474,6 +474,7 @@ instance Arbitrary P_Interface where
       <*> arbitrary
       <*> arbitrary
       <*> arbitrary
+      <*> arbitrary
       <*> makeObj InterfaceKind
       <*> arbitrary
       <*> safeText

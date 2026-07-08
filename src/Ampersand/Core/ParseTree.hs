@@ -979,6 +979,8 @@ instance Traced P_Population where
 data P_Interface = P_Ifc
   { -- | The interface is of type API
     ifc_IsAPI :: !Bool,
+    -- | The interface is declared TRANSACTIONAL (optimistic, invariant-guarded editing)
+    ifc_IsTransactional :: !Bool,
     -- | the name of the interface
     ifc_Name :: !Name,
     ifc_lbl :: !(Maybe Label),
