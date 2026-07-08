@@ -95,6 +95,7 @@ keywords =
     ++
     -- Keywords for interfaces
     [ "INTERFACE",
+      "TRANSACTIONAL",
       "FOR",
       "LINKTO",
       "API",

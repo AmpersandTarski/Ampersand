@@ -1,4 +1,6 @@
 ﻿# Release notes of Ampersand
+## v5.9.0
+- **New keyword `TRANSACTIONAL INTERFACE`**: a modeller can now declare an interface as one optimistic transaction by writing `TRANSACTIONAL` in front of `INTERFACE` (or `API`). The compiler parses the keyword and records the flag as `isTransactional` in `generics/interfaces.json`, from which the prototype framework drives its buffered save/cancel edit mode (Save enabled only when all invariants hold, Cancel rolls back). Because the choice lives in the model, a transactional interface stays transactional wherever it is reused, including as a `LINKTO` sub-interface. See [issue #1658](https://github.com/AmpersandTarski/Ampersand/issues/1658) and the reference material on interfaces.
 ## v5.8.1
 - **Docker image and CI move to Ubuntu 24.04 LTS**: the `ampersandtarski/ampersand` image is now built `FROM ubuntu:24.04` (was 22.04) and every GitHub Actions workflow runs on `ubuntu-24.04`, so the released binaries and the container run on the current LTS. No functional change to the compiler.
 ## v5.8.0

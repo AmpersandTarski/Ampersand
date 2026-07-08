@@ -460,6 +460,7 @@ makeFSpec env context =
                       )
        in [ Ifc
               { ifcIsAPI = False,
+                ifcIsTransactional = False,
                 ifcname = name c,
                 ifclbl = Nothing,
                 ifcObj =
@@ -485,6 +486,7 @@ makeFSpec env context =
       =
       [ Ifc
           { ifcIsAPI = False,
+            ifcIsTransactional = False,
             ifcname = nm,
             ifclbl = Nothing,
             ifcObj =
