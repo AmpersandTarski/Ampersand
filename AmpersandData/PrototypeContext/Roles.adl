@@ -10,11 +10,6 @@ CONTEXT PrototypeContext IN ENGLISH
     RELATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] [UNI] --TODO: Should be TOT as wel, but that still gives problems.
         POPULATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] CONTAINS [ ("Anonymous", "Anonymous"), ("Any", "Any") ]
 
-    -- Marks the "Any" role, so the ExecEngine can expand a public interface to exactly the "Any" role (not to every role).
-    -- Its population is provided by the transformer in Transformers.hs.
-    RELATION PrototypeContext.isAny[PrototypeContext.Role*PrototypeContext.Role] [PROP]
-        MEANING "This property marks the role that stands for 'every authenticated role' (i.e. an interface without an explicit FOR-clause)."
-
     API PrototypeContext.AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*PrototypeContext.Role] BOX
         [ "id"              : I
         , "label"           : PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label]

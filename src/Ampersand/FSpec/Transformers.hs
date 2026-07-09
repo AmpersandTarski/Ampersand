@@ -977,12 +977,6 @@ transformersPrototypeContext fSpec =
                  null (ifcRoles ifc)
              ]
       ),
-      -- Marks the "Any" role (the role given to interfaces without an explicit FOR-clause).
-      ( "PrototypeContext.isAny",
-        "PrototypeContext.Role",
-        "PrototypeContext.Role",
-        [(PopAlphaNumeric "Any", PopAlphaNumeric "Any")]
-      ),
       ( "PrototypeContext.ifc",
         "PrototypeContext.NavMenuItem",
         "PrototypeContext.Interface",
