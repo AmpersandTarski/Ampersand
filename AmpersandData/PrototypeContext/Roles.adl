@@ -2,10 +2,18 @@ CONTEXT PrototypeContext IN ENGLISH
 
     CONCEPT PrototypeContext.Role ""
         REPRESENT PrototypeContext.Role TYPE OBJECT
-        POPULATION PrototypeContext.Role CONTAINS ["Anonymous"] -- at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3
-    
+        -- "Anonymous": at least one role is needed, because nav items are filtered using 'sessionActiveRoles'. Anonymous is part of SIAMv3.
+        -- "Any": the role that every interface without an explicit FOR-clause is given, so every interface has at least one role.
+        --       Every (authenticated) role satisfies "Any"; the Anonymous (no-user) role does NOT. See issue #1658 follow-up.
+        POPULATION PrototypeContext.Role CONTAINS ["Anonymous", "Any"]
+
     RELATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] [UNI] --TODO: Should be TOT as wel, but that still gives problems.
-        POPULATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] CONTAINS [ ("Anonymous", "Anonymous") ]
+        POPULATION PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label] CONTAINS [ ("Anonymous", "Anonymous"), ("Any", "Any") ]
+
+    -- Marks the "Any" role, so the ExecEngine can expand a public interface to exactly the "Any" role (not to every role).
+    -- Its population is provided by the transformer in Transformers.hs.
+    RELATION PrototypeContext.isAny[PrototypeContext.Role*PrototypeContext.Role] [PROP]
+        MEANING "This property marks the role that stands for 'every authenticated role' (i.e. an interface without an explicit FOR-clause)."
 
     API PrototypeContext.AllRoles LABEL "All roles" FOR SYSTEM : V[ONE*PrototypeContext.Role] BOX
         [ "id"              : I

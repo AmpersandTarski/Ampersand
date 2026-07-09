@@ -13,18 +13,16 @@ CONTEXT PrototypeContext IN ENGLISH
         MEANING "This relation contains the roles for which an interface is available"
     
     RELATION PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
-        MEANING "This property states that an interface is accessible for all roles (i.e. public)"
+        MEANING "This property states that an interface has no explicit FOR-clause, and is therefore given the 'Any' role."
 
-        -- Cannot enforce this rule yet, because ExecEngine is still required to add missing roles
-        -- RULE PublicInterfaceIntegrity LABEL "Public interface integrity" : isPublic;V[Interface*Role] |- ifcRoles
-
-    -- EQUIVALENCE ifcRoles[Interface*Role] == isPublic;V[Interface*Role]
+    -- EQUIVALENCE: a public interface (one without an explicit FOR-clause) is given exactly the "Any" role, not every role.
+    -- The Anonymous (no-user) role is deliberately excluded: it only reaches interfaces that are explicitly FOR Anonymous.
     ROLE ExecEngine MAINTAINS PrototypeContext.EquivalenceInsRoles
-    RULE PrototypeContext.EquivalenceInsRoles LABEL "Equivalence - InsPair ifcRoles" : PrototypeContext.isPublic;V[PrototypeContext.Interface*PrototypeContext.Role] |- PrototypeContext.ifcRoles
+    RULE PrototypeContext.EquivalenceInsRoles LABEL "Equivalence - InsPair ifcRoles" : PrototypeContext.isPublic;V[PrototypeContext.Interface*PrototypeContext.Role];PrototypeContext.isAny |- PrototypeContext.ifcRoles
     VIOLATION (TXT "{EX} InsPair;PrototypeContext.ifcRoles;PrototypeContext.Interface;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
-    
+
     ROLE ExecEngine MAINTAINS PrototypeContext.EquivalenceDelRoles
-    RULE PrototypeContext.EquivalenceDelRoles LABEL "Equivalence - DelPair ifcRoles" : PrototypeContext.isPublic;PrototypeContext.ifcRoles |- PrototypeContext.isPublic;V[PrototypeContext.Interface*PrototypeContext.Role]
+    RULE PrototypeContext.EquivalenceDelRoles LABEL "Equivalence - DelPair ifcRoles" : PrototypeContext.isPublic;PrototypeContext.ifcRoles |- PrototypeContext.isPublic;V[PrototypeContext.Interface*PrototypeContext.Role];PrototypeContext.isAny
     VIOLATION (TXT "{EX} DelPair;PrototypeContext.ifcRoles;PrototypeContext.Interface;", SRC I, TXT ";PrototypeContext.Role;", TGT I)
 
     RELATION PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
