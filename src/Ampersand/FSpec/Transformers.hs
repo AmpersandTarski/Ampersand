@@ -962,6 +962,9 @@ transformersPrototypeContext fSpec =
         ]
       ),
       -- the following transformer is called ifcRoles[Interface*Role] in FormalAmpersand
+      -- Every interface is delivered with at least one role: its explicit FOR-roles, or
+      -- the "Any" role when the script couples no role to the interface. "Any" is satisfied
+      -- by every authenticated role (but not by the Anonymous no-user role).
       ( "PrototypeContext.ifcRoles",
         "PrototypeContext.Interface",
         "PrototypeContext.Role",
@@ -969,6 +972,10 @@ transformersPrototypeContext fSpec =
           | ifc :: Interface <- instanceList fSpec,
             role <- ifcRoles ifc
         ]
+          <> [ (dirtyIdWithoutType' ifc, PopAlphaNumeric "Any")
+               | ifc :: Interface <- instanceList fSpec,
+                 null (ifcRoles ifc)
+             ]
       ),
       ( "PrototypeContext.ifc",
         "PrototypeContext.NavMenuItem",
