@@ -20,7 +20,6 @@ extra-source-files:
   - AmpersandData/PrototypeContext/*
   - AmpersandData/IFCSchemas/*
   - outputTemplates/*
-  - testing/**/*
 
 ghc-options:
   - -Wall
