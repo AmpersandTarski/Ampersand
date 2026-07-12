@@ -5,3 +5,4 @@ session Ampersand_Kleene = HOL +
   theories
     KleeneReduction
     IncrementalDelete
+    SingletonSurjective

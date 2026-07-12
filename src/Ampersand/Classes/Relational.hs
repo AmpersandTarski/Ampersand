@@ -180,7 +180,13 @@ isTotSur prop expr =
     EBin {} -> todo
     EDcV {} -> todo
     EBrk e -> isTotSur prop e
-    EMp1 {} -> True
+    -- A singleton {(a,a)}[C*C] is Uni/Inj/Sym/Asy/Trn, but NOT total or surjective
+    -- unless C happens to be the singleton concept {a} (which we cannot derive here).
+    -- Claiming Tot/Sur is unsound: it makes isSur (and isTot) true for a singleton,
+    -- which makes isTrue (V;singleton) true, so -(V;singleton) is absorbed as -V and the
+    -- restriction is silently dropped (e.g. V[A*B];"x" collapses to V[A*B]). Derive from
+    -- the singleton's known property set instead, so Tot/Sur come out False.
+    EMp1 {} -> todo
   where
     todo = prop `elem` properties expr
 
