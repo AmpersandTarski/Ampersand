@@ -21,7 +21,13 @@ CONTEXT PrototypeContext IN ENGLISH
         ]
 
     --[SYSTEM INTERFACES to query menu items]------------------------------------------------------
-    API PrototypeContext.MenuItems LABEL "Menu items" FOR SYSTEM: PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role];PrototypeContext.navItemRoles~;PrototypeContext.isVisible BOX
+    -- A menu item is shown when one of the session's active roles is coupled to it (via navItemRoles).
+    -- A role-less interface is coupled to the wildcard role "Any"; it must show for any AUTHENTICATED
+    -- session (mirroring the access-control rule), but not for the Anonymous (no-user) session. So the
+    -- session's effective roles are its active roles PLUS "Any" whenever it has a non-Anonymous active
+    -- role. `(sessionActiveRoles - sessionActiveRoles;"Anonymous")` keeps the non-Anonymous active roles;
+    -- crossing (#) their sessions with "Any" grants those sessions the wildcard role for menu filtering.
+    API PrototypeContext.MenuItems LABEL "Menu items" FOR SYSTEM: ( PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role] \/ ( ( PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role] - PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role];"Anonymous" ) # "Any" ) );PrototypeContext.navItemRoles~;PrototypeContext.isVisible BOX
         [ "id"              : I
         , "label"           : PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label]
         , "seqNr"           : PrototypeContext.seqNr
