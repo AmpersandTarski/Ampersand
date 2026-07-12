@@ -1,0 +1,32 @@
+CONTEXT SingletonFlood IN ENGLISH
+
+PURPOSE CONTEXT SingletonFlood MARKDOWN
+{+ Regression test for the normalizer bug where a singleton relation was
+   wrongly treated as surjective, so `V[A*Role];"x"` collapsed to the full
+   `V[A*Role]` cartesian (see proofs/kleene/SingletonSurjective.thy).
+
+   The ENFORCE below grants every A-atom the single Role "x". With the bug the
+   generated SQL flooded `s` with the whole A*Role cartesian, so it disagreed
+   with the Haskell evaluator (which keeps the ";x" restriction). `ampersand
+   validate` compares the two and fails on that disagreement; it passes once the
+   restriction is preserved.
++}
+
+RELATION aKind[A*AType]
+POPULATION aKind CONTAINS [ ("a1","T"), ("a2","T"), ("a3","T") ]
+
+RELATION rKind[Role*RType]
+POPULATION rKind CONTAINS [ ("x","R"), ("y","R"), ("z","R") ]
+
+RELATION expectedS[A*Role]
+MEANING "Every A-atom paired with exactly Role x -- never with y or z."
+POPULATION expectedS CONTAINS [ ("a1","x"), ("a2","x"), ("a3","x") ]
+
+-- Correct semantics: V[A*Role];"x" = {(a,x) | a in A}, a subset of expectedS, so
+-- this rule holds. The buggy normalizer dropped ";x" (V;singleton = V), turning the
+-- antecedent into the full A*Role cartesian, which violates the rule for every
+-- (a, y) and (a, z) pair. validate compares Haskell vs SQL and flags the disagreement.
+RULE noFlood : V[A*Role];"x" |- expectedS
+MEANING "A singleton-restricted V must not flood to the full A*Role cartesian."
+
+ENDCONTEXT

@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.9.1
+version:        5.9.2
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -199,7 +199,6 @@ extra-source-files:
     testing/StillUnsupported/try.xlsx
     testing/Travis/README.md
     testing/Travis/testcases/Archimate/ArchiMetaModel.adl
-    testing/Travis/testcases/Archimate/MetaModel.adl
     testing/Travis/testcases/Archimate/repositoryumcu.archimate
     testing/Travis/testcases/Archimate/testinfo.yaml
     testing/Travis/testcases/Bugs/Bug_ANY_in_violation_view.adl
@@ -245,14 +244,11 @@ extra-source-files:
     testing/Travis/testcases/Check/ShouldFail/testinfo.yaml
     testing/Travis/testcases/Check/testinfo.yaml
     testing/Travis/testcases/FuncSpec/Issue1275.adl
-    testing/Travis/testcases/FuncSpec/Issue1275.docx
     testing/Travis/testcases/FuncSpec/Mandatering/Mandatering.adl
     testing/Travis/testcases/FuncSpec/Mandatering/ToevoegenMandaat.adl
     testing/Travis/testcases/FuncSpec/testinfo.yaml
     testing/Travis/testcases/FuncSpec/testIssue1183.adl
-    testing/Travis/testcases/FuncSpec/testIssue1183.docx
     testing/Travis/testcases/FuncSpec/testPredLogic.adl
-    testing/Travis/testcases/FuncSpec/testPredLogic.docx
     testing/Travis/testcases/Kleene/README.md
     testing/Travis/testcases/Kleene/semantics/ChainShortcut.adl
     testing/Travis/testcases/Kleene/semantics/CombinedOperators.adl
@@ -269,9 +265,7 @@ extra-source-files:
     testing/Travis/testcases/Kleene/typecheck/shouldPass/KleeneStar.adl
     testing/Travis/testcases/Kleene/typecheck/shouldPass/testinfo.yaml
     testing/Travis/testcases/meatgrinder/Issue1484.adl
-    testing/Travis/testcases/meatgrinder/Issue1484_generated_pop.json
     testing/Travis/testcases/meatgrinder/Issue1487.adl
-    testing/Travis/testcases/meatgrinder/Issue1487_generated_pop.json
     testing/Travis/testcases/meatgrinder/testinfo.yaml
     testing/Travis/testcases/Misc/Arbeidsduur.adl
     testing/Travis/testcases/Misc/ArchiTest1.adl
@@ -441,7 +435,6 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/Issue855.adl
     testing/Travis/testcases/prototype/shouldSucceed/MultipleDeclaredRules.adl
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1.adl
-    testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/Archimate1_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/README.md
     testing/Travis/testcases/prototype/shouldSucceed/NoMinMinValidate-Issue557/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/phone.adl
@@ -509,18 +502,14 @@ extra-source-files:
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue148.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue862a.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/Issue865.adl
+    testing/Travis/testcases/prototype/shouldSucceed/validate/SingletonSurjective.adl
     testing/Travis/testcases/prototype/shouldSucceed/validate/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/CheckDanglingPurposes_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/PossibleSQLbug_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/residutest_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/SpecEdit_generated_pop.json
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/testinfo.yaml
     testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440.adl
-    testing/Travis/testcases/prototype/shouldSucceed/WithMeatgrinder/Ticket440_generated_pop.json
     testing/Travis/testcases/Simple/Delivery.adl
     testing/Travis/testcases/Simple/DeliverySimple.adl
     testing/Travis/testcases/Simple/DeliverySimple.css
