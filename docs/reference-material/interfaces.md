@@ -224,7 +224,7 @@ INTERFACE Bookings FOR Clerk : I[SESSION]
   ]
 ```
 
-The compiler records the flag in the generated `interfaces.json` (as `isTransactional`), from which the prototype framework drives the transactional edit mode: a distinct accent border with an always-visible **Save** and **Cancel**. **Save** is disabled while any invariant is violated; hovering it then shows the concrete violation messages.
+The compiler records the flag in the generated `interfaces.json` (as `isTransactional`), from which the prototype framework drives the transactional edit mode: a distinct accent border holding **Save** and **Cancel**. **Save** shows from the moment the interface opens and is disabled while any invariant is violated; hovering a disabled **Save** shows the concrete violation messages. **Cancel** appears only while there are buffered edits to roll back.
 
 ## CRUD {#CRUD}
 
