@@ -3,6 +3,8 @@ ArchitectureAndDesign/
 docker/
 miscellaneous/
 *.lock
+# keep the lock in the build context so a dependency bump invalidates the deps layer
+!stack.yaml.lock
 README*
 travis_long
 .dockerignore
