@@ -17,7 +17,7 @@ In the early days of the development of Ampersand, it was a single person's proj
 * We seek to adopt sound software engineering practices that have demonstrated quality.
 * We want to reuse good software built by others, not only to save ourselves maintenance work, but also to benefit from things that others have done in a better way.
 
-## Tool policy {#tool-policy}
+## Tool policy
 
 When we adopt a tool or dependency, two principles guide the choice:
 
