@@ -201,9 +201,12 @@ sumarize = do
         finalize = do
           logInfo $ displayShow (successes sofar) <> " regression tests succeeded."
           logError $ displayShow (failures sofar) <> " regression tests failed."
-          if failures sofar == 0
-            then logInfo "Regression test of all scripts succeeded."
-            else exitWith (SomeTestsFailed ["Regression test failed!"])
+          if successes sofar + failures sofar == 0
+            then exitWith (SomeTestsFailed ["No regression tests were executed. Does the test root contain testinfo.yaml files?"])
+            else
+              if failures sofar == 0
+                then logInfo "Regression test of all scripts succeeded."
+                else exitWith (SomeTestsFailed ["Regression test failed!"])
 
 yaml :: FilePath
 yaml = "testinfo.yaml" -- the required name of the file that contains the test info for this directory.
