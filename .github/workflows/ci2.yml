@@ -14,7 +14,7 @@ on:
       - "app/**"
       - "AmpersandData/**"      # bundled into the binary (extra-source-files)
       - "outputTemplates/**"    # bundled into the binary (extra-source-files)
-      - "testing/**"            # test-suite inputs (extra-source-files)
+      - "testing/**"            # test-suite inputs (discovered at runtime by the test suite)
       - "package.yaml"
       - "ampersand.cabal"
       - "stack.yaml"
