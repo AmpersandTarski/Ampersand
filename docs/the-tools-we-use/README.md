@@ -17,6 +17,13 @@ In the early days of the development of Ampersand, it was a single person's proj
 * We seek to adopt sound software engineering practices that have demonstrated quality.
 * We want to reuse good software built by others, not only to save ourselves maintenance work, but also to benefit from things that others have done in a better way.
 
+## Tool policy
+
+When we adopt a tool or dependency, two principles guide the choice:
+
+1. **Free open source only.** We do not make ourselves dependent on paid or proprietary software — not now and not in the future. When we adopt a free tool, we weigh the risk that it gets closed off later (a paid tier absorbing the features we need, a licence change, an acquisition). A tool with a genuinely open licence and an independent future is worth more to us than a richer tool with an enclosure risk.
+2. **A living community.** We prefer tools with a large user base and active development, visible on GitHub. That way we benefit from progress on their side without effort on ours, and we can find people who know the tool. This principle is softer than the first, because there is not always much to choose from. It does have teeth: we are saying goodbye to pandoc-crossref because its development has died.
+
 ## Contributions to the documentation
 
 If you have anything to fix or details to add, just post a comment next to the paragraph. We really appreciate if you do so, because our readers know best what it is they are looking for in the docs.
@@ -30,4 +37,3 @@ Unless otherwise specified, everything in this repository is covered by the foll
 ![Creative Commons Attribution-ShareAlike 4.0 International](https://licensebuttons.net/l/by-sa/4.0/88x31.png)
 
 _**Ampersand Documentation**_ by the [the Ampersand team](https://github.com/orgs/AmpersandTarski/teams/core) is licensed under a [Creative Commons Attribution 4.0 International Licence](http://creativecommons.org/licenses/by-sa/4.0/).
-
