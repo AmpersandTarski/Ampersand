@@ -1,4 +1,16 @@
 # The purpose of this docker file is to produce a latest Ampersand-compiler in the form of a docker image.
+
+# Normalize the version line of package.yaml before it enters the dependency layer.
+# A release bumps `version:`, which would change the COPY checksum and needlessly
+# invalidate the dependency layer below (231 packages, ~24 min), even though the
+# dependency set did not change (issue #1664). The dependency layer must key on the
+# dependency set, not on the package version. `COPY --from=manifest` keys on the
+# content of the normalized file, so a version-only bump keeps the cache warm while
+# a change to the dependency list, resolver, or lock still invalidates it.
+FROM haskell:9.6.6 AS manifest
+COPY package.yaml /manifest/package.yaml
+RUN sed -i 's/^version:.*/version: 0.0.0/' /manifest/package.yaml
+
 FROM haskell:9.6.6 AS buildstage
 
 RUN mkdir /opt/ampersand
@@ -30,12 +42,15 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
     
 # Start with a docker-layer that contains build dependencies, to maximize the reuse of these dependencies by docker's cache mechanism.
-# Only updates to stack.yaml, stack.yaml.lock or package.yaml rebuild this layer; all other changes use the cache.
+# Only updates to stack.yaml, stack.yaml.lock or package.yaml (beyond its version line) rebuild this layer;
+# all other changes use the cache. package.yaml comes from the manifest stage above, so a version-only bump
+# (every release) keeps this layer cached.
 # stack.yaml.lock is included on purpose: it pins the exact dependency set, so a lock-only change must invalidate
 # this layer (see .dockerignore, which re-includes it despite the general *.lock exclusion).
 # Expect stack to give warnings in this step, which you can ignore.
 # Idea taken from https://medium.com/permutive/optimized-docker-builds-for-haskell-76a9808eb10b
-COPY stack.yaml stack.yaml.lock package.yaml /opt/ampersand/
+COPY stack.yaml stack.yaml.lock /opt/ampersand/
+COPY --from=manifest /manifest/package.yaml /opt/ampersand/
 RUN stack build --dependencies-only
 
 # Copy the rest of the application
