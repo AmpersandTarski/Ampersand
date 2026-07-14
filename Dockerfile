@@ -30,10 +30,12 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
     
 # Start with a docker-layer that contains build dependencies, to maximize the reuse of these dependencies by docker's cache mechanism.
-# Only updates to the files stack.yaml package.yaml will rebuild this layer; all other changes use the cache.
+# Only updates to stack.yaml, stack.yaml.lock or package.yaml rebuild this layer; all other changes use the cache.
+# stack.yaml.lock is included on purpose: it pins the exact dependency set, so a lock-only change must invalidate
+# this layer (see .dockerignore, which re-includes it despite the general *.lock exclusion).
 # Expect stack to give warnings in this step, which you can ignore.
 # Idea taken from https://medium.com/permutive/optimized-docker-builds-for-haskell-76a9808eb10b
-COPY stack.yaml package.yaml /opt/ampersand/
+COPY stack.yaml stack.yaml.lock package.yaml /opt/ampersand/
 RUN stack build --dependencies-only
 
 # Copy the rest of the application
