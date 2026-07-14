@@ -40,8 +40,23 @@ jobs:
           echo Running on branch ${GITHUB_REF##*/}
           docker version
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build with Buildx so the dependency layer (231 packages / ~24 min from scratch)
+      # is restored from the shared GitHub Actions cache instead of recompiled every run.
+      # `load: true` keeps the image in the local docker so the main-only push step below works.
       - name: Build final image
-        run: docker build . --tag ${DOCKER_AMPERSAND_IMAGE}:latest --build-arg GIT_SHA=${{ github.sha }} --build-arg GIT_Branch=${{ github.ref }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: ${{ env.DOCKER_AMPERSAND_IMAGE }}:latest
+          load: true
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_Branch=${{ github.ref }}
+          cache-from: type=gha,scope=ampersand-image
+          cache-to: type=gha,mode=max,scope=ampersand-image
 
       # For main branch push latest to DockerHub
       - name: Login to DockerHub

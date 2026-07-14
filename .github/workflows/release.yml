@@ -61,6 +61,10 @@ jobs:
           build-args: |
             GIT_SHA=${{github.sha}}
             GIT_Branch=${{github.ref}}
+          # Restore the dependency layer from the shared cache written by the last main push,
+          # so the release image recompiles only Ampersand itself instead of all 231 packages.
+          cache-from: type=gha,scope=ampersand-image
+          cache-to: type=gha,mode=max,scope=ampersand-image
 
   add-release-artefacts:
     name: Add artefacts to release
