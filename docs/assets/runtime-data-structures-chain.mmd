@@ -7,11 +7,19 @@ graph LR
     NG["Angular components<br/>+ interfaces.json"]
   end
   subgraph runtime ["Run time"]
-    DB[("MariaDB<br/>population")]
-    PHP["PHP object graph<br/>(rebuilt per request)"]
-    API["resource JSON<br/>(REST API)"]
-    TREE["Angular resource tree<br/>(one per interface)"]
-    DOM["DOM"]
+    subgraph db ["Database (MariaDB)"]
+      DB[("population:<br/>wide + narrow tables")]
+    end
+    subgraph backend ["Back-end (PHP, server)"]
+      PHP["PHP object graph<br/>(rebuilt per request)"]
+    end
+    subgraph api ["API (REST)"]
+      API["resource JSON"]
+    end
+    subgraph frontend ["Front-end (Angular, browser)"]
+      TREE["resource tree<br/>(one per interface)"]
+      DOM["DOM"]
+    end
   end
   FS --> GJ
   FS --> NG
