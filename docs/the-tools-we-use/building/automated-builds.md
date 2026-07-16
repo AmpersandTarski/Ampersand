@@ -4,7 +4,7 @@ description: This page explains how Ampersand images are built automatically
 
 # Automated builds
 
-We followed [docker's instruction for automated builds](https://docs.docker.com/docker-hub/builds/), to automate the workflow from committing to the [Ampersand repository on Github](https://github.com/AmpersandTarski/Ampersand) to the corresponding docker image on [Docker hub](https://hub.docker.com/r/ampersandtarski/ampersand).
+The workflow from committing to the [Ampersand repository on Github](https://github.com/AmpersandTarski/Ampersand) to the corresponding docker image on [Docker hub](https://hub.docker.com/r/ampersandtarski/ampersand) is automated with GitHub Actions. [The deploy pipeline](the-deploy-pipeline.md) describes the whole route, how the Docker build is cached, and how to walk it by hand.
 
 ## Manual builds
 
