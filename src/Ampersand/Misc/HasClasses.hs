@@ -64,6 +64,8 @@ class HasFSpecGenOpts a where
   allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x {xallowInvariantViolations = y})
   failOnOscillationL :: Lens' a Bool
   failOnOscillationL = fSpecGenOptsL . lens xfailOnOscillation (\x y -> x {xfailOnOscillation = y})
+  failOnCartesianProductL :: Lens' a Bool
+  failOnCartesianProductL = fSpecGenOptsL . lens xfailOnCartesianProduct (\x y -> x {xfailOnCartesianProduct = y})
 
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -302,7 +304,9 @@ data FSpecGenOpts = FSpecGenOpts
     -- | Should invariant violations be ignored?
     xallowInvariantViolations :: !Bool,
     -- | Should a detected ExecEngine oscillation risk make the run fail (non-zero exit)?
-    xfailOnOscillation :: !Bool
+    xfailOnOscillation :: !Bool,
+    -- | Should a Cartesian product in a violation query make the run fail (non-zero exit)?
+    xfailOnCartesianProduct :: !Bool
   }
   deriving (Show)
 
@@ -321,7 +325,8 @@ instance HasOptions FSpecGenOpts where
       ("--[no-]trim-cellvalues", tshow $ xtrimXLSXCells opts),
       ("--build-recipe", tshow $ xrecipe opts),
       ("--ignore-invariant-violations", tshow $ xallowInvariantViolations opts),
-      ("--fail-on-oscillation", tshow $ xfailOnOscillation opts)
+      ("--fail-on-oscillation", tshow $ xfailOnOscillation opts),
+      ("--fail-on-cartesian-product", tshow $ xfailOnCartesianProduct opts)
     ]
 
 data FSpecFormat

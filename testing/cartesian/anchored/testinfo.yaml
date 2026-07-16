@@ -1,0 +1,14 @@
+# Regression tests for the anchored-complement rewrite (issue #562,
+# Ampersand.ADL1.Expression.anchorComplements): the MUST-BE-ANCHORED cases.
+# Each script here contains a rule whose violation term combines complements
+# with a complement-free member ("anchor") in the same intersection. The
+# rewrite must absorb every complement into an anchored difference, so the
+# generated violation queries contain no Cartesian product and
+# `--fail-on-cartesian-product` must succeed (exit 0). If a future change
+# reintroduces the product, CI turns red.
+#   * anchor-test.adl   the ENFORCE reproducer from issue #562: the violation
+#                       term  x /\ ((-a \/ -(f;st~)) - (I-f;f~);a)  must
+#                       compile to anti-joins anchored on x, not to V[S*E]
+testCmds:
+  - command: ampersand check --fail-on-cartesian-product
+    exitcode: 0

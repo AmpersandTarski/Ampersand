@@ -8,6 +8,8 @@ where
 
 import Ampersand.ADL1.Expression
   ( Expressions,
+    anchorComplements,
+    hasUnanchoredComplement,
     deMorganECps,
     deMorganEIsc,
     deMorganERad,

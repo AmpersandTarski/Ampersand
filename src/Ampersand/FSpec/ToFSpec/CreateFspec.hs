@@ -8,6 +8,7 @@ module Ampersand.FSpec.ToFSpec.CreateFspec
     --  , MetaModel(..)
     createFspec,
     pCtx2Fspec,
+    cartesianProductWarnings,
     --  , script
     --  , merge
     --  , andThen
@@ -19,6 +20,7 @@ import Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import Ampersand.Basics
 import Ampersand.Core.A2P_Converters (aRelation2pRelation)
 import Ampersand.Core.ParseTree (mkPConcept)
+import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
 import Ampersand.FSpec.Oscillation (warnOscillationRisk)
@@ -262,6 +264,7 @@ pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
   warnCartesianProducts env fSpec
   warnOscillationRisk fSpec
+  addWarnings (cartesianProductWarnings env fSpec) $ pure ()
   checkInvariants fSpec
   where
     checkInvariants :: FSpec -> Guarded FSpec
@@ -368,10 +371,11 @@ warnCartesianProducts env fSpec
           (Just (normExpr, prettySQL normExpr))
         | rule <- Set.toList (vrules fSpec),
           let origExpr = formalExpression rule,
-          let normExpr = conjNF env origExpr,
-          -- Search the *normalized* expression, so that rewrites in normStep
-          -- (e.g. eliminating the cross join in  x |- I[A]#r  when r is a PROP
-          -- relation) actually silence the warning.
+          -- Search the expression as the SQL generator receives it: normalized
+          -- AND anchored, so that rewrites in normStep (e.g. eliminating the
+          -- cross join in  x |- I[A]#r  when r is a PROP relation) and the
+          -- anchored-complement rewrite actually silence the warning.
+          let normExpr = anchorComplements (conjNF env origExpr),
           sub <- findCartesianSubexprs normExpr
       ]
 
@@ -382,3 +386,26 @@ warnCartesianProducts env fSpec
       SqlQueryPlain t -> t
       SqlQueryPretty ls -> T.intercalate "\n" ls
       SqlQuerySimple t -> t
+
+-- | One warning per conjunct whose violation query computes a Cartesian
+--   product of two concept tables to evaluate a complement. The violation
+--   term is inspected as the SQL generator receives it — normalized and
+--   anchored — so after 'anchorComplements' (issue #562) a warning remains
+--   only when the term has no complement-free member to anchor on, i.e.
+--   when the product is semantically necessary.
+--
+--   These warnings are always on (unlike 'warnCartesianProducts'): the cost
+--   of such a rule grows with the product of two concept populations, which
+--   the modeler wants to know before the rule slows down every transaction.
+--   With --fail-on-cartesian-product they also make the run fail (exit 46),
+--   so a test suite can assert their absence.
+cartesianProductWarnings :: env -> FSpec -> [Warning]
+cartesianProductWarnings env fSpec =
+  [ mkUnavoidableCartesianProductWarning
+      (rrfps . NE.head . rc_orgRules $ conj)
+      (fullName <$> rc_orgRules conj)
+      (showA violationTerm)
+    | conj <- allConjuncts fSpec,
+      let violationTerm = anchorComplements . conjNF env . notCpl . rcConjunct $ conj,
+      hasUnanchoredComplement violationTerm
+  ]

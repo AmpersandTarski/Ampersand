@@ -8,6 +8,7 @@ module Ampersand.FSpec.SQL
     prettyBroadQueryWithPlaceholder,
     broadQueryWithPlaceholder,
     commentBlockSQL,
+    cartesianProductMarker,
   )
 where
 
@@ -31,6 +32,15 @@ data SqlQuery
 
 placeHolderSQL :: Text
 placeHolderSQL = "_SRCATOM"
+
+-- | The table alias that marks a Cartesian product of two concept tables in
+--   a generated query. Exactly two translations in 'selectExpr' enumerate
+--   all pairs of two concept tables, and both carry this alias: the generic
+--   complement case (@ECpl e@) and the standalone V case (@EDcV@ outside a
+--   composition). Its presence in a generated query is therefore the
+--   tell-tale sign of a product that 'anchorComplements' could not remove.
+cartesianProductMarker :: Text
+cartesianProductMarker = "cartesian product of"
 
 broadQueryWithPlaceholder :: FSpec -> ObjectDef -> Text
 broadQueryWithPlaceholder fSpec =
@@ -131,7 +141,11 @@ class SQLAble a where
           placeHolder = BinOp (col2ScalarExpr (bseSrc bqe)) [uName "="] (stringLit placeHolderSQL)
 
 instance SQLAble Expression where
-  getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
+  -- anchorComplements runs once, up front: it turns complements that have a
+  -- complement-free sibling in an intersection into anchored differences,
+  -- the shape that maybeSpecialCase compiles into an anti-join instead of a
+  -- Cartesian product (issue #562).
+  getBinQueryExpr fSpec = setDistinct . selectExpr fSpec . anchorComplements
 
 instance SQLAble Relation where
   getBinQueryExpr = selectRelation
@@ -839,7 +853,16 @@ nonSpecialSelectExpr fSpec expr =
                           [notNull (Iden [first', fsrc]), notNull (Iden [secnd, ftgt])]
                   }
                 where
-                  first' = uName "fst"
+                  -- The alias of the first table carries the Cartesian-product
+                  -- marker: this branch is the one that enumerates all pairs
+                  -- of two concept tables (see 'cartesianProductMarker').
+                  first' =
+                    qName
+                      $ cartesianProductMarker
+                      <> " "
+                      <> (tshow . source $ expr)
+                      <> " and "
+                      <> (tshow . target $ expr)
                   secnd = uName "snd"
       where
         one :: BinQueryExpr
@@ -1021,7 +1044,8 @@ nonSpecialSelectExpr fSpec expr =
             posName = uName "pos"
             closedWorldName =
               qName
-                $ "cartesian product of "
+                $ cartesianProductMarker
+                <> " "
                 <> (tshow . source $ e)
                 <> " and "
                 <> (tshow . target $ e)

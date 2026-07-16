@@ -95,3 +95,10 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
   **new** workflow file requires `git add -f`.
+- `ampersand validate` writes its PHP helper to a **fixed** temp path
+  (`$TMPDIR/tmpPhpQueryOfAmpersand.php`, see `executePHPStr` in
+  `src/Ampersand/Prototype/PHP.hs`). Two concurrent validate runs (e.g. an
+  interactive `ampersand validate` next to a running `stack test`) clobber each
+  other's script and fail spuriously with exit 60 or a "Parse error on php
+  result" fatal (exit 2). Serialize them: never run validate while the
+  regression suite is running.
