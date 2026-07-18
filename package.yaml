@@ -1,5 +1,5 @@
 name: ampersand
-version: 5.9.3
+version: 5.9.4
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
@@ -140,6 +140,7 @@ library:
     - Ampersand.FSpec.ToFSpec.ADL2FSpec
     - Ampersand.FSpec.ToFSpec.ADL2Plug
     - Ampersand.FSpec.ToFSpec.Calc
+    - Ampersand.FSpec.ToFSpec.ConceptTables
     - Ampersand.FSpec.ToFSpec.CreateFspec
     - Ampersand.FSpec.ToFSpec.NormalForms
     - Ampersand.FSpec.ToFSpec.Populated
