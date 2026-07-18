@@ -25,7 +25,9 @@ data Concept = Concept
     cptJSONaffectedConjuncts :: [Text],
     cptJSONinterfaces :: [Text],
     cptJSONdefaultViewName :: Maybe Text,
-    cptJSONconceptTable :: TableCols,
+    -- | Nothing for a concept that has no concept table of its own: ONE, and
+    --   any concept whose atoms no generated query enumerates (issue #1672).
+    cptJSONconceptTable :: Maybe TableCols,
     cptJSONlargestConcept :: Text
   }
   deriving (Generic, Show)
@@ -66,8 +68,10 @@ instance ToJSON View where
 instance ToJSON Segment where
   toJSON = amp2Jason
 
+-- TableCols is reached as `Maybe TableCols`, so it needs a ToJSON of its own
+-- rather than one borrowed from a JSON instance.
 instance ToJSON TableCols where
-  toJSON = amp2Jason
+  toJSON = genericToJSON ampersandDefault
 
 instance JSON FSpec Concepts where
   fromAmpersand env fSpec _ = (Concepts . map (fromAmpersand env fSpec) . filter isUsed . toList . concs) fSpec
@@ -99,23 +103,24 @@ instance JSON A_Concept Concept where
       hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
       cpts = cpt : largerConcepts cpt
 
-instance JSON A_Concept TableCols where
-  fromAmpersand _ fSpec cpt =
-    TableCols
-      { tclJSONname = tshow (sqlname cptTable),
-        tclJSONcols = case L.nub . map fst $ cols of
-          [t] ->
-            if t == cptTable
-              then map (text1ToText . sqlColumNameToText1 . attSQLColName . snd) cols
-              else fatal $ "Table names should match: " <> tshow (sqlname t) <> " " <> tshow (sqlname cptTable) <> "."
-          _ -> fatal "All concepts in a typology should be in exactly one table."
-      }
-    where
-      cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
-      cptTable = case lookupCpt fSpec cpt of
-        [(table, _)] -> table
-        [] -> fatal ("Concept `" <> fullName cpt <> "` not found in a table.")
-        _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
+instance JSON A_Concept (Maybe TableCols) where
+  fromAmpersand _ fSpec cpt = case lookupCpt fSpec cpt of
+    [] -> Nothing -- this concept has no concept table; see issue #1672
+    [(cptTable, _)] ->
+      Just
+        TableCols
+          { tclJSONname = tshow (sqlname cptTable),
+            tclJSONcols = case L.nub . map fst $ cols of
+              [t] ->
+                if t == cptTable
+                  then map (text1ToText . sqlColumNameToText1 . attSQLColName . snd) cols
+                  else fatal $ "Table names should match: " <> tshow (sqlname t) <> " " <> tshow (sqlname cptTable) <> "."
+              _ -> fatal "All concepts in a typology should be in exactly one table."
+          }
+      where
+        -- A generalization without a table of its own contributes no column.
+        cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
+    _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =

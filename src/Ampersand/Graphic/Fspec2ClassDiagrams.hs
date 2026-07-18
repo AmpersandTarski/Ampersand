@@ -12,6 +12,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
+import Ampersand.FSpec.FSpecAux (lookupConceptTable)
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
@@ -350,19 +351,24 @@ tdAnalysis fSpec =
         relsOf t =
           case t of
             TblSQL {} -> map (mkRel t) . mapMaybe relOf . attributes $ t
-            BinSQL {} -> NE.toList $ fmap mkOOAssoc (plugAttributes t)
+            BinSQL {} -> mapMaybe mkOOAssoc . NE.toList . plugAttributes $ t
               where
-                mkOOAssoc a =
-                  OOAssoc
-                    { assSrc = name . mainItem $ t,
-                      assSrcPort = sqlAttToName a,
-                      asslhm = Mult MinZero MaxMany,
-                      asslhr = Nothing,
-                      assTgt = name . mainItem . getConceptTableFor fSpec . target . attExpr $ a,
-                      assrhm = Mult MinOne MaxOne,
-                      assrhr = Nothing,
-                      assmdcl = Nothing
-                    }
+                -- A concept without a concept table is in no class, so an
+                -- association to it is not an association between classes
+                -- (issue #1672).
+                mkOOAssoc a = do
+                  (tgtPlug, _) <- lookupConceptTable fSpec (target . attExpr $ a)
+                  pure
+                    OOAssoc
+                      { assSrc = name . mainItem $ t,
+                        assSrcPort = sqlAttToName a,
+                        asslhm = Mult MinZero MaxMany,
+                        asslhr = Nothing,
+                        assTgt = name . mainItem $ tgtPlug,
+                        assrhm = Mult MinOne MaxOne,
+                        assrhr = Nothing,
+                        assmdcl = Nothing
+                      }
         relOf att =
           let expr = attExpr att
            in case expr of
