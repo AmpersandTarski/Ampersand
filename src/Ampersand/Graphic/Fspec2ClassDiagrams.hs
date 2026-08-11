@@ -4,6 +4,7 @@
 module Ampersand.Graphic.Fspec2ClassDiagrams
   ( clAnalysis,
     cdAnalysis,
+    cdmAnalysis,
     tdAnalysis,
   )
 where
@@ -286,6 +287,65 @@ instance CDAnalysable A_Context where
           | pat <- ctxpats ctx,
             cd <- ptcds pat
         ]
+
+-- | This function generates a conceptual data model of a context. It draws the
+--   same concepts as boxes as the logical data model does (`cdAnalysis`), but
+--   without any attributes, and it draws every user-defined relation between
+--   two of those boxes as an association -- including the univalent ones that
+--   the logical data model would have folded into an attribute. The value types
+--   (the concepts the logical data model shows only as an attribute's type) are
+--   left out, so the picture shows the entity concepts and the relations
+--   between them and nothing else.
+--
+--   The box selection is taken from `classesAndAssociations`, the same source
+--   the logical data model uses, so the boxes here are exactly its blue boxes.
+--   This is robust regardless of how concepts are represented: it does not rely
+--   on a concept's TType (a pure data model without interfaces has no Object
+--   concepts at all). The Bool groups the classes by pattern, as `cdAnalysis`
+--   does.
+cdmAnalysis :: (HasDocumentOpts env) => Bool -> env -> FSpec -> A_Context -> ClassDiag
+cdmAnalysis grouped env fSpec ctx =
+  OOclassdiagram
+    { cdName = prependToPlainName "conceptual data model of " $ name ctx,
+      cdLabel = Nothing,
+      classes = map stripAttributes ldmClasses,
+      assocs = map rel2Assoc relationsBetweenBoxes,
+      -- Only generalisations between two boxes are drawn; a value type is no
+      -- box here, so a generalisation touching one has nothing to link.
+      geners = map OOGener . filter (all isBox . toList . concs) . gens $ ctx,
+      ooCpts = boxConcepts
+    }
+  where
+    ldmClasses :: [(Class, Maybe Name)]
+    ldmClasses = fst (classesAndAssociations env fSpec ctx)
+    boxConcepts :: [A_Concept]
+    boxConcepts = [cpt | (cl, _) <- ldmClasses, Just (cpt, _) <- [clcpt cl]]
+    isBox :: A_Concept -> Bool
+    isBox cpt = cpt `elem` boxConcepts
+    relationsBetweenBoxes :: [Relation]
+    relationsBetweenBoxes =
+      [ rel
+        | rel <- toList (relsDefdIn ctx),
+          decusr rel, -- only relations declared by the author, not generated ones
+          not (isProp (EDcD rel)), -- a pure property is not a relation between concepts
+          isBox (source rel),
+          isBox (target rel)
+      ]
+    stripAttributes :: (Class, Maybe Name) -> (Class, Maybe Name)
+    stripAttributes (cl, mName) =
+      (cl {clAtts = []}, if grouped then mName else Nothing)
+    rel2Assoc :: Relation -> Association
+    rel2Assoc rel =
+      OOAssoc
+        { assSrc = name $ source rel,
+          assSrcPort = name rel,
+          asslhm = mults . flp $ EDcD rel,
+          asslhr = Nothing,
+          assTgt = name $ target rel,
+          assrhm = mults $ EDcD rel,
+          assrhr = Just $ name rel,
+          assmdcl = Just rel
+        }
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.
