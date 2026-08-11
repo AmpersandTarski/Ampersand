@@ -39,7 +39,7 @@ data PictureTyp
   | PTConceptualModelOfRule !Rule -- conceptual diagram of the rule in isolation of any context.
   | PTLogicalDataModelOfContext !Bool -- logical data model of the entire script
   | PTLogicalDataModelOfPattern !Pattern -- logical data model of the pattern
-  | PTConceptualDataModelOfContext !Bool -- concepts and their relations, without attributes; entire script
+  | PTObjectModelOfContext !Bool -- concepts and their relations, without attributes; entire script
   | PTTechnicalDataModel -- technical data model of the entire script
 
 data DotContent
@@ -74,7 +74,7 @@ instance Named PictureTyp where -- for displaying a fatal error
     PTConceptualModelOfRule r -> name r
     PTLogicalDataModelOfContext grouped -> mkName' $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
     PTLogicalDataModelOfPattern pat -> mkName' $ "PTLogicalDM_" <> tshow (name pat)
-    PTConceptualDataModelOfContext grouped -> mkName' $ "PTConceptualDM_" <> (if grouped then "grouped_by_patterns" else mempty)
+    PTObjectModelOfContext grouped -> mkName' $ "PTObjectModel_" <> (if grouped then "grouped_by_patterns" else mempty)
     PTTechnicalDataModel -> mkName' "PTTechnicalDataModel"
     where
       mkName' :: Text -> Name
@@ -136,15 +136,15 @@ makePicture env fSpec pr =
               Dutch -> "Logisch gegevensmodel van " <> fullName pat,
           visualFocus = VPattern
         }
-    PTConceptualDataModelOfContext grouped ->
+    PTObjectModelOfContext grouped ->
       Picture
-        { pType = PTConceptualDataModelOfContext grouped,
-          pictureFileName = toBaseFileName $ "ConceptualDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
+        { pType = PTObjectModelOfContext grouped,
+          pictureFileName = toBaseFileName $ "ObjectModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
           forDataModelsOnlySwitch = True,
           scale = scale',
           dotContent =
             ClassDiagram
-              ( cdmAnalysis
+              ( objectModelAnalysis
                   grouped
                   env
                   fSpec
@@ -153,8 +153,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Conceptual data model of " <> fullName fSpec
-              Dutch -> "Conceptueel gegevensmodel van " <> fullName fSpec,
+              English -> "Object model of " <> fullName fSpec
+              Dutch -> "Objectmodel van " <> fullName fSpec,
           visualFocus = VContext
         }
     PTTechnicalDataModel ->
@@ -240,7 +240,7 @@ makePicture env fSpec pr =
         PTConceptualModelOfConcept {} -> "0.7"
         PTLogicalDataModelOfContext {} -> "1.2"
         PTLogicalDataModelOfPattern {} -> "1.2"
-        PTConceptualDataModelOfContext {} -> "1.2"
+        PTObjectModelOfContext {} -> "1.2"
         PTTechnicalDataModel -> "1.2"
     graphVizCmdForConceptualGraph =
       -- Dot gives bad results, but there seems no way to fiddle with the length of edges.
@@ -325,7 +325,7 @@ conceptualStructure fSpec pr =
     PTClassificationDiagram -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTLogicalDataModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
-    PTConceptualDataModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTObjectModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
     isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, (s `elem` cpts && g `elem` cpts) || s `elem` cpts]

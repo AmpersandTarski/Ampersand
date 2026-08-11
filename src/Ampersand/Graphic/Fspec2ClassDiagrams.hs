@@ -4,7 +4,7 @@
 module Ampersand.Graphic.Fspec2ClassDiagrams
   ( clAnalysis,
     cdAnalysis,
-    cdmAnalysis,
+    objectModelAnalysis,
     tdAnalysis,
   )
 where
@@ -288,8 +288,8 @@ instance CDAnalysable A_Context where
             cd <- ptcds pat
         ]
 
--- | This function generates a conceptual data model of a context. It draws the
---   same concepts as boxes as the logical data model does (`cdAnalysis`), but
+-- | This function generates an object model of a context. It draws the same
+--   concepts as boxes as the logical data model does (`cdAnalysis`), but
 --   without any attributes, and it draws every user-defined relation between
 --   two of those boxes as an association -- including the univalent ones that
 --   the logical data model would have folded into an attribute. The value types
@@ -303,10 +303,10 @@ instance CDAnalysable A_Context where
 --   on a concept's TType (a pure data model without interfaces has no Object
 --   concepts at all). The Bool groups the classes by pattern, as `cdAnalysis`
 --   does.
-cdmAnalysis :: (HasDocumentOpts env) => Bool -> env -> FSpec -> A_Context -> ClassDiag
-cdmAnalysis grouped env fSpec ctx =
+objectModelAnalysis :: (HasDocumentOpts env) => Bool -> env -> FSpec -> A_Context -> ClassDiag
+objectModelAnalysis grouped env fSpec ctx =
   OOclassdiagram
-    { cdName = prependToPlainName "conceptual data model of " $ name ctx,
+    { cdName = prependToPlainName "object model of " $ name ctx,
       cdLabel = Nothing,
       classes = map stripAttributes ldmClasses,
       assocs = map rel2Assoc relationsBetweenBoxes,

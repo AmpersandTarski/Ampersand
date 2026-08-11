@@ -143,11 +143,11 @@ fSpec2Pandoc env now fSpec = (thePandoc, L.sortOn (name . pType) thePictures)
             : map PTLogicalDataModelOfPattern (patterns fSpec)
               <> [ PTLogicalDataModelOfContext False,
                    PTLogicalDataModelOfContext True,
-                   -- The conceptual data model is generated alongside the other
-                   -- pictures, in the same two variants as the logical one, even
-                   -- though no chapter embeds it yet.
-                   PTConceptualDataModelOfContext False,
-                   PTConceptualDataModelOfContext True,
+                   -- The object model is generated alongside the other pictures,
+                   -- in the same two variants as the logical one, even though no
+                   -- chapter embeds it yet.
+                   PTObjectModelOfContext False,
+                   PTObjectModelOfContext True,
                    PTTechnicalDataModel
                  ]
     blocksByChapter :: [Blocks]
