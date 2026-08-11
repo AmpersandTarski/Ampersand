@@ -1,5 +1,7 @@
 module Ampersand.Graphic.ClassDiagram
   ( ClassDiag (..),
+    CdName (..),
+    unlabeled,
     Class (..),
     CdAttribute (..),
     Association (..),
@@ -23,11 +25,42 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import qualified RIO.Text as T
 
+-- | An item in a class diagram carries both the name it was declared with and
+--   the LABEL the Ampersand script gave it (if any). The name identifies the
+--   item, so nodes, ports and edges keep referring to each other by name. The
+--   label is the text that the picture shows. Without a LABEL, @label@ falls
+--   back to the name, so a script without labels yields the same picture as
+--   before.
+data CdName = CdName
+  { cdnName :: !Name,
+    cdnLabel :: !(Maybe Label)
+  }
+  deriving (Eq, Ord, Show)
+
+instance Named CdName where
+  name = cdnName
+
+instance Labeled CdName where
+  mLabel = cdnLabel
+
+  -- An item without a LABEL is shown by its full name, which is what a class
+  -- diagram showed before labels reached it. So a LABEL is the only thing that
+  -- changes what a picture shows.
+  label x = case cdnLabel x of
+    Nothing -> fullName x
+    Just (Label lbl) -> lbl
+
+-- | A name that has no LABEL, so the picture shows the name itself. This is
+--   what the technical data model uses, because it shows the names that exist
+--   in the database rather than the names from the script.
+unlabeled :: Name -> CdName
+unlabeled nm = CdName {cdnName = nm, cdnLabel = Nothing}
+
 data ClassDiag = OOclassdiagram
   { cdName :: !Name,
     cdLabel :: !(Maybe Label),
     -- | list of classes with the optional name of a subgraph in which they belong
-    classes :: ![(Class, Maybe Name)],
+    classes :: ![(Class, Maybe CdName)],
     assocs :: ![Association], --
     geners :: ![Generalization], --
     ooCpts :: ![A_Concept]
@@ -42,7 +75,7 @@ instance Labeled ClassDiag where
 
 data Class = OOClass
   { -- | name of the class
-    clName :: !Name,
+    clName :: !CdName,
     -- | Main concept of the class. (link tables do not have a main concept)
     clcpt :: !(Maybe (A_Concept, TType)),
     -- | Attributes of the class
@@ -53,11 +86,15 @@ data Class = OOClass
 instance Named Class where
   name = name . clName
 
+instance Labeled Class where
+  mLabel = mLabel . clName
+  label = label . clName
+
 data CdAttribute = OOAttr
   { -- | name of the attribute
-    attNm :: !Name,
+    attNm :: !CdName,
     -- | type of the attribute (Concept name or built-in type)
-    attTyp :: !Name,
+    attTyp :: !CdName,
     -- | says whether the attribute is optional
     attOptional :: !Bool,
     attProps :: ![AProp]
@@ -65,7 +102,11 @@ data CdAttribute = OOAttr
   deriving (Show, Eq)
 
 instance Named CdAttribute where
-  name = attNm
+  name = name . attNm
+
+instance Labeled CdAttribute where
+  mLabel = mLabel . attNm
+  label = label . attNm
 
 data MinValue = MinZero | MinOne deriving (Show, Eq)
 
@@ -81,13 +122,13 @@ data Association = OOAssoc
     -- | left hand side properties
     asslhm :: !Multiplicities,
     -- | left hand side role, if it exists
-    asslhr :: !(Maybe Name),
+    asslhr :: !(Maybe CdName),
     -- | target: the name of the target class
     assTgt :: !Name,
     -- | right hand side properties
     assrhm :: !Multiplicities,
     -- | right hand side role, if it exists
-    assrhr :: !(Maybe Name),
+    assrhr :: !(Maybe CdName),
     -- | the relation that caused this association , if any.
     assmdcl :: !(Maybe Relation)
   }

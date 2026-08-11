@@ -226,7 +226,7 @@ chpDataAnalysis env fSpec = (theBlocks, [])
     detailsOfClass cl =
       header
         (sectionLevel + 1)
-        ((text . l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph . strong . text . fullName) cl)
+        ((text . l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph . strong . text . label) cl)
         <> case clcpt cl of
           Nothing -> mempty
           Just (cpt, _) -> purposes2Blocks env (purposesOf fSpec outputLang' cpt)
@@ -265,12 +265,12 @@ chpDataAnalysis env fSpec = (theBlocks, [])
                  ]
           )
         <> let asscs =
-                 [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
+                 [ assoc | assoc <- assocs oocd, assSrc assoc == name (clName cl) || assTgt assoc == name (clName cl)
                  ]
             in case asscs of
-                 [] -> para (text (fullName cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
+                 [] -> para (text (label cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _ ->
-                   para (text (fullName cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
+                   para (text (label cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                      <> simpleTable
                        [ (plain . text . l) (NL "Source", EN "Source"),
                          (plain . text . l) (NL "uniek", EN "unique"),
