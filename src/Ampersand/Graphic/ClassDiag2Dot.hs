@@ -80,6 +80,19 @@ classdiagram2dot env cd =
                 }
           }
 
+    -- Does this class show an attribute of this name? An edge may attach to the
+    -- row of the attribute it belongs to, but only a relation that the picture
+    -- draws as an attribute has such a row. A relation drawn as an association
+    -- has none, and naming a port that does not exist makes Graphviz reject the
+    -- picture it is asked to draw.
+    hasAttribute :: Name -> Name -> Bool
+    hasAttribute clsNm attrNm =
+      or
+        [ any ((attrNm ==) . name) (clAtts cl)
+          | (cl, _) <- classes cd,
+            name cl == clsNm
+        ]
+
     class2node :: Class -> DotNode MyDotNode
     class2node cl =
       DotNode
@@ -167,7 +180,9 @@ classdiagram2dot env cd =
               Label . StrLabel . fromString . T.unpack . maybe mempty label . assrhr $ ass,
               LabelFloat True
             ]
-              ++ [TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)]
+              ++ [ TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)
+                   | hasAttribute (assSrc ass) (assSrcPort ass)
+                 ]
         }
       where
         mult2Lable = StrLabel . fromString . mult2Str
