@@ -113,6 +113,8 @@ we could lift the restriction of a unique root.
 This seems an attractive enhancement of Ampersand because it gives us multiple inheritance.
 We will save this enhancement for the future.
 
+The root of a hierarchy also decides what the object model draws: that picture keeps one box per root and leaves the specialisations out, so a hierarchy appears in it as the single concept the whole component stands for. See [data-model pictures](./data-model-pictures.md) for the three pictures Ampersand draws of a model and what each one shows.
+
 ### Table Structure
 
 The database table contains:

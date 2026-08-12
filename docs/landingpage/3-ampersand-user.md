@@ -38,6 +38,8 @@ When your prototype does what you want, put it online. [Deploying your prototype
 
 To keep your application healthy over time, understand [the architecture of an Ampersand application](../reference-material/architecture-of-an-ampersand-application) — how the generated system fits together, so you can build, deploy and maintain it with confidence.
 
+A model you inherit is quickest to grasp from the pictures Ampersand draws of it. [Data-model pictures](../reference-material/data-model-pictures.md) explains what the object model, the logical data model and the technical data model each show, so you can pick the one that answers your question — the first to discuss the domain with a stakeholder, the last to make sense of the database.
+
 ## Questions & answers
 
 Whether you are sketching your first model or operating a live system, these answers cut to what matters for a builder: how to design clean models, generate and run prototypes, deploy them, get real data in, shape the user interface, and keep it all running. Pick the section that matches where you are on your build journey.

@@ -216,6 +216,7 @@ The generated document typically includes the following chapters:
 
 The document includes **visuals** (diagrams) in multiple chapters and on various topics.
 
+Three of them draw your model as a whole, each at its own level of detail: the object model shows the entity types and their relations, the logical data model adds every concept with its attributes, and the technical data model shows the tables of the database. What each one contains, and which to use when, is described under [data-model pictures](./reference-material/data-model-pictures.md).
 
 By default, visuals are generated just before the document itself is created. This ensures that the graphics are always up-to-date with the most recent state of the model. However, sometimes it is practical to generate the document and the visuals separately. Depending on your specific needs, the following options might help you in your specific case:
 

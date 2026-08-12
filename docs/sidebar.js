@@ -84,6 +84,11 @@ module.exports = {
             id: 'ampersand/reference-material/from-rules-to-running-code'
         },
         {
+            label: 'Data-model pictures',
+            type: 'doc',
+            id: 'ampersand/reference-material/data-model-pictures'
+        },
+        {
             label: 'Preprocessor',
             type: 'doc',
             id: 'ampersand/reference-material/the-preprocessor'

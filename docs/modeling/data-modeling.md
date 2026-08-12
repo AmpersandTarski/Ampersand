@@ -204,7 +204,7 @@ In [this video](https://youtu.be/ruO4UgjA11E) you sit in in a private lecture in
 
 ## Assignment
 
-1. Generate a functional specification from this script, open the generated document, and look up what your data model looks like.
+1. Generate a functional specification from this script, open the generated document, and look up what your data model looks like. [Data-model pictures](../reference-material/data-model-pictures.md) explains how to read the drawings you find there, and how the logical data model differs from the object model and the technical data model.
 2. Make a data analysis of a small problem of your own choosing; then generate a functional specification from that script.
 
 ## What have you learned?
