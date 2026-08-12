@@ -315,7 +315,8 @@ instance CDAnalysable A_Context where
     where
       patternInWhichToDrawTheConcept :: A_Concept -> (A_Concept, Maybe CdName)
       patternInWhichToDrawTheConcept cpt =
-        case L.sortOn name
+        case L.sortOn
+          name
           [ n | (cd, n) <- cDefs, name cd == name cpt
           ] of
           [] -> (cpt, Nothing)
@@ -327,38 +328,57 @@ instance CDAnalysable A_Context where
             cd <- ptcds pat
         ]
 
--- | This function generates an object model of a context. It draws the same
---   concepts as boxes as the logical data model does (`cdAnalysis`), but
---   without any attributes, and it draws every user-defined relation between
---   two of those boxes as an association -- including the univalent ones that
---   the logical data model would have folded into an attribute. The value types
---   (the concepts the logical data model shows only as an attribute's type) are
---   left out, so the picture shows the entity concepts and the relations
---   between them and nothing else.
+-- | A concept is the root of its taxonomy when it is the most generic concept
+--   of the typology it belongs to. Because a concept can be known under several
+--   aliases, being the root means that the root's name is one of them.
+isRootOfTaxonomy :: A_Concept -> Bool
+isRootOfTaxonomy cpt = case cpt of
+  PlainConcept {aliases = as} -> name (tyroot (typology cpt)) `elem` as
+  -- ONE and the composite concepts belong to no taxonomy, so there is nothing
+  -- more generic than they are.
+  _ -> True
+
+-- | This function generates an object model of a context. It draws a box for
+--   every concept that is the root of its taxonomy, without any attributes, and
+--   it draws every user-defined relation between two of those boxes as an
+--   association -- including the univalent ones that the logical data model
+--   would have folded into an attribute. The value types (the concepts the
+--   logical data model shows only as an attribute's type) are left out, so the
+--   picture shows the root entity types and the relations between them and
+--   nothing else.
 --
---   The box selection is taken from `classesAndAssociations`, the same source
---   the logical data model uses, so the boxes here are exactly its blue boxes.
---   This is robust regardless of how concepts are represented: it does not rely
---   on a concept's TType (a pure data model without interfaces has no Object
---   concepts at all). The Bool groups the classes by pattern, as `cdAnalysis`
---   does.
+--   The box selection starts from `classesAndAssociations`, the same source the
+--   logical data model uses, and keeps the roots of it. This is robust
+--   regardless of how concepts are represented: it does not rely on a concept's
+--   TType (a pure data model without interfaces has no Object concepts at all).
+--   A relation that touches a specialisation is left out, because the box it
+--   would attach to is no longer there. The Bool groups the classes by pattern,
+--   as `cdAnalysis` does.
 objectModelAnalysis :: (HasDocumentOpts env) => Bool -> env -> FSpec -> A_Context -> ClassDiag
 objectModelAnalysis grouped env fSpec ctx =
   OOclassdiagram
     { cdName = prependToPlainName "object model of " $ name ctx,
       cdLabel = Just . Label $ "object model of " <> label ctx,
-      classes = map stripAttributes ldmClasses,
+      classes = map stripAttributes boxClasses,
       assocs = map rel2Assoc relationsBetweenBoxes,
-      -- Only generalisations between two boxes are drawn; a value type is no
-      -- box here, so a generalisation touching one has nothing to link.
-      geners = map OOGener . filter (all isBox . toList . concs) . gens $ ctx,
+      -- A generalisation runs from a specialisation to a more generic concept,
+      -- and a specialisation is no box here. So a CLASSIFY statement has nothing
+      -- to link in this picture.
+      geners = mempty,
       ooCpts = boxConcepts
     }
   where
     ldmClasses :: [(Class, Maybe CdName)]
     ldmClasses = fst (classesAndAssociations env fSpec ctx)
+    boxClasses :: [(Class, Maybe CdName)]
+    boxClasses =
+      [ (cl, mName)
+        | (cl, mName) <- ldmClasses,
+          Just (cpt, _) <- [clcpt cl],
+          isRootOfTaxonomy cpt
+      ]
     boxConcepts :: [A_Concept]
-    boxConcepts = [cpt | (cl, _) <- ldmClasses, Just (cpt, _) <- [clcpt cl]]
+    boxConcepts = [cpt | (cl, _) <- boxClasses, Just (cpt, _) <- [clcpt cl]]
     isBox :: A_Concept -> Bool
     isBox cpt = cpt `elem` boxConcepts
     relationsBetweenBoxes :: [Relation]
