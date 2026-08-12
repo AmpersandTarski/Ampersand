@@ -15,6 +15,7 @@ import Ampersand.FSpec.Crud
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
+import Ampersand.FSpec.ToFSpec.ConceptTables
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.Misc.HasClasses
@@ -309,7 +310,10 @@ makeFSpec env context =
     -- making plugs
     --------------
     allplugs = genPlugs -- all generated plugs
-    genPlugs = InternalPlug <$> makeGeneratedSqlPlugs env context
+    genPlugs = InternalPlug <$> makeGeneratedSqlPlugs env context conceptsWithATable
+    -- Only concepts that some generated query enumerates get a concept table
+    -- of their own; see issue #1672.
+    conceptsWithATable = conceptsNeedingATable env context allConjs
     --      where
     -- qlfname :: PlugSQL -> PlugSQL
     -- qlfname x = case T.uncons . view namespaceL $ env of

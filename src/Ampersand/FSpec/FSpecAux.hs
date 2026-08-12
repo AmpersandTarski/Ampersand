@@ -1,4 +1,4 @@
-module Ampersand.FSpec.FSpecAux (getRelationTableInfo, getConceptTableInfo) where
+module Ampersand.FSpec.FSpecAux (getRelationTableInfo, getConceptTableInfo, lookupConceptTable) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
@@ -18,11 +18,22 @@ getRelationTableInfo fSpec dcl =
     thisDcl :: (a, RelStore) -> Bool
     thisDcl (_, store) = rsDcl store == dcl
 
--- return table name and source and target column names for relation rel, or nothing if the relation is not found
+-- | The concept table of a concept, and the column in it that holds the atoms,
+--   or Nothing when the concept has no concept table of its own. That happens
+--   for ONE, and for any concept whose atoms no generated query enumerates
+--   (issue #1672).
+lookupConceptTable :: FSpec -> A_Concept -> Maybe (PlugSQL, SqlAttribute)
+lookupConceptTable fSpec cpt =
+  case lookupCpt fSpec cpt of
+    [] -> Nothing
+    [x] -> Just x -- Any of the resulting plugs should do.
+    xs -> fatal ("Only one result expected:" <> tshow xs)
 
+-- return table name and source and target column names for relation rel.
+--   Use `lookupConceptTable` instead where a concept without a table is a
+--   possibility rather than a bug.
 getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL, SqlAttribute)
 getConceptTableInfo fSpec cpt =
-  case lookupCpt fSpec cpt of
-    [] -> fatal ("No plug found for concept '" <> fullName cpt <> "'.")
-    [x] -> x -- Any of the resulting plugs should do.
-    xs -> fatal ("Only one result expected:" <> tshow xs)
+  case lookupConceptTable fSpec cpt of
+    Nothing -> fatal ("No plug found for concept '" <> fullName cpt <> "'.")
+    Just x -> x

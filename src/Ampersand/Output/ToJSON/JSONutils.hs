@@ -5,6 +5,8 @@ module Ampersand.Output.ToJSON.JSONutils
   ( JSON (..),
     JSON' (..),
     ToJSON (..),
+    ampersandDefault,
+    genericToJSON,
     module Ampersand.Basics,
     module Ampersand.Classes,
     module Ampersand.Core.ParseTree,

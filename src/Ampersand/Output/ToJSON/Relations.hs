@@ -97,13 +97,15 @@ instance JSON Relation RelTableInfo where
       }
     where
       (plug, relstore) = getRelationTableInfo fSpec dcl
-      (plugSrc, _) = getConceptTableInfo fSpec (source dcl)
-      (plugTrg, _) = getConceptTableInfo fSpec (target dcl)
+      -- A concept without a concept table is in no table at all, so it can
+      -- never be the table this relation is stored in (issue #1672).
+      plugSrc = fst <$> lookupConceptTable fSpec (source dcl)
+      plugTrg = fst <$> lookupConceptTable fSpec (target dcl)
       srcOrtgt :: Maybe Text
       srcOrtgt
-        | (plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
-        | plug == plugSrc = Just "src" -- relation in same table as src concept (UNI relations)
-        | plug == plugTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
+        | (Just plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
+        | Just plug == plugSrc = Just "src" -- relation in same table as src concept (UNI relations)
+        | Just plug == plugTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
         | otherwise = Nothing -- relations in n-n table (not UNI and not INJ)
 
 instance JSON SqlAttribute TableCol where
