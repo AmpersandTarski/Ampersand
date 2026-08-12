@@ -6,6 +6,7 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (Label)
 import qualified Ampersand.Basics.Name as Name
 import Ampersand.Classes
+import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Oscillation (OscEdge (..), OscillationCycle (..))
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
@@ -455,7 +456,7 @@ oscillation2Dot oc =
             nodeStmts =
               [ DotNode
                   { nodeID = toMyDotNode r,
-                    nodeAttributes = [Label . StrLabel . TL.fromStrict . shorten . label $ r]
+                    nodeAttributes = [Label . StrLabel . TL.fromStrict . shorten . nodeText $ r]
                   }
                 | r <- NE.toList (ocRules oc)
               ],
@@ -463,8 +464,12 @@ oscillation2Dot oc =
           }
     }
   where
-    -- Rule names can be long (an ENFORCE statement generates a rule whose name
-    -- contains the whole term); an over-long node label wrecks the layout.
+    -- An ENFORCE statement generates a rule whose *name* contains the whole
+    -- term in AST notation; show the term in Ampersand syntax instead.
+    nodeText :: Rule -> Text
+    nodeText r = case rrkind r of
+      Enforce -> "ENFORCE: " <> showA (formalExpression r)
+      _ -> label r
     shorten :: Text -> Text
     shorten t
       | T.length t <= 60 = t
