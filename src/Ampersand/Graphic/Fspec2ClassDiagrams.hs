@@ -25,23 +25,55 @@ import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 
+-- | The name of a concept, together with the LABEL of its CONCEPT statement.
+--   A picture shows the label wherever the script has one.
+cdConcept :: FSpec -> A_Concept -> CdName
+cdConcept fSpec cpt =
+  CdName
+    { cdnName = name cpt,
+      cdnLabel = conceptLabelInFSpec fSpec cpt
+    }
+
+-- | The name of a relation, together with the LABEL of its RELATION statement.
+cdRelation :: Relation -> CdName
+cdRelation rel =
+  CdName
+    { cdnName = name rel,
+      cdnLabel = mLabel rel
+    }
+
+-- | The name of a pattern, together with the LABEL of its PATTERN statement.
+cdPattern :: Pattern -> CdName
+cdPattern pat =
+  CdName
+    { cdnName = name pat,
+      cdnLabel = mLabel pat
+    }
+
+-- | The LABEL of the relation that an expression is built from. An attribute in
+--   a class diagram stands for a relation, so it shows that relation's label.
+relationLabelIn :: Expression -> Maybe Label
+relationLabelIn expr = case toList (bindedRelationsIn expr) of
+  rel : _ -> mLabel rel
+  [] -> Nothing
+
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
   OOclassdiagram
     { cdName = prependToPlainName "classification diagram of " $ name fSpec,
-      cdLabel = Nothing,
+      cdLabel = Just . Label $ "classification diagram of " <> label fSpec,
       classes = map clas . toList . concs . vgens $ fSpec,
       assocs = [],
       geners = map OOGener . vgens $ fSpec,
       ooCpts = toList . concs $ fSpec
     }
   where
-    clas :: A_Concept -> (Class, Maybe Name)
+    clas :: A_Concept -> (Class, Maybe CdName)
     clas root =
       ( OOClass
-          { clName = name root,
+          { clName = cdConcept fSpec root,
             clcpt = Just (root, cptTType fSpec root),
             clAtts = (map makeAttr . attributesOfConcept fSpec) root
           },
@@ -50,8 +82,15 @@ clAnalysis fSpec =
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att =
       OOAttr
-        { attNm = sqlAttToName att,
-          attTyp = if isProp (attExpr att) then propTypeName else (name . target . attExpr) att,
+        { attNm =
+            CdName
+              { cdnName = sqlAttToName att,
+                cdnLabel = relationLabelIn (attExpr att)
+              },
+          attTyp =
+            if isProp (attExpr att)
+              then unlabeled propTypeName
+              else (cdConcept fSpec . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
           attProps = Set.toList . properties $ attExpr att
         }
@@ -79,9 +118,9 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
 
   -- | This function returns the concepts that could become a class, together with an identifying name
   --   for the group in which they may be grouped.
-  classCandidates :: a -> Map A_Concept (Maybe Name)
+  classCandidates :: a -> Map A_Concept (Maybe CdName)
 
-  classesAndAssociations :: (HasDocumentOpts env) => env -> FSpec -> a -> ([(Class, Maybe Name)], [Association])
+  classesAndAssociations :: (HasDocumentOpts env) => env -> FSpec -> a -> ([(Class, Maybe CdName)], [Association])
   -- ^ This function returns all the classes in the given datamodel that should be drawn.
   --   Note: classes without attributes are included as well.
   -- The idea is as follows:
@@ -121,7 +160,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
             target rel `elem` map fst mustBeDrawnAsClass,
             not (isProp rel)
         ]
-      conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe Name)]
+      conceptsWithUniOrGens, conceptsWithoutUniOrGens :: [(A_Concept, Maybe CdName)]
       (conceptsWithUniOrGens, conceptsWithoutUniOrGens) =
         L.partition (isConceptWithUniOrGen . fst) (Map.toList $ classCandidates a)
         where
@@ -135,7 +174,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
 
       multiAttributes :: [Expression]
       relations2draw :: [Relation]
-      standalonConcepts :: [(A_Concept, Maybe Name)]
+      standalonConcepts :: [(A_Concept, Maybe CdName)]
       (multiAttributes, relations2draw, standalonConcepts) =
         ( concatMap fst3 results,
           concatMap snd3 results,
@@ -143,7 +182,7 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
         )
         where
           results = map handleRelation nonUniOrInjs
-          handleRelation :: Relation -> ([Expression], [Relation], [(A_Concept, Maybe Name)])
+          handleRelation :: Relation -> ([Expression], [Relation], [(A_Concept, Maybe CdName)])
           handleRelation d =
             case (source d `elem` map fst conceptsWithUniOrGens, target d `elem` map fst conceptsWithUniOrGens) of
               (True, True) ->
@@ -155,9 +194,9 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
               (False, False) ->
                 ([], [d], filter srcOrtgt conceptsWithoutUniOrGens)
                 where
-                  srcOrtgt :: (A_Concept, Maybe Name) -> Bool
+                  srcOrtgt :: (A_Concept, Maybe CdName) -> Bool
                   srcOrtgt (cpt, _) = cpt == source d || cpt == target d
-      addAttributes :: (A_Concept, Maybe Name) -> (A_Concept, Maybe Name, [Expression])
+      addAttributes :: (A_Concept, Maybe CdName) -> (A_Concept, Maybe CdName, [Expression])
       addAttributes (cpt, group) = (cpt, group, attribs)
         where
           attribs = filter ((cpt ==) . source) (uniAttributes <> multiAttributes)
@@ -170,27 +209,27 @@ class (ConceptStructure a, Language a) => CDAnalysable a where
             asslhr = Nothing,
             assTgt = name $ target rel,
             assrhm = mults $ EDcD rel,
-            assrhr = Just $ name rel,
+            assrhr = Just $ cdRelation rel,
             assmdcl = Just rel
           }
 
-      buildClass :: (A_Concept, Maybe Name, [Expression]) -> (Class, Maybe Name)
+      buildClass :: (A_Concept, Maybe CdName, [Expression]) -> (Class, Maybe CdName)
       buildClass (root, mName, exprs) =
         ( OOClass
-            { clName = name root,
+            { clName = cdConcept fSpec root,
               clcpt = cptWithTType fSpec <$> Just root,
-              clAtts = fmap ooAttr exprs
+              clAtts = fmap (ooAttr fSpec) exprs
             },
           mName
         )
 
-ooAttr :: Expression -> CdAttribute
-ooAttr r =
+ooAttr :: FSpec -> Expression -> CdAttribute
+ooAttr fSpec r =
   OOAttr
     { attNm = case toList $ bindedRelationsIn r of
         [] -> fatal $ "No bindedRelations in expression: " <> tshow r
-        h : _ -> name h,
-      attTyp = if isProp r then propTypeName else (name . target) r,
+        h : _ -> cdRelation h,
+      attTyp = if isProp r then unlabeled propTypeName else (cdConcept fSpec . target) r,
       attOptional = (not . isTot) r,
       attProps = Set.toList $ properties r
     }
@@ -199,7 +238,7 @@ instance CDAnalysable Pattern where
   cdAnalysis _ env fSpec pat =
     OOclassdiagram
       { cdName = prependToPlainName "class diagram of " $ name pat,
-        cdLabel = ptlbl pat,
+        cdLabel = Just . Label $ "class diagram of " <> label pat,
         classes = classes' <> superClasses <> subClasses,
         assocs = associations',
         geners = map OOGener generalisations',
@@ -222,10 +261,10 @@ instance CDAnalysable Pattern where
         IsE {} -> NE.toList $ genrhs gen
       smallers :: AClassify -> [A_Concept]
       smallers gen = [genspc gen]
-      toClass :: A_Concept -> (Class, Maybe Name)
+      toClass :: A_Concept -> (Class, Maybe CdName)
       toClass cpt =
         ( OOClass
-            { clName = name cpt,
+            { clName = cdConcept fSpec cpt,
               clcpt = Just (cpt, cptTType fSpec cpt),
               clAtts = []
             },
@@ -246,14 +285,14 @@ instance CDAnalysable Pattern where
             tshow (name pat) == tshow (acdfrom cDef)
         ]
 
-  classCandidates :: Pattern -> Map A_Concept (Maybe Name)
+  classCandidates :: Pattern -> Map A_Concept (Maybe CdName)
   classCandidates pat = Map.fromList . map foo . toList . concs $ pat
     where
-      foo :: A_Concept -> (A_Concept, Maybe Name)
+      foo :: A_Concept -> (A_Concept, Maybe CdName)
       foo cpt =
         ( cpt,
           if cpt `elem` map acdcpt (ptcds pat)
-            then Just (name pat)
+            then Just (cdPattern pat)
             else Nothing
         )
 
@@ -261,7 +300,7 @@ instance CDAnalysable A_Context where
   cdAnalysis grouped env fSpec ctx =
     OOclassdiagram
       { cdName = prependToPlainName "class diagram of " $ name ctx,
-        cdLabel = Nothing,
+        cdLabel = Just . Label $ "class diagram of " <> label ctx,
         classes = map handleGrouping classes',
         assocs = associations',
         geners = map OOGener (gens ctx),
@@ -271,55 +310,75 @@ instance CDAnalysable A_Context where
       handleGrouping (cl, mName) = (cl, if grouped then mName else Nothing)
       (classes', associations') = classesAndAssociations env fSpec ctx
   relations _ = relsDefdIn
-  classCandidates :: A_Context -> Map A_Concept (Maybe Name)
+  classCandidates :: A_Context -> Map A_Concept (Maybe CdName)
   classCandidates ctx = Map.fromList . map patternInWhichToDrawTheConcept . toList . concs $ ctx
     where
-      patternInWhichToDrawTheConcept :: A_Concept -> (A_Concept, Maybe Name)
+      patternInWhichToDrawTheConcept :: A_Concept -> (A_Concept, Maybe CdName)
       patternInWhichToDrawTheConcept cpt =
-        case L.sort
+        case L.sortOn
+          name
           [ n | (cd, n) <- cDefs, name cd == name cpt
           ] of
           [] -> (cpt, Nothing)
           (n : _) -> (cpt, Just n)
-      cDefs :: [(AConceptDef, Name)]
+      cDefs :: [(AConceptDef, CdName)]
       cDefs =
-        [ (cd, name pat)
+        [ (cd, cdPattern pat)
           | pat <- ctxpats ctx,
             cd <- ptcds pat
         ]
 
--- | This function generates an object model of a context. It draws the same
---   concepts as boxes as the logical data model does (`cdAnalysis`), but
---   without any attributes, and it draws every user-defined relation between
---   two of those boxes as an association -- including the univalent ones that
---   the logical data model would have folded into an attribute. The value types
---   (the concepts the logical data model shows only as an attribute's type) are
---   left out, so the picture shows the entity concepts and the relations
---   between them and nothing else.
+-- | A concept is the root of its taxonomy when it is the most generic concept
+--   of the typology it belongs to. Because a concept can be known under several
+--   aliases, being the root means that the root's name is one of them.
+isRootOfTaxonomy :: A_Concept -> Bool
+isRootOfTaxonomy cpt = case cpt of
+  PlainConcept {aliases = as} -> name (tyroot (typology cpt)) `elem` as
+  -- ONE and the composite concepts belong to no taxonomy, so there is nothing
+  -- more generic than they are.
+  _ -> True
+
+-- | This function generates an object model of a context. It draws a box for
+--   every concept that is the root of its taxonomy, without any attributes, and
+--   it draws every user-defined relation between two of those boxes as an
+--   association -- including the univalent ones that the logical data model
+--   would have folded into an attribute. The value types (the concepts the
+--   logical data model shows only as an attribute's type) are left out, so the
+--   picture shows the root entity types and the relations between them and
+--   nothing else.
 --
---   The box selection is taken from `classesAndAssociations`, the same source
---   the logical data model uses, so the boxes here are exactly its blue boxes.
---   This is robust regardless of how concepts are represented: it does not rely
---   on a concept's TType (a pure data model without interfaces has no Object
---   concepts at all). The Bool groups the classes by pattern, as `cdAnalysis`
---   does.
+--   The box selection starts from `classesAndAssociations`, the same source the
+--   logical data model uses, and keeps the roots of it. This is robust
+--   regardless of how concepts are represented: it does not rely on a concept's
+--   TType (a pure data model without interfaces has no Object concepts at all).
+--   A relation that touches a specialisation is left out, because the box it
+--   would attach to is no longer there. The Bool groups the classes by pattern,
+--   as `cdAnalysis` does.
 objectModelAnalysis :: (HasDocumentOpts env) => Bool -> env -> FSpec -> A_Context -> ClassDiag
 objectModelAnalysis grouped env fSpec ctx =
   OOclassdiagram
     { cdName = prependToPlainName "object model of " $ name ctx,
-      cdLabel = Nothing,
-      classes = map stripAttributes ldmClasses,
+      cdLabel = Just . Label $ "object model of " <> label ctx,
+      classes = map stripAttributes boxClasses,
       assocs = map rel2Assoc relationsBetweenBoxes,
-      -- Only generalisations between two boxes are drawn; a value type is no
-      -- box here, so a generalisation touching one has nothing to link.
-      geners = map OOGener . filter (all isBox . toList . concs) . gens $ ctx,
+      -- A generalisation runs from a specialisation to a more generic concept,
+      -- and a specialisation is no box here. So a CLASSIFY statement has nothing
+      -- to link in this picture.
+      geners = mempty,
       ooCpts = boxConcepts
     }
   where
-    ldmClasses :: [(Class, Maybe Name)]
+    ldmClasses :: [(Class, Maybe CdName)]
     ldmClasses = fst (classesAndAssociations env fSpec ctx)
+    boxClasses :: [(Class, Maybe CdName)]
+    boxClasses =
+      [ (cl, mName)
+        | (cl, mName) <- ldmClasses,
+          Just (cpt, _) <- [clcpt cl],
+          isRootOfTaxonomy cpt
+      ]
     boxConcepts :: [A_Concept]
-    boxConcepts = [cpt | (cl, _) <- ldmClasses, Just (cpt, _) <- [clcpt cl]]
+    boxConcepts = [cpt | (cl, _) <- boxClasses, Just (cpt, _) <- [clcpt cl]]
     isBox :: A_Concept -> Bool
     isBox cpt = cpt `elem` boxConcepts
     relationsBetweenBoxes :: [Relation]
@@ -331,7 +390,7 @@ objectModelAnalysis grouped env fSpec ctx =
           isBox (source rel),
           isBox (target rel)
       ]
-    stripAttributes :: (Class, Maybe Name) -> (Class, Maybe Name)
+    stripAttributes :: (Class, Maybe CdName) -> (Class, Maybe CdName)
     stripAttributes (cl, mName) =
       (cl {clAtts = []}, if grouped then mName else Nothing)
     rel2Assoc :: Relation -> Association
@@ -343,7 +402,7 @@ objectModelAnalysis grouped env fSpec ctx =
           asslhr = Nothing,
           assTgt = name $ target rel,
           assrhm = mults $ EDcD rel,
-          assrhr = Just $ name rel,
+          assrhr = Just $ cdRelation rel,
           assmdcl = Just rel
         }
 
@@ -360,9 +419,13 @@ tdAnalysis fSpec =
       ooCpts = roots
     }
   where
+    -- The technical data model shows the tables and columns as they exist in
+    -- the database, so it shows the names Ampersand generated for them. A LABEL
+    -- from the script has no bearing on a database name, so nothing here is
+    -- labeled.
     allClasses' =
       [ ( OOClass
-            { clName = name . mainItem $ table,
+            { clName = unlabeled . name . mainItem $ table,
               clcpt = cptWithTType fSpec <$> primKey table,
               clAtts = case table of
                 TblSQL {} ->
@@ -375,13 +438,13 @@ tdAnalysis fSpec =
                   where
                     mkOOattr att =
                       OOAttr
-                        { attNm = sqlAttToName att,
-                          attTyp = (name . target . attExpr) att,
+                        { attNm = unlabeled $ sqlAttToName att,
+                          attTyp = unlabeled . name . target . attExpr $ att,
                           attOptional = False, -- A BinSQL contains pairs, so NULL cannot occur.
                           attProps = Set.toList $ properties (attExpr att)
                         }
             },
-          name <$> primKey table
+          unlabeled . name <$> primKey table
         )
         | table <- tables,
           length (plugAttributes table) > 1
@@ -396,17 +459,18 @@ tdAnalysis fSpec =
     ooAtt :: [SqlAttribute] -> SqlAttribute -> CdAttribute
     ooAtt kernelAtts att =
       OOAttr
-        { attNm = sqlAttToName att,
+        { attNm = unlabeled $ sqlAttToName att,
           attTyp =
-            if isProp (attExpr att) && att `notElem` kernelAtts
-              then propTypeName
-              else (name . target . attExpr) att,
+            unlabeled
+              $ if isProp (attExpr att) && att `notElem` kernelAtts
+                then propTypeName
+                else (name . target . attExpr) att,
           attOptional = attNull att, -- optional if NULL is allowed
           attProps = Set.toList $ properties (attExpr att)
         }
     allAssocs = concatMap (filter isAssocBetweenClasses . relsOf) tables
       where
-        isAssocBetweenClasses a = let allClassNames = map (clName . fst) allClasses' in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
+        isAssocBetweenClasses a = let allClassNames = map (name . clName . fst) allClasses' in assSrc a `elem` allClassNames && assTgt a `elem` allClassNames
         kernelConcepts = map fst (concatMap cLkpTbl tables)
         relsOf t =
           case t of
@@ -442,11 +506,11 @@ tdAnalysis fSpec =
             { assSrc = name . mainItem $ t,
               assSrcPort = sqlAttToName att,
               asslhm = (mults . flp) expr,
-              asslhr = Just $ sqlAttToName att,
+              asslhr = Just . unlabeled $ sqlAttToName att,
               assTgt = name . mainItem . getConceptTableFor fSpec . target $ expr,
               assrhm = mults expr,
               assrhr = case toList . toList $ bindedRelationsIn expr of
-                h : _ -> Just (name h)
+                h : _ -> Just (unlabeled (name h))
                 _ -> fatal "no relations used in expr",
               assmdcl = Nothing
             }
