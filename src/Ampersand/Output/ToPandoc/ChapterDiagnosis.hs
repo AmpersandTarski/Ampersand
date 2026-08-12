@@ -13,7 +13,10 @@
 module Ampersand.Output.ToPandoc.ChapterDiagnosis (chpDiagnosis) where
 
 import Ampersand.Diagnosis.Types
+import Ampersand.FSpec.Oscillation (OscillationCycle (..))
 import Ampersand.Output.ToPandoc.SharedAmongChapters
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 chpDiagnosis ::
@@ -30,8 +33,9 @@ chpDiagnosis env fSpec dd
           <> overviewStats
           <> perPatternTable
           <> violationSummary
+          <> oscillationBlocks
           <> xlsxReference,
-        []
+        oscillationPics
       )
   where
     -- localisation
@@ -224,6 +228,78 @@ chpDiagnosis env fSpec dd
     plurNl _ = "en"
     plurEn 1 = ""
     plurEn _ = "s"
+
+    ----------------------------------------------------------------
+    -- Oscillation analysis: one signed triggering-graph diagram per
+    -- risky cycle of automated rules, plus reading instructions.
+    -- The data comes from 'Ampersand.FSpec.Oscillation' (via
+    -- 'ddOscillations'); the diagram design is documented in
+    -- docs/ongoing-research/visualizing-oscillation-cycles.md.
+    ----------------------------------------------------------------
+    cycles' :: [OscillationCycle]
+    cycles' = ddOscillations dd
+
+    oscillationPics :: [Picture]
+    oscillationPics =
+      [ makePicture env fSpec (PTOscillationCycle i oc)
+        | (i, oc) <- zip [1 ..] cycles'
+      ]
+
+    oscillationBlocks :: Blocks
+    oscillationBlocks =
+      header
+        2
+        ((str . l) (NL "Oscillatie-analyse", EN "Oscillation analysis"))
+        <> ( if null cycles'
+               then noRiskPara
+               else riskIntro <> mconcat (zipWith perCycle cycles' oscillationPics)
+           )
+      where
+        noRiskPara =
+          para
+            $ (str . l)
+              ( NL "De statische analyse van de geautomatiseerde regels (onderhouden door de ExecEngine) vindt geen cyclus waarin herstelacties elkaar tegenwerken. Er is geen oscillatierisico gevonden.",
+                EN "The static analysis of the automated rules (maintained by the ExecEngine) finds no cycle in which repair actions oppose each other. No oscillation risk was found."
+              )
+        riskIntro =
+          para
+            ( (str . l)
+                ( NL "De geautomatiseerde regels bevatten ",
+                  EN "The automated rules contain "
+                )
+                <> (str . tshow . length) cycles'
+                <> (str . l)
+                  ( NL " groep(en) regels die elkaar via hun herstelacties kunnen blijven hertriggeren. Elke figuur toont één zo'n groep. Een pijl van regel A naar regel B betekent dat een herstelactie van A nieuwe overtredingen van B kan veroorzaken; het label noemt de relatie die daarbij geschreven wordt, met ",
+                    EN " group(s) of rules that can keep re-triggering each other through their repair actions. Each figure shows one such group. An arrow from rule A to rule B means that a repair action of A can create new violations of B; the label names the relation being written, with "
+                  )
+                <> code "+"
+                <> (str . l)
+                  ( NL " voor toevoegen en ",
+                    EN " for inserting and "
+                  )
+                <> code "-"
+                <> (str . l)
+                  ( NL " voor verwijderen of samenvoegen. De zware gestreepte pijl markeert de verwijdering die de cyclus niet-monotoon maakt; daar kan een oscillatie ontstaan.",
+                    EN " for deleting or merging. The heavy dashed arrow marks the deletion that makes the cycle non-monotone; that is where an oscillation can arise."
+                  )
+            )
+        perCycle :: OscillationCycle -> Picture -> Blocks
+        perCycle oc pict =
+          xDefBlck env fSpec pict
+            <> para
+              ( (str . l)
+                  ( NL "De betrokken regels zijn ",
+                    EN "The rules involved are "
+                  )
+                  <> ( mconcat
+                         . L.intersperse (str ", ")
+                         . map (code . label)
+                         . NE.toList
+                         . ocRules
+                     )
+                    oc
+                  <> str "."
+              )
 
     ----------------------------------------------------------------
     -- Spreadsheet reference (A3: use real inline code instead of

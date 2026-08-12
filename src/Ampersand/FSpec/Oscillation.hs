@@ -42,6 +42,9 @@
 --   @docs/ongoing-research/making-oscillation-risk-visible.md@.
 module Ampersand.FSpec.Oscillation
   ( warnOscillationRisk,
+    OscEdge (..),
+    OscillationCycle (..),
+    oscillationCycles,
     -- exposed for testing
     oscillationWarnings,
   )
@@ -98,6 +101,42 @@ data NegEdge = NegEdge
     neShared :: !Text
   }
 
+-- | One triggering edge inside a risky component, kept for the diagnosis
+--   diagram: rule 'oeFrom' performs a write on 'oeRelation' that can grow the
+--   violation set of rule 'oeTo'.
+data OscEdge = OscEdge
+  { oeFrom :: !Rule,
+    oeTo :: !Rule,
+    oeRelation :: !Text,
+    -- | the triggering write deletes or merges (a non-monotone operation)
+    oeNegative :: !Bool,
+    -- | negative /and/ not certified convergent by the Stage-2a certificate:
+    --   an edge on which the oscillation risk actually rests
+    oeRisky :: !Bool
+  }
+  deriving (Show)
+
+-- | A risky strongly-connected component with its internal triggering edges —
+--   the data behind one oscillation warning, exposed so the Diagnosis chapter
+--   can draw one diagram per component.
+data OscillationCycle = OscillationCycle
+  { ocRules :: !(NE.NonEmpty Rule),
+    ocEdges :: ![OscEdge],
+    -- | the relations on which opposing writes collide
+    ocCollisions :: ![Text]
+  }
+  deriving (Show)
+
+instance Eq OscEdge where
+  a == b =
+    (fullName (oeFrom a), fullName (oeTo a), oeRelation a, oeNegative a, oeRisky a)
+      == (fullName (oeFrom b), fullName (oeTo b), oeRelation b, oeNegative b, oeRisky b)
+
+instance Eq OscillationCycle where
+  a == b =
+    (map fullName (NE.toList (ocRules a)), ocEdges a, ocCollisions a)
+      == (map fullName (NE.toList (ocRules b)), ocEdges b, ocCollisions b)
+
 -- | Run the Stage-1 analysis and accumulate a 'Warning' for each detected risk
 --   in the 'Guarded' pipeline. Hooked into 'pCtx2Fspec'.
 warnOscillationRisk :: FSpec -> Guarded ()
@@ -108,11 +147,39 @@ warnOscillationRisk fSpec = addWarnings (oscillationWarnings fSpec) (pure ())
 oscillationWarnings :: FSpec -> [Warning]
 oscillationWarnings fSpec =
   [ mkOscillationWarning
-      (rrfps (NE.head comp))
-      (map fullName (NE.toList comp))
-    | comp <- riskyComponents
+      (rrfps (NE.head (ocRules oc)))
+      (map fullName (NE.toList (ocRules oc)))
+    | oc <- oscillationCycles fSpec
   ]
+
+-- | The risky components of an 'FSpec' as data: per component the rules, the
+--   internal signed edges, and the colliding relations. 'oscillationWarnings'
+--   and the Diagnosis-chapter diagram are both derived from this.
+oscillationCycles :: FSpec -> [OscillationCycle]
+oscillationCycles fSpec =
+  [ mkCycle comp | comp <- riskyComponents ]
   where
+    mkCycle :: NE.NonEmpty Rule -> OscillationCycle
+    mkCycle comp =
+      OscillationCycle
+        { ocRules = comp,
+          ocEdges =
+            L.nub
+              [ OscEdge
+                  { oeFrom = ruleAt i,
+                    oeTo = ruleAt j,
+                    oeRelation = shared,
+                    oeNegative = sgn == Neg,
+                    oeRisky = sgn == Neg && shared `Set.notMember` benign
+                  }
+                | (i, j, sgn, shared) <- edges,
+                  ruleAt i `elem` comp,
+                  ruleAt j `elem` comp
+              ],
+          ocCollisions = L.nub [neShared e | e <- negEdgesOf comp]
+        }
+      where
+        benign = benignRelsOf comp
     -- Automated rules, deterministically ordered so warnings are stable.
     rules :: [Rule]
     rules = L.sortOn fullName (execEngineRules fSpec)

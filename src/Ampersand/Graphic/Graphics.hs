@@ -7,6 +7,7 @@ import Ampersand.Basics hiding (Label)
 import qualified Ampersand.Basics.Name as Name
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Oscillation (OscEdge (..), OscillationCycle (..))
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiag2Dot
 import Ampersand.Graphic.ClassDiagram (ClassDiag (..))
@@ -25,6 +26,8 @@ import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Exception
 import RIO.Directory (createDirectoryIfMissing, makeAbsolute)
 import RIO.FilePath
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import qualified RIO.Text.Lazy as TL
@@ -41,10 +44,12 @@ data PictureTyp
   | PTLogicalDataModelOfPattern !Pattern -- logical data model of the pattern
   | PTObjectModelOfContext !Bool -- concepts and their relations, without attributes; entire script
   | PTTechnicalDataModel -- technical data model of the entire script
+  | PTOscillationCycle !Int !OscillationCycle -- one risky cycle of automated rules (1-based index keeps file names unique)
 
 data DotContent
   = ClassDiagram ClassDiag
   | ConceptualDg ConceptualStructure
+  | OscillationDg OscillationCycle
 
 data Picture = Picture
   { -- | the type of the picture
@@ -76,6 +81,7 @@ instance Named PictureTyp where -- for displaying a fatal error
     PTLogicalDataModelOfPattern pat -> mkName' $ "PTLogicalDM_" <> tshow (name pat)
     PTObjectModelOfContext grouped -> mkName' $ "PTObjectModel_" <> (if grouped then "grouped_by_patterns" else mempty)
     PTTechnicalDataModel -> mkName' "PTTechnicalDataModel"
+    PTOscillationCycle i _ -> mkName' $ "PTOscillationCycle" <> tshow i
     where
       mkName' :: Text -> Name
       mkName' x =
@@ -234,6 +240,21 @@ makePicture env fSpec pr =
               Dutch -> "Conceptueel diagram van regel " <> label rul,
           visualFocus = VRule
         }
+    PTOscillationCycle i oc ->
+      Picture
+        { pType = PTOscillationCycle i oc,
+          pictureFileName = toBaseFileName $ "OscillationCycle" <> tshow i,
+          forDataModelsOnlySwitch = False,
+          scale = scale',
+          dotContent = OscillationDg oc,
+          dotProgName = Dot,
+          caption =
+            let rels = T.intercalate ", " (ocCollisions oc)
+             in case outputLang' of
+                  English -> "Oscillation risk " <> tshow i <> ": opposing inserts and deletes on " <> rels
+                  Dutch -> "Oscillatierisico " <> tshow i <> ": elkaar tegenwerkende toevoegingen en verwijderingen op " <> rels,
+          visualFocus = VContext
+        }
   where
     outputLang' :: Lang
     outputLang' = outputLang env fSpec
@@ -253,6 +274,7 @@ makePicture env fSpec pr =
         PTLogicalDataModelOfPattern {} -> "1.2"
         PTObjectModelOfContext {} -> "1.2"
         PTTechnicalDataModel -> "1.2"
+        PTOscillationCycle {} -> "0.7"
     graphVizCmdForConceptualGraph =
       -- Dot gives bad results, but there seems no way to fiddle with the length of edges.
       Neato
@@ -338,6 +360,7 @@ conceptualStructure fSpec pr =
     PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTObjectModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTOscillationCycle {} -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
     isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, (s `elem` cpts && g `elem` cpts) || s `elem` cpts]
     gs = fsisa fSpec
@@ -400,6 +423,82 @@ mkDotGraph env pict =
   case dotContent pict of
     ClassDiagram x -> classdiagram2dot env x
     ConceptualDg x -> conceptual2Dot x
+    OscillationDg x -> oscillation2Dot x
+
+-- | Draw one risky cycle of automated rules as a signed triggering graph:
+--   rules are nodes; an edge A -> B says that a repair of A can create new
+--   violations of B, labelled with the relation written and the sign of the
+--   write (@+@ inserts, @-@ deletes/merges). The edges on which the risk rests
+--   (negative and not certified convergent) are drawn heavy and dashed, so the
+--   eye lands on the opposing write first; benign negative edges are dashed
+--   and gray, positive edges plain. The design rationale is documented in
+--   @docs/ongoing-research/visualizing-oscillation-cycles.md@.
+oscillation2Dot :: OscillationCycle -> DotGraph MyDotNode
+oscillation2Dot oc =
+  DotGraph
+    { strictGraph = False,
+      directedGraph = True,
+      graphID = Nothing,
+      graphStatements =
+        DotStmts
+          { attrStmts =
+              [ GraphAttrs
+                  [ BgColor [WC (X11Color White) Nothing],
+                    RankDir FromLeft
+                  ],
+                NodeAttrs
+                  [ Shape BoxShape,
+                    Style [SItem Rounded []]
+                  ]
+              ],
+            subGraphs = [],
+            nodeStmts =
+              [ DotNode
+                  { nodeID = toMyDotNode r,
+                    nodeAttributes = [Label . StrLabel . TL.fromStrict . shorten . label $ r]
+                  }
+                | r <- NE.toList (ocRules oc)
+              ],
+            edgeStmts = map edge groupedEdges
+          }
+    }
+  where
+    -- Rule names can be long (an ENFORCE statement generates a rule whose name
+    -- contains the whole term); an over-long node label wrecks the layout.
+    shorten :: Text -> Text
+    shorten t
+      | T.length t <= 60 = t
+      | otherwise = T.take 59 t <> "…"
+    -- All writes between the same pair of rules merge into one arrow with a
+    -- multi-line label, so a dense component stays as readable as possible.
+    groupedEdges :: [NE.NonEmpty OscEdge]
+    groupedEdges =
+      mapMaybe NE.nonEmpty
+        . L.groupBy sameNodes
+        . L.sortOn key
+        $ ocEdges oc
+      where
+        key e = (fullName (oeFrom e), fullName (oeTo e))
+        sameNodes a b = key a == key b
+    edge :: NE.NonEmpty OscEdge -> DotEdge MyDotNode
+    edge es =
+      DotEdge
+        { fromNode = toMyDotNode (oeFrom (NE.head es)),
+          toNode = toMyDotNode (oeTo (NE.head es)),
+          edgeAttributes =
+            ( Label
+                . StrLabel
+                . TL.fromStrict
+                . T.intercalate "\n"
+                $ [oeRelation e <> (if oeNegative e then " -" else " +") | e <- NE.toList es]
+            )
+              : styleOf
+        }
+      where
+        styleOf
+          | any oeRisky es = [Style [SItem Dashed []], PenWidth 2.5]
+          | any oeNegative es = [Style [SItem Dashed []], Color [WC (X11Color Gray) Nothing]]
+          | otherwise = []
 
 class ReferableFromPandoc a where
   imagePathRelativeToDirOutput ::
