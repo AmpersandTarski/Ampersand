@@ -538,7 +538,13 @@ data IncrementalBenchOpts = IncrementalBenchOpts
     xIncBenchCsv :: !(Maybe FilePath),
     -- | Run the delta-SQL referee harness against MariaDB instead of the
     --   in-memory benchmark (issue #1684)
-    xIncBenchSql :: !Bool
+    xIncBenchSql :: !Bool,
+    -- | Harness transactions replay pairs from the real population instead
+    --   of synthesizing atoms; works on any table layout
+    xIncBenchReplay :: !Bool,
+    -- | Referee cadence in the SQL harness: check the affected conjuncts
+    --   every k-th transaction (the final full check always runs)
+    xIncBenchRefereeEvery :: !Int
   }
   deriving (Show)
 
@@ -550,7 +556,9 @@ instance HasOptions IncrementalBenchOpts where
            ("--seed", tshow (xIncBenchSeed opts)),
            ("--verify", tshow (xIncBenchVerify opts)),
            ("--csv", maybe "<not set>" tshow (xIncBenchCsv opts)),
-           ("--sql", tshow (xIncBenchSql opts))
+           ("--sql", tshow (xIncBenchSql opts)),
+           ("--replay", tshow (xIncBenchReplay opts)),
+           ("--referee-every", tshow (xIncBenchRefereeEvery opts))
          ]
 
 class HasIncrementalBenchOpts env where
@@ -567,6 +575,10 @@ class HasIncrementalBenchOpts env where
   incBenchCsvL = incrementalBenchOptsL . lens xIncBenchCsv (\x y -> x {xIncBenchCsv = y})
   incBenchSqlL :: Lens' env Bool
   incBenchSqlL = incrementalBenchOptsL . lens xIncBenchSql (\x y -> x {xIncBenchSql = y})
+  incBenchReplayL :: Lens' env Bool
+  incBenchReplayL = incrementalBenchOptsL . lens xIncBenchReplay (\x y -> x {xIncBenchReplay = y})
+  incBenchRefereeEveryL :: Lens' env Int
+  incBenchRefereeEveryL = incrementalBenchOptsL . lens xIncBenchRefereeEvery (\x y -> x {xIncBenchRefereeEvery = y})
 
 instance HasIncrementalBenchOpts IncrementalBenchOpts where
   incrementalBenchOptsL = id

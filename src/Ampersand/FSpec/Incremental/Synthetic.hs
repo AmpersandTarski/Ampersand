@@ -10,6 +10,7 @@ module Ampersand.FSpec.Incremental.Synthetic
     benchAtom,
     synthesize,
     pickTx,
+    pickReplayTx,
   )
 where
 
@@ -75,6 +76,37 @@ synthesize ci rels n rng0 = go rels rng0 []
               (j, rng2) = randBelow n rng1
               p = (benchAtom ci (source r) i, benchAtom ci (target r) j)
            in drawPairs r k rng2 (Set.insert p acc)
+
+-- | One replay transaction: delete a random existing pair, or re-insert a
+--   pair deleted earlier in the stream. Draws only values that occur in the
+--   real population, so it is type-safe on any model and mirrors the
+--   realistic mutation profile. Returns the updated deleted-pool.
+pickReplayTx ::
+  Map Relation (Set (AAtomValue, AAtomValue)) ->
+  [(Relation, (AAtomValue, AAtomValue))] -> -- pool of deleted pairs
+  [Relation] ->
+  Word64 ->
+  (Maybe (Relation, (AAtomValue, AAtomValue), Int), [(Relation, (AAtomValue, AAtomValue))], Word64)
+pickReplayTx shadow deletedPool rels rng0 =
+  let (coin, rng1) = randBelow 2 rng0
+      reinsert = coin == 1 && not (null deletedPool)
+   in if reinsert
+        then
+          let (i, rng2) = randBelow (length deletedPool) rng1
+              (r, p) = nth i deletedPool
+              pool' = take i deletedPool <> drop (i + 1) deletedPool
+           in (Just (r, p, 1), pool', rng2)
+        else
+          let nonEmpty = [r | r <- rels, not (Set.null (fromMaybe Set.empty (Map.lookup r shadow)))]
+           in if null nonEmpty
+                then (Nothing, deletedPool, rng1)
+                else
+                  let (ri, rng2) = randBelow (length nonEmpty) rng1
+                      r = nth ri nonEmpty
+                      existing = fromMaybe Set.empty (Map.lookup r shadow)
+                      (pi', rng3) = randBelow (Set.size existing) rng2
+                      p = nth pi' (Set.toAscList existing)
+                   in (Just (r, p, -1), (r, p) : deletedPool, rng3)
 
 -- | One random single-pair transaction against a shadow of the current pairs:
 --   insert a fresh pair or delete an existing one in a random relation.

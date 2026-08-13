@@ -71,6 +71,12 @@ database-werk; zonder `--sql-bin-tables` stopt het na de telling vanzelf:
 residu-antijoins liggen het meest voor de hand; hun S-lemma's zijn al bewezen)
 en de census herhalen.
 
+*Uitslag (2026-08-13):* het model compileert met `--build-recipe Prototype`
+(de SIAM-koppeling gebruikt PrototypeContext-relaties) en telt **626
+conjuncts, waarvan 611 (97,6%) met delta-queries**; 15 vallen buiten de
+ondersteunde klasse. Het beslispunt is gehaald: geen D-regel-uitbreiding
+nodig vóór de praktijktest.
+
 **Stap 1 — Harnas-uitbreidingen** (in de compiler-worktree, zonder FC5):
 replay-modus (`--replay`: transacties gesampled uit de scriptpopulatie; de
 schaalparameter wordt sample-grootte), affected-only referee met instelbare

@@ -56,11 +56,13 @@ incrementalBench fSpec = do
   verify <- view incBenchVerifyL
   mCsv <- view incBenchCsvL
   sqlMode <- view incBenchSqlL
+  replay <- view incBenchReplayL
+  refereeEvery <- view incBenchRefereeEveryL
   let scales = parseScales scalesTxt
   when sqlMode $ do
-    results <- forM scales $ \n -> do
-      logInfo . display $ "--- delta-sql harness at scale " <> tshow n <> " pairs per relation ---"
-      runDeltaSqlHarness n txCount seed fSpec
+    results <- forM (if replay then take 1 scales else scales) $ \n -> do
+      logInfo . display $ "--- delta-sql harness at scale " <> tshow n <> (if replay then " (replay: scale ignored)" else " pairs per relation") <> " ---"
+      runDeltaSqlHarness replay n txCount refereeEvery seed fSpec
     if and results
       then logInfo "delta-sql harness: all scales green."
       else do
