@@ -108,7 +108,7 @@ carry a documented verdict.
 Each phase has a deliverable and an exit criterion; no phase starts before the
 previous one's exit criterion is met and its insights are folded back into this plan.
 
-### Phase 1 — Delta calculus for Ampersand terms (design)
+### Phase 1 — Delta calculus for Ampersand terms (design) — DONE 2026-08-13
 
 Write the delta rules for every `Expression` constructor: for a change
 `Δr` to relation `r`, the term `Δ(e)` that computes the change of `e`, following
@@ -121,7 +121,11 @@ Decide the complement/residual discipline: the normal form every conjunct must r
 examples from the regression suite. *Exit:* the rules cover every constructor or
 name its explicit fallback.
 
-### Phase 2 — Oracle validation in pure Haskell
+*Status:* [delta-calculus.md](delta-calculus.md) carries the desugaring table,
+the delta rules (D1-D7) and the proof obligations (S/Z/B series); every
+constructor has a rule or the explicit D7 fallback.
+
+### Phase 2 — Oracle validation in pure Haskell — DONE 2026-08-13
 
 Build a small in-memory incremental evaluator next to `pairsInExpr`/`allViolations`
 (the compiler's existing full evaluator) and test the delta rules against it:
@@ -131,6 +135,15 @@ This validates the theory-to-Ampersand mapping before any SQL or PHP exists, cat
 weight/`distinct` bookkeeping errors early, and doubles as executable documentation.
 *Deliverable:* the evaluator plus a property-test suite. *Exit:* green on the full
 regression population set, including flipped/UNI/INJ storage variants.
+
+*Status:* implemented as `Ampersand.FSpec.Incremental`(+`.ZSet`) with the CLI
+command `ampersand incremental-bench` (OK-6). The `--verify` oracle holds on
+ten regression models (Kleene, cartesian products, subtyping, complements,
+script populations) with 60+ verified transactions each; the oracle caught and
+killed two real bugs on the way (OK-7, consideration 2). The deliverable
+differs from the plan in form: verification runs as a command-driven
+transaction stream against the oracle rather than a QuickCheck suite inside
+`stack test` — turning it into a property-test suite remains open (Phase 0.1).
 
 ### Phase 3 — Delta SQL generation
 

@@ -99,6 +99,63 @@ gains delta tables; the reinstall flow (which executes `database.sql` verbatim)
 carries both along. The framework's commit path maintains the cache from delta
 queries instead of replacing it, also inside each ExecEngine iteration.
 
+**The compiler carries an in-memory incremental evaluator, exposed as the command `ampersand incremental-bench`, with per-transaction oracle verification.**
+*OK-6 · valid · 2026-08-13 · origin: user decision 2026-08-13, issue #1682*
+
+The modules `Ampersand.FSpec.Incremental` and `Ampersand.FSpec.Incremental.ZSet`
+implement the delta calculus of [delta-calculus.md](delta-calculus.md) as a
+circuit interpreter; the command benchmarks it against full re-evaluation of
+the affected conjuncts on synthetic populations of chosen scales, and
+`--verify` holds every transaction's maintained violation sets against
+`fullContents`.
+
+*Considerations:*
+
+1. The goal is measurable evidence — for issue #1682 and the article — that
+   per-transaction cost stays flat where full re-evaluation grows with the
+   database, before any SQL generation or runtime work builds on the calculus.
+2. The evaluator doubles as Phase 2's oracle validation: the `--verify` runs on
+   the regression models are the observational-equality test the plan demanded.
+3. A benchmark inside the prototype stack (PHP + MariaDB) was considered and
+   rejected for this phase: it measures the framework and the DBMS as much as
+   the calculus, and it needs the Phase 3/4 artifacts that this phase must
+   justify first.
+
+*Impact on the specification:* none; models are unchanged.
+
+*Impact in production:* none yet — the command is measurement-only and the
+generated SQL is untouched.
+
+**A circuit node carries a set as output; weighted state stays local to the nodes that need it, and every construct without a proven delta rule runs as a recompute node.**
+*OK-7 · valid · 2026-08-13 · origin: [delta-calculus.md](delta-calculus.md), oracle runs of 2026-08-13*
+
+Each node's output is a Z-set with all weights 1; pre-`distinct` integrals,
+composition's flipped index, and the product projections live inside the node
+kinds that use them. Residuals, diamond, relative addition, `EBin`,
+non-collapsible complements, and Kleene closures evaluate as recompute
+(fallback) nodes over the current population.
+
+*Considerations:*
+
+1. The goal is an engine that is correct on every model from day one and
+   incremental on the common violation shapes; coverage grows per proven rule
+   (OK-4 gates this), and `circuitFallbacks` reports the coverage per conjunct.
+2. The oracle caught two real errors during construction, which the register
+   records as the argument for keeping the oracle in every phase: a
+   left/right-occurrence merge that silently dropped concept-population
+   weights, and a De Morgan push that assumed untyped complements — in
+   Ampersand's typed algebra, double-negation elimination is valid only when
+   the signatures coincide, so the push carries the target signature and the
+   difference absorption carries a signature guard (`signLeq`).
+3. A single global distinct-consolidation pass (the paper's step 2) was
+   considered and postponed: per-node distinct state is simpler to prove and
+   to test, and the measurements show the target behaviour already.
+
+*Impact on the specification:* none.
+
+*Impact in production:* none yet; the node inventory is the blueprint for the
+delta-SQL generation of Phase 3.
+
 ## Assurance and publication
 
 **Correctness of the delta calculus rests on our own Isabelle/HOL proofs in `proofs/`, with the Lean formalization of DBSP as inspiration.**
