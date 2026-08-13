@@ -242,76 +242,74 @@ signLeq :: Signature -> Signature -> Bool
 signLeq s1 s2 = source s1 `cptLeq` source s2 && target s1 `cptLeq` target s2
 
 -- | Build an engine (state still empty; call 'engineInit').
-mkEngine :: ContextInfo -> [A_Concept] -> [(Text, Expression)] -> IncEngine
-mkEngine ci allConcepts terms =
+--
+--   The wiring — which declared relations feed a term's relations, which
+--   concepts a relation's atoms occur in, and which concepts an explicit
+--   atom population reaches up the ISA cone — is fixed here, from the
+--   __declared__ relations and concepts. Deriving it from the initially
+--   populated relations instead (as an earlier version did) silently
+--   dropped every transaction on a relation or concept that started empty;
+--   the engine oracle property in "Ampersand.Test.Incremental.Properties"
+--   pins this. The transaction domain is therefore: any relation in
+--   @allRels@, any concept in @allConcepts@.
+mkEngine :: ContextInfo -> [A_Concept] -> [Relation] -> [(Text, Expression)] -> IncEngine
+mkEngine ci allConcepts allRels terms =
   IncEngine
     { ieCI = ci,
-      ieCircuits = [(nm, term, wireFeeders (compileTerm ci term)) | (nm, term) <- terms],
+      ieCircuits = [(nm, term, resolveFeeders (compileTerm ci term)) | (nm, term) <- terms],
       ieRelPairs = Map.empty,
       ieCptAtoms = Map.empty,
       ieCptOcc = Map.empty,
       ieCptSet = Map.empty,
-      ieFeeders = Map.empty, -- filled per transaction domain below
-      ieCptFeed = Map.empty,
-      ieCptUp = Map.empty,
+      ieFeeders =
+        Map.fromList
+          [ (r, feedersOf r)
+            | r <- L.nub (termRels <> decls)
+          ],
+      ieCptFeed =
+        Map.fromList
+          [ ( d,
+              ( [c | c <- plains, c /= ONE, source d `elem` (c : smallerConcepts c)],
+                [c | c <- plains, c /= ONE, target d `elem` (c : smallerConcepts c)]
+              )
+            )
+            | d <- decls
+          ],
+      ieCptUp =
+        Map.fromList
+          [ (c, [c' | c' <- plains, c' /= ONE, c `elem` (c' : smallerConcepts c')])
+            | c <- plains,
+              c /= ONE
+          ],
       ieAllCpts = plains
     }
   where
     plains = L.nub (filter isPlain allConcepts <> [ONE])
-    wireFeeders = id -- feeders are resolved against the populated relations at init
-
--- | Initialize: register the populated relations (fixing the feeder maps) and
---   run the initial population through the circuits as one big first
---   transaction — the backfill is the same code path as any other step.
-engineInit :: IncEngine -> [Population] -> IncEngine
-engineInit eng pops = fst (applyTx engWired tx0)
-  where
-    popRels = L.nub [popdcl p | p@ARelPopu {} <- pops]
+    decls = L.nub allRels
     termRels =
-      Set.toList . Set.unions $ [bindedRelationsIn term | (_, term, _) <- ieCircuits eng]
-    engWired =
-      eng
-        { ieFeeders =
-            Map.fromList
-              [ ( r,
-                  [ d | d <- popRels, name d == name r, source d `elem` (source r : smallerConcepts (source r)), target d `elem` (target r : smallerConcepts (target r))
-                  ]
-                )
-                | r <- L.nub (termRels <> popRels)
-              ],
-          ieCptFeed =
-            Map.fromList
-              [ ( d,
-                  ( [c | c <- ieAllCpts eng, c /= ONE, source d `elem` (c : smallerConcepts c)],
-                    [c | c <- ieAllCpts eng, c /= ONE, target d `elem` (c : smallerConcepts c)]
-                  )
-                )
-                | d <- popRels
-              ],
-          ieCptUp =
-            Map.fromList
-              [ (c, [c' | c' <- ieAllCpts eng, c' /= ONE, c `elem` (c' : smallerConcepts c')])
-                | c <- L.nub [popcpt p | p@ACptPopu {} <- pops]
-              ],
-          ieCircuits =
-            [ (nm, term, resolveFeeders circ) | (nm, term, circ) <- ieCircuits eng
-            ]
-        }
+      Set.toList . Set.unions $ [bindedRelationsIn term | (_, term) <- terms]
+    feedersOf r =
+      [ d | d <- decls, name d == name r, source d `elem` (source r : smallerConcepts (source r)), target d `elem` (target r : smallerConcepts (target r))
+      ]
+    resolveFeeders c = c {cKind = go (cKind c)}
       where
-        resolveFeeders c = c {cKind = go (cKind c)}
-          where
-            go k = case k of
-              KRel r _ z ->
-                KRel r [d | d <- popRels, name d == name r, source d `elem` (source r : smallerConcepts (source r)), target d `elem` (target r : smallerConcepts (target r))] z
-              KFlp a -> KFlp (resolveFeeders a)
-              KUni a b z -> KUni (resolveFeeders a) (resolveFeeders b) z
-              KDif a b z -> KDif (resolveFeeders a) (resolveFeeders b) z
-              KIsc a b -> KIsc (resolveFeeders a) (resolveFeeders b)
-              KCps a b z f -> KCps (resolveFeeders a) (resolveFeeders b) z f
-              KPrd a b p q s t -> KPrd (resolveFeeders a) (resolveFeeders b) p q s t
-              KKl0 a cpt -> KKl0 (resolveFeeders a) cpt
-              KKl1 a -> KKl1 (resolveFeeders a)
-              _ -> k
+        go k = case k of
+          KRel r _ z -> KRel r (feedersOf r) z
+          KFlp a -> KFlp (resolveFeeders a)
+          KUni a b z -> KUni (resolveFeeders a) (resolveFeeders b) z
+          KDif a b z -> KDif (resolveFeeders a) (resolveFeeders b) z
+          KIsc a b -> KIsc (resolveFeeders a) (resolveFeeders b)
+          KCps a b z f -> KCps (resolveFeeders a) (resolveFeeders b) z f
+          KPrd a b p q s t -> KPrd (resolveFeeders a) (resolveFeeders b) p q s t
+          KKl0 a cpt -> KKl0 (resolveFeeders a) cpt
+          KKl1 a -> KKl1 (resolveFeeders a)
+          _ -> k
+
+-- | Initialize: run the initial population through the circuits as one big
+--   first transaction — the backfill is the same code path as any other step.
+engineInit :: IncEngine -> [Population] -> IncEngine
+engineInit eng pops = fst (applyTx eng tx0)
+  where
     -- populations are merged set-wise per relation/concept first (mirroring
     -- initialpopsDefinedInScript), so tx0 carries weight 1 per pair and the
     -- raw-pair sets and the KRel integrals stay in lockstep.
