@@ -14,6 +14,9 @@ Contents:
   each choice with its considerations and rejected alternatives.
 - [delta-calculus.md](delta-calculus.md) — Phase 1: the desugaring and delta
   rules the implementation and the Isabelle proofs follow.
+- [correctness-argument.md](correctness-argument.md) — how the Isabelle lemmas
+  combine into the correctness claim, the gaps in that argument, and the work
+  those gaps define (also comment 5 on issue #1682).
 - [bench/](bench/) — the benchmark model and measurement results of
   `ampersand incremental-bench`.
 - [dbsp-paper-study.md](dbsp-paper-study.md) — study note on the DBSP paper:
