@@ -239,6 +239,21 @@ ship with the scripts and data that produced them; proofs are versioned in
 DBSP-style incrementalization of a relation-algebra rule engine, with a
 machine-checked delta calculus and measured order-of-magnitude gains.
 
+## When the referee can go
+
+`fullContents` carries three roles; each has its own dismantling criterion.
+As a runtime component (the fallback nodes) it disappears construct by
+construct as proven delta rules replace fallbacks — residuals first (S1-S4
+proven, implementation work remains), then Kleene closures (Phase 5,
+IncrementalDelete.thy), then EBin and composite concepts; criterion:
+`circuitFallbacks` reports 0 on the target models. As load-bearing evidence it
+retires when Circuit.thy (the whole-circuit induction) and Phase 0.1 (the
+lemmas as QuickCheck properties over the Haskell functions) land; `--verify`
+then demotes to a diagnostic switch, the status `ampersand validate` has
+today. As executable specification it stays: the compiler needs it for
+compile-time checks, and Phase 3 gives it a new referee role — holding the
+generated delta SQL against the proven engine.
+
 ## Risks and open questions
 
 - **Weights vs. sets in SQL.** Z-set weights (witness counts) must live in the
