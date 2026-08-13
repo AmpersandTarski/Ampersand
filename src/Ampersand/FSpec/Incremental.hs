@@ -249,8 +249,8 @@ mkEngine ci allConcepts terms =
       ieCircuits = [(nm, term, wireFeeders (compileTerm ci term)) | (nm, term) <- terms],
       ieRelPairs = Map.empty,
       ieCptAtoms = Map.empty,
-      ieCptOcc = oneOcc,
-      ieCptSet = oneOcc,
+      ieCptOcc = Map.empty,
+      ieCptSet = Map.empty,
       ieFeeders = Map.empty, -- filled per transaction domain below
       ieCptFeed = Map.empty,
       ieCptUp = Map.empty,
@@ -258,7 +258,6 @@ mkEngine ci allConcepts terms =
     }
   where
     plains = L.nub (filter isPlain allConcepts <> [ONE])
-    oneOcc = Map.singleton ONE (Map.singleton AtomValueOfONE 1)
     wireFeeders = id -- feeders are resolved against the populated relations at init
 
 -- | Initialize: register the populated relations (fixing the feeder maps) and
@@ -316,6 +315,11 @@ engineInit eng pops = fst (applyTx engWired tx0)
     -- populations are merged set-wise per relation/concept first (mirroring
     -- initialpopsDefinedInScript), so tx0 carries weight 1 per pair and the
     -- raw-pair sets and the KRel integrals stay in lockstep.
+    -- ONE's singleton population travels through tx0 like any other delta:
+    -- pre-seeding it in 'mkEngine' instead would leave the base state of
+    -- I[ONE]/V[..*ONE] circuits out of sync with their semantics (their
+    -- constant content would never be emitted), which is exactly the base
+    -- case of the circuit invariant in proofs/incremental/Circuit.thy.
     tx0 =
       TxDelta
         { txRel =
@@ -329,9 +333,11 @@ engineInit eng pops = fst (applyTx engWired tx0)
             Map.map (Map.fromSet (const 1))
               $ Map.fromListWith
                 Set.union
-                [ (popcpt p, Set.fromList (popas p))
-                  | p@ACptPopu {} <- pops
-                ]
+                ( (ONE, Set.singleton AtomValueOfONE)
+                    : [ (popcpt p, Set.fromList (popas p))
+                        | p@ACptPopu {} <- pops
+                      ]
+                )
         }
 
 -- | The current population, in the shape 'fullContents' consumes. O(#relations).
