@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Incremental evaluation of rule-violation terms (DBSP-style, arXiv
@@ -182,7 +181,7 @@ compileTerm ci = build . simplify
           conservative = not (all isPlain (Set.toList (concs e)))
        in mk e (KFallback e (bindedRelationsIn e) cpts conservative)
     mk :: Expression -> Kind -> Circuit
-    mk e = Circuit relEmpty e
+    mk = Circuit relEmpty
     relEmpty = Map.empty
 
 -- | Push complements inward and rewrite derived operators, mirroring
@@ -562,12 +561,11 @@ step env (Circuit out expr kind) = case kind of
 
 -- | Closure via the same 'transClosureMap' the oracle uses, on the carried sets.
 closureOf :: ZR -> ZR
-closureOf z =
+closureOf =
   Map.map (Map.fromSet (const 1))
     . transClosureMap
     . Map.filter (not . Set.null)
     . Map.map (Map.keysSet . Map.filter (> 0))
-    $ z
 
 relFromAtomPairs :: AAtomPairs -> ZR
 relFromAtomPairs ps = relFromPairs [((apLeft p, apRight p), 1) | p <- Set.toList ps]
@@ -594,16 +592,15 @@ verifyDetails eng =
     | (nm, term, c) <- ieCircuits eng,
       relToAtomPairs (cOut c) /= fullContents (ieCI eng) pops term,
       let (e, i, o, missing, extra) =
-            case deepestMismatch eng c of
-              Just d -> d
-              Nothing ->
-                -- top-level term and circuit term differ semantically
-                ( term,
-                  Set.size (relToAtomPairs (cOut c)),
-                  Set.size (fullContents (ieCI eng) pops term),
-                  [],
-                  []
-                )
+            fromMaybe
+              -- top-level term and circuit term differ semantically
+              ( term,
+                Set.size (relToAtomPairs (cOut c)),
+                Set.size (fullContents (ieCI eng) pops term),
+                [],
+                []
+              )
+              (deepestMismatch eng c)
   ]
   where
     pops = popsView eng

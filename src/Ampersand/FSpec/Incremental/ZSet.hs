@@ -122,7 +122,7 @@ relFlip m =
 
 -- | Zero-crossing on binary Z-sets. (Obligation Z5.)
 relH :: (Ord a) => ZRel a -> ZRel a -> ZRel a
-relH integral delta =
+relH integral =
   Map.mapMaybeWithKey
     ( \x row ->
         let irow = Map.findWithDefault Map.empty x integral
@@ -136,7 +136,6 @@ relH integral delta =
                 ]
          in if Map.null out then Nothing else Just out
     )
-    delta
 
 relWeight :: (Ord a) => ZRel a -> a -> a -> Int
 relWeight m x y = maybe 0 (Map.findWithDefault 0 y) (Map.lookup x m)
@@ -185,7 +184,7 @@ composeDeltaOld deltaA oldB =
 --   computed against the incrementally maintained /flipped/ copy of a's output
 --   (indexed by the middle atom). Work: O(|Δb| × matching rows).
 composeFlipDelta :: (Ord a) => ZRel a -> ZRel a -> ZRel a
-composeFlipDelta flipA deltaB =
+composeFlipDelta flipA =
   Map.foldlWithKey'
     ( \acc m ys -> case Map.lookup m flipA of
         Nothing -> acc
@@ -195,7 +194,6 @@ composeFlipDelta flipA deltaB =
             (Map.mapMaybe (\wx -> let r = Map.mapMaybe (nonZero . (* wx)) ys in if Map.null r then Nothing else Just r) xs)
     )
     Map.empty
-    deltaB
 
 -- | @Δa ⊙ b@ — pointwise product of a delta against a stored operand
 --   (obligation Z2). Work: O(|Δa| × log |b|).

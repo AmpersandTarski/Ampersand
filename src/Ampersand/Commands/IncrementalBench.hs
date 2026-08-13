@@ -162,10 +162,11 @@ parseScales t =
 
 -- deterministic splitmix64
 mix :: Word64 -> Word64
-mix s = let z0 = s + 0x9E3779B97F4A7C15
-            z1 = (z0 `xor` (z0 `shiftR` 30)) * 0xBF58476D1CE4E5B9
-            z2 = (z1 `xor` (z1 `shiftR` 27)) * 0x94D049BB133111EB
-         in z2 `xor` (z2 `shiftR` 31)
+mix s =
+  let z0 = s + 0x9E3779B97F4A7C15
+      z1 = (z0 `xor` (z0 `shiftR` 30)) * 0xBF58476D1CE4E5B9
+      z2 = (z1 `xor` (z1 `shiftR` 27)) * 0x94D049BB133111EB
+   in z2 `xor` (z2 `shiftR` 31)
 
 randBelow :: Int -> Word64 -> (Int, Word64)
 randBelow n rng =
