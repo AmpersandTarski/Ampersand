@@ -164,11 +164,14 @@ remaining cost sits.
 
 ## To investigate before Phase 1
 
-- **Runtime ground truth** (in progress → [prototype-runtime-map.md](prototype-runtime-map.md)):
-  how the PHP framework (AmpersandTarski/prototype) executes transactions and conjunct
-  queries today, whether any conjunct caching exists, where a delta-table write hook
-  and violation-cache maintenance would fit, and which other consumers (RAP) share
-  the generics contract.
+- **Runtime ground truth** — done, see [prototype-runtime-map.md](prototype-runtime-map.md).
+  Key findings: the framework already materializes violations per conjunct in
+  `__conj_violation_cache__`, refreshed wholesale at each commit; signal rules read
+  entirely from that cache. Delta maintenance therefore changes the refresh strategy
+  of an existing store (OK-3). The natural delta hook is `MysqlDB::addLink/deleteLink`
+  (bulk operations like `deleteAllLinks` need care); `conjuncts.json` tolerates added
+  optional fields; reinstall executes `database.sql` verbatim, so extra tables ride
+  along; RAP uses this same framework, so it inherits the improvement.
 - **Baseline measurement.** Profile a realistic prototype (e.g. a `testing/` model
   with population, or an RVB-class model) to verify the premise that conjunct
   violation queries dominate transaction cost, and to fix the yardstick Phase 4
@@ -179,9 +182,35 @@ remaining cost sits.
   install is the obvious route; confirm it fits the framework's reinstall mechanism.
   The Feldera episode names backfill as the engineering Achilles heel — for us it is
   bounded because the full queries already exist.
-- **Inspect the Lean formalization** (tchajed/database-stream-processing-theory)
-  before leaning on the "machine-checked" status of DBSP's theorems; note which
-  theorems we actually depend on (Prop 3.2, Thm 3.4, Prop 4.7).
+- **Scope the Isabelle/HOL proof base** (decision OK-4: we redo the correctness
+  proofs ourselves, with the Lean formalization as inspiration): determine how
+  `proofs/spike/Ampersand_RA.thy` extends to a Z-set (weighted) semantics of the
+  heterogeneous operators, which DBSP theorems we re-prove versus specialize
+  (Prop 3.2, Thm 3.4, Prop 4.7), and how the Lean development
+  (tchajed/database-stream-processing-theory) maps onto that plan lemma by lemma.
+
+## Proof track — Isabelle/HOL (parallel to Phases 1–2)
+
+Decision OK-4: every delta rule of Phase 1 carries its own machine-checked proof in
+Isabelle/HOL, or an explicit flag that it does not yet — and an unproved rule falls
+back to full evaluation. The proofs extend the existing shallow embedding of
+Ampersand's heterogeneous relation algebra (`proofs/spike/Ampersand_RA.thy`) with a
+Z-set semantics (weighted pairs over typed domains); the Kleene theories in
+`proofs/kleene/` — including `IncrementalDelete.thy`, which already proves
+incremental-deletion facts for transitive closure — feed Phase 5 directly. The Lean
+development by Chajed serves as a lemma-by-lemma roadmap, not as trust base.
+*Deliverable:* one theory file per Phase-1 rule group, running headless via the
+`proofs/` toolchain. *Exit:* the Phase-1 rule table cites a checked lemma per rule.
+
+## Paper track (continuous)
+
+Decision OK-5: the work is documented for publication. Decisions go into
+[DesignChoices.md](DesignChoices.md) at decision time, with the rejected
+alternatives; every phase ends with a written record in this folder; measurements
+ship with the scripts and data that produced them; proofs are versioned in
+`proofs/`. The article is assembled from this material — candidate storyline:
+DBSP-style incrementalization of a relation-algebra rule engine, with a
+machine-checked delta calculus and measured order-of-magnitude gains.
 
 ## Risks and open questions
 
@@ -194,10 +223,10 @@ remaining cost sits.
   today, but say so explicitly).
 - **Schema migration.** Extra tables and a count column change `database.sql`; the
   model-hash reinstall mechanism covers prototypes, but document it.
-- **Scope of proof.** The DBSP theorems are machine-checked in Lean
-  (tchajed/database-stream-processing-theory — inspect before leaning on it); our own
-  rewrite must earn trust through the Phase 2 oracle tests, and possibly later through
-  the proofs/ toolchain in this repo.
+- **Scope of proof.** The delta rules earn trust twice: through the Phase 2 oracle
+  tests and through the Isabelle/HOL proof track (OK-4). The open modelling question
+  is the Z-set semantics of the heterogeneous operators in Isabelle; until a rule's
+  proof lands, the compiler treats it as unproved (full-evaluation fallback).
 
 ## Working agreements
 
