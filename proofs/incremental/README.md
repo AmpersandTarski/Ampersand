@@ -11,7 +11,7 @@ Build:
 ```
 
 The build reuses the prebuilt HOL heap (see `proofs/spike/install.sh`) and takes
-in the order of a minute.
+a few seconds.
 
 ## Modelling
 
@@ -33,7 +33,7 @@ in the order of a minute.
 ## Obligation → lemma
 
 | Obligation | Lemma | Theory |
-|---|---|---|
+| --- | --- | --- |
 | S1 left residual `l/r = -(-l ; r~)` | `S1_lrs_as_antijoin` (+ `S1_quantifier_domain`) | `Desugar.thy` |
 | S2 right residual `l\r = -(l~ ; -r)` | `S2_rrs_as_antijoin` (+ `S2_quantifier_domain`) | `Desugar.thy` |
 | S3 diamond as conjunction of both directions | `S3_dia_as_conjunction` | `Desugar.thy` |
@@ -77,3 +77,19 @@ Notes per obligation:
   oracle check `ampersand incremental-bench --verify`.
 - The **`EEqu` finding** of delta-calculus.md (fullContents computes the union
   of the two inclusions): deliberately mirrored, not proved "correct".
+
+## Working notes for future proof sessions
+
+Two Isabelle gotchas cost bisection time in this session; the proofs are
+written the way they are to avoid them:
+
+- `blast`/`meson`/`metis`/`force` can diverge without failing in batch builds
+  on two goal shapes seen here: `finite`-goals fed subset lemmas (the subset
+  unfolds into membership logic), and search over a conditional witness lemma
+  that is not yet instantiated. The theories therefore use explicit
+  `rule finite_subset[OF …]` chains and instantiate witnesses first
+  (`zcomp_nonzero_witness[OF nz]`).
+- `fix p` followed by `obtain x z where "p = (x, z)"` before any typed use of
+  `p` gives `x`, `z` fresh rigid types, which surfaces later as a type-
+  unification error at an unrelated `have`. The theories state the `show`
+  first and then open `proof (cases p)` / `case (Pair x z)`.
