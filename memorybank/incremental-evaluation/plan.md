@@ -238,6 +238,9 @@ with adequacy premises, typed complement). The obligation→lemma table stands i
 `proofs/incremental/README.md`. Not yet proved: the structural-induction glue
 (deep embedding of the core language) — the per-transaction oracle covers it
 empirically; D7 recompute nodes need no proof (they run the specification).
+The remaining proof work (Circuit.thy, the QuickCheck code-to-model bridge of
+Phase 0.1, and the population-mirror proof) is specified execution-ready in
+issue [#1683](https://github.com/AmpersandTarski/Ampersand/issues/1683).
 
 ## Paper track (continuous)
 
