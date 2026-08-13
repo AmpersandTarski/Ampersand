@@ -162,6 +162,27 @@ says they matter.
 *Deliverable/exit:* per construct, decided when Phase 4's numbers show where the
 remaining cost sits.
 
+## To investigate before Phase 1
+
+- **Runtime ground truth** (in progress → [prototype-runtime-map.md](prototype-runtime-map.md)):
+  how the PHP framework (AmpersandTarski/prototype) executes transactions and conjunct
+  queries today, whether any conjunct caching exists, where a delta-table write hook
+  and violation-cache maintenance would fit, and which other consumers (RAP) share
+  the generics contract.
+- **Baseline measurement.** Profile a realistic prototype (e.g. a `testing/` model
+  with population, or an RVB-class model) to verify the premise that conjunct
+  violation queries dominate transaction cost, and to fix the yardstick Phase 4
+  must beat. If interface (`_SRCATOM`) read queries dominate instead, the plan's
+  priorities shift.
+- **The backfill story.** Initial population of materialized violation tables at
+  install/reinstall time (the model-hash flow): one full-query run per conjunct at
+  install is the obvious route; confirm it fits the framework's reinstall mechanism.
+  The Feldera episode names backfill as the engineering Achilles heel — for us it is
+  bounded because the full queries already exist.
+- **Inspect the Lean formalization** (tchajed/database-stream-processing-theory)
+  before leaning on the "machine-checked" status of DBSP's theorems; note which
+  theorems we actually depend on (Prop 3.2, Thm 3.4, Prop 4.7).
+
 ## Risks and open questions
 
 - **Weights vs. sets in SQL.** Z-set weights (witness counts) must live in the
