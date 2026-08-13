@@ -83,9 +83,19 @@ schaalparameter wordt sample-grootte), affected-only referee met instelbare
 cadans plus integrale eindcheck, en mutaties op brede tabellen. Elke
 uitbreiding eerst groen op de bestaande vijf testmodellen.
 
+*Uitslag (2026-08-13):* gereed (commit 208f9bac1): `--replay`,
+`--referee-every K` (met altijd de integrale eindcheck), UPDATE-mutaties op
+brede tabellen, en tijdmeting per transactie. De matrix is groen: vier
+modellen × drie modi (synthetisch/bin, replay/bin, replay/brede-layout).
+Een lege replay-stroom beëindigt de run in plaats van te blijven draaien
+(gevonden doordat een populatieloos testmodel de lus liet spinnen).
+
 **Stap 2 — Rooktest op een FC5-deelmodel.** Eén registerdeel met zijn
 xlsx-populatie in een tijdelijke database op de eigen container;
 replay-transacties; referee groen; runtijd meten om stap 3 te dimensioneren.
+
+*Uitslag (2026-08-13):* de rooktest draaide meteen op het volledige model met
+de volledige populatie (25 replay-transacties, productie-tabellayout): groen.
 
 **Stap 3 — Volledige FC5-populatie.** Drie meetdoelen: (a) **correctheid** —
 referee nul verschillen over minstens duizend replay-transacties; (b)
@@ -93,6 +103,35 @@ referee nul verschillen over minstens duizend replay-transacties; (b)
 van het protocol); (c) **tijdverhouding** delta-protocol tegenover integrale
 herberekening per transactie, beide in SQL op dezelfde database. Daarna, als
 stap 1's wide-table-mutaties er zijn, dezelfde run op de productie-tabellayout.
+
+*Uitslag (2026-08-13):*
+
+- **(a) Correctheid: gehaald.** 1075 replay-transacties (3×350 + 25) op de
+  volledige populatie en de productie-tabellayout, referee elke tiende
+  transactie op de geraakte conjuncts plus per chunk een integrale eindcheck
+  over alle 611 delta-onderhouden caches: **nul verschillen**. De
+  C-obligaties (kandidaat-volledigheid) zijn daarmee empirisch stevig
+  ondersteund; het bewijs blijft open werk.
+- **(c) Tijdverhouding: het delta-protocol wint hier nog niet.** Medianen per
+  transactie over de drie chunks: delta-protocol 547/567/596 ms; referee
+  (cache-pull plus volledige her-evaluatie van de geraakte conjuncts)
+  236/449/242 ms. Op de huidige populatiegrootte zijn FC5's volledige queries
+  al snel, terwijl het protocol per (conjunct, relatie) twee statements
+  uitvoert die elk de kandidaatquery opnieuw evalueren — de kandidaatprijs
+  overtreft de winst. De in-Haskell schaalcurves (bench/RESULTS.md) laten de
+  kruising met de databasegroei meegroeien; wanneer die kruising voor FC5
+  valt, is een open meetvraag.
+- **(b) Kandidaat-groottes: niet gemeten** — open, zie vervolgwerk.
+
+*Vervolgwerk uit stap 3:* (1) de kandidaatverzameling per (transactie,
+conjunct) éénmalig materialiseren in een tijdelijke tabel en beide scoped
+statements daartegen draaien (halveert de kandidaatevaluatie); (2)
+kandidaat-groottes bemonsteren; (3) dezelfde meting op een gegroeide
+populatie, want de winst schaalt met de databasegrootte; (4) de fase-4-maatstaf
+is het huidige framework-gedrag — integrale her-evaluatie plus integrale
+cache-vervanging — dat aan de referee-kant nog cache-schrijfkosten toevoegt.
+Runtijd per chunk: 36-47 minuten, gedomineerd door modelcompilatie,
+populatie-installatie en de twee integrale referees.
 
 **Stap 4 — Rapportage en borging.** Resultaten lokaal; in overleg naar de
 projectwerkmap. Naar issue #1684 alleen inhoudsvrije aggregaten na review.
