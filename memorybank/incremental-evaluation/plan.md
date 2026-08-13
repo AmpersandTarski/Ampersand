@@ -165,9 +165,19 @@ With the prototype-framework repo (AmpersandTarski/prototype): consume the delta
 queries, maintain the violation tables per transaction, keep the full queries as
 fallback and as periodic self-check. Benchmark on a realistic model and population;
 the claim to verify is per-transaction cost proportional to change size.
+Production confidence is built operationally on top of the proofs: a **shadow
+run** first (a real application maintains violations both ways for a period,
+logs every divergence, users see only the old route), then a permanent
+**sampled self-check** in production (periodically recompute one conjunct in
+full and compare; on divergence: alarm plus automatic cache rebuild from the
+full queries), and a **feature switch per application**. Edge cases the runtime
+map already names must be covered explicitly: bulk mutations
+(`deleteAllLinks`, `removeAtom`), ExecEngine iterations, transaction
+boundaries, crash recovery.
 *Deliverable:* an end-to-end prototype and a measurement report. *Exit:* measured
 order-of-magnitude improvement on transaction-heavy scenarios, with identical
-violation sets.
+violation sets — including a divergence-free shadow-run period on a real
+application.
 
 ### Phase 5 — The harder constructs
 
