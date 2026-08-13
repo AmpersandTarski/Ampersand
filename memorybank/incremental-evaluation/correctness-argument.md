@@ -72,25 +72,37 @@ reachable state.
 
 ## Where the argument is weaker than a proof
 
-- **Step 5 is not machine-checked.** The per-node lemmas are proven; their
-  composition into the whole-circuit invariant is a prose induction. The
-  planned deep embedding (a `Circuit.thy` with the core term language, the
-  step function and the invariant theorem) did not land in the first proof
-  session. Until it does, the glue is tested — every `--verify` run checks the
-  invariant after every transaction — but not proven.
-- **The proofs are about a model of the code, not the code.** `ZSet.thy`
-  models Z-sets as integer-valued functions; the implementation uses nested
-  maps with a no-zero invariant and maintains derived structures (the flipped
-  copy inside composition nodes, the occurrence integrals per concept). That
-  `bagApply`/`relH`/`composeDeltaOld`/`composeFlipDelta` implement
-  `zplus`/`H`/the two Z3 terms is an unverified correspondence. The oracle
-  exercises it; no refinement proof connects them.
+- **Step 5 is machine-checked since #1683.** `Circuit.thy` carries the deep
+  embedding, the step function written with the proven expansions, and the
+  theorems C1-C5: a step preserves the invariant, and every state reachable
+  from the all-zero base by at least one transaction (backfill included) has
+  every node's clipped output equal to its term's set semantics. What the
+  induction deliberately does not cover, the README records: the dirty-flag
+  skip conditions and the Kleene nodes' reading of their child run on the
+  oracle's evidence, not on proof.
+- **The code is bound to the model per build, not by refinement proof.**
+  `ZSet.thy` models Z-sets as integer-valued functions; the implementation
+  uses nested maps with a no-zero invariant. Since #1683,
+  `Ampersand.Test.Incremental.Properties` (in `stack test`) re-checks one
+  QuickCheck property per proven lemma against the actual
+  `bagApply`/`relH`/`composeDeltaOld`/`composeFlipDelta`/... functions, plus
+  an engine-level oracle property on random transaction streams. That is a
+  per-build statistical link; a refinement proof remains out of scope.
 - **The adequacy premises are proven sufficient, not proven satisfied.** The
-  S-lemmas assume every relation lies inside the `V` of its signature, and the
-  engine assumes its concept-population bookkeeping mirrors `atomValuesOf`
-  (ISA cones included). Both are properties of Ampersand's population
-  semantics that the argument takes as given — and the population mirror is
-  exactly where the oracle caught a real bug during construction.
+  S-lemmas assume every relation lies inside the `V` of its signature. The
+  population mirror itself is now proven (`Population.thy`, P1-P5: the
+  occurrence sums are linear and carry exactly the `atomValuesOf` set, ISA
+  cones included) under the engine's set-discipline contract on raw stores —
+  a contract the transaction generator of the engine property enforces and
+  the runtime must honour.
+- **The base-case analysis found two real defects.** Working out C4 (the
+  all-zero base) exposed that ONE's population was pre-seeded instead of
+  travelling through the backfill transaction, leaving `I[ONE]`/`V[..*ONE]`
+  circuits permanently empty; the engine property then found that the
+  feeder/cone wiring, derived from initially populated relations, silently
+  dropped transactions on initially empty ones. Both are fixed and pinned by
+  the property suite — the argument's own machinery caught them, which is
+  the argument working as intended.
 - **Oracle and fallback share one implementation.** Fallback nodes and the
   verification oracle both call `fullContents`, so an error in `fullContents`
   itself would pass unnoticed by `--verify` (the same blind spot `ampersand
@@ -107,13 +119,11 @@ reachable state.
 
 ## Follow-up work these gaps define
 
-1. **`Circuit.thy`** — deep embedding plus the step-invariant theorem, closing
-   the induction gap (the one purely proof-technical item left open).
-2. **Phase 0.1** — recast the lemma statements as QuickCheck properties over
-   the actual Haskell functions inside `stack test`: a pragmatic
-   implementation-to-model link while a refinement proof is out of scope.
-3. **Prove the population mirror** — the occurrence-sum derivation of concept
-   populations against `atomValuesOf`, ISA cones included.
+1. **`Circuit.thy`** — done (#1683): C1-C5 in `proofs/incremental/Circuit.thy`.
+2. **Phase 0.1** — done (#1683): `Ampersand.Test.Incremental.Properties` in
+   `stack test`.
+3. **The population mirror** — done (#1683): P1-P5 in
+   `proofs/incremental/Population.thy`.
 4. **Incremental Kleene closures (Phase 5)** — `proofs/kleene/
    IncrementalDelete.thy` already proves the deletion-side facts; wiring it
    into the engine replaces the closure recompute nodes.

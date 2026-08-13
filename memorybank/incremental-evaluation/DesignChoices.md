@@ -156,6 +156,64 @@ non-collapsible complements, and Kleene closures evaluate as recompute
 *Impact in production:* none yet; the node inventory is the blueprint for the
 delta-SQL generation of Phase 3.
 
+**The engine's transaction domain is the full set of declared relations and concepts; all wiring is fixed at construction.**
+*OK-10 · valid · 2026-08-13 · origin: issue #1683, engine oracle property*
+
+`mkEngine` receives the declared relations and fixes the feeder lists per
+term relation, the concept cones per relation, and the ISA-upward map for
+explicit atom populations, all over the declaration domain. `engineInit`
+only runs the backfill transaction; ONE's singleton population is part of
+that transaction.
+
+*Considerations:*
+
+1. The goal is an engine that is correct for every transaction the runtime
+   can send, not only for relations that happen to hold initial population.
+2. The earlier wiring derived these maps from the initially populated
+   relations and concepts, and the pre-seeded ONE population never crossed
+   the circuits. Both defects stayed invisible to `incremental-bench`
+   (which populates every relation at init and never sends ONE deltas);
+   the base case of the circuit invariant (Circuit.thy, C4) predicted the
+   first, and the engine oracle property demonstrated both.
+3. Wiring lazily inside `applyTx` was considered and rejected: it moves a
+   per-construction cost into every transaction and leaves the transaction
+   domain implicit.
+
+*Impact on the specification:* none.
+
+*Impact in production:* none yet; Phase 3's generated artifacts inherit the
+rule that delta plumbing exists per declared relation, populated or not.
+
+**The correctness of the incremental core rests on two machine-checked layers: Isabelle proves the model (whole-circuit induction included), and per-build QuickCheck properties bind the Haskell code to that model.**
+*OK-11 · valid · 2026-08-13 · origin: issue #1683, [correctness-argument.md](correctness-argument.md)*
+
+The session `Incremental_Delta` proves the delta rules, the whole-circuit
+induction (C1-C5) and the population mirror (P1-P5); the test-suite module
+`Ampersand.Test.Incremental.Properties` holds one QuickCheck property per
+proven lemma against the real `ZSet` functions, plus an engine oracle
+property over random set-disciplined transaction streams. `--verify` in
+`incremental-bench` is thereby a diagnostic, no longer load-bearing
+evidence.
+
+*Considerations:*
+
+1. The goal is to retire the runtime referee from the trust chain (the plan's
+   "When the referee can go") with evidence that every build re-checks.
+2. Code generation from Isabelle (verified extraction) was considered and
+   rejected: it replaces the performance-critical `Map`-based code path and
+   ties the build to the proof toolchain, for a gap the per-build properties
+   cover; it returns to the table if a property ever finds a divergence.
+3. Proving against the literal Haskell (hs-to-coq-style translation) was
+   rejected: no maintained toolchain for this GHC/stack setup.
+4. The property suite caught a real defect on its second random stream
+   (OK-10, consideration 2), which is the empirical argument for keeping it
+   in `stack test` permanently.
+
+*Impact on the specification:* none.
+
+*Impact in production:* none directly; the proofs and properties gate which
+constructs may leave the fallback route, and Phase 3 inherits a proven core.
+
 ## Assurance and publication
 
 **Correctness of the delta calculus rests on our own Isabelle/HOL proofs in `proofs/`, with the Lean formalization of DBSP as inspiration.**
@@ -216,9 +274,6 @@ draws on this material without a separate reconstruction effort.
 
 ## Still to decide
 
-- The exact Z-set semantics of the heterogeneous operators in Isabelle
-  (weighted pairs over typed domains) and which DBSP theorems are re-proved
-  versus specialized — input for Phase 1 and OK-4's first theory file.
 - The venue and scope of the article (OK-5): compiler-engineering story,
   formalization story, or both.
 - Whether delta maintenance runs per ExecEngine iteration from the start or

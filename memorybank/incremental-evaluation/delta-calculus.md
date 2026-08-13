@@ -169,10 +169,14 @@ Bridge (inputs are sets, i.e. 0/1-weighted):
 - **B5** unary weighted product + distinct = cartesian product of the underlying sets;
 - **B6** `flip` = converse.
 
-Stretch goal: a deep embedding of the core language with the step function and
-the invariant `S = semantics(t)` preserved by every step (structural induction
-over the D-rules). Until that lands, the glue argument is prose plus the
-per-transaction oracle check in `incremental-bench --verify`.
+The former stretch goal — a deep embedding of the core language with the step
+function and the invariant `S = semantics(t)` preserved by every step — is
+proven since issue #1683: obligations C1-C5 in `proofs/incremental/Circuit.thy`
+(whole-circuit induction, backfill as the first step), with the population
+bookkeeping proven as P1-P5 in `Population.thy`. The per-transaction oracle
+check in `incremental-bench --verify` is thereby a diagnostic, and the
+QuickCheck bridge in `stack test` binds the implementation to these lemmas on
+every build.
 
 ## 6. What falls outside this phase
 
