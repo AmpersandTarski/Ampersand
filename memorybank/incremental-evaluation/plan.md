@@ -144,6 +144,9 @@ killed two real bugs on the way (OK-7, consideration 2). The deliverable
 differs from the plan in form: verification runs as a command-driven
 transaction stream against the oracle rather than a QuickCheck suite inside
 `stack test` — turning it into a property-test suite remains open (Phase 0.1).
+First scaling measurements stand in [bench/RESULTS.md](bench/RESULTS.md):
+across a ×40 database growth the incremental step grows ×6 (10→65 µs) while
+full re-evaluation grows ×1200 (1.65 ms→1.98 s), speedup ×166 → ×30 626.
 
 ### Phase 3 — Delta SQL generation
 
@@ -214,6 +217,17 @@ incremental-deletion facts for transitive closure — feed Phase 5 directly. The
 development by Chajed serves as a lemma-by-lemma roadmap, not as trust base.
 *Deliverable:* one theory file per Phase-1 rule group, running headless via the
 `proofs/` toolchain. *Exit:* the Phase-1 rule table cites a checked lemma per rule.
+
+*Status (2026-08-13):* session `Incremental_Delta` in `proofs/incremental/`
+builds green from clean (verified first-hand: `isabelle build -c -D
+proofs/incremental`), zero `sorry`, 78 lemmas over four theories. Covered:
+Z1-Z5 (group laws, both bilinear expansions in the asymmetric form the
+implementation uses, the zero-crossing H with its support bound), B1-B6 (the
+Z-to-set bridge per node type), S1-S5 (residual/diamond/dagger antijoin forms
+with adequacy premises, typed complement). The obligation→lemma table stands in
+`proofs/incremental/README.md`. Not yet proved: the structural-induction glue
+(deep embedding of the core language) — the per-transaction oracle covers it
+empirically; D7 recompute nodes need no proof (they run the specification).
 
 ## Paper track (continuous)
 
