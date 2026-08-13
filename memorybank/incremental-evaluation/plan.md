@@ -63,6 +63,46 @@ Ampersand's intelligence already lives — in the compiler, as a semantics-prese
 rewrite, which is also the form in which it can be tested against the existing
 evaluator and, eventually, proved.
 
+## Readiness (added 2026-08-13)
+
+Two readiness reports examined whether the compiler can carry this plan:
+[data-structure-readiness.md](data-structure-readiness.md) and
+[technical-debt-scan.md](technical-debt-scan.md). Conclusions folded into the plan:
+
+- **Δr representation:** a fabricated `Relation` behind `EDcD` (with `dechash`
+  filled, `decusr = False`, a name outside the user namespace) — zero AST ripple,
+  and the historical `delta` placeholder in `NormalForms.hs:1148-1168` is this exact
+  approach. A new `Expression` constructor would touch ~26 match sites in 18 modules
+  with only warnings to find them. Each delta relation gets its own `BinSQL` plug
+  (the transaction's delta table), which `getRelationTableInfo` requires anyway.
+- **Reusable as-is:** `conjNF` is pure; `subst` already substitutes a relation by an
+  arbitrary term (`r := r ∪ Δr` for free); the combinators accept well-typed delta
+  terms without smart-constructor friction; evaluation dispatches in one `case`
+  block in `Populated.hs`, so the weighted evaluator is a contained one-module job.
+- **Vestigial but harmless:** `rc_dnfClauses` and `vquads` feed only the Haskell
+  dump; leave them, build nothing on them.
+
+### Phase 0 — Preparatory interventions
+
+Targeted work before Phase 1, chosen because the feature leans on it — not a broad
+simplification pass (the ten path modules build with zero warnings under `-Wall`
+and carry two hlint hints in total; there is little to simplify there):
+
+1. **Pin down `pairsInExpr`/`fullContents` semantics with unit and property tests.**
+   Today the only semantic guard is `ampersand validate` — end-to-end, database
+   required, and blind to an error that hits SQL and Haskell alike. Phase 2 promotes
+   `pairsInExpr` to oracle; an oracle must first be trusted on its own.
+2. **Resolve the marked uncertainties in the normalizer core** — the two
+   "use of posCpl is erroneous" TODOs (`NormalForms.hs:1232-1233`) and the two
+   disabled Peirce rules — by fixing or by documenting why they are safe. `conjNF`
+   is load-bearing for today's violation queries and for tomorrow's delta terms.
+3. **Guard the `ConceptTables`↔`selectExpr` mirror with an automated check.** The
+   sync contract is comment-plus-runtime-`fatal` today, and delta queries will read
+   concept tables in new places (population deltas).
+
+*Exit:* the tests of (1) and (3) run in `stack test`; the TODOs of (2) are fixed or
+carry a documented verdict.
+
 ## Phases
 
 Each phase has a deliverable and an exit criterion; no phase starts before the
