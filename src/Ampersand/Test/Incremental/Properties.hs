@@ -199,10 +199,10 @@ refCrossing old new
 
 -- | Storage invariant: no key maps to 0, no source maps to an empty row.
 invB :: ZBag Int -> Bool
-invB = all (/= 0) . Map.elems
+invB = notElem 0 . Map.elems
 
 invR :: ZRel Int -> Bool
-invR m = all (\row -> not (Map.null row) && all (/= 0) (Map.elems row)) (Map.elems m)
+invR m = all (\row -> not (Map.null row) && 0 `notElem` Map.elems row) (Map.elems m)
 
 -- * The properties
 
