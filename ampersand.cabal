@@ -257,6 +257,8 @@ library
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
       Ampersand.FSpec.Incremental
+      Ampersand.FSpec.Incremental.DeltaTerms
+      Ampersand.FSpec.Incremental.Synthetic
       Ampersand.FSpec.Incremental.ZSet
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
@@ -276,6 +278,7 @@ library
       Ampersand.Options.ValidateOptsParser
       Ampersand.Output.FSpec2Turtle
       Ampersand.Output.PredLogic
+      Ampersand.Prototype.DeltaSQLHarness
       Ampersand.Types.Config
       Paths_ampersand
   autogen-modules:

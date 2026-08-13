@@ -535,7 +535,10 @@ data IncrementalBenchOpts = IncrementalBenchOpts
     -- | Check every transaction against full re-evaluation (the oracle)
     xIncBenchVerify :: !Bool,
     -- | Write per-transaction measurements to this CSV file
-    xIncBenchCsv :: !(Maybe FilePath)
+    xIncBenchCsv :: !(Maybe FilePath),
+    -- | Run the delta-SQL referee harness against MariaDB instead of the
+    --   in-memory benchmark (issue #1684)
+    xIncBenchSql :: !Bool
   }
   deriving (Show)
 
@@ -546,7 +549,8 @@ instance HasOptions IncrementalBenchOpts where
            ("--transactions", tshow (xIncBenchTxCount opts)),
            ("--seed", tshow (xIncBenchSeed opts)),
            ("--verify", tshow (xIncBenchVerify opts)),
-           ("--csv", maybe "<not set>" tshow (xIncBenchCsv opts))
+           ("--csv", maybe "<not set>" tshow (xIncBenchCsv opts)),
+           ("--sql", tshow (xIncBenchSql opts))
          ]
 
 class HasIncrementalBenchOpts env where
@@ -561,6 +565,8 @@ class HasIncrementalBenchOpts env where
   incBenchVerifyL = incrementalBenchOptsL . lens xIncBenchVerify (\x y -> x {xIncBenchVerify = y})
   incBenchCsvL :: Lens' env (Maybe FilePath)
   incBenchCsvL = incrementalBenchOptsL . lens xIncBenchCsv (\x y -> x {xIncBenchCsv = y})
+  incBenchSqlL :: Lens' env Bool
+  incBenchSqlL = incrementalBenchOptsL . lens xIncBenchSql (\x y -> x {xIncBenchSql = y})
 
 instance HasIncrementalBenchOpts IncrementalBenchOpts where
   incrementalBenchOptsL = id

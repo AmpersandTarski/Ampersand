@@ -2,6 +2,8 @@ module Ampersand.Prototype.PHP
   ( evaluateExpSQL,
     createTempDatabase,
     tempDbName,
+    executeRawSQL,
+    performRawQuery,
   )
 where
 
@@ -89,6 +91,32 @@ performQuery dbNm queryStr = do
              "  }",
              "echo ']';"
            ]
+
+-- | Execute raw SQL statements (DDL/DML) against the given database, in
+--   order, in one PHP round trip. Fatal on the first statement that errors.
+--   Used by the delta-SQL harness (issue #1684).
+executeRawSQL :: (HasLogFunc env) => Text -> [Text] -> RIO env ()
+executeRawSQL dbNm stmts = do
+  result <- executePHPStr . showPHP $ php
+  when ("Error" `T.isPrefixOf` result)
+    $ fatal ("PHP/SQL problem: " <> result <> "\nstatements:\n" <> T.unlines stmts)
+  where
+    php :: [Text]
+    php =
+      connectToMySqlServerPHP (Just dbNm)
+        <> concat
+          [ [ "$sql=" <> queryAsPHP (SqlQuerySimple stmt) <> ";",
+              "if(!mysqli_query($DB_link,$sql)) {",
+              "  die('Error: '.mysqli_error($DB_link).' (Sql: '.$sql.')');",
+              "}"
+            ]
+            | stmt <- stmts
+          ]
+
+-- | Run one raw two-column query (columns aliased src and tgt) and return the
+--   pairs. Used by the delta-SQL harness (issue #1684).
+performRawQuery :: (HasLogFunc env) => Text -> Text -> RIO env [(Text, Text)]
+performRawQuery dbNm sql = performQuery dbNm (SqlQuerySimple sql)
 
 -- call the command-line php with phpStr as input
 executePHPStr :: (HasLogFunc env) => Text -> RIO env Text

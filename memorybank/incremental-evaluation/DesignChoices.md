@@ -156,6 +156,59 @@ non-collapsible complements, and Kleene closures evaluate as recompute
 *Impact in production:* none yet; the node inventory is the blueprint for the
 delta-SQL generation of Phase 3.
 
+**Delta SQL maintains the violation cache by delta-scoped re-evaluation: generated candidate queries name the pairs to recheck, and the recheck runs the existing violation predicate.**
+*OK-8 · valid · 2026-08-13 · origin: issue #1684, [delta-calculus.md](delta-calculus.md) §7*
+
+Per (conjunct, relation) the compiler emits one candidate query over the
+current tables plus the delta tables (one two-column table per relation,
+holding the transaction's touched pairs). The runtime protocol per changed
+relation is: DELETE the cache rows in the candidate set, then re-INSERT the
+violation-query rows restricted to the candidate set. The cache schema is
+today's `__conj_violation_cache__`, unchanged.
+
+*Considerations:*
+
+1. The goal is incrementality on MariaDB, which offers no view maintenance of
+   its own, without moving correctness onto new arithmetic: the recheck runs
+   the same predicate `ampersand validate` already referees, so only candidate
+   completeness (obligation series C) is new proof surface.
+2. The full current state lives in the database, which is what makes recheck
+   sound — a streaming engine sees only deltas and must count witnesses; a
+   database can simply look again.
+3. Weighted caches in SQL (the circuits' integrals as weight columns) were
+   considered and rejected for now: they change the cache schema the framework
+   reads, need state tables per composition, and shift correctness onto
+   generated arithmetic. Revisit if Phase 4 measures the recheck as too slow.
+4. Database triggers were rejected: the same generated logic with less
+   visibility (architecture map, option c).
+
+*Impact on the specification:* none; models are unchanged.
+
+*Impact in production:* additive only — new tables and new optional JSON
+fields; a framework that ignores them behaves exactly as today.
+
+**A transaction that changes concept populations keeps full re-evaluation for the conjuncts it affects; delta queries serve the relation-triggered case.**
+*OK-9 · valid · 2026-08-13 · origin: issue #1684, [prototype-runtime-map.md](prototype-runtime-map.md)*
+
+The runtime's existing concept-affected trigger (`concepts.json`,
+`affectedConjuncts`) remains the route for atom creation and deletion; the
+candidate calculus treats `I`, `V` and `EBin` as constants.
+
+*Considerations:*
+
+1. The goal is a sound protocol without tracking the active domain through
+   the candidate calculus: `I`, `V` and `EBin` read concept tables, whose
+   content moves when atoms appear or disappear.
+2. The runtime map shows the volume sits in pair mutations on existing atoms;
+   atom-creating transactions already pay a full evaluation today, so this
+   choice concedes no regression.
+
+*Impact on the specification:* none.
+
+*Impact in production:* the framework's dispatch rule becomes: concept-affected
+or no `deltaQueries` → full re-evaluation (today's path); otherwise the delta
+protocol.
+
 ## Assurance and publication
 
 **Correctness of the delta calculus rests on our own Isabelle/HOL proofs in `proofs/`, with the Lean formalization of DBSP as inspiration.**

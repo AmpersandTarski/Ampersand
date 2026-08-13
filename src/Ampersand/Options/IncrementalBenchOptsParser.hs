@@ -47,3 +47,7 @@ incrementalBenchOptsParser =
               <> help "Write per-transaction measurements to FILE as CSV."
           )
       )
+    <*> switch
+      ( long "sql"
+          <> help "Run the delta-SQL referee harness against MariaDB instead of the in-memory benchmark: maintain a violation cache with the generated delta queries and compare it with full-query evaluation after every transaction. Requires command line php with MySQL support, and --sql-bin-tables."
+      )

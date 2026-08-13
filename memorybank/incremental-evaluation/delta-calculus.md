@@ -180,3 +180,46 @@ Symbolic delta *terms* (Δ as `Expression`, OK-2) for SQL generation are Phase 3
 this phase implements the circuit interpreter that the benchmark and the oracle
 run in pure Haskell. Incremental Kleene closure and incremental `EBin` are
 Phase 5 (D7 covers them correctly, at recompute cost).
+
+## 7. The candidate calculus for delta SQL (Phase 3, issue #1684)
+
+The SQL side uses delta-scoped re-evaluation (OK-8): the cache update re-runs
+the existing violation predicate on a candidate set, so only candidate
+**completeness** matters — no weights, no intermediate state. With `Δs` the
+delta table of relation s (the pairs touched by the transaction; empty when s
+is untouched), the widened and narrowed envelopes bound the relation's old and
+new state per position polarity:
+
+```
+W(s) = s ∪ Δs                N(s) = s − Δs
+W(a∪b) = W(a) ∪ W(b)         N likewise
+W(a∩b) = W(a) ∩ W(b)         N likewise
+W(a−b) = W(a) − N(b)         N(a−b) = N(a) − W(b)
+W(a;b) = W(a) ; W(b)         N likewise      W(a~) = W(a)~
+W(-a)  = -(N(a))             N(-a)  = -(W(a))
+W = N = id on I, V, atom literals, EBin
+```
+
+The candidate terms for a change in r (each a superset of the pairs whose
+membership may have changed via one occurrence of r):
+
+```
+D(s)      = [Δr]  if s = r, else []
+D(a∪b)    = D(a) ++ D(b)
+D(a∩b)    = [d ∩ W(b) | d∈D(a)] ++ [W(a) ∩ d | d∈D(b)]
+D(a−b)    = [d − N(b) | d∈D(a)] ++ [W(a) ∩ d | d∈D(b)]
+D(a;b)    = [d ; W(b) | d∈D(a)] ++ [W(a) ; d | d∈D(b)]
+D(a~)     = [d~ | d∈D(a)]         D(-a) = D(a)
+D = []    on I, V, atom literals, EBin
+```
+
+Any other constructor makes the conjunct unsupported: it keeps full
+re-evaluation. Concept-population changes (which move `I`, `V` and `EBin`)
+also keep full re-evaluation, via the existing concept-affected trigger (OK-9).
+
+**Proof obligations (C-series, open):** for every rule above, if a pair's
+membership in the term differs between the old and the new database state,
+then the pair is in the union of the candidate terms evaluated over the new
+state plus the delta tables. C1 union, C2 intersection, C3 difference,
+C4 composition, C5 converse, C6 complement. Until proven, the delta-SQL
+harness (`ampersand incremental-bench --sql`) tests them against MariaDB.

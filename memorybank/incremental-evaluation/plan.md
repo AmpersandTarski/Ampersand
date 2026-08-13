@@ -148,7 +148,7 @@ First scaling measurements stand in [bench/RESULTS.md](bench/RESULTS.md):
 across a ×40 database growth the incremental step grows ×6 (10→65 µs) while
 full re-evaluation grows ×1200 (1.65 ms→1.98 s), speedup ×166 → ×30 626.
 
-### Phase 3 — Delta SQL generation
+### Phase 3 — Delta SQL generation — FIRST INCREMENT DONE 2026-08-13
 
 A new compiler module derives, per (conjunct, affected relation), the delta term and
 compiles it with the existing `sqlQuery` machinery, parameterized by the transaction's
@@ -158,6 +158,19 @@ the schema gains one materialized violation table per conjunct.
 *Deliverable:* generated delta SQL behind a feature flag. *Exit:* an
 `ampersand validate`-style harness shows delta-maintained violation tables equal to
 full-query results on the test suite.
+
+*Status:* issue #1684, branch `delta-sql`. The design shifted from weighted
+caches to **delta-scoped re-evaluation** (OK-8): candidate queries name the
+pairs to recheck, the recheck runs the existing violation predicate, and the
+cache schema stays as it is. The candidate calculus (W/N envelopes + D-rules,
+[delta-calculus.md](delta-calculus.md) §7) lives in
+`Ampersand.FSpec.Incremental.DeltaTerms`; `conjuncts.json` carries the
+candidate queries, `relations.json` the delta-table names, `database.sql` the
+delta tables — all additive. The referee harness (`incremental-bench --sql`,
+`Ampersand.Prototype.DeltaSQLHarness`) runs green on five models against a
+real MariaDB, subtyping and complements included; Kleene models correctly
+report zero delta support. Open within this phase: the C-obligation proofs
+(candidate completeness, §7), and a candidate-cost measurement.
 
 ### Phase 4 — Runtime adoption and measurement
 
