@@ -1,7 +1,9 @@
 # Machine-checked proofs for the delta calculus
 
 Isabelle/HOL proofs of the proof obligations in
-`memorybank/incremental-evaluation/delta-calculus.md`, section 5.
+`memorybank/incremental-evaluation/delta-calculus.md`, section 5 — including
+the whole-circuit induction (`Circuit.thy`) and the population mirror
+(`Population.thy`) that issue #1683 asked for.
 Session `Incremental_Delta`, parent `HOL`, no axioms beyond HOL, no `sorry`.
 
 Build:
@@ -23,6 +25,21 @@ a few seconds.
   long as `M` covers `midsupp a b`, and `finite_midsupp` proves such a finite
   cover exists for finite-support inputs. This mirrors the implementation,
   which sums over the keys of source-indexed maps.
+- `Circuit.thy` is the deep embedding of the evaluator's circuit language:
+  one constructor per `Kind` of `src/Ampersand/FSpec/Incremental.hs`, with the
+  node states inline (pre-distinct integrals, the flipped copy for
+  composition, the four projection integrals for products). The environment
+  holds per relation the pre-distinct pair integral and per concept the
+  occurrence integral; a transaction adds to both linearly, as `applyTx`
+  does. Every construct without a proven delta rule — fallback terms, `Mp1`,
+  `Bin`, `Kl0`, `Kl1` — is a *specification node* `CSpec F`: its step
+  re-evaluates `F` on the new environment and emits `new − old` (D7), which
+  keeps the theorems' scope honest: they cover every circuit the compiler
+  builds. The step function `nxt`/`dlt` is written with the proven
+  expansions (Z2/Z3/Z4 asymmetric form, H for every distinct state).
+- `Population.thy` models the concept-population bookkeeping in a locale
+  over finite sets of declared relations and concepts with an abstract cone
+  function `bel` (implementation: `c : smallerConcepts c`).
 - `Desugar.thy` uses the set-level house style of
   `proofs/spike/Ampersand_RA.thy`: one universe type `'a`, concepts as sets,
   a relation with signature `[A*B]` as `r ⊆ A×B`, and the TYPED complement
@@ -51,6 +68,16 @@ a few seconds.
 | B4 `distinct(a;b)` = relational composition | `B4_distinct_zcomp_is_relcomp` | `Bridge.thy` |
 | B5 weighted product + distinct = cartesian product | `B5_distinct_zprod_is_cartesian` | `Bridge.thy` |
 | B6 flip = converse | `B6_flip_is_converse` | `Bridge.thy` |
+| C1 a step preserves the state invariant (structural induction over all node kinds) | `C1_step_preserves_state` | `Circuit.thy` |
+| C2 specification (D7) nodes are correct after every step, unconditionally | `C2_step_establishes_spec` | `Circuit.thy` |
+| C3 a well-formed circuit's clipped outputs are the set semantics of its terms | `C3_output_is_semantics`, `C3_setof_output` | `Circuit.thy` |
+| C4 the all-zero base state is well-formed | `C4_backfill_base` | `Circuit.thy` |
+| C5 every state reachable by ≥1 transaction from the base (backfill included) is correct | `C5_run_correct` (+ `run_wf`, `sem_run`) | `Circuit.thy` |
+| P1 the occurrence integral is linear in the transaction (D4; `occDelta` is exact) | `P1_occ_linear` | `Population.thy` |
+| P2 its carried set equals the `atomValuesOf` set | `P2_occ_mirrors_atomValuesOf` | `Population.thy` |
+| P3 the population-set delta is the zero-crossing H (`cptSetDelta` = `bagH`) | `P3_popset_delta` | `Population.thy` |
+| P4 a term relation's integral sums its feeders linearly | `P4_feed_linear` | `Population.thy` |
+| P5 its carried set is the `pairsOf` union | `P5_feed_contents` | `Population.thy` |
 
 Notes per obligation:
 
@@ -64,17 +91,35 @@ Notes per obligation:
   the rows of the relation, which is what `fullContents` does.
 - **S4** needs no typing premise at all, because both complements in
   `-(-l ; -r)` are typed.
+- **C1-C5** split the invariant in two: `wfs` (states are the right functions
+  of the children's outputs; holds at the all-zero base) and `sholds`
+  (specification nodes' outputs match their semantics; established by any
+  step, no premise needed). That split is the formal shape of "backfill is
+  the first transaction": the base state need not know the constants (`Mp1`
+  content, `I[ONE]`) — the first step emits them. Working out the base case
+  exposed that the implementation pre-seeded ONE's population instead of
+  letting it travel through `tx0`, which left `I[ONE]`/`V[..*ONE]` circuits
+  permanently empty; fixed on this branch and pinned by the engine property.
+- **P2**'s set-discipline premise (raw stores hold weights 0/1) is the
+  engine's lockstep contract: transaction weights are ±1, insert only absent
+  pairs, delete only present ones.
 
 ## What is NOT proved
 
-- **D7 recompute nodes** (`Kl0`, `Kl1`, `Bin`): they re-run the specification
-  on the new input and emit `new - old`, so they are correct by construction;
-  there is nothing to prove beyond the definition.
-- **The structural-induction glue** (stretch goal: deep embedding of the core
-  term language with the per-node step function and the invariant
-  `S = semantics(t)`): not attempted in this session. Until it lands, the glue
-  argument is prose (delta-calculus.md, section 4) plus the per-transaction
-  oracle check `ampersand incremental-bench --verify`.
+- **The dirty-flag shortcuts** of the implementation (a fallback node skips
+  recomputation when none of its relations or concepts changed; `Kl0`/`Kl1`
+  skip when the child emitted nothing). The model's specification nodes
+  recompute every step, so the theorems do not cover the soundness of the
+  skip conditions; the per-transaction oracle and the engine property do.
+- **Kleene nodes' reading of their child.** `Circuit.thy` models a closure
+  node as a specification node over the *semantics* of its child term; the
+  implementation computes the closure of the child's *maintained output*.
+  Under the proved invariant the two coincide, but the implementation's
+  wiring of that equality is covered by the oracle, not by the induction.
+- **The Haskell code itself.** The theorems are about the model; the
+  QuickCheck bridge (`Ampersand.Test.Incremental.Properties`, run by
+  `stack test`) binds the real `ZSet` functions and the engine to the lemmas
+  on every build. Verified extraction was considered and rejected (#1683).
 - The **`EEqu` finding** of delta-calculus.md (fullContents computes the union
   of the two inclusions): deliberately mirrored, not proved "correct".
 
@@ -93,3 +138,11 @@ written the way they are to avoid them:
   `p` gives `x`, `z` fresh rigid types, which surfaces later as a type-
   unification error at an unrelated `have`. The theories state the `show`
   first and then open `proof (cases p)` / `case (Pair x z)`.
+- The pointwise `*_apply [simp]` rules of `ZSet.thy` make simp unfold a
+  partially applied operator into a raw lambda (simp eta-expands such rules),
+  after which compositional lemmas about `finsupp`/`isSet`/function equality
+  no longer match. `Circuit.thy` therefore removes them from the simp set
+  once the reasoning moves to whole Z-set values, and re-adds them by name in
+  the few pointwise steps. Related: a partially instantiated `fun_cong` as a
+  simp rule sends the simplifier into a divergent search (observed as the
+  "Unable to increase stack" batch failure); apply it with `rule` instead.

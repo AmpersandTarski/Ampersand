@@ -72,7 +72,7 @@ incrementalBench fSpec = do
     logError "No relation in the conjuncts is suitable for synthetic population."
     exitFailure
   logInfo . display $ "incremental-bench: " <> tshow (length terms) <> " conjuncts, " <> tshow (length synthRels) <> " relations to populate."
-  let engine0 = mkEngine ci allConcepts terms
+  let engine0 = mkEngine ci allConcepts (Set.toList (relsDefdIn ctx)) terms
   reportFallbacks engine0
   let scriptPops = ctxpopus ctx <> concatMap ptups (patterns ctx)
   allRows <- forM scales $ \n -> do
