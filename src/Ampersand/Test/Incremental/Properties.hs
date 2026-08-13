@@ -472,7 +472,8 @@ propStream ci ctx engine1 =
       _ -> 6
     stepOp acc@(Left _) _ = acc
     stepOp (Right (eng, n)) (kind, choice, i, j)
-      | kind < 70 = -- relation edit
+      | kind < 70 -- relation edit
+        =
           let d = nth (choice `mod` length rels) rels
               p = (atomFor (source d) i, atomFor (target d) j)
               existing = Map.findWithDefault Set.empty d (ieRelPairs eng)
@@ -483,7 +484,8 @@ propStream ci ctx engine1 =
                     txCpt = Map.empty
                   }
            in runTx eng n tx
-      | otherwise = -- explicit concept-atom edit
+      | otherwise -- explicit concept-atom edit
+        =
           let c = nth (choice `mod` length cpts) cpts
               a = atomFor c i
               existing = Map.findWithDefault Set.empty c (ieCptAtoms eng)
