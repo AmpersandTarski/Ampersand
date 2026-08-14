@@ -10,7 +10,7 @@ Contents:
 
 - [plan.md](plan.md) — the plan of approach: chosen direction, phases with
   exit criteria, proof and paper tracks, risks. **Start here.**
-- [DesignChoices.md](DesignChoices.md) — the design-choice register (OK-1 …),
+- [DesignChoices.md](DesignChoices.md) — the design-choice register (DC-1 …),
   each choice with its considerations and rejected alternatives.
 - [delta-calculus.md](delta-calculus.md) — Phase 1: the desugaring and delta
   rules the implementation and the Isabelle proofs follow.
@@ -19,6 +19,9 @@ Contents:
   those gaps define (also comment 5 on issue #1682).
 - [bench/](bench/) — the benchmark model and measurement results of
   `ampersand incremental-bench`.
+- [interface-queries.md](interface-queries.md) — the assessment behind issue
+  #1687: where incremental evaluation of interface queries pays, the push
+  track, and the RAP validation plan.
 - [dbsp-paper-study.md](dbsp-paper-study.md) — study note on the DBSP paper:
   Z-sets, the stream calculus, the incrementalization algorithm, and the mapping
   to Ampersand's relation algebra.
