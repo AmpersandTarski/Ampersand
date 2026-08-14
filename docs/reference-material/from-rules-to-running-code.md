@@ -470,12 +470,16 @@ the full query, insert the result. Signal rules are *read* entirely from that
 table. Incremental evaluation therefore changes the refresh strategy of an
 existing store, not the architecture around it. Two steps remain:
 
-- **Delta SQL (compiler).** Derive, per (conjunct, affected relation), the
-  delta term as an ordinary `Expression` and compile it with the same
-  `selectExpr` machinery of Part II — delta terms are just terms over the
-  transaction's changed pairs. `conjuncts.json` grows an optional per-relation
-  delta-query field; the framework ignores unknown fields, so the contract
-  stays backward compatible.
+- **Delta SQL (compiler).** Derive, per (conjunct, touched relation), a
+  *candidate query*: an ordinary `Expression` naming the pairs whose
+  violation status may have changed, compiled with the same `selectExpr`
+  machinery of Part II — candidate terms are just terms over the base
+  relations and the transaction's changed pairs. The runtime settles each
+  candidate pair by re-running the conjunct's own violation predicate on it,
+  so the calculus owes one property: no changed pair escapes the candidates.
+  `conjuncts.json` grows an optional per-relation delta-query field; the
+  framework ignores unknown fields, so the contract stays backward
+  compatible.
 - **Runtime adoption (prototype framework).** Maintain the violation table by
   applying row deltas instead of the wholesale refresh, keep the full queries
   as fallback and as periodic self-check, and switch per application — after a
@@ -485,6 +489,8 @@ existing store, not the architecture around it. Two steps remain:
 Until those steps land, Parts I–III describe every prototype in production,
 unchanged; this part describes the compiler's proven core and the route by
 which it reaches the runtime.
+
+*Proof track: [PRF-7 — the candidate calculus is complete](../proofs/README.md#prf-7).*
 
 *Proof track: [PRF-6 — the delta SQL maintains the violation records exactly](../proofs/README.md#prf-6).*
 

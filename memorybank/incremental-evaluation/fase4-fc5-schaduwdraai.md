@@ -72,8 +72,9 @@ duizend replay-transacties door de API van het draaiende prototype (niet
 rechtstreeks op de database), met `transactions.deltaConjunctMaintenance:
 'shadow'`. Slagingscriterium: nul `DELTA SHADOW MISMATCH`-regels; elke
 mismatch is een bevinding die eerst verklaard en verholpen wordt (en waar hij
-op een kandidaat-volledigheidsgat wijst, terugvloeit naar de C-obligaties van
-fase 3).
+op een kandidaat-volledigheidsgat wijst, terugvloeit naar de K-obligaties van
+fase 3 — tot 2026-08-14 "C-obligaties" geheten, sindsdien machine-checked in
+`proofs/incremental/Candidates.thy`, registerclaim PRF-7).
 
 *Uitslag (2026-08-14): gehaald.* De schaduwdraai omvatte 1043
 replay-transacties (3×350 + 25, seeds 46-49) op de volledige scriptpopulatie
