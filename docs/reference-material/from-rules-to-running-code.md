@@ -452,7 +452,8 @@ The delta rules are machine-checked. The Isabelle/HOL session
 `Incremental_Delta` in `proofs/incremental/` (six theories, no unproven gaps)
 covers the Z-set algebra, the bilinear expansions, the zero-crossing rule, the
 desugaring identities, and a whole-circuit induction: every state reachable
-from the empty database by transactions — the initial backfill included —
+from the empty database by transactions — the loading of the initial
+population included —
 yields exactly the set semantics of every term. The obligation-to-lemma map is
 in `proofs/incremental/README.md`. A QuickCheck suite in `stack test` states
 the same lemmas as properties over the actual Haskell functions, so the code
