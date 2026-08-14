@@ -362,6 +362,8 @@ Taking the union over all of the transaction's changes gives
   to get out of step — which is the strongest form of the "compute once, ship the
   result" principle.
 
+*Proof track: [PRF-1 — the runtime re-checks exactly the affected conjuncts](../proofs/README.md#prf-1).*
+
 ---
 
 ## Part IV — Paying for the change, not the database
@@ -456,6 +458,8 @@ in `proofs/incremental/README.md`. A QuickCheck suite in `stack test` states
 the same lemmas as properties over the actual Haskell functions, so the code
 is bound to the proofs on every build.
 
+*Proof track: [PRF-2 — the incremental evaluator is exact](../proofs/README.md#prf-2).*
+
 ### 4. What remains before a prototype runs it
 
 The runtime seam is already in place. The prototype framework materializes
@@ -483,6 +487,9 @@ which it reaches the runtime.
 
 ### Where to look
 
+- The [proof track](../proofs/README.md) — the register of claims behind this
+  chapter, with the narrative trail
+  [Incremental evaluation](../proofs/incremental-evaluation.md).
 - `src/Ampersand/FSpec/Incremental.hs` and
   `src/Ampersand/FSpec/Incremental/ZSet.hs` — the circuits, the delta
   propagation, and the oracle comparison.
