@@ -140,10 +140,11 @@ regression population set, including flipped/UNI/INJ storage variants.
 command `ampersand incremental-bench` (OK-6). The `--verify` oracle holds on
 ten regression models (Kleene, cartesian products, subtyping, complements,
 script populations) with 60+ verified transactions each; the oracle caught and
-killed two real bugs on the way (OK-7, consideration 2). The deliverable
-differs from the plan in form: verification runs as a command-driven
-transaction stream against the oracle rather than a QuickCheck suite inside
-`stack test` — turning it into a property-test suite remains open (Phase 0.1).
+killed two real bugs on the way (OK-7, consideration 2). Phase 0.1 is closed:
+`Ampersand.Test.Incremental.Properties` runs in `stack test` — one QuickCheck
+property per proven lemma over the real `ZSet` functions, plus an engine
+oracle property on a miniature context (ISA hierarchy, ONE-typed terms, one
+circuit per node kind) driven by random set-disciplined transaction streams.
 First scaling measurements stand in [bench/RESULTS.md](bench/RESULTS.md):
 across a ×40 database growth the incremental step grows ×6 (10→65 µs) while
 full re-evaluation grows ×1200 (1.65 ms→1.98 s), speedup ×166 → ×30 626.
@@ -241,19 +242,31 @@ development by Chajed serves as a lemma-by-lemma roadmap, not as trust base.
 *Deliverable:* one theory file per Phase-1 rule group, running headless via the
 `proofs/` toolchain. *Exit:* the Phase-1 rule table cites a checked lemma per rule.
 
-*Status (2026-08-13):* session `Incremental_Delta` in `proofs/incremental/`
-builds green from clean (verified first-hand: `isabelle build -c -D
-proofs/incremental`), zero `sorry`, 78 lemmas over four theories. Covered:
-Z1-Z5 (group laws, both bilinear expansions in the asymmetric form the
-implementation uses, the zero-crossing H with its support bound), B1-B6 (the
-Z-to-set bridge per node type), S1-S5 (residual/diamond/dagger antijoin forms
-with adequacy premises, typed complement). The obligation→lemma table stands in
-`proofs/incremental/README.md`. Not yet proved: the structural-induction glue
-(deep embedding of the core language) — the per-transaction oracle covers it
-empirically; D7 recompute nodes need no proof (they run the specification).
-The remaining proof work (Circuit.thy, the QuickCheck code-to-model bridge of
-Phase 0.1, and the population-mirror proof) is specified execution-ready in
-issue [#1683](https://github.com/AmpersandTarski/Ampersand/issues/1683).
+*Status (2026-08-13, updated after issue
+[#1683](https://github.com/AmpersandTarski/Ampersand/issues/1683)):* session
+`Incremental_Delta` in `proofs/incremental/` builds green from clean
+(verified first-hand: `isabelle build -c -D proofs/incremental`), zero
+`sorry`, six theories. Covered: Z1-Z5, B1-B6, S1-S5 as before, and now also
+the whole-circuit induction (`Circuit.thy`, obligations C1-C5: a step
+preserves the invariant, specification nodes recover unconditionally,
+well-formed outputs are the set semantics, the all-zero base is well-formed,
+and every state reachable from the base by at least one transaction —
+backfill included — is correct) and the population mirror (`Population.thy`,
+P1-P5: the occurrence integral is linear, carries the `atomValuesOf` set,
+its distinct-delta is the zero-crossing H, and the relation front-end sums
+feeders with `pairsOf` contents). The obligation→lemma table stands in
+`proofs/incremental/README.md`, together with what deliberately remains
+outside the proofs (dirty-flag shortcuts, the Kleene nodes' reading of their
+child, and the code itself — covered by the QuickCheck bridge and the
+oracle).
+
+Working out the base case surfaced two real engine defects, both fixed on
+branch `prove-incremental-core` and pinned by the new engine property:
+ONE's population was pre-seeded instead of travelling through the backfill
+transaction (leaving `I[ONE]`/`V[..*ONE]` circuits permanently empty), and
+the feeder/cone wiring was derived from the initially populated relations,
+so transactions on initially empty relations or concepts fell through
+silently.
 
 ## Paper track (continuous)
 
@@ -273,9 +286,9 @@ construct as proven delta rules replace fallbacks — residuals first (S1-S4
 proven, implementation work remains), then Kleene closures (Phase 5,
 IncrementalDelete.thy), then EBin and composite concepts; criterion:
 `circuitFallbacks` reports 0 on the target models. As load-bearing evidence it
-retires when Circuit.thy (the whole-circuit induction) and Phase 0.1 (the
-lemmas as QuickCheck properties over the Haskell functions) land; `--verify`
-then demotes to a diagnostic switch, the status `ampersand validate` has
+has retired: Circuit.thy (the whole-circuit induction) and Phase 0.1 (the
+lemmas as QuickCheck properties over the Haskell functions) have landed, so
+`--verify` is now a diagnostic switch, the status `ampersand validate` has
 today. As executable specification it stays: the compiler needs it for
 compile-time checks, and Phase 3 gives it a new referee role — holding the
 generated delta SQL against the proven engine.

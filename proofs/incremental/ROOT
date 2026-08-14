@@ -9,3 +9,5 @@ session Incremental_Delta = HOL +
     Delta
     Bridge
     Desugar
+    Circuit
+    Population
