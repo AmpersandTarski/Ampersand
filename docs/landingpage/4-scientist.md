@@ -26,9 +26,10 @@ Ampersand rests on relation algebra: business rules are formal constraints whose
 
 ## Machine-checked results
 
-Some of Ampersand's claims about its own machinery are proved, several of them with a proof assistant. The [proof track](../proofs/README.md) registers these claims under permanent identifiers, states per claim exactly what is and is not proved, and organises them into narrative trails — stories that answer one reader's question by visiting the proofs that settle it. Two trails are written out today:
+Some of Ampersand's claims about its own machinery are proved, several of them with a proof assistant. The [proof track](../proofs/README.md) registers these claims under permanent identifiers, states per claim exactly what is and is not proved, and organises them into narrative trails — stories that answer one reader's question by visiting the proofs that settle it. Three trails are written out today:
 
 - [Incremental evaluation](../proofs/incremental-evaluation.md) — the incremental evaluator of rule violations is proved to compute exactly the set semantics of every rule term.
+- [Correctness of the incremental SQL queries](../proofs/incremental-sql.md) — the whole chain from script to running system, and the layered argument that delta-maintained violation records agree with the full queries that define them.
 - [The Kleene operators](../proofs/kleene-operators.md) — the rewrite laws for transitive closure, the transitive reduction, and the maintenance of stored closures.
 
 ## Background and direction

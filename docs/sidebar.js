@@ -242,6 +242,7 @@ module.exports = {
             items: [
                 'ampersand/proofs/README',
                 'ampersand/proofs/incremental-evaluation',
+                'ampersand/proofs/incremental-sql',
                 'ampersand/proofs/kleene-operators',
             ]
         },

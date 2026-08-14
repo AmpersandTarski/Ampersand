@@ -485,6 +485,8 @@ Until those steps land, Parts I–III describe every prototype in production,
 unchanged; this part describes the compiler's proven core and the route by
 which it reaches the runtime.
 
+*Proof track: [PRF-6 — the delta SQL maintains the violation records exactly](../proofs/README.md#prf-6).*
+
 ### Where to look
 
 - The [proof track](../proofs/README.md) — the register of claims behind this

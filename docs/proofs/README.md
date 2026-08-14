@@ -25,11 +25,12 @@ Two habits keep these statuses honest. A status is recorded only after the build
 
 | ID | Claim | Status | Artifact | Trails |
 | --- | --- | --- | --- | --- |
-| [PRF-1](#prf-1) | The runtime re-checks exactly the conjuncts a transaction can have changed | paper proof | [From rules to running code, Part III](../reference-material/from-rules-to-running-code.md#part-iii--do-the-compiler-and-the-back-end-agree) | TRAIL-1 |
-| [PRF-2](#prf-2) | The incremental evaluator computes exactly the set semantics of every rule term | machine-checked | [`proofs/incremental/`](https://github.com/AmpersandTarski/Ampersand/tree/main/proofs/incremental), session `Incremental_Delta` | TRAIL-1, TRAIL-2 |
+| [PRF-1](#prf-1) | The runtime re-checks exactly the conjuncts a transaction can have changed | paper proof | [From rules to running code, Part III](../reference-material/from-rules-to-running-code.md#part-iii--do-the-compiler-and-the-back-end-agree) | TRAIL-1, TRAIL-4 |
+| [PRF-2](#prf-2) | The incremental evaluator computes exactly the set semantics of every rule term | machine-checked | [`proofs/incremental/`](https://github.com/AmpersandTarski/Ampersand/tree/main/proofs/incremental), session `Incremental_Delta` | TRAIL-1, TRAIL-2, TRAIL-4 |
 | [PRF-3](#prf-3) | The Kleene rewrite laws are sound, `r%` is the transitive reduction, and insert-only closure maintenance converges | machine-checked | [`proofs/kleene/KleeneReduction.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/kleene/KleeneReduction.thy) | TRAIL-3 |
 | [PRF-4](#prf-4) | Incremental deletion from a stored closure is exact, cycles included | machine-checked | [`proofs/kleene/IncrementalDelete.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/kleene/IncrementalDelete.thy) | TRAIL-2, TRAIL-3 |
 | [PRF-5](#prf-5) | A singleton relation is neither total nor surjective in general; the law that assumed so is refuted | machine-checked | [`proofs/kleene/SingletonSurjective.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/kleene/SingletonSurjective.thy) | TRAIL-3 |
+| [PRF-6](#prf-6) | The generated delta SQL and its maintenance protocol keep the violation records equal to full re-evaluation | stated | obligation stated in [Correctness of the incremental SQL queries](./incremental-sql.md); formalisation planned in Lean 4 | TRAIL-4 |
 
 ### PRF-1 {#prf-1}
 
@@ -61,6 +62,12 @@ Two habits keep these statuses honest. A status is recorded only after the build
 
 *Artifact:* [`proofs/kleene/SingletonSurjective.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/kleene/SingletonSurjective.thy). *Scope:* the refutation motivated the corrected `isTotSur`/`isTot` in `Ampersand.Classes.Relational`; the correctness of that Haskell code is covered by the regression suite, not by the theorem.
 
+### PRF-6 {#prf-6}
+
+**The generated delta SQL and its maintenance protocol keep the violation records equal to full re-evaluation.** The compiler derives, per conjunct and affected relation, a delta term — an ordinary relation-algebra expression over the base relations and the transaction's changed pairs — and compiles it with the same term-to-SQL translation as the full violation queries; the runtime applies the resulting delta queries to a materialized violation table through scoped statements, with full re-evaluation as fallback outside the supported class. The claim is that this maintained table equals, after every commit, the result of the full violation queries. The obligation has two halves: a correspondence between the generated SQL operations and the proven Z-set operations of [PRF-2](#prf-2), and a protocol statement that the commit-time sequence of statements preserves the cache invariant, fallback and repair-engine iterations included.
+
+*Status:* stated — registered before its proof, as the working method requires. *Evidence to date:* a validate-style harness over the regression suite and a divergence-free shadow run of 1142 transactions on a production-scale application, documented in the trail [Correctness of the incremental SQL queries](./incremental-sql.md). *Planned vehicle:* Lean 4, with [Chajed's Lean formalisation of DBSP](https://github.com/tchajed/database-stream-processing-theory) as a lemma-by-lemma roadmap.
+
 ## Trails
 
 | ID | Trail | The question it answers | Narrative | Claims visited |
@@ -68,6 +75,7 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | TRAIL-1 | From rules to running code | When I write a rule, where does its code end up, and is the enforcement machinery correct? | [From rules to running code](../reference-material/from-rules-to-running-code.md) | PRF-1, PRF-2 |
 | TRAIL-2 | Incremental evaluation | Can a system that maintains rule violations incrementally ever disagree with full re-evaluation? | [Incremental evaluation](./incremental-evaluation.md) | PRF-2, PRF-4 |
 | TRAIL-3 | The Kleene operators | What does Ampersand guarantee about transitive closure — its laws, its reduction, its maintenance? | [The Kleene operators](./kleene-operators.md) | PRF-3, PRF-4, PRF-5 |
+| TRAIL-4 | Correctness of the incremental SQL queries | When the runtime maintains its violation records by increments, what guarantees they never drift from the full queries that define them? | [Correctness of the incremental SQL queries](./incremental-sql.md) | PRF-1, PRF-2, PRF-6 |
 
 A trail's narrative need not live on this site. TRAIL-1 is anchored in the reference chapter that contributors already read; a future trail may be anchored in a published article, with the register linking the article to the claims it rests on. What the register guarantees is the connection: from any claim to every story that uses it, and from any story to every claim it stands on.
 

@@ -62,3 +62,5 @@ isabelle build -D proofs/kleene
 ```
 
 The property bridge runs with the ordinary test suite (`stack test`), and the oracle comparison with `stack exec ampersand -- incremental-bench --verify`. The benchmark measurements that motivate the whole construction — an incremental step whose cost follows the change while full re-evaluation follows the database — are reported with their method in the repository, under `memorybank/incremental-evaluation/`.
+
+The road from these in-compiler results to the generated SQL and the running system is the subject of the trail [Correctness of the incremental SQL queries](./incremental-sql.md).
