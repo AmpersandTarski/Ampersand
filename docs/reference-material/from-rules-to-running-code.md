@@ -14,6 +14,11 @@ contributors and is deliberately layered, so you can stop at the depth you need:
 - **[Part III — Do the two sides agree?](#part-iii--do-the-compiler-and-the-back-end-agree)**
   proves that the compiler and the back-end agree, exactly, on which conjuncts to
   re-check after a change — no missed violations and no wasted work.
+- **[Part IV — Paying for the change, not the database](#part-iv--paying-for-the-change-not-the-database)**
+  follows the work in progress that makes each re-check itself incremental: a
+  delta computation whose cost follows the size of the change, with the proofs
+  and measurements that exist today and the steps that remain before prototypes
+  run it.
 
 ---
 
@@ -65,9 +70,12 @@ JSON files change.
 
 The compiler also computes **quads**, which wire each relation to the rules it can
 break. A quad records: *if this relation changes, then this rule may be violated,
-so check these conjuncts.* When the back-end mutates a relation, it uses the quads
-to run only the affected conjunct queries — not every rule. The wiring is computed
-once at compile time; the checking happens at runtime, inside the PHP transaction.
+so check these conjuncts.* The same wiring ships to the back-end as
+`affectedConjuncts` lists in `concepts.json` and `relations.json`. During a
+transaction the back-end only records which relations and concepts were touched;
+when the transaction closes it unions their lists and runs exactly those conjunct
+queries — not every rule. The wiring is computed once at compile time; the
+checking happens at runtime, inside the PHP transaction.
 
 ### Invariants versus signals
 
@@ -224,7 +232,8 @@ That subset is small and partly already enforced structurally by keys. The
 genuine win for "less back-end ↔ database traffic" is not triggers but **batching
 detection into a single round trip** — a stored procedure or one `UNION ALL` query
 that evaluates all affected conjuncts server-side — while rollback, repair and
-messaging stay in the back-end.
+messaging stay in the back-end. Part IV attacks the same cost from the other
+side: not fewer round trips, but smaller queries.
 
 This layering is deliberate: the compiler reasons about rules algebraically,
 generates *data* (JSON + SQL), and delegates *interpretation* to a generic
@@ -352,3 +361,136 @@ Taking the union over all of the transaction's changes gives
   the index (which the runtime never recomputes). There is no duplicated derivation
   to get out of step — which is the strongest form of the "compute once, ship the
   result" principle.
+
+---
+
+## Part IV — Paying for the change, not the database
+
+Parts I–III describe every prototype Ampersand generates today, and Part III
+proved that the *selection* of conjuncts to re-check is exact. The check itself,
+however, is not proportional to the change: each selected conjunct re-runs its
+full violation query over the whole population. Insert one pair into a database
+of a million pairs, and the joins of Part II section 1 run over the million.
+
+The **incremental evaluation** work (issue
+[#1682](https://github.com/AmpersandTarski/Ampersand/issues/1682), branch
+`incremental-evaluation`) removes that mismatch: it computes the *change* of
+each violation set directly from the *change* in the population, in time
+proportional to the change. The theory is DBSP ("DBSP: Automatic Incremental
+View Maintenance for Rich Query Languages", arXiv 2203.16684, VLDB 2023) — a
+compile-time transformation that turns any relational-algebra query into its
+incremental form. Ampersand's rule terms are relational algebra over binary
+relations, so the theory applies without translation loss. This part gives the
+mechanism at the level of Part II and states precisely what exists today; the
+full rule table, the proofs and the raw measurements live in the repository,
+under `memorybank/incremental-evaluation/` and `proofs/incremental/`.
+
+### 1. Z-sets: sets that can express a change
+
+A **Z-set** maps each pair to an integer weight; pairs not mentioned have
+weight 0. An ordinary relation is a Z-set with all weights 1. A *change* is a
+small Z-set too: weight +1 means "this pair was inserted", −1 "this pair was
+deleted". One transaction thus becomes one small Z-set per touched relation,
+plus one per concept for atom creation and deletion — atom changes are deltas
+like any other, which is how the typology of Part III joins the calculus.
+
+The weights are not bookkeeping decoration; composition needs them. The pair
+`(x,y)` is in `r;s` when *some* intermediate `z` witnesses it, and there may be
+several. Deleting one witness must not delete the pair while another witness
+remains. The weight counts the witnesses, and a `distinct` step clips positive
+weights back to 1 where set semantics is required. Getting that clip right is
+the crux of the whole construction (rule D6 below).
+
+### 2. The delta rules
+
+Each conjunct's violation term is first desugared into a small core language:
+complements become differences from `V`, and the residuals `l/r`, `l\r`, the
+diamond and the relative addition become "no witness" compositions — the
+antijoin discipline that keeps `V[A×B]` from ever being materialized. The core
+term then becomes a **circuit**: one node per subterm, each holding exactly the
+state its delta rule needs. A transaction enters at the leaves (the changed
+relations and concepts) and propagates upward; each node emits the delta of its
+output. Three groups of rules cover the core:
+
+| Operators | Delta rule | State kept per node |
+| --- | --- | --- |
+| converse, union, difference | *linear*: the delta passes straight through, e.g. `Δ(a∪b) = Δa + Δb` | the weighted sum (for the `distinct` step) |
+| composition, intersection, cartesian product | *bilinear*: `Δ(a⊗b) = Δa⊗b_old + a_new⊗Δb` — evaluated by index lookups against the maintained inputs, never a full scan | composition also keeps a converse copy of its left input, so both lookup directions are indexed |
+| `distinct` (weights → set) | *zero-crossing*: a pair enters the set when its weight rises above 0 and leaves when it drops to 0; all other weight changes are invisible | the pre-`distinct` weights |
+
+Kleene closures (`*`, `+`) and the built-in operators have no delta rule yet:
+their nodes recompute from their — incrementally maintained — input whenever
+that input changed. That is the general discipline of the design: **a construct
+without a proven delta rule falls back to full evaluation**, so the route is
+never incorrect, only locally slower. Incremental closure maintenance is a
+planned phase of its own.
+
+The full table, with the desugaring identities and their derivations, is
+`memorybank/incremental-evaluation/delta-calculus.md`.
+
+### 3. What exists today: a proven, measured evaluator in the compiler
+
+`Ampersand.FSpec.Incremental` (with `Ampersand.FSpec.Incremental.ZSet`)
+implements the circuits in pure Haskell, next to the existing full evaluator
+`fullContents` — the compiler's in-memory equivalent of the violation SQL. The
+command `ampersand incremental-bench` builds the circuits for a model, runs a
+stream of random single-pair transactions through both evaluators, and in
+`--verify` mode compares the maintained violation set of every conjunct against
+a fresh full evaluation after every single transaction.
+
+The measured gap is the point of the whole exercise. Across a ×40 growth of the
+benchmark database (200 → 8 000 pairs per relation), the incremental step grows
+×6 (10 → 65 µs per transaction) while full re-evaluation grows ×1 200
+(1.65 ms → 1.98 s) — a speedup between ×166 and ×30 626, with zero mismatches
+on the verified runs. The incremental cost follows the size of the change; the
+full cost follows the size of the database. Raw data and method:
+`memorybank/incremental-evaluation/bench/RESULTS.md`.
+
+The delta rules are machine-checked. The Isabelle/HOL session
+`Incremental_Delta` in `proofs/incremental/` (six theories, no unproven gaps)
+covers the Z-set algebra, the bilinear expansions, the zero-crossing rule, the
+desugaring identities, and a whole-circuit induction: every state reachable
+from the empty database by transactions — the initial backfill included —
+yields exactly the set semantics of every term. The obligation-to-lemma map is
+in `proofs/incremental/README.md`. A QuickCheck suite in `stack test` states
+the same lemmas as properties over the actual Haskell functions, so the code
+is bound to the proofs on every build.
+
+### 4. What remains before a prototype runs it
+
+The runtime seam is already in place. The prototype framework materializes
+violations per conjunct in a database table (`__conj_violation_cache__`) and
+refreshes it wholesale at each commit: delete all rows of the conjunct, re-run
+the full query, insert the result. Signal rules are *read* entirely from that
+table. Incremental evaluation therefore changes the refresh strategy of an
+existing store, not the architecture around it. Two steps remain:
+
+- **Delta SQL (compiler).** Derive, per (conjunct, affected relation), the
+  delta term as an ordinary `Expression` and compile it with the same
+  `selectExpr` machinery of Part II — delta terms are just terms over the
+  transaction's changed pairs. `conjuncts.json` grows an optional per-relation
+  delta-query field; the framework ignores unknown fields, so the contract
+  stays backward compatible.
+- **Runtime adoption (prototype framework).** Maintain the violation table by
+  applying row deltas instead of the wholesale refresh, keep the full queries
+  as fallback and as periodic self-check, and switch per application — after a
+  shadow-run period on a real application in which both routes run, every
+  divergence is logged, and users see only the old route.
+
+Until those steps land, Parts I–III describe every prototype in production,
+unchanged; this part describes the compiler's proven core and the route by
+which it reaches the runtime.
+
+### Where to look
+
+- `src/Ampersand/FSpec/Incremental.hs` and
+  `src/Ampersand/FSpec/Incremental/ZSet.hs` — the circuits, the delta
+  propagation, and the oracle comparison.
+- `src/Ampersand/Commands/IncrementalBench.hs` — the `incremental-bench`
+  command.
+- `src/Ampersand/Test/Incremental/Properties.hs` — the QuickCheck bridge that
+  runs in `stack test`.
+- `proofs/incremental/` — the Isabelle/HOL theories, with the
+  obligation-to-lemma table in its `README.md`.
+- `memorybank/incremental-evaluation/` — the delta calculus, the design-choice
+  register, the plan with phase status, and the benchmark data.
