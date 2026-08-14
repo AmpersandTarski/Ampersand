@@ -170,8 +170,10 @@ candidate queries, `relations.json` the delta-table names, `database.sql` the
 delta tables — all additive. The referee harness (`incremental-bench --sql`,
 `Ampersand.Prototype.DeltaSQLHarness`) runs green on five models against a
 real MariaDB, subtyping and complements included; Kleene models correctly
-report zero delta support. Open within this phase: the C-obligation proofs
-(candidate completeness, §7), and a candidate-cost measurement.
+report zero delta support. The K-obligation proofs (candidate completeness,
+§7; named C-obligations until 2026-08-14) are machine-checked in
+`proofs/incremental/Candidates.thy` on branch `incremental-evaluation`
+(register claim PRF-7). Open within this phase: a candidate-cost measurement.
 
 ### Phase 4 — Runtime adoption and measurement
 

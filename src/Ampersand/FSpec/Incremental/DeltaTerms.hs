@@ -8,7 +8,8 @@
 --   violation predicate on a small set of candidate pairs — the pairs whose
 --   violation status may have changed given the transaction's touched pairs.
 --   No weight columns, no intermediate state: the SQL side only needs
---   candidate COMPLETENESS (obligation series C, delta-calculus.md §7).
+--   candidate COMPLETENESS (obligation series K, delta-calculus.md §7;
+--   machine-checked in proofs/incremental/Candidates.thy, claim PRF-7).
 --
 --   For every populatable relation r there is a delta table (a two-column
 --   'BinSQL' plug) holding the pairs touched by the current transaction —

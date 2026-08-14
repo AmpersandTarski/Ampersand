@@ -221,9 +221,16 @@ Any other constructor makes the conjunct unsupported: it keeps full
 re-evaluation. Concept-population changes (which move `I`, `V` and `EBin`)
 also keep full re-evaluation, via the existing concept-affected trigger (OK-9).
 
-**Proof obligations (C-series, open):** for every rule above, if a pair's
-membership in the term differs between the old and the new database state,
-then the pair is in the union of the candidate terms evaluated over the new
-state plus the delta tables. C1 union, C2 intersection, C3 difference,
-C4 composition, C5 converse, C6 complement. Until proven, the delta-SQL
-harness (`ampersand incremental-bench --sql`) tests them against MariaDB.
+**Proof obligations (K-series, machine-checked 2026-08-14):** for every rule
+above, if a pair's membership in the term differs between the old and the new
+database state, then the pair is in the union of the candidate terms evaluated
+over the new state plus the delta tables. K1 union, K2 intersection,
+K3 difference, K4 composition, K5 converse, K6 complement. Proven in
+`proofs/incremental/Candidates.thy` (branch `incremental-evaluation`, register
+claim PRF-7): one lemma per rule, the W/N envelope invariant, the whole-term
+theorem `K_complete`, and the per-relation decomposition `K_per_relation`
+that justifies taking the union of per-relation candidate queries. The series
+was labelled C1..C6 until 2026-08-14; it is renamed to K (kandidaat) because
+C1..C5 name the whole-circuit obligations of `Circuit.thy`. The delta-SQL
+harness (`ampersand incremental-bench --sql`) remains as the test that binds
+the generated SQL to these lemmas.

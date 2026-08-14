@@ -52,8 +52,10 @@ echte MariaDB, subtyping en complementen inbegrepen.
      veranderen), een instelbare cadans, en één integrale eindcheck.
 - **Parallelle sporen** die de volgorde raken, niet de inhoud: de lopende
   release v5.9.7 (de `delta-sql`-branch merget daarna), de #1683-bewijssessie
-  in haar eigen worktree, en de nog onbewezen C-obligaties
-  (candidate-volledigheid) — de praktijktest is juist hun empirische toets.
+  in haar eigen worktree, en de destijds nog onbewezen K-obligaties
+  (kandidaat-volledigheid; tot 2026-08-14 "C-obligaties" geheten) — de
+  praktijktest is juist hun empirische toets. Inmiddels zijn zij
+  machine-checked: `proofs/incremental/Candidates.thy`, registerclaim PRF-7.
 
 Oordeel: **nog niet toe aan de praktijktest zelf**; wel aan stap 0 en stap 1,
 die samen de weg vrijmaken.
@@ -110,8 +112,9 @@ stap 1's wide-table-mutaties er zijn, dezelfde run op de productie-tabellayout.
   volledige populatie en de productie-tabellayout, referee elke tiende
   transactie op de geraakte conjuncts plus per chunk een integrale eindcheck
   over alle 611 delta-onderhouden caches: **nul verschillen**. De
-  C-obligaties (kandidaat-volledigheid) zijn daarmee empirisch stevig
-  ondersteund; het bewijs blijft open werk.
+  K-obligaties (kandidaat-volledigheid) zijn daarmee empirisch stevig
+  ondersteund; sinds 2026-08-14 zijn zij bovendien machine-checked
+  (`proofs/incremental/Candidates.thy`, registerclaim PRF-7).
 - **(c) Tijdverhouding: het delta-protocol wint hier nog niet.** Medianen per
   transactie over de drie chunks: delta-protocol 547/567/596 ms; referee
   (cache-pull plus volledige her-evaluatie van de geraakte conjuncts)
