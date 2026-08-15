@@ -1,0 +1,10 @@
+59.7	2	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+10.4	1	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+3.2	1	UPDATE `SESSION` SET `PrototypeContext.lastAccess` = ? WHERE `SESSION` = ? 
+2.6	1	COMMIT 
+1.4	1	TRUNCATE `performance_schema` . `events_statements_summary_by_digest` 
+0.3	2	UPDATE `Script` SET `content` = ? WHERE `Script` = ? 
+0.2	1	SELECT `SESSION` AS `src` , `PrototypeContext.sessionActiveRoles` AS `tgt` FROM `SESSION` WHERE `SESSION` = ? AND `PrototypeContext.sessionActiveRoles` IS NOT N
+0.2	3	DELETE FROM `__conj_violation_cache__` WHERE `conjId` IN (?) 
+0.1	1	SELECT `Script` FROM `Script` WHERE `Script` = ? 
+0.0	1	START TRANSACTION 
