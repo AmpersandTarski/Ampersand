@@ -157,7 +157,7 @@ non-collapsible complements, and Kleene closures evaluate as recompute
 delta-SQL generation of Phase 3.
 
 **Delta SQL maintains the violation cache by delta-scoped re-evaluation: generated candidate queries name the pairs to recheck, and the recheck runs the existing violation predicate.**
-*OK-8 · valid · 2026-08-13 · origin: issue #1684, [delta-calculus.md](delta-calculus.md) §7*
+*DC-8 · valid · 2026-08-13 · origin: issue #1684, [delta-calculus.md](delta-calculus.md) §7*
 
 Per (conjunct, relation) the compiler emits one candidate query over the
 current tables plus the delta tables (one two-column table per relation,
@@ -188,7 +188,7 @@ today's `__conj_violation_cache__`, unchanged.
 fields; a framework that ignores them behaves exactly as today.
 
 **A transaction that changes concept populations keeps full re-evaluation for the conjuncts it affects; delta queries serve the relation-triggered case.**
-*OK-9 · valid · 2026-08-13 · origin: issue #1684, [prototype-runtime-map.md](prototype-runtime-map.md)*
+*DC-9 · valid · 2026-08-13 · origin: issue #1684, [prototype-runtime-map.md](prototype-runtime-map.md)*
 
 The runtime's existing concept-affected trigger (`concepts.json`,
 `affectedConjuncts`) remains the route for atom creation and deletion; the

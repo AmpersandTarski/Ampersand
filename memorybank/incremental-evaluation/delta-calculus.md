@@ -187,7 +187,7 @@ Phase 5 (D7 covers them correctly, at recompute cost).
 
 ## 7. The candidate calculus for delta SQL (Phase 3, issue #1684)
 
-The SQL side uses delta-scoped re-evaluation (OK-8): the cache update re-runs
+The SQL side uses delta-scoped re-evaluation (DC-8): the cache update re-runs
 the existing violation predicate on a candidate set, so only candidate
 **completeness** matters — no weights, no intermediate state. With `Δs` the
 delta table of relation s (the pairs touched by the transaction; empty when s
@@ -219,7 +219,7 @@ D = []    on I, V, atom literals, EBin
 
 Any other constructor makes the conjunct unsupported: it keeps full
 re-evaluation. Concept-population changes (which move `I`, `V` and `EBin`)
-also keep full re-evaluation, via the existing concept-affected trigger (OK-9).
+also keep full re-evaluation, via the existing concept-affected trigger (DC-9).
 
 **Proof obligations (K-series, machine-checked 2026-08-14):** for every rule
 above, if a pair's membership in the term differs between the old and the new

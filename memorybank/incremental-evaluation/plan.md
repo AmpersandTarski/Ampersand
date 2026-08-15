@@ -161,7 +161,7 @@ the schema gains one materialized violation table per conjunct.
 full-query results on the test suite.
 
 *Status:* issue #1684, branch `delta-sql`. The design shifted from weighted
-caches to **delta-scoped re-evaluation** (OK-8): candidate queries name the
+caches to **delta-scoped re-evaluation** (DC-8): candidate queries name the
 pairs to recheck, the recheck runs the existing violation predicate, and the
 cache schema stays as it is. The candidate calculus (W/N envelopes + D-rules,
 [delta-calculus.md](delta-calculus.md) §7) lives in

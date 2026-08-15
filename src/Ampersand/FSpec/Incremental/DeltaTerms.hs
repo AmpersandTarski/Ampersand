@@ -39,7 +39,7 @@ import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
 
--- | The fabricated delta relation Δr (design choice OK-2): same signature as
+-- | The fabricated delta relation Δr (design choice DC-2): same signature as
 --   r, a name outside the user namespace, @decusr = False@.
 deltaRelationOf :: Relation -> Relation
 deltaRelationOf r =
@@ -115,7 +115,7 @@ withDeltaPlugs fSpec =
   fSpec {plugInfos = plugInfos fSpec <> map InternalPlug (deltaPlugs fSpec)}
 
 -- | The term class the candidate calculus covers. Anything else keeps full
---   re-evaluation for its conjunct (coverage grows per construct, OK-7).
+--   re-evaluation for its conjunct (coverage grows per construct, DC-7).
 deltaSupported :: Expression -> Bool
 deltaSupported e = case e of
   EUni (a, b) -> deltaSupported a && deltaSupported b
