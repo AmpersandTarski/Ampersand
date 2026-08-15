@@ -210,6 +210,7 @@ library:
     - Ampersand.Test.IFC.IFCBinderTest
     - Ampersand.Test.IFC.IFCRegressionTest
     - Ampersand.Test.IFC.IFCWiringTest
+    - Ampersand.Test.Incremental.CandidateProperties
     - Ampersand.Test.Incremental.Properties
     - Ampersand.Test.Parser.ArbitraryTree
     - Ampersand.Test.Parser.ParserTest

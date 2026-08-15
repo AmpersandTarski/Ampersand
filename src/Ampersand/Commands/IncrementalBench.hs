@@ -24,10 +24,11 @@ import Ampersand.Classes
 import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec
 import Ampersand.FSpec.Incremental
+import Ampersand.FSpec.Incremental.Synthetic
 import Ampersand.FSpec.Incremental.ZSet (relSizeF)
 import Ampersand.FSpec.ToFSpec.Populated (fullContents)
 import Ampersand.Misc.HasClasses
-import Data.Bits (shiftR, xor)
+import Ampersand.Prototype.DeltaSQLHarness (runDeltaSqlHarness)
 import qualified RIO.List as L
 import qualified RIO.Map as Map
 import qualified RIO.Set as Set
@@ -54,7 +55,20 @@ incrementalBench fSpec = do
   seed <- view incBenchSeedL
   verify <- view incBenchVerifyL
   mCsv <- view incBenchCsvL
+  sqlMode <- view incBenchSqlL
+  replay <- view incBenchReplayL
+  refereeEvery <- view incBenchRefereeEveryL
   let scales = parseScales scalesTxt
+  when sqlMode $ do
+    results <- forM (if replay then take 1 scales else scales) $ \n -> do
+      logInfo . display $ "--- delta-sql harness at scale " <> tshow n <> (if replay then " (replay: scale ignored)" else " pairs per relation") <> " ---"
+      runDeltaSqlHarness replay n txCount refereeEvery seed fSpec
+    if and results
+      then logInfo "delta-sql harness: all scales green."
+      else do
+        logError "delta-sql harness: differences found; see log."
+        exitFailure
+    exitSuccess
   let ci = fcontextInfo fSpec
       ctx = fromMaybe (fatal "incremental-bench needs the original context") (originalContext fSpec)
       allConcepts = Set.toList (concs ctx)
@@ -92,10 +106,15 @@ incrementalBench fSpec = do
         loop i eng rng acc
           | i > txCount = pure (reverse acc)
           | otherwise = do
-              let (mtx, opName, rng') = genTx eng synthRels ci n rng
-              case mtx of
+              let (mpick, opName, rng') = pickTx (ieRelPairs eng) synthRels ci n rng
+              case mpick of
                 Nothing -> loop i eng rng' acc
-                Just tx -> do
+                Just (r, (x, y), w) -> do
+                  let tx =
+                        TxDelta
+                          { txRel = Map.singleton r (Map.singleton x (Map.singleton y w)),
+                            txCpt = Map.empty
+                          }
                   ta <- getMonotonicTime
                   let (eng', deltas) = applyTx eng tx
                       !dForce = sum (map (relSizeF . snd) deltas)
@@ -160,88 +179,6 @@ parseScales t =
     Just ns | not (null ns), all (> 0) ns -> ns
     _ -> fatal "--scales must be a comma-separated list of positive numbers, e.g. 1000,2000,4000"
 
--- deterministic splitmix64
-mix :: Word64 -> Word64
-mix s =
-  let z0 = s + 0x9E3779B97F4A7C15
-      z1 = (z0 `xor` (z0 `shiftR` 30)) * 0xBF58476D1CE4E5B9
-      z2 = (z1 `xor` (z1 `shiftR` 27)) * 0x94D049BB133111EB
-   in z2 `xor` (z2 `shiftR` 31)
-
-randBelow :: Int -> Word64 -> (Int, Word64)
-randBelow n rng =
-  let rng' = mix rng
-   in (fromIntegral (rng' `mod` fromIntegral (max 1 n)), rng')
-
--- | Synthetic initial population: per relation, @n@ distinct pairs drawn from
---   pools of @n@ atoms per concept.
-synthesize :: ContextInfo -> [Relation] -> Int -> Word64 -> ([Population], Word64)
-synthesize ci rels n rng0 = go rels rng0 []
-  where
-    go [] rng acc = (acc, rng)
-    go (r : rs) rng acc =
-      let (prs, rng') = drawPairs r n rng Set.empty
-       in go rs rng'
-            $ ARelPopu
-              { popsrc = source r,
-                poptgt = target r,
-                popdcl = r,
-                popps = Set.map (uncurry mkAtomPair) prs
-              }
-            : acc
-    drawPairs r k rng acc
-      | Set.size acc >= k = (acc, rng)
-      | otherwise =
-          let (i, rng1) = randBelow n rng
-              (j, rng2) = randBelow n rng1
-              p = (benchAtom ci (source r) i, benchAtom ci (target r) j)
-           in drawPairs r k rng2 (Set.insert p acc)
-
--- | One random single-pair transaction: insert a fresh pair or delete an
---   existing one in a randomly chosen relation.
-genTx :: IncEngine -> [Relation] -> ContextInfo -> Int -> Word64 -> (Maybe TxDelta, Text, Word64)
-genTx eng rels ci n rng0 =
-  let (ri, rng1) = randBelow (length rels) rng0
-      r = nth ri rels
-      existing = Map.findWithDefault Set.empty r (ieRelPairs eng)
-      (coin, rng2) = randBelow 2 rng1
-      doInsert = coin == 0 || Set.null existing
-   in if doInsert
-        then
-          let tryPair 0 rng = (Nothing, "skip", rng)
-              tryPair (k :: Int) rng =
-                let (i, rngA) = randBelow n rng
-                    (j, rngB) = randBelow n rngA
-                    p = (benchAtom ci (source r) i, benchAtom ci (target r) j)
-                 in if p `Set.member` existing
-                      then tryPair (k - 1) rngB
-                      else (Just (txOf r p 1), "ins", rngB)
-           in tryPair (8 :: Int) rng2
-        else
-          let (i, rng3) = randBelow (Set.size existing) rng2
-              p = nth i (Set.toAscList existing)
-           in (Just (txOf r p (-1)), "del", rng3)
-  where
-    txOf r (x, y) w =
-      TxDelta
-        { txRel = Map.singleton r (Map.singleton x (Map.singleton y w)),
-          txCpt = Map.empty
-        }
-
--- | A deterministic synthetic atom for a concept, honouring its representation.
-benchAtom :: ContextInfo -> A_Concept -> Int -> AAtomValue
-benchAtom ci c i =
-  case unsafePAtomVal2AtomValue tt (Just c) pav of
-    Right v -> v
-    Left msg -> fatal ("incremental-bench cannot synthesize an atom for " <> tshow c <> ": " <> msg)
-  where
-    tt = reprType ci c
-    pav = case tt of
-      Integer -> ScriptInt OriginUnknown (fromIntegral i)
-      Float -> ScriptFloat OriginUnknown (fromIntegral i)
-      Boolean -> ComnBool OriginUnknown (even i)
-      _ -> ScriptString OriginUnknown ("bench_" <> tshow i)
-
 -- 'getMonotonicTime' returns nanoseconds (verified empirically against a
 -- 100 ms threadDelay).
 nsToMicros :: Double -> Double
@@ -249,11 +186,6 @@ nsToMicros = (/ 1e3)
 
 nsToSecs :: Double -> Double
 nsToSecs = (/ 1e9)
-
-nth :: Int -> [a] -> a
-nth i xs = case L.drop i xs of
-  (x : _) -> x
-  [] -> fatal "nth: index out of range"
 
 median :: [Double] -> Double
 median [] = 0
