@@ -78,6 +78,9 @@ instance HasFSpecGenOpts ValidateOpts where
 instance HasFSpecGenOpts ProofOpts where
   fSpecGenOptsL = lens x6fSpecGenOpts (\x y -> x {x6fSpecGenOpts = y})
 
+instance HasFSpecGenOpts IncrementalBenchOpts where
+  fSpecGenOptsL = lens xIncBenchFSpecGenOpts (\x y -> x {xIncBenchFSpecGenOpts = y})
+
 instance HasFSpecGenOpts PopulationOpts where
   fSpecGenOptsL = lens x5fSpecGenOpts (\x y -> x {x5fSpecGenOpts = y})
 
@@ -518,6 +521,68 @@ newtype ProofOpts = ProofOpts
 instance HasOptions ProofOpts where
   optsList opts =
     optsList (x6fSpecGenOpts opts)
+
+-- | Options for @ampersand incremental-bench@
+data IncrementalBenchOpts = IncrementalBenchOpts
+  { -- | Options required to build the fSpec
+    xIncBenchFSpecGenOpts :: !FSpecGenOpts,
+    -- | Comma-separated population sizes (pairs per relation) to measure at
+    xIncBenchScales :: !Text,
+    -- | Number of single-pair transactions per scale
+    xIncBenchTxCount :: !Int,
+    -- | Seed of the deterministic transaction stream
+    xIncBenchSeed :: !Int,
+    -- | Check every transaction against full re-evaluation (the oracle)
+    xIncBenchVerify :: !Bool,
+    -- | Write per-transaction measurements to this CSV file
+    xIncBenchCsv :: !(Maybe FilePath),
+    -- | Run the delta-SQL referee harness against MariaDB instead of the
+    --   in-memory benchmark (issue #1684)
+    xIncBenchSql :: !Bool,
+    -- | Harness transactions replay pairs from the real population instead
+    --   of synthesizing atoms; works on any table layout
+    xIncBenchReplay :: !Bool,
+    -- | Referee cadence in the SQL harness: check the affected conjuncts
+    --   every k-th transaction (the final full check always runs)
+    xIncBenchRefereeEvery :: !Int
+  }
+  deriving (Show)
+
+instance HasOptions IncrementalBenchOpts where
+  optsList opts =
+    optsList (xIncBenchFSpecGenOpts opts)
+      <> [ ("--scales", xIncBenchScales opts),
+           ("--transactions", tshow (xIncBenchTxCount opts)),
+           ("--seed", tshow (xIncBenchSeed opts)),
+           ("--verify", tshow (xIncBenchVerify opts)),
+           ("--csv", maybe "<not set>" tshow (xIncBenchCsv opts)),
+           ("--sql", tshow (xIncBenchSql opts)),
+           ("--replay", tshow (xIncBenchReplay opts)),
+           ("--referee-every", tshow (xIncBenchRefereeEvery opts))
+         ]
+
+class HasIncrementalBenchOpts env where
+  incrementalBenchOptsL :: Lens' env IncrementalBenchOpts
+  incBenchScalesL :: Lens' env Text
+  incBenchScalesL = incrementalBenchOptsL . lens xIncBenchScales (\x y -> x {xIncBenchScales = y})
+  incBenchTxCountL :: Lens' env Int
+  incBenchTxCountL = incrementalBenchOptsL . lens xIncBenchTxCount (\x y -> x {xIncBenchTxCount = y})
+  incBenchSeedL :: Lens' env Int
+  incBenchSeedL = incrementalBenchOptsL . lens xIncBenchSeed (\x y -> x {xIncBenchSeed = y})
+  incBenchVerifyL :: Lens' env Bool
+  incBenchVerifyL = incrementalBenchOptsL . lens xIncBenchVerify (\x y -> x {xIncBenchVerify = y})
+  incBenchCsvL :: Lens' env (Maybe FilePath)
+  incBenchCsvL = incrementalBenchOptsL . lens xIncBenchCsv (\x y -> x {xIncBenchCsv = y})
+  incBenchSqlL :: Lens' env Bool
+  incBenchSqlL = incrementalBenchOptsL . lens xIncBenchSql (\x y -> x {xIncBenchSql = y})
+  incBenchReplayL :: Lens' env Bool
+  incBenchReplayL = incrementalBenchOptsL . lens xIncBenchReplay (\x y -> x {xIncBenchReplay = y})
+  incBenchRefereeEveryL :: Lens' env Int
+  incBenchRefereeEveryL = incrementalBenchOptsL . lens xIncBenchRefereeEvery (\x y -> x {xIncBenchRefereeEvery = y})
+
+instance HasIncrementalBenchOpts IncrementalBenchOpts where
+  incrementalBenchOptsL = id
+  {-# INLINE incrementalBenchOptsL #-}
 
 -- | Options for @ampersand init@
 data InitOpts = InitOpts

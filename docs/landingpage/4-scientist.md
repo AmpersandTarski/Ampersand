@@ -24,6 +24,14 @@ Ampersand rests on relation algebra: business rules are formal constraints whose
 - [Which research results have been produced?](../research#Results) — RAP, graduations, the *Rule Based Design* course and book, and systems built in production.
 - [Unpublished research](../research#unpublished-research) — working notes not yet peer-reviewed, such as [making ExecEngine oscillation risk visible](../ongoing-research/making-oscillation-risk-visible.md).
 
+## Machine-checked results
+
+Some of Ampersand's claims about its own machinery are proved, several of them with a proof assistant. The [proof track](../proofs/README.md) registers these claims under permanent identifiers, states per claim exactly what is and is not proved, and organises them into narrative trails — stories that answer one reader's question by visiting the proofs that settle it. Three trails are written out today:
+
+- [Incremental evaluation](../proofs/incremental-evaluation.md) — the incremental evaluator of rule violations is proved to compute exactly the set semantics of every rule term.
+- [Correctness of the incremental SQL queries](../proofs/incremental-sql.md) — the whole chain from script to running system, and the layered argument that delta-maintained violation records agree with the full queries that define them.
+- [The Kleene operators](../proofs/kleene-operators.md) — the rewrite laws for transitive closure, the transitive reduction, and the maintenance of stored closures.
+
 ## Background and direction
 
 - [What is the purpose of Ampersand?](./1-interested-visitor.md#whyAmpersand)
@@ -74,6 +82,9 @@ The denotation of a rule is compiled into a SQL query that returns its violation
 Yes: the affected-conjunct selection is proved to retrieve exactly the conjuncts a change can violate — no missed violations, no wasted checks — with the typology reasoning residing solely in the compiler. The note also weighs how far the argument is, and is not, linear-logic-shaped. [Learn more →](../reference-material/from-rules-to-running-code.md#part-iii--do-the-compiler-and-the-back-end-agree)
 
 ### Research, publications & results
+
+**Which of Ampersand's claims are machine-checked?**
+A register with permanent identifiers lists every proved claim, its status, and the Isabelle/HOL artifact that establishes it, and narrative trails walk you through the proofs that answer a given question — with the boundary of each proof stated as precisely as the proof itself. [Learn more →](../proofs/README.md)
 
 **Where can I find the research papers and results produced by the Ampersand team?**
 A single research overview lists every publication from 2000 onward, alongside results such as RAP, graduation projects, the Rule-Based Design course and book, and production systems, so you can locate citable work quickly. [Learn more →](./4-scientist.md)

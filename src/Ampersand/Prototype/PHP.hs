@@ -1,7 +1,10 @@
 module Ampersand.Prototype.PHP
   ( evaluateExpSQL,
     createTempDatabase,
+    probeMySqlServer,
     tempDbName,
+    executeRawSQL,
+    performRawQuery,
   )
 where
 
@@ -14,7 +17,7 @@ import Ampersand.Prototype.TableSpec
 import RIO.Directory
 import RIO.FilePath
 import qualified RIO.Text as T
-import System.Process (cwd, readCreateProcess, shell)
+import System.Process (cwd, readCreateProcessWithExitCode, shell)
 
 createTablePHP :: TableSpec -> [Text]
 createTablePHP tSpec =
@@ -90,6 +93,32 @@ performQuery dbNm queryStr = do
              "echo ']';"
            ]
 
+-- | Execute raw SQL statements (DDL/DML) against the given database, in
+--   order, in one PHP round trip. Fatal on the first statement that errors.
+--   Used by the delta-SQL harness (issue #1684).
+executeRawSQL :: (HasLogFunc env) => Text -> [Text] -> RIO env ()
+executeRawSQL dbNm stmts = do
+  result <- executePHPStr . showPHP $ php
+  when ("Error" `T.isPrefixOf` result)
+    $ fatal ("PHP/SQL problem: " <> result <> "\nstatements:\n" <> T.unlines stmts)
+  where
+    php :: [Text]
+    php =
+      connectToMySqlServerPHP (Just dbNm)
+        <> concat
+          [ [ "$sql=" <> queryAsPHP (SqlQuerySimple stmt) <> ";",
+              "if(!mysqli_query($DB_link,$sql)) {",
+              "  die('Error: '.mysqli_error($DB_link).' (Sql: '.$sql.')');",
+              "}"
+            ]
+            | stmt <- stmts
+          ]
+
+-- | Run one raw two-column query (columns aliased src and tgt) and return the
+--   pairs. Used by the delta-SQL harness (issue #1684).
+performRawQuery :: (HasLogFunc env) => Text -> Text -> RIO env [(Text, Text)]
+performRawQuery dbNm sql = performQuery dbNm (SqlQuerySimple sql)
+
 -- call the command-line php with phpStr as input
 executePHPStr :: (HasLogFunc env) => Text -> RIO env Text
 executePHPStr phpStr = do
@@ -114,37 +143,82 @@ executePHP phpPath = do
       inputFile = phpPath
       outputFile = inputFile <> "Result"
       command = "php " <> show inputFile <> " > " <> show outputFile
-      errorHandler :: (HasLogFunc env) => IOException -> RIO env String
-      errorHandler err = do
-        logError . display $ "Could not execute PHP: " <> tshow err
-        fileContents <- readFileUtf8 phpPath
-        mapM_ (logError . display)
-          $ case fileContents of
-            Left msg -> msg
-            Right txt -> addLineNumbers . T.lines $ txt
-        return "ERROR"
-  execResult <- liftIO (readCreateProcess cp "") `catch` errorHandler
-  -- Check if PHP execution failed
-  when (execResult == "ERROR")
-    $ exitWith
-    . PHPExecutionFailed
-    $ [ "PHP execution failed:",
-        "  The PHP interpreter could not execute the script.",
-        "  Possible causes:",
-        "  - PHP is not installed or not in PATH",
-        "  - The generated PHP script has syntax errors",
-        "  - File permissions issue"
-      ]
-  result <- readFileUtf8 outputFile
-  case result of
-    Right content -> do
-      liftIO $ removeFile outputFile
-      return content
-    Left err ->
+  (exit_code, _out, err) <- liftIO (readCreateProcessWithExitCode cp "")
+  case exit_code of
+    ExitFailure code -> do
+      fileContents <- readFileUtf8 phpPath
+      mapM_ (logDebug . display)
+        $ case fileContents of
+          Left msg -> msg
+          Right txt -> addLineNumbers . T.lines $ txt
       exitWith
         . PHPExecutionFailed
-        $ "PHP execution failed:"
-        : fmap ("  " <>) err
+        $ [ "PHP execution failed (exit code " <> tshow code <> "). The PHP interpreter reported:"
+          ]
+        <> map ("  " <>) (reportedLines err)
+        <> databaseHint err
+    ExitSuccess -> do
+      result <- readFileUtf8 outputFile
+      case result of
+        Right content -> do
+          liftIO $ removeFile outputFile
+          return content
+        Left err' ->
+          exitWith
+            . PHPExecutionFailed
+            $ "PHP execution failed:"
+            : fmap ("  " <>) err'
+  where
+    reportedLines :: String -> [Text]
+    reportedLines err = case take 10 . filter (not . T.null) . T.lines . T.pack $ err of
+      [] -> ["(the interpreter produced no error output; is PHP installed and in PATH?)"]
+      ls -> ls
+    -- The most common failure by far is a refused database connection, which
+    -- PHP reports as an uncaught mysqli exception. Name the cause and the way
+    -- out, instead of leaving the reader with a bare interpreter error.
+    databaseHint :: String -> [Text]
+    databaseHint err
+      | "mysqli" `T.isInfixOf` T.pack err =
+          [ "",
+            "This is a database-connection failure, not a PHP defect.",
+            "Ampersand reads MYSQL_HOST, MYSQL_USER and MYSQL_PASSWORD (defaults: 127.0.0.1, root, empty password).",
+            "Point MYSQL_HOST at a reachable MariaDB, for example:",
+            "  docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:10.4",
+            "  MYSQL_HOST=127.0.0.1:3310 ampersand validate <script.adl>"
+          ]
+      | otherwise = []
+
+-- | Probe the MySQL server exactly as every generated PHP script reaches it:
+--   the same connection code, reading the same environment variables. Returns
+--   Nothing when the server answers, or the interpreter's error output when
+--   it does not. The probe never exits the program; callers decide how to
+--   report.
+probeMySqlServer :: (HasLogFunc env) => RIO env (Maybe [Text])
+probeMySqlServer = do
+  tempdir <-
+    liftIO getTemporaryDirectory
+      `catch` ( \e -> do
+                  let err = show (e :: IOException)
+                  logWarn $ "Couldn't find temp directory. Using current directory : " <> displayShow err
+                  return "."
+              )
+  let phpPath = tempdir </> "tmpPhpProbeOfAmpersand" <.> "php"
+  liftIO $ createDirectoryIfMissing True (takeDirectory phpPath)
+  writeFileUtf8 phpPath (showPHP php)
+  let cp = (shell ("php " <> show phpPath)) {cwd = Just (takeDirectory phpPath)}
+  (exit_code, out, err) <- liftIO (readCreateProcessWithExitCode cp "")
+  return $ case exit_code of
+    ExitSuccess
+      | "DBOK" `T.isInfixOf` T.pack out -> Nothing
+      -- Older PHP reports a refused connection through die(), which exits 0.
+      | otherwise -> Just (probeLines (out <> "\n" <> err))
+    ExitFailure _ -> Just (probeLines (err <> "\n" <> out))
+  where
+    php = connectToMySqlServerPHP Nothing <> ["echo 'DBOK';"]
+    probeLines :: String -> [Text]
+    probeLines s = case filter (not . T.null) . T.lines . T.pack $ s of
+      [] -> ["(the PHP interpreter produced no output; is PHP installed and in PATH?)"]
+      ls -> ls
 
 addLineNumbers :: [Text] -> [Text]
 addLineNumbers = zipWith (curry withNumber) [0 ..]

@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.9.6
+version:        5.9.7
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -225,6 +225,8 @@ library
       Ampersand.Test.IFC.IFCBinderTest
       Ampersand.Test.IFC.IFCRegressionTest
       Ampersand.Test.IFC.IFCWiringTest
+      Ampersand.Test.Incremental.CandidateProperties
+      Ampersand.Test.Incremental.Properties
       Ampersand.Test.Parser.ArbitraryTree
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks
@@ -241,6 +243,7 @@ library
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation
       Ampersand.Commands.ExportAsADL
+      Ampersand.Commands.IncrementalBench
       Ampersand.Commands.Init
       Ampersand.Commands.Population
       Ampersand.Commands.Proof
@@ -255,6 +258,10 @@ library
       Ampersand.Daemon.Util
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
+      Ampersand.FSpec.Incremental
+      Ampersand.FSpec.Incremental.DeltaTerms
+      Ampersand.FSpec.Incremental.Synthetic
+      Ampersand.FSpec.Incremental.ZSet
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Input.AtlasImport
@@ -264,6 +271,7 @@ library
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser
       Ampersand.Options.FSpecGenOptsParser
+      Ampersand.Options.IncrementalBenchOptsParser
       Ampersand.Options.InputOutputOpts
       Ampersand.Options.PopulationOptsParser
       Ampersand.Options.ProofOptsParser
@@ -272,6 +280,7 @@ library
       Ampersand.Options.ValidateOptsParser
       Ampersand.Output.FSpec2Turtle
       Ampersand.Output.PredLogic
+      Ampersand.Prototype.DeltaSQLHarness
       Ampersand.Types.Config
       Paths_ampersand
   autogen-modules:

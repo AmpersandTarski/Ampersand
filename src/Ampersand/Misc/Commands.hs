@@ -15,6 +15,7 @@ import Ampersand.Commands.Daemon
 import Ampersand.Commands.Devoutput
 import Ampersand.Commands.Documentation
 import Ampersand.Commands.ExportAsADL
+import Ampersand.Commands.IncrementalBench
 import Ampersand.Commands.Population
 import Ampersand.Commands.Proof
 import Ampersand.Commands.Proto
@@ -31,6 +32,7 @@ import Ampersand.Options.DevoutputOptsParser
 import Ampersand.Options.DocOptsParser
 import Ampersand.Options.FSpecGenOptsParser
 import Ampersand.Options.GlobalParser
+import Ampersand.Options.IncrementalBenchOptsParser
 import Ampersand.Options.InputOutputOpts
 import Ampersand.Options.PopulationOptsParser
 import Ampersand.Options.ProofOptsParser
@@ -127,6 +129,15 @@ commandLineHandler currentDir _progName args =
       --                  ""
       --                  (mkAction init)
       --                  initOptsParser
+      addCommand''
+        IncrementalBench
+        ( "Benchmark incremental evaluation of rule violations against full "
+            <> "re-evaluation, on synthetic populations of increasing size. "
+            <> "With --verify, every transaction is checked against the "
+            <> "in-memory oracle. This is for measuring the Ampersand compiler only."
+        )
+        (mkAction incrementalBench)
+        incrementalBenchOptsParser
       addCommand''
         Population
         "Generate a file that contains the population of your script."
@@ -423,6 +434,7 @@ data Command
   | Devoutput
   | Documentation
   | Export
+  | IncrementalBench
   | Population
   | Proofs
   | Proto
@@ -437,6 +449,7 @@ instance Show Command where
   show Devoutput = "dev-output"
   show Documentation = "documentation"
   show Export = "export"
+  show IncrementalBench = "incremental-bench"
   show Population = "population"
   show Proofs = "proofs"
   show Proto = "proto"
