@@ -1,0 +1,34 @@
+ExecEngine maintains 100 rules
+conjuncts: 451 total; EE-covered 100; NOT EE-covered 351 (78%)
+of the uncovered: 351 carry delta queries
+
+  conj_3: Anonfirstitemofasequencehasapredecessor
+  conj_4: Anonlastitemofasequencehasasuccessor
+  conj_17: RefuseExistingStudentnumber
+  conj_18: PrototypeContext.INJ1281036245684789643
+  conj_19: PrototypeContext.INJ2929575726137283991
+  conj_21: PrototypeContext.INJ2774696913355351083
+  conj_22: INJ4126518529494829744
+  conj_23: INJ7382357686650527613
+  conj_24: INJ7947132917451382854
+  conj_25: INJ9172587998251935961
+  conj_26: INJ7434477813244724502
+  conj_27: INJ449897729261649246
+  conj_28: INJ2960433485094639880
+  conj_29: INJ7072671161078620726
+  conj_30: INJ3493534666395186405
+  conj_31: INJ2843163181122214783
+  conj_32: INJ7352086102017562562
+  conj_33: INJ3585598202944245916
+  conj_34: INJ2804792183815505881
+  conj_35: INJ4337333777700002187
+  conj_36: INJ7547663604599314229
+  conj_37: INJ4774645661269916105
+  conj_38: INJ6907701090098994598
+  conj_39: INJ8315285510604390347
+  conj_40: Anonemptysequencehasafirstitemandalastitem
+  conj_41: INJ1095661169782432840
+  conj_42: INJ5396909113034528125
+  conj_43: INJ3051461949893720724
+  conj_44: Authenticateuser
+  conj_45: INJ8813356845805922170

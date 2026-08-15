@@ -42,19 +42,18 @@ decomposes those ~69 ms:
 
 | component | cost | grows with db? |
 |---|---:|---|
-| ExecEngine forced full re-evaluation (2 fixpoint iterations of the affected EE rule, `ExecEngine.php:167` `checkRule(true)`) | ~57 ms | **yes — linear** |
+| the expensive EE-rule conjunct evaluated twice — once by the ExecEngine (`ExecEngine.php:167` `checkRule(true)`), once again by the close | ~57 ms | **yes — linear** |
 | one further full conjunct evaluation | ~9 ms | yes |
 | `lastAccess` bookkeeping + COMMIT + mutation | ~12 ms | no |
-| delta-protocol cache maintenance (`on` only: delta-table insert, 3 scoped cache updates) | ~0.5 ms | no |
+| delta-table bookkeeping (`on` only) | ~0.5 ms | no |
 
-The delta protocol does exactly what the calculus promises — maintaining
-the violation cache for the three affected conjuncts costs half a
-millisecond instead of a full re-evaluation. The reason `off` does not pay
-for its wholesale refresh either is in-request memoization: the ExecEngine
-has just force-evaluated those same conjuncts in full, so the close reuses
-the result. As long as `ExecEngine::run` force-evaluates every affected
-conjunct on every fixpoint iteration, that forced evaluation dominates the
-close, and cache maintenance — incremental or not — is noise beside it.
+Why did `on` not save the close's share? The replay response gives the
+answer: this edit reports `affectedConcepts: 1` — deleting and re-adding
+the content pair touches the `ScriptContent` population, the
+concept-affected fallback fires, and the `on` close takes the same full
+evaluations as `off`. The only difference that remains is the delta-table
+bookkeeping, which is the consistent 0.2–0.5 ms loss. The follow-up below
+measures what happens when the fallback does *not* fire.
 
 ## What carries the benchmark
 
@@ -68,21 +67,80 @@ executed once per fixpoint iteration. Page-open queries are a small share
 of total database time; the interface side carries `StudentScripts` as its
 only growing term.
 
+## Follow-up: where the win can and cannot be harvested (2026-08-15, same day)
+
+The equality of `off` and `on` raised the right question — is the protocol
+applied at the wrong place, or does RAP not have the problem? Three
+verified findings answer it.
+
+**A. 78% of RAP's conjuncts are outside the ExecEngine — and all of them
+are cheap.** The ExecEngine maintains 100 of RAP's 451 conjunct-bearing
+rules; 351 conjuncts (78%) have no EE rule and are evaluated only by the
+close ([analyze-coverage.py](analyze-coverage.py)). Timing every one of
+those 351 full queries against the 12 000-script database (calibrated for
+client overhead) puts each at roughly 0–15 ms, most between 1 and 8 ms:
+they are multiplicity checks (`UNI`/`INJ`/`SYM`/`ASY`) that MariaDB
+answers from indexes. RAP's only expensive violation queries belong to
+EE rules (*Submission Timestamping*, *Submittor*: 26–29 ms at this size).
+
+**B. On a delta-eligible transaction the protocol loses to the cheap full
+queries it replaces.** A real edit without concept churn — swapping
+`submittor` of one script between two existing accounts,
+`affectedConcepts: 0`, 20 repetitions, alternating direction:
+
+| measurement | off | on |
+|---|---:|---:|
+| median closeMs at 12 000 scripts | **40.4 ms** | **47.0 ms** |
+
+The digest shows the candidate protocol working exactly as designed
+(scoped cache DELETEs and INSERT…SELECTs per conjunct, 0.5–10 ms each) —
+and costing ~14 ms where the three cheap full evaluations it replaced
+cost ~10 ms. Fixed protocol machinery per (conjunct, relation) beats
+index-cheap full queries only when those queries are expensive; in RAP
+they never are.
+
+**C. The one expensive close-side evaluation is outside the calculus.**
+In both modes the 26–29 ms *Submittor* query runs twice per swap: once in
+the ExecEngine, once again in the close. The `on` close could not maintain
+it incrementally because `conj_269` is the single conjunct of the 451
+without delta queries — its term contains a cartesian product with
+`_SESSION`, the explicit D7 fallback. The close's second evaluation is
+also redundant in a different way: the ExecEngine had just evaluated it
+and made no repairs afterwards, so a clean-since-evaluation check would
+skip it without any incremental machinery.
+
 ## Reading, for the article
 
 The end-to-end hypothesis — transaction latency near-constant as the
-population grows — does not hold on RAP **yet**, and the measurements
-locate the remaining work to one line of framework code: the ExecEngine's
-forced full re-evaluation. The incremental machinery itself delivers its
-promise wherever it is actually on the critical path: cache maintenance
-per affected conjunct went from a database-sized query to a
-half-millisecond scoped update, consistent with the engine-level
-measurements (`bench/RESULTS.md`: incremental step ×6 versus full
-re-evaluation ×1200 over a ×40 growth). Feeding the ExecEngine's fixpoint
-loop from delta-maintained state is exactly the "repair loop as outer
-feedback cycle" that the plan already lists as Phase 5 — these
-measurements promote it to the head of the queue, with a quantified prize:
-at 12 000 scripts, ~57 of the 69 ms of a typical edit.
+population grows — does not hold on RAP, and the reason is now precise.
+The database-size-proportional cost sits in the EE-rule queries, which the
+current protocol cannot reach: the ExecEngine force-evaluates them in full
+regardless of mode, the close evaluates them a second time, and the single
+expensive one is the D7-fallback shape. The conjuncts the protocol *does*
+maintain are uniformly index-cheap in RAP, so candidate-scoped
+maintenance costs more than it saves there (+6.6 ms median on eligible
+transactions, +0.2–0.5 ms bookkeeping on fallback transactions). The
+engine-level speedups (`bench/RESULTS.md`, ×166–×30 626) are real but
+belong to expensive terms; RAP's rule repertoire keeps its expensive
+terms inside the ExecEngine.
+
+The harvest map this yields:
+
+1. **Move the application point into the ExecEngine fixpoint loop** — the
+   only place where expensive evaluation provably recurs and grows
+   (Phase 5, "repair loop as outer feedback cycle"). Prize on RAP: the
+   26–29 ms EE evaluations per iteration.
+2. **Skip the close's redundant re-evaluation** when the ExecEngine made
+   no repairs after its last evaluation — an engineering fix, no new
+   calculus, worth another 26–29 ms per affected transaction on RAP.
+3. **Gate the protocol per conjunct on estimated query cost** — engage
+   candidate maintenance only where the full query is expensive;
+   otherwise the wholesale refresh is already optimal. For RAP-class
+   models that gate keeps the protocol off everywhere today, which makes
+   the current default (`off`) the right production setting.
+4. The promise the track has already banked is correctness at scale
+   (PRF-2/PRF-6/PRF-7, the FC5 shadow run); the performance promise needs
+   items 1–3, in that order.
 
 ## Full tables (generated by analyze.py)
 

@@ -201,6 +201,16 @@ each:
    the delta administration) and cost a constant ~9 ms per close in the
    profile — bookkeeping, not a scaling problem.
 
+*Revision (same day, follow-up in rap-bench/RESULTS.md):* the ordered
+list above was written before the discriminating measurement; the
+follow-up revises it. The concept-affected fallback (item 2) drops in
+priority: a real edit that avoids it entirely (`affectedConcepts: 0`)
+made `on` *slower* than `off` (47.0 vs 40.4 ms median, n=20), because
+RAP's 351 non-EE conjuncts are all index-cheap and the candidate
+protocol's fixed machinery costs more than the full queries it replaces.
+The revised order stands in plan.md (Phase 5): EE loop first, then the
+close's redundant re-evaluation, then a per-conjunct cost gate.
+
 **Steps 4/5 — deploy side by side and compare.** Realized as the DC-14
 stack (off :8191, on :8192) rather than as a second full RAP image on
 another port; the deviation is deliberate and recorded in DC-14
