@@ -133,3 +133,14 @@ Findings, each verified first-hand on this date:
 
 Step 1 of the plan is herewith complete: the baseline stands, and the
 current compiler and framework carry RAP without local patches.
+
+One point carries into the design of step 2: the two deployments run
+slightly different models. The baseline serves `origin/main`'s model; the
+current-stack deployment serves the modernized sources, which besides the
+syntax conversion also carry the single-role SIAM changes of the
+interactive-editor line. The step-2 harness must therefore restrict its
+fixed mix to pages both models serve identically (script browsing,
+diagnosis), or the model drift must first be assessed and accepted
+explicitly. The alternative — a minimal, purely syntactic modernization of
+`origin/main` as the v2 source base — remains open if the drift turns out
+to matter.
