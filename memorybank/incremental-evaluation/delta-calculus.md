@@ -231,6 +231,10 @@ claim PRF-7): one lemma per rule, the W/N envelope invariant, the whole-term
 theorem `K_complete`, and the per-relation decomposition `K_per_relation`
 that justifies taking the union of per-relation candidate queries. The series
 was labelled C1..C6 until 2026-08-14; it is renamed to K (kandidaat) because
-C1..C5 name the whole-circuit obligations of `Circuit.thy`. The delta-SQL
-harness (`ampersand incremental-bench --sql`) remains as the test that binds
-the generated SQL to these lemmas.
+C1..C5 name the whole-circuit obligations of `Circuit.thy`. Two tests bind
+the code to the lemmas: the QuickCheck bridge
+`Ampersand.Test.Incremental.CandidateProperties` (in `stack test`, one
+property per lemma over the real `widen`/`narrow`/`candidateTerms`, with an
+independent reference evaluator) re-checks the correspondence on every
+build, and the delta-SQL harness (`ampersand incremental-bench --sql`) binds
+the generated SQL to it against a real MariaDB.

@@ -22,6 +22,8 @@ module Ampersand.FSpec.Incremental.DeltaTerms
     deltaTableName,
     withDeltaPlugs,
     deltaSupported,
+    widen,
+    narrow,
     candidateTerms,
     deltaQueriesFor,
   )

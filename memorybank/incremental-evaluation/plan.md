@@ -173,7 +173,10 @@ real MariaDB, subtyping and complements included; Kleene models correctly
 report zero delta support. The K-obligation proofs (candidate completeness,
 §7; named C-obligations until 2026-08-14) are machine-checked in
 `proofs/incremental/Candidates.thy` on branch `incremental-evaluation`
-(register claim PRF-7). Open within this phase: a candidate-cost measurement.
+(register claim PRF-7), and the QuickCheck bridge
+`Ampersand.Test.Incremental.CandidateProperties` re-checks the real
+`widen`/`narrow`/`candidateTerms` against those lemmas on every
+`stack test`. Open within this phase: a candidate-cost measurement.
 
 ### Phase 4 — Runtime adoption and measurement
 
