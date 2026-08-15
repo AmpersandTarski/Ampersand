@@ -257,6 +257,42 @@ changed.
 *Impact in production:* none; every published image keeps the switch on
 `off`, and the shadow stack is disposable.
 
+**The RAP validation of issue #1687 runs on two local deployments side by side: RAP as-is from `origin/main` on the v1 toolchain, and RAP from the modernized `feature/interactive-editor` sources on the published compiler v5.9.7 and framework v2.6.0.**
+*DC-13 · valid · 2026-08-15 · origin: issue #1687 step 1, [interface-queries.md](interface-queries.md)*
+
+The baseline (`:8081`) is the image the production pipeline would build:
+`origin/main` sources, prototype-framework v1.18.1, the framework's bundled
+compiler. The current-stack deployment (`:8089`) builds from RAP branch
+`incremental-evaluation` — based on `feature/interactive-editor`, whose
+sources already satisfy the current names-and-labels syntax — with the
+published images `ampersandtarski/ampersand:v5.9.7` and
+`prototype-framework:v2.6.0`. Each deployment owns its MariaDB and volumes;
+`docker-compose.1687.yml` in the RAP repo holds both.
+
+*Considerations:*
+
+1. The goal is a production-faithful baseline next to a current-stack RAP,
+   so that step 2 profiles real behaviour and step 4 can add the
+   incremental build as a third, comparable deployment.
+2. Modernizing `origin/main` afresh was considered and set aside: `main`
+   stops the current compiler at `src/RAP4.adl:196` (`UnexpectedChar '_'`,
+   names such as `pf_ifcRoles`), and the interactive-editor branch has this
+   conversion already behind it, verified by a clean
+   `ampersand proto` run and a working deployment.
+3. Building the baseline with the current compiler was rejected for the
+   same reason in reverse: the as-is baseline derives its value from being
+   the image production runs, old toolchain included.
+4. The RAP work lives on its own branch and worktree
+   (`~/git/RAP-incremental-evaluation`), so the interactive-editor line and
+   its running deployment on `:8088` stay undisturbed.
+
+*Impact on the specification:* none; both deployments compile the RAP4
+model as their branches carry it.
+
+*Impact in production:* none; both stacks are local and disposable. For
+step 4, the sources of RAP branch `incremental-evaluation` are the ones
+the incremental compiler must accept.
+
 ## Assurance and publication
 
 **Correctness of the delta calculus rests on our own Isabelle/HOL proofs in `proofs/`, with the Lean formalization of DBSP as inspiration.**

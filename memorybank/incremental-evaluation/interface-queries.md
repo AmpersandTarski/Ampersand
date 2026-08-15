@@ -83,3 +83,53 @@ Two obstacles are known going into step 1, both observed earlier and to be
 re-verified: RAP's ADL sources use older syntax the current compiler rejects,
 and RAP pins prototype-framework `^1.8.5` while current work targets v2.6.x.
 Step 4 requires both resolved.
+
+## Step 1 log (2026-08-15)
+
+The starting position turned out better than the issue assumed, because the
+RAP branch `feature/interactive-editor` had already modernized the sources.
+Findings, each verified first-hand on this date:
+
+1. **Both known obstacles are already resolved on RAP branch
+   `feature/interactive-editor`.** That branch carries `RAP4/Dockerfile.v2`,
+   which builds RAP on prototype-framework v2 with compiler v5.6.0, and a
+   local `docker-compose.yml`; a container built from it (framework
+   v2.1.0-local, compiler v5.6.0) has been serving RAP on `localhost:8088`
+   since seven weeks. The framework pin `^1.8.5` lives in the repo-root
+   `composer.json`, which the v2 Dockerfile does not use.
+2. **RAP `origin/main` (the production sources) still trips the current
+   compiler**, exactly as the issue predicted: `ampersand proto` v5.9.7 stops
+   at `src/RAP4.adl:196:16 — UnexpectedChar '_'` (relation names such as
+   `pf_ifcRoles`; the names-and-labels change made `_` illegal in bare
+   identifiers). The baseline deployment therefore builds with the *old*
+   toolchain (framework v1.18.1 with its bundled compiler), which is also the
+   production-faithful choice.
+3. **The modernized sources compile clean with the current compiler.**
+   `ampersand proto --no-frontend` v5.9.7 (branch build
+   `incremental-evaluation:392e54352`) generates the RAP backend in ~2.5 s,
+   with oscillation-risk warnings as the only diagnostics.
+4. **Work setup.** RAP work for #1687 lives on RAP branch
+   `incremental-evaluation` (worktree `~/git/RAP-incremental-evaluation`,
+   based on `feature/interactive-editor`'s committed top `a73cb9b`), so the
+   interactive-editor line and its running deployment stay undisturbed.
+   `Dockerfile.v2` there now builds from the *published* images
+   `ampersandtarski/ampersand:v5.9.7` and
+   `ampersandtarski/prototype-framework:v2.6.0` instead of local smoke-test
+   images, and `docker-compose.1687.yml` deploys baseline and current-stack
+   RAP side by side (`:8081` v1-as-is, `:8089` v2.6.0), each with its own
+   MariaDB. Design choice DC-13 records the layout and the rejected
+   alternatives.
+5. **Both deployments stand and pass their smoke test.** The v1-as-is
+   image builds from `origin/main` with context `RAP4/` (the workflow's
+   choice; a root context fails on `COPY customizations`). The v2.6 image
+   builds clean including the Angular frontend and the two frontend `sed`
+   patches, whose grep anchors still hold in framework v2.6.0. On both
+   ports the installer reports success and the anonymous navbar serves the
+   Login interface — on `:8089` that also confirms the SIAM role bridge
+   works unchanged on v2.6.0.
+6. **Step 2 lead.** The RAP repo already contains Gatling material
+   (`gatling-3-7-2/` and `Testing/Gatling/` with RAP request definitions);
+   the load harness of step 2 should start there rather than from scratch.
+
+Step 1 of the plan is herewith complete: the baseline stands, and the
+current compiler and framework carry RAP without local patches.
