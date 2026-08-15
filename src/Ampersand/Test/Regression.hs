@@ -7,6 +7,7 @@ where
 
 import Ampersand.Basics
 import Ampersand.Misc.HasClasses
+import Ampersand.Prototype.PHP (probeMySqlServer)
 import Ampersand.Types.Config
 import Conduit
 import Data.Yaml
@@ -53,7 +54,60 @@ regressionTest :: (HasTestOpts env, HasRunner env) => RIO env ()
 regressionTest = do
   testOpts <- view testOptsL
   baseDir <- liftIO . makeAbsolute $ rootTestDir testOpts
+  databasePreflight baseDir
   runConduit $ walkDirTree baseDir .| numberIt .| doTestsInDir .| sumarize
+
+-- | Some test sets run @ampersand validate@, which needs a reachable MariaDB.
+--   Without one, every such test fails with the same connection error, buried
+--   in hundreds of lines of output. This preflight probes the database once,
+--   before any test runs: when the suite contains validate tests and the
+--   probe fails, the suite stops immediately with one message that names the
+--   cause and the way out.
+databasePreflight :: (HasLogFunc env) => FilePath -> RIO env ()
+databasePreflight baseDir = do
+  validateDirs <- countValidateTestDirs baseDir
+  when (validateDirs > 0) $ do
+    logInfo
+      $ "The suite contains "
+      <> displayShow validateDirs
+      <> (if validateDirs == 1 then " test directory" else " test directories")
+      <> " that run 'ampersand validate' against a database; probing the database connection."
+    probe <- probeMySqlServer
+    case probe of
+      Nothing -> logInfo "Database reachable."
+      Just errLines -> do
+        mapM_
+          (logError . display)
+          ( [ "❗❗❗ The test suite contains 'ampersand validate' tests, which need a reachable MariaDB — but the database probe failed:" :: Text
+            ]
+              <> map ("      " <>) (L.take 6 errLines)
+              <> [ "    Ampersand reads MYSQL_HOST, MYSQL_USER and MYSQL_PASSWORD (defaults: 127.0.0.1, root, empty password).",
+                   "    Start a dedicated local database and pass its address, for example:",
+                   "      docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:10.4",
+                   "      MYSQL_HOST=127.0.0.1:3310 stack test",
+                   "    or run scripts/test-local.sh, which sets this up and runs the suite."
+                 ]
+          )
+        exitWith (SomeTestsFailed ["The database for the 'ampersand validate' tests is not reachable. No regression tests were run."])
+
+-- | The number of test directories whose instructions run @ampersand
+--   validate@. Yaml files that do not parse count as zero here; the test run
+--   itself reports them.
+countValidateTestDirs :: FilePath -> RIO env Int
+countValidateTestDirs baseDir =
+  runConduit $ walkDirTree baseDir .| numberIt .| foldMC countDir 0
+  where
+    countDir :: Int -> DirData -> RIO env Int
+    countDir n dd = case dirContent dd of
+      DirError _ -> pure n
+      DirList {filesOf = fs}
+        | yaml `elem` fs -> do
+            parsed <- liftIO . decodeFileEither $ path dd </> yaml
+            pure $ case parsed of
+              Right ti
+                | any (("validate" `T.isInfixOf`) . command) (testCmds ti) -> n + 1
+              _ -> n
+        | otherwise -> pure n
 
 walkDirTree :: FilePath -> ConduitT () (Int -> DirData) (RIO env) ()
 walkDirTree fp = do
