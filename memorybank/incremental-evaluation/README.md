@@ -22,6 +22,11 @@ Contents:
 - [interface-queries.md](interface-queries.md) — the assessment behind issue
   #1687: where incremental evaluation of interface queries pays, the push
   track, and the RAP validation plan.
+- [rap-bench/](rap-bench/) — the RAP validation of issue #1687: the harness,
+  the off/on measurements, and their reading.
+- [design-heuristics.md](design-heuristics.md) — the general design
+  heuristics (H1–H7) and research hypotheses (O1–O7) that the RAP
+  validation yields; the article's discussion section in the making.
 - [dbsp-paper-study.md](dbsp-paper-study.md) — study note on the DBSP paper:
   Z-sets, the stream calculus, the incrementalization algorithm, and the mapping
   to Ampersand's relation algebra.
