@@ -13,7 +13,11 @@
 module Ampersand.Output.ToPandoc.ChapterDiagnosis (chpDiagnosis) where
 
 import Ampersand.Diagnosis.Types
+import Ampersand.FSpec.Oscillation (OscEdge (..), OscillationCycle (..))
 import Ampersand.Output.ToPandoc.SharedAmongChapters
+import RIO.FilePath (takeFileName)
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
 chpDiagnosis ::
@@ -30,8 +34,9 @@ chpDiagnosis env fSpec dd
           <> overviewStats
           <> perPatternTable
           <> violationSummary
+          <> oscillationBlocks
           <> xlsxReference,
-        []
+        oscillationPics
       )
   where
     -- localisation
@@ -224,6 +229,133 @@ chpDiagnosis env fSpec dd
     plurNl _ = "en"
     plurEn 1 = ""
     plurEn _ = "s"
+
+    ----------------------------------------------------------------
+    -- Oscillation analysis: one signed triggering-graph diagram per
+    -- risky cycle of automated rules, plus reading instructions.
+    -- The data comes from 'Ampersand.FSpec.Oscillation' (via
+    -- 'ddOscillations'); the diagram design is documented in
+    -- docs/ongoing-research/visualizing-oscillation-cycles.md.
+    ----------------------------------------------------------------
+    cycles' :: [OscillationCycle]
+    cycles' = ddOscillations dd
+
+    oscillationPics :: [Picture]
+    oscillationPics =
+      [ makePicture env fSpec (PTOscillationCycle i oc)
+        | (i, oc) <- zip [1 ..] cycles'
+      ]
+
+    oscillationBlocks :: Blocks
+    oscillationBlocks =
+      header
+        2
+        ((str . l) (NL "Oscillatie-analyse", EN "Oscillation analysis"))
+        <> ( if null cycles'
+               then noRiskPara
+               else riskIntro <> mconcat (zipWith perCycle cycles' oscillationPics)
+           )
+      where
+        noRiskPara =
+          para
+            $ (str . l)
+              ( NL "De statische analyse van de geautomatiseerde regels (onderhouden door de ExecEngine) vindt geen cyclus waarin herstelacties elkaar tegenwerken. Er is geen oscillatierisico gevonden.",
+                EN "The static analysis of the automated rules (maintained by the ExecEngine) finds no cycle in which repair actions oppose each other. No oscillation risk was found."
+              )
+        riskIntro =
+          para
+            ( (str . l)
+                ( NL "De geautomatiseerde regels bevatten ",
+                  EN "The automated rules contain "
+                )
+                <> (str . tshow . length) cycles'
+                <> (str . l)
+                  ( NL " groep(en) regels die elkaar via hun herstelacties kunnen blijven hertriggeren. Elke figuur toont één zo'n groep. Een pijl van regel A naar regel B betekent dat een herstelactie van A nieuwe overtredingen van B kan veroorzaken; het label noemt de relatie die daarbij geschreven wordt, met ",
+                    EN " group(s) of rules that can keep re-triggering each other through their repair actions. Each figure shows one such group. An arrow from rule A to rule B means that a repair action of A can create new violations of B; the label names the relation being written, with "
+                  )
+                <> code "+"
+                <> (str . l)
+                  ( NL " voor toevoegen en ",
+                    EN " for inserting and "
+                  )
+                <> code "-"
+                <> (str . l)
+                  ( NL " voor verwijderen of samenvoegen. De zware gestreepte pijl markeert de verwijdering die de cyclus niet-monotoon maakt; daar kan een oscillatie ontstaan.",
+                    EN " for deleting or merging. The heavy dashed arrow marks the deletion that makes the cycle non-monotone; that is where an oscillation can arise."
+                  )
+            )
+        perCycle :: OscillationCycle -> Picture -> Blocks
+        perCycle oc pict =
+          xDefBlck env fSpec pict
+            <> para ((str . l) (NL "De betrokken regels zijn:", EN "The rules involved are:"))
+            <> bulletList (map ruleItem (NE.toList (ocRules oc)))
+            <> para
+              ( (str . l)
+                  ( NL "Waarom kan dit oscilleren? In deze cyclus werken herstelacties op dezelfde relatie in tegengestelde richting:",
+                    EN "Why can this oscillate? In this cycle, repair actions work on the same relation in opposite directions:"
+                  )
+              )
+            <> bulletList (map collisionItem (ocCollisions oc))
+            <> para
+              ( (str . l)
+                  ( NL "Elke toevoeging kan de regel achter de verwijdering opnieuw in overtreding brengen, en omgekeerd; de ExecEngine blijft dan herstellen tot hij afbreekt met \"Maximum reruns exceeded\". Of dat werkelijk gebeurt, hangt van de populatie af; deze analyse kan het niet uitsluiten. Doorbreek de cyclus door één van de herstelacties zó aan te passen dat toevoegingen en verwijderingen elkaar niet meer kunnen raken; zie de ",
+                    EN "Every insert can put the rule behind the delete back in violation, and vice versa; the ExecEngine then keeps repairing until it aborts with \"Maximum reruns exceeded\". Whether that actually happens depends on the population; this analysis cannot rule it out. Break the cycle by changing one of the repair actions so that inserts and deletes can no longer meet; see the "
+                  )
+                  <> link
+                    "https://ampersandtarski.github.io/ampersand/guides/oscillations"
+                    ""
+                    ((str . l) (NL "oscillatiegids", EN "oscillation guide"))
+                  <> str "."
+              )
+          where
+            -- One bullet per rule: its (generated) name, a file:line hyperlink to
+            -- the Ampersand source, and the rule's term in Ampersand syntax.
+            ruleItem :: Rule -> Blocks
+            ruleItem r =
+              plain
+                $ ruleName r
+                <> str " ("
+                <> sourceLink r
+                <> str "): "
+                <> (code . showA . formalExpression) r
+            ruleName :: Rule -> Inlines
+            ruleName r = case rrkind r of
+              Enforce -> case enforcedRel r of
+                Just d -> code ("ENFORCE " <> label d)
+                Nothing -> (str . l) (NL "ENFORCE-regel", EN "ENFORCE rule")
+              _ -> code (label r)
+            -- The relation an ENFORCE-generated rule maintains; its formal
+            -- expression is 'subExpr |- rel' (InsPair) or 'rel |- subExpr'
+            -- (DelPair) by construction.
+            enforcedRel :: Rule -> Maybe Relation
+            enforcedRel r = case formalExpression r of
+              EInc (_, EDcD d) -> Just d
+              EInc (EDcD d, _) -> Just d
+              _ -> Nothing
+            sourceLink :: Rule -> Inlines
+            sourceLink r =
+              link
+                ("file://" <> T.pack (filenm r))
+                ""
+                (str (T.pack (takeFileName (filenm r)) <> ":" <> tshow (linenr r)))
+            -- One bullet per colliding relation: who inserts, who deletes.
+            collisionItem :: Text -> Blocks
+            collisionItem rel =
+              plain
+                $ code rel
+                <> str ": "
+                <> names [oeFrom e | e <- ocEdges oc, oeRelation e == rel, not (oeNegative e)]
+                <> (str . l) (NL " voegt paren toe, ", EN " inserts pairs, ")
+                <> names [oeFrom e | e <- ocEdges oc, oeRelation e == rel, oeNegative e]
+                <> (str . l) (NL " verwijdert ze weer.", EN " removes them again.")
+            names :: [Rule] -> Inlines
+            names [] = (str . l) (NL "geen enkele regel", EN "no rule")
+            names rs =
+              mconcat
+                . L.intersperse (str ", ")
+                . map ruleName
+                . L.nubBy (\a b -> fullName a == fullName b)
+                $ rs
 
     ----------------------------------------------------------------
     -- Spreadsheet reference (A3: use real inline code instead of
