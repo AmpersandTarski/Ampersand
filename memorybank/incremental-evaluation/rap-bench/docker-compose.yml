@@ -24,7 +24,7 @@ services:
     environment:
       - AMPERSAND_DBHOST=bench-db-off
       - AMPERSAND_DBUSER=ampersand
-      - AMPERSAND_DBPASS=rap1687
+      - AMPERSAND_DBPASS=${RAP_BENCH_PW:?run setup.sh}
       - AMPERSAND_DBNAME=rap1687off
       - AMPERSAND_PRODUCTION_MODE=false
       - AMPERSAND_DEBUG_MODE=true
@@ -41,9 +41,9 @@ services:
     command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL", "--performance-schema=ON"]
     mem_limit: 2g
     environment:
-      - MYSQL_ROOT_PASSWORD=rap1687-root
+      - MYSQL_ROOT_PASSWORD=${RAP_BENCH_ROOT_PW:?run setup.sh}
       - MYSQL_USER=ampersand
-      - MYSQL_PASSWORD=rap1687
+      - MYSQL_PASSWORD=${RAP_BENCH_PW:?run setup.sh}
       - MYSQL_DATABASE=rap1687off
     ports:
       - "127.0.0.1:3491:3306"
@@ -64,7 +64,7 @@ services:
     environment:
       - AMPERSAND_DBHOST=bench-db-on
       - AMPERSAND_DBUSER=ampersand
-      - AMPERSAND_DBPASS=rap1687
+      - AMPERSAND_DBPASS=${RAP_BENCH_PW:?run setup.sh}
       - AMPERSAND_DBNAME=rap1687on
       - AMPERSAND_PRODUCTION_MODE=false
       - AMPERSAND_DEBUG_MODE=true
@@ -81,9 +81,9 @@ services:
     command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL", "--performance-schema=ON"]
     mem_limit: 2g
     environment:
-      - MYSQL_ROOT_PASSWORD=rap1687-root
+      - MYSQL_ROOT_PASSWORD=${RAP_BENCH_ROOT_PW:?run setup.sh}
       - MYSQL_USER=ampersand
-      - MYSQL_PASSWORD=rap1687
+      - MYSQL_PASSWORD=${RAP_BENCH_PW:?run setup.sh}
       - MYSQL_DATABASE=rap1687on
     ports:
       - "127.0.0.1:3492:3306"
