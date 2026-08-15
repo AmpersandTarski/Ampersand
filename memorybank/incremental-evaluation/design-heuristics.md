@@ -124,6 +124,64 @@ Each hypothesis is falsifiable with instruments that already exist
   across the corpus; the hypothesis fails if any model shows a regression
   against its best pure mode.
 
+## Interfaces as materialized views (added 2026-08-15)
+
+Interfaces are not merely *like* views — every interface field expression
+is a relation-algebra term, hence a view definition. What distinguishes
+them from the conjunct views is parameterization: the compiler bakes a
+placeholder for the source atom into every interface query
+(`broadQueryWithPlaceholder`). That splits the repertoire into three
+classes with three different answers:
+
+1. **Parameterized point queries** (`MyScripts`, detail forms) — a view
+   indexed by one atom, answered by an index lookup. Measured flat at
+   ~22 ms; materialization can only lose (DC-15 stands).
+2. **Global overviews** (`StudentScripts`-class) — the head
+   (`"_SESSION" # …`) only gates access; the body
+   (`I[Account] /\ submittor~;submittor` with its subtree) is
+   session-free and global. This is an unparameterized view in disguise,
+   and the class where H6's gate can flip: the read costs 310 ms at
+   12 000 scripts and grows, while maintaining the body under a script
+   submission is a few scoped rows. Materialization turns a growing
+   user-visible latency into a flat read plus a bounded per-transaction
+   write. The H2 classifier recognizes the class at compile time — the
+   same global-term shapes that mark expensive conjuncts mark expensive
+   interface bodies.
+3. **Parameterized expensive subtrees** (per-atom closures, atlas-style
+   context views) — a family of views, one per atom, too many to
+   materialize eagerly. The fitting shape is partial materialization
+   (Noria's "partial state"): materialize per atom on first open,
+   maintain while open, evict later. Real machinery: on-demand backfill
+   and eviction. Defer until class 2 has proven itself.
+
+The change-stream side is already unified, which is what makes class 2
+cheap to build: every edit — interactive field edits and the batched
+commits of transactional interfaces alike — flows through
+`Relation::addLink/deleteLink`, exactly where the delta tables record;
+ExecEngine repairs travel the same road. One recorded change stream can
+therefore feed two consumers with the same candidate machinery: the rule
+caches (built) and materialized interface bodies (class 2, proposed). The
+same materialized body plus its delta is also precisely the payload the
+push track needs: the delta of an open overview, filtered per subscriber,
+is the patch to push. Materialized overviews are the stepping stone from
+the performance track to the push track, not a detour.
+
+Two hypotheses extend the research program:
+
+- **O8 (overview materialization).** For interface bodies that the
+  H2-classifier marks expensive and session-free, incremental
+  materialization beats recomputation already at modest read rates:
+  maintenance stays within a few ms per touching transaction while the
+  saved read grows with volume. *Test:* materialize the `StudentScripts`
+  body on the rap-bench stack as a shadow table maintained by candidate
+  queries; measure page-open latency and per-transaction overhead across
+  the three sizes; find the break-even read/write ratio.
+- **O9 (partial materialization).** For parameterized expensive subtrees,
+  per-atom partial materialization with on-demand backfill bounds both
+  storage and maintenance to the working set of open atoms, at eviction
+  complexity that a prototype framework can carry. *Test:* only after O8;
+  prototype on an atlas-style view over compiled scripts.
+
 ## Relation to the literature
 
 The nuance is not new, but it is rarely quantified at the language level:
