@@ -1,6 +1,6 @@
 session Incremental_Delta = HOL +
   (* Proof obligations of the delta calculus,
-     memorybank/incremental-evaluation/delta-calculus.md section 5.
+     memorybank/incremental-evaluation/delta-calculus.md sections 5 and 7.
      Build:  isabelle build -D .   (reuses the prebuilt HOL heap).
      timeout bounds wall-clock; threads low to bound CPU/memory. *)
   options [document = false, timeout = 1800, threads = 1]
@@ -9,5 +9,6 @@ session Incremental_Delta = HOL +
     Delta
     Bridge
     Desugar
+    Candidates
     Circuit
     Population

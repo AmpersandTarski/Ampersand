@@ -1,9 +1,11 @@
 # Machine-checked proofs for the delta calculus
 
 Isabelle/HOL proofs of the proof obligations in
-`memorybank/incremental-evaluation/delta-calculus.md`, section 5 — including
-the whole-circuit induction (`Circuit.thy`) and the population mirror
-(`Population.thy`) that issue #1683 asked for.
+`memorybank/incremental-evaluation/delta-calculus.md`, sections 5 and 7 —
+including the whole-circuit induction (`Circuit.thy`) and the population
+mirror (`Population.thy`) that issue #1683 asked for, and the candidate
+calculus of the delta-SQL route (`Candidates.thy`, K-obligations, register
+claim PRF-7).
 Session `Incremental_Delta`, parent `HOL`, no axioms beyond HOL, no `sorry`.
 
 Build:
@@ -46,6 +48,17 @@ a few seconds.
   `cpl A B r = A×B - r`. The adequacy condition of `delta-calculus.md`
   (every relation lies inside the `V` of its signature) appears as the typing
   premises of the lemmas.
+- `Candidates.thy` (same set-level house style) is a deep embedding of the
+  supported term class of `DeltaTerms.hs` (branch `delta-sql`): relation
+  leaves plus state-independent leaves (`Cst`, covering `EDcI`/`EDcV`/
+  `EMp1`/`EBin` under the concept-fallback assumption OK-9), closed under
+  union, intersection, difference, composition, converse and typed
+  complement. The locale `delta_transaction` fixes an old state, a new state
+  and per relation a delta set, with one assumption: every changed pair is
+  in its relation's delta set. The envelopes `W`/`N` are one recursion with
+  a polarity flag, mirroring `widen`/`narrow`; the candidate set `candg` is
+  parameterised by the leaf assignment so that the per-relation
+  decomposition is a theorem, not a remark.
 
 ## Obligation → lemma
 
@@ -78,6 +91,15 @@ a few seconds.
 | P3 the population-set delta is the zero-crossing H (`cptSetDelta` = `bagH`) | `P3_popset_delta` | `Population.thy` |
 | P4 a term relation's integral sums its feeders linearly | `P4_feed_linear` | `Population.thy` |
 | P5 its carried set is the `pairsOf` union | `P5_feed_contents` | `Population.thy` |
+| W/N envelope invariant (W bounds old∪new from above, N old∩new from below) | `WN_envelope` (+ `W_upper`, `N_lower`) | `Candidates.thy` |
+| K1 union candidate rule is complete | `K1_uni` | `Candidates.thy` |
+| K2 intersection candidate rule is complete | `K2_isc` | `Candidates.thy` |
+| K3 difference candidate rule is complete | `K3_dif` | `Candidates.thy` |
+| K4 composition candidate rule is complete | `K4_cps` | `Candidates.thy` |
+| K5 converse candidate rule is complete | `K5_flp` | `Candidates.thy` |
+| K6 typed-complement candidate rule is complete | `K6_cpl` | `Candidates.thy` |
+| K whole-term completeness (every changed pair is a candidate) | `K_complete` | `Candidates.thy` |
+| K per-relation decomposition (union of per-relation queries = global candidate set) | `K_per_relation` (+ `candg_UN`, `K_touched_cover`) | `Candidates.thy` |
 
 Notes per obligation:
 
@@ -103,6 +125,14 @@ Notes per obligation:
 - **P2**'s set-discipline premise (raw stores hold weights 0/1) is the
   engine's lockstep contract: transaction weights are ±1, insert only absent
   pairs, delete only present ones.
+- **K1-K6** were labelled C1-C6 until 2026-08-14; renamed because C1-C5
+  already name the whole-circuit obligations above. Completeness is the only
+  property the delta-SQL route needs (OK-8, delta-scoped re-evaluation): the
+  runtime settles every candidate pair by re-running the conjunct's own
+  violation predicate, so a too-large candidate set costs time, never
+  correctness. No typing or adequacy premises are needed: the typed
+  complement subtracts from a fixed rectangle `A×B`, which drops out of the
+  symmetric difference.
 
 ## What is NOT proved
 
@@ -122,6 +152,18 @@ Notes per obligation:
   on every build. Verified extraction was considered and rejected (#1683).
 - The **`EEqu` finding** of delta-calculus.md (fullContents computes the union
   of the two inclusions): deliberately mirrored, not proved "correct".
+- **The candidate side of the SQL route** (`Candidates.thy`): the Haskell
+  functions `widen`/`narrow`/`candidateTerms` that mirror the calculus
+  (bound to the lemmas by the QuickCheck bridge
+  `Ampersand.Test.Incremental.CandidateProperties` in `stack test` on the
+  `delta-sql` branch, and exercised against MariaDB by
+  `ampersand incremental-bench --sql`), the SQL compilation of the candidate
+  terms (shared with the full queries; guarded by `ampersand validate`),
+  and the delta-table contract itself — that the runtime records every
+  changed pair — which belongs to the protocol half of register claim
+  PRF-6. Constancy of the concept populations is an assumption of the
+  theorems, discharged operationally by the concept-affected fallback
+  (OK-9).
 
 ## Working notes for future proof sessions
 
