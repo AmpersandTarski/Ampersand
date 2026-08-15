@@ -154,13 +154,16 @@ Notes per obligation:
   of the two inclusions): deliberately mirrored, not proved "correct".
 - **The candidate side of the SQL route** (`Candidates.thy`): the Haskell
   functions `widen`/`narrow`/`candidateTerms` that mirror the calculus
-  (exercised by `ampersand incremental-bench --sql`), the SQL compilation of
-  the candidate terms (shared with the full queries; guarded by
-  `ampersand validate`), and the delta-table contract itself — that the
-  runtime records every changed pair — which belongs to the protocol half of
-  register claim PRF-6. Constancy of the concept populations is an
-  assumption of the theorems, discharged operationally by the
-  concept-affected fallback (OK-9).
+  (bound to the lemmas by the QuickCheck bridge
+  `Ampersand.Test.Incremental.CandidateProperties` in `stack test` on the
+  `delta-sql` branch, and exercised against MariaDB by
+  `ampersand incremental-bench --sql`), the SQL compilation of the candidate
+  terms (shared with the full queries; guarded by `ampersand validate`),
+  and the delta-table contract itself — that the runtime records every
+  changed pair — which belongs to the protocol half of register claim
+  PRF-6. Constancy of the concept populations is an assumption of the
+  theorems, discharged operationally by the concept-affected fallback
+  (OK-9).
 
 ## Working notes for future proof sessions
 
