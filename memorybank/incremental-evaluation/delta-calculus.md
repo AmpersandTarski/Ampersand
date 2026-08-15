@@ -33,7 +33,7 @@ Desugaring rules (mirroring `fullContents` case by case):
 | Expression | Core |
 |---|---|
 | `EInc (l,r)` | `core (ECpl l .\/. r)` |
-| `EEqu (l,r)` | `core ((l .|-. r) .\/. (r .|-. l))` — mirrors `Populated.hs:82`; see the note below |
+| `EEqu (l,r)` | `core ((l .\|-. r) .\/. (r .\|-. l))` — mirrors `Populated.hs:82`; see the note below |
 | `ECpl x` | `Dif (V (sign x)) (core x)` |
 | `ELrs (l,r)` (`l/r`) | `core (ECpl (ECpl l .:. EFlp r))` |
 | `ERrs (l,r)` (`l\r`) | `core (ECpl (EFlp l .:. ECpl r))` |
@@ -180,7 +180,7 @@ every build.
 
 ## 6. What falls outside this phase
 
-Symbolic delta *terms* (Δ as `Expression`, OK-2) for SQL generation are Phase 3;
+Symbolic delta *terms* (Δ as `Expression`, DC-2) for SQL generation are Phase 3;
 this phase implements the circuit interpreter that the benchmark and the oracle
 run in pure Haskell. Incremental Kleene closure and incremental `EBin` are
 Phase 5 (D7 covers them correctly, at recompute cost).
