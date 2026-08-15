@@ -200,6 +200,19 @@ says they matter.
 *Deliverable/exit:* per construct, decided when Phase 4's numbers show where the
 remaining cost sits.
 
+*Status (2026-08-15, from the RAP benchmark of issue #1687 —
+[rap-bench/RESULTS.md](rap-bench/RESULTS.md)):* the profiling decision is
+in. Interface queries are settled by DC-15 (point queries flat, no
+materialization; `StudentScripts`-class overview expressions stay full
+queries, revisit trigger recorded). The ExecEngine repair loop is promoted
+to the head of this phase: its forced full re-evaluation per fixpoint
+iteration (`ExecEngine.php:167`) is ~57 of the 69 ms of a typical RAP edit
+at 12 000 scripts and grows linearly, while the delta protocol's own cache
+maintenance holds at ~0.5 ms. Second in line: refine the concept-affected
+fallback so creation-heavy workloads (every RAP script submission) reach
+the delta path; the population mirror is proven (P-obligations), the SQL
+protocol does not carry it yet.
+
 ## To investigate before Phase 1
 
 - **Runtime ground truth** — done, see [prototype-runtime-map.md](prototype-runtime-map.md).

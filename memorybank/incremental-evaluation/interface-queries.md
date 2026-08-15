@@ -144,3 +144,73 @@ diagnosis), or the model drift must first be assessed and accepted
 explicitly. The alternative — a minimal, purely syntactic modernization of
 `origin/main` as the v2 source base — remains open if the drift turns out
 to matter.
+
+*Resolution (same day):* the drift question dissolved by redesigning the
+comparison. The headline pair is not v1-versus-v2 but off-versus-on on one
+identical stack (DC-14), so both sides serve the same model by
+construction; the step-1 deployments remain as production context.
+
+## Steps 2–5 log (2026-08-15)
+
+The harness, the stack and the measurements live in
+[rap-bench/](rap-bench/): README.md (setup and reproduction), RESULTS.md
+(findings and full tables), data/ (raw CSVs, query digests, versions).
+Design choices DC-14 (experiment design) and DC-15 (interface queries stay
+unmaterialized) record the decisions; this log records the course of
+events and the design output of step 3.
+
+**Step 2 — profile.** The delta-sql compiler covers RAP almost entirely:
+450 of 451 conjuncts carry delta queries (99.8%), 194 relations a delta
+table. The profile across 1 000→12 000 scripts answers the issue's
+decision question "where does incremental evaluation pay": the interface
+point queries are flat (~22 ms) and need nothing; the computed
+`StudentScripts` overview grows linearly and stays a full query by
+decision DC-15; the transaction close grows linearly, and the digest
+attributes that growth to the violation queries of the ExecEngine rules,
+led by *Submission Timestamping*. Those rule queries are the list that
+carries the benchmark.
+
+**Step 3 — design and proof obligations.** The adoption of the
+incremental machinery for RAP needs no new compiler or framework change
+beyond the existing delta-sql branch and delta-framework branch: the
+compiler compiles RAP as-is, the framework runs it, and the switch selects
+the protocol. Because the adoption is configuration-only, no
+semantics-bearing code changes and no new proof obligation arises; the
+deployed mechanism stays under PRF-6 (stated, protocol half) and PRF-7
+(machine-checked core). The ordered list of problems that must be solved
+before the end-to-end promise holds on RAP, with the measured cost of
+each:
+
+1. **The ExecEngine's forced full re-evaluation** (`ExecEngine.php:167`,
+   `checkRule(true)` per fixpoint iteration): ~57 of the 69 ms of a
+   typical edit at 12 000 scripts, growing linearly. This is the plan's
+   Phase-5 item "repair loop as outer feedback cycle", now promoted to
+   the head of the queue by measurement. It carries a proof obligation
+   when designed: the fixpoint reached from delta-maintained state must
+   equal the fixpoint from full evaluation.
+2. **The concept-affected fallback**: any transaction that creates atoms
+   (every script submission) sends its conjuncts down the full path, which
+   is why the seed stream shows off and on at parity. Refining the
+   fallback (population deltas are proven — the P-obligations — but the
+   SQL protocol does not carry them yet) unlocks the delta path for
+   creation-heavy workloads.
+3. **Set-level mutations** (`deleteAllLinks`, `removeAtom`) keep their
+   conservative fallback; RAP's workload made them invisible in the
+   profile, so they stay behind the two items above.
+4. **SESSION churn** (`lastAccess`) is handled (autocommit writes bypass
+   the delta administration) and cost a constant ~9 ms per close in the
+   profile — bookkeeping, not a scaling problem.
+
+**Steps 4/5 — deploy side by side and compare.** Realized as the DC-14
+stack (off :8191, on :8192) rather than as a second full RAP image on
+another port; the deviation is deliberate and recorded in DC-14
+(consideration 3): identical code and model on both sides is what makes
+the comparison publishable. The delta path was verified operationally
+before each run (delta-table traffic in the digest of `on`, none in
+`off`). Outcome, published either way as the issue asked: the hypothesis
+does not hold end to end on RAP yet — both modes grow linearly with the
+database — and the profile pins the entire growth on the forced
+ExecEngine evaluations, while the protocol's own cache maintenance costs
+~0.5 ms flat. The incremental promise is delivered for the component the
+track built; the remaining distance to the end-to-end promise is problem 1
+above, with a quantified prize.

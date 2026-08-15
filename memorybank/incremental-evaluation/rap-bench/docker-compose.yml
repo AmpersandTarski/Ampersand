@@ -1,0 +1,93 @@
+# RAP benchmark stack for issue #1687 (steps 2/4/5): two API-level RAP
+# deployments that differ in exactly one setting —
+# transactions.deltaConjunctMaintenance 'off' (:8191) versus 'on' (:8192).
+# Both mount the same framework worktree (branch feat-delta-conjunct-
+# maintenance) and the same generics, generated once by the delta-sql
+# compiler from RAP branch incremental-evaluation.
+#
+# Runtime state lives under BENCH_ROOT (default /tmp/rap1687-bench), created
+# by setup.sh. Start:  docker compose -f docker-compose.yml up -d
+name: rap1687bench
+services:
+  bench-off:
+    container_name: rap1687bench-off
+    image: ampersandtarski/prototype-framework:v2.6.0
+    platform: linux/amd64
+    mem_limit: 4g
+    volumes:
+      - ${FRAMEWORK_DIR:-/Users/stef/git/PrototypeFramework-delta}:/var/www
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/backend-gen/generics:/var/www/backend/generics:ro
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/off/config:/var/www/backend/config:ro
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/off/data:/var/www/backend/data
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/off/log:/var/www/backend/log
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/php-overrides.ini:/usr/local/etc/php/conf.d/99-prototype-limits.ini:ro
+    environment:
+      - AMPERSAND_DBHOST=bench-db-off
+      - AMPERSAND_DBUSER=ampersand
+      - AMPERSAND_DBPASS=rap1687
+      - AMPERSAND_DBNAME=rap1687off
+      - AMPERSAND_PRODUCTION_MODE=false
+      - AMPERSAND_DEBUG_MODE=true
+      - AMPERSAND_SERVER_URL=http://localhost:8191
+    ports:
+      - "8191:80"
+    depends_on:
+      - bench-db-off
+    networks: [db]
+
+  bench-db-off:
+    container_name: rap1687bench-db-off
+    image: mariadb:10.4
+    command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL", "--performance-schema=ON"]
+    mem_limit: 2g
+    environment:
+      - MYSQL_ROOT_PASSWORD=rap1687-root
+      - MYSQL_USER=ampersand
+      - MYSQL_PASSWORD=rap1687
+      - MYSQL_DATABASE=rap1687off
+    ports:
+      - "127.0.0.1:3491:3306"
+    networks: [db]
+
+  bench-on:
+    container_name: rap1687bench-on
+    image: ampersandtarski/prototype-framework:v2.6.0
+    platform: linux/amd64
+    mem_limit: 4g
+    volumes:
+      - ${FRAMEWORK_DIR:-/Users/stef/git/PrototypeFramework-delta}:/var/www
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/backend-gen/generics:/var/www/backend/generics:ro
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/on/config:/var/www/backend/config:ro
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/on/data:/var/www/backend/data
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/on/log:/var/www/backend/log
+      - ${BENCH_ROOT:-/tmp/rap1687-bench}/php-overrides.ini:/usr/local/etc/php/conf.d/99-prototype-limits.ini:ro
+    environment:
+      - AMPERSAND_DBHOST=bench-db-on
+      - AMPERSAND_DBUSER=ampersand
+      - AMPERSAND_DBPASS=rap1687
+      - AMPERSAND_DBNAME=rap1687on
+      - AMPERSAND_PRODUCTION_MODE=false
+      - AMPERSAND_DEBUG_MODE=true
+      - AMPERSAND_SERVER_URL=http://localhost:8192
+    ports:
+      - "8192:80"
+    depends_on:
+      - bench-db-on
+    networks: [db]
+
+  bench-db-on:
+    container_name: rap1687bench-db-on
+    image: mariadb:10.4
+    command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL", "--performance-schema=ON"]
+    mem_limit: 2g
+    environment:
+      - MYSQL_ROOT_PASSWORD=rap1687-root
+      - MYSQL_USER=ampersand
+      - MYSQL_PASSWORD=rap1687
+      - MYSQL_DATABASE=rap1687on
+    ports:
+      - "127.0.0.1:3492:3306"
+    networks: [db]
+
+networks:
+  db:

@@ -293,6 +293,90 @@ model as their branches carry it.
 step 4, the sources of RAP branch `incremental-evaluation` are the ones
 the incremental compiler must accept.
 
+**The RAP benchmark of issue #1687 compares two deployments that differ in exactly one setting — `transactions.deltaConjunctMaintenance` `off` versus `on` — on otherwise identical code, model, and data; every measurement travels the full request pipeline.**
+*DC-14 · valid · 2026-08-15 · origin: issue #1687 steps 2/4/5, [rap-bench/](rap-bench/)*
+
+Both instances mount the same framework worktree (branch
+`feat-delta-conjunct-maintenance`) and the same generics, generated once by
+the delta-sql compiler from RAP branch `incremental-evaluation`; only
+`project.yaml` differs, in the one switch. The harness in
+[rap-bench/](rap-bench/) drives three measurements per instance: the seed
+stream (batched script submissions through the replay endpoint) yields the
+transaction-close cost against a growing database; at three checkpoint
+sizes, repeated single-edit transactions yield the per-transaction cost at
+fixed size, and repeated interface GETs (`MyScripts` and `Nieuwscript` as
+point queries, `StudentScripts` as a computed expression over all
+accounts) yield the page-open cost. MariaDB's statement digest per phase
+names the dominating queries. Login is mimicked at the data level: the
+replay endpoint links `sessionAccount` and the SIAM rules grant the roles.
+
+*Considerations:*
+
+1. The goal is a publication-grade comparison: the article's claim —
+   per-transaction cost tracks the size of the change, not of the
+   database — needs a comparison in which incremental maintenance is the
+   only variable. The step-1 deployments differ in compiler, framework
+   *and* model, so they serve as production context, not as the
+   comparison pair.
+2. An earlier idea — running the harness against the as-is v1 baseline —
+   was set aside for the headline numbers for that reason; the model
+   drift between `origin/main` and the modernized sources (noted in the
+   step-1 log) disappears from the comparison entirely because both
+   instances serve the same generics.
+3. The API-level layout repeats DC-12 (FC5 shadow run): stock
+   framework image, mounted worktree, host-generated generics, replay
+   endpoint. What DC-12 validated for correctness (shadow, zero
+   mismatches), this stack measures for speed (off vs on).
+4. Real SIAM login through the login interface was considered and set
+   aside: it exercises password administration that contributes nothing
+   to the measured queries, and the data-level mimicry follows the same
+   ExecEngine role-granting rules a real login triggers.
+5. The delta path is verified operationally before each run: the
+   statement digest of the `on` instance shows the `delta_*` table
+   traffic; the `off` instance shows none.
+
+*Impact on the specification:* none; the RAP model is compiled as the
+branch carries it.
+
+*Impact in production:* none; the stack is local and disposable
+(`rap1687bench-*` containers, ports 8191/8192).
+
+**Interface queries stay unmaterialized: the compiler and framework keep answering every interface query with the existing placeholder queries, and the incremental machinery serves rules only.**
+*DC-15 · valid · 2026-08-15 · origin: issue #1687 step 3, [rap-bench/RESULTS.md](rap-bench/RESULTS.md)*
+
+The generated interface queries (`broadQueryWithPlaceholder`) remain the
+single read path for pages. No interface expression carries a materialized
+table, and `conjuncts.json`'s delta contract stays a rule-track artifact.
+
+*Considerations:*
+
+1. The goal of issue #1687's question 1 was to decide this on measurements
+   rather than on the cost model alone. The measurements agree with the
+   model: RAP's interface point queries (`MyScripts`, `Nieuwscript`) hold
+   a flat ~22 ms from 1 000 to 12 000 scripts — there is nothing for
+   maintenance to win, and every materialized view would add write
+   amplification on each of RAP's transactions.
+2. The one growing interface class — computed overview expressions such as
+   `StudentScripts`, 45→310 ms over the same span — was considered for
+   shared materialization with the delta stream and set aside: RAP
+   carries few such pages, they serve the Tutor overview role, and
+   0.3 s at production-like size does not buy the added moving parts.
+   The delta tables keep providing the change stream, so this choice can
+   be revisited per application with the same harness.
+3. Maintaining every interface expression (the Materialize/Feldera
+   default) was rejected outright by measurement 1; it is the
+   write-amplification case the issue's analysis predicted.
+4. Because no semantics-bearing code changes, no new proof obligation
+   arises; the deployed mechanism stays covered by PRF-6/PRF-7. A future
+   shared-materialization design would state its own claim first
+   (register discipline).
+
+*Impact on the specification:* none; models keep compiling unchanged.
+
+*Impact in production:* none today. The revisit trigger is written down:
+an application whose profiled interface load concentrates in computed
+overview expressions re-runs this decision with rap-bench numbers.
+
 ## Assurance and publication
 
 **Correctness of the delta calculus rests on our own Isabelle/HOL proofs in `proofs/`, with the Lean formalization of DBSP as inspiration.**
