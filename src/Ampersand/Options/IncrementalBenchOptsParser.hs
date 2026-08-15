@@ -47,3 +47,19 @@ incrementalBenchOptsParser =
               <> help "Write per-transaction measurements to FILE as CSV."
           )
       )
+    <*> switch
+      ( long "sql"
+          <> help "Run the delta-SQL referee harness against MariaDB instead of the in-memory benchmark: maintain a violation cache with the generated delta queries and compare it with full-query evaluation after every transaction. Requires command line php with MySQL support. Synthetic transactions need --sql-bin-tables; --replay works on any layout."
+      )
+    <*> switch
+      ( long "replay"
+          <> help "Harness transactions replay pairs from the model's own population (delete and re-insert) instead of synthesizing atoms. Type-safe on any model, and works with the production table layout."
+      )
+    <*> option
+      auto
+      ( long "referee-every"
+          <> metavar "K"
+          <> value 1
+          <> showDefault
+          <> help "In the SQL harness, compare the affected caches with full evaluation every K-th transaction. The final full check over all caches always runs."
+      )
