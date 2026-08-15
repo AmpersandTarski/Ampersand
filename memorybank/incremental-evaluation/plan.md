@@ -216,9 +216,12 @@ provably recurs (26–29 ms per iteration on RAP); (2) skip the close's
 redundant re-evaluation when the ExecEngine made no repairs after its
 last evaluation — no new calculus, same size of prize; (3) a per-conjunct
 cost gate so candidate maintenance engages only where the full query is
-expensive. Refining the concept-affected fallback drops below these: on
-RAP it would unlock transactions into a path that loses anyway until (3)
-exists.
+expensive — opened as issue
+[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
+(compile-time cost gate, with the backfill/maintenance split and the
+case table as R2). Refining the concept-affected fallback drops below
+these: on RAP it would unlock transactions into a path that loses anyway
+until (3) exists.
 
 ## To investigate before Phase 1
 

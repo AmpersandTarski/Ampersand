@@ -122,7 +122,10 @@ Each hypothesis is falsifiable with instruments that already exist
   otherwise — is never slower than either pure mode on any model in the
   corpus. *Test:* implement the gate, run rap-bench and incremental-bench
   across the corpus; the hypothesis fails if any model shows a regression
-  against its best pure mode.
+  against its best pure mode. *Research line:* O2 and O7 together, plus
+  the backfill/maintenance split, are issue
+  [#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
+  (compile-time cost gate).
 
 ## Interfaces as materialized views (added 2026-08-15)
 
