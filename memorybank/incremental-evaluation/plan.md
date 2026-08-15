@@ -234,10 +234,16 @@ provably recurs (26–29 ms per iteration on RAP); (2) skip the close's
 redundant re-evaluation when the ExecEngine made no repairs after its
 last evaluation — no new calculus, same size of prize; (3) a per-conjunct
 cost gate so candidate maintenance engages only where the full query is
-expensive — opened as issue
-[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
-(compile-time cost gate, with the backfill/maintenance split and the
-case table as R2). Refining the concept-affected fallback drops below
+expensive — researched and closed as issue
+[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690). The
+corpus study ([cost-gate/RESULTS.md](cost-gate/RESULTS.md)) settled the
+gate's form: a compile-time cost profile per conjunct, judged by the
+framework against live table sizes (DC-16 case table, DC-17 contract).
+It also corrected the "all expensive queries are EE rules" reading: at
+96 000 scripts three non-EE UNI checks join the expensive class, and all
+three are structurally enforced by the table layout, so their optimal
+route is no query at all. The implementation is queued as its own
+feature issue. Refining the concept-affected fallback drops below
 these: on RAP it would unlock transactions into a path that loses anyway
 until (3) exists.
 
