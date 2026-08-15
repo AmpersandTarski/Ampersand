@@ -17,16 +17,16 @@ Ampersand is many things:
 * It is a [programming/specification language](https://cs.ou.nl/oursi/OUrsi052-Joosten-programming-with-relation-algebras.pdf) in which you can specify your own information systems.
 
 In the Ampersand project,
-we believe in correct data, to help information intensive organizations to prevent mistakes and save them the effort of fixing those mistakes.
+we believe in correct data, to help information intensive organizations to prevent mistakes that affect customers and to save them the effort of fixing those mistakes and repairing their customer relations.
 We believe in correct software, to prevent teething troubles of new information systems and save on debugging and rework.
-We believe in generating software, to save time by eliminating laborious and error-prone tasks from software development projects.
+We believe in generating software, so we can evaluate multiple alternative design choices rapidly, and also to save time by eliminating laborious and error-prone tasks from software development projects.
 We believe in incremental development, to create predictable results in a predictable time.
 
 
 ## Key capabilities
 Ampersand can help you with information system development. It helps you to:
-* Generate your information systems, to save work on programming.
-* Develop incrementally, also when your data model changes, to support agile software development and to remain flexible while functional requirements *e changing.
+* Generate your information systems, evaluate design alternatives and to save work on programming.
+* Develop incrementally, also when your data model changes, to support agile software development and to remain flexible while functional requirements are changing.
 * Make a domain analysis of your business problems to create a shared understanding. 
 * Automate making your database schema, to kick-start your application(s).
 * Experiment with rules to [_**simplify**_ business processes](https://player.ou.nl/wowzaportlets/#!production/P2w4YD0) until they represent your intention, to enhance compliance by design.
@@ -59,7 +59,7 @@ This feature characterizes Ampersand as different from *procedural* languages.
 Ampersand is a [reactive](../reactive-programming.md) language.
 It does not follow pre-specified threads of action, but it reacts to events from outside and inside the system.
 
-Reactive programming sets Ampersand apart from multi-threaded programming.
+Reactive programming sets Ampersand apart both from multi-threaded and single-threaded programming.
 
 ### Statically typed
 All relations in a context together form a conceptual model.
@@ -109,6 +109,8 @@ Scientific foundations of Ampersand have been published in the International Con
 * Medications, a demonstrator built by TNO in Ampersand to showcase attestation on the internet. This example is undocumented.
 * [SETU standards](https://setu.t4smm.nl/), a site to disclose standards for electronic messaging in the sector of flexible labour. This example is undocumented.
 * [RAP4](https://rap.cs.ou.nl), a tool for students to learn how to work with Ampersand. This project is documented in [https://github.com/AmpersandTarski/RAP](https://github.com/AmpersandTarski/RAP).
+* Landeneisenregister, a registry by the Dutch Food Authority (NVWA) of the import requirements for living plants or plant material of over 200 countries. This registry was designed with and prototyped in Ampersand in 2026.
+* Indigo, a system to support the immigration process of the IND was designed with Ampersand in 2007.
 
 ### Why rule-based?
 
