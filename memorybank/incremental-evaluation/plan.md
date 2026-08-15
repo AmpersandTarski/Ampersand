@@ -137,10 +137,10 @@ weight/`distinct` bookkeeping errors early, and doubles as executable documentat
 regression population set, including flipped/UNI/INJ storage variants.
 
 *Status:* implemented as `Ampersand.FSpec.Incremental`(+`.ZSet`) with the CLI
-command `ampersand incremental-bench` (OK-6). The `--verify` oracle holds on
+command `ampersand incremental-bench` (DC-6). The `--verify` oracle holds on
 ten regression models (Kleene, cartesian products, subtyping, complements,
 script populations) with 60+ verified transactions each; the oracle caught and
-killed two real bugs on the way (OK-7, consideration 2). Phase 0.1 is closed:
+killed two real bugs on the way (DC-7, consideration 2). Phase 0.1 is closed:
 `Ampersand.Test.Incremental.Properties` runs in `stack test` — one QuickCheck
 property per proven lemma over the real `ZSet` functions, plus an engine
 oracle property on a miniature context (ISA hierarchy, ONE-typed terms, one
@@ -198,6 +198,17 @@ order-of-magnitude improvement on transaction-heavy scenarios, with identical
 violation sets — including a divergence-free shadow-run period on a real
 application.
 
+*Status (2026-08-14):* the framework side exists (branch
+`feat-delta-conjunct-maintenance`, switch `off`/`shadow`/`on`) and the FC5
+shadow run has run divergence-free: 1142 replay transactions through the
+full request pipeline, zero `DELTA SHADOW MISMATCH`, and identical commit
+decisions in all 1043 paired on/off transactions. Coverage on the real mix:
+61% of (transaction, conjunct) instances took the delta path. The timing
+half of the exit criterion is open: at the current population size (~1100
+pairs) `on` still costs more than `off` (median close 4.2 vs 3.1 ms), so
+the measured gain must come from database growth. Details and the road to
+`on`: [fase4-fc5-schaduwdraai.md](fase4-fc5-schaduwdraai.md).
+
 ### Phase 5 — The harder constructs
 
 Kleene closures via the nested-stream construction (semi-naïve evaluation that also
@@ -207,13 +218,36 @@ says they matter.
 *Deliverable/exit:* per construct, decided when Phase 4's numbers show where the
 remaining cost sits.
 
+*Status (2026-08-15, from the RAP benchmark of issue #1687 and its
+follow-up — [rap-bench/RESULTS.md](rap-bench/RESULTS.md)):* the profiling
+decision is in. Interface queries are settled by DC-15 (point queries
+flat, no materialization; `StudentScripts`-class overview expressions stay
+full queries, revisit trigger recorded). On the rule side the follow-up
+sharpened the picture: RAP's expensive violation queries all belong to
+ExecEngine rules; the 351 non-EE conjuncts (78%) are index-cheap, so at
+the close the candidate protocol loses even on delta-eligible
+transactions (+6.6 ms median at 12 000 scripts) and the `off` default is
+the right production setting for RAP-class models. The harvest order for
+this phase is therefore: (1) the ExecEngine repair loop on
+delta-maintained state — the only place where expensive evaluation
+provably recurs (26–29 ms per iteration on RAP); (2) skip the close's
+redundant re-evaluation when the ExecEngine made no repairs after its
+last evaluation — no new calculus, same size of prize; (3) a per-conjunct
+cost gate so candidate maintenance engages only where the full query is
+expensive — opened as issue
+[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
+(compile-time cost gate, with the backfill/maintenance split and the
+case table as R2). Refining the concept-affected fallback drops below
+these: on RAP it would unlock transactions into a path that loses anyway
+until (3) exists.
+
 ## To investigate before Phase 1
 
 - **Runtime ground truth** — done, see [prototype-runtime-map.md](prototype-runtime-map.md).
   Key findings: the framework already materializes violations per conjunct in
   `__conj_violation_cache__`, refreshed wholesale at each commit; signal rules read
   entirely from that cache. Delta maintenance therefore changes the refresh strategy
-  of an existing store (OK-3). The natural delta hook is `MysqlDB::addLink/deleteLink`
+  of an existing store (DC-3). The natural delta hook is `MysqlDB::addLink/deleteLink`
   (bulk operations like `deleteAllLinks` need care); `conjuncts.json` tolerates added
   optional fields; reinstall executes `database.sql` verbatim, so extra tables ride
   along; RAP uses this same framework, so it inherits the improvement.
@@ -227,7 +261,7 @@ remaining cost sits.
   install is the obvious route; confirm it fits the framework's reinstall mechanism.
   The Feldera episode names backfill as the engineering Achilles heel — for us it is
   bounded because the full queries already exist.
-- **Scope the Isabelle/HOL proof base** (decision OK-4: we redo the correctness
+- **Scope the Isabelle/HOL proof base** (decision DC-4: we redo the correctness
   proofs ourselves, with the Lean formalization as inspiration): determine how
   `proofs/spike/Ampersand_RA.thy` extends to a Z-set (weighted) semantics of the
   heterogeneous operators, which DBSP theorems we re-prove versus specialize
@@ -236,7 +270,7 @@ remaining cost sits.
 
 ## Proof track — Isabelle/HOL (parallel to Phases 1–2)
 
-Decision OK-4: every delta rule of Phase 1 carries its own machine-checked proof in
+Decision DC-4: every delta rule of Phase 1 carries its own machine-checked proof in
 Isabelle/HOL, or an explicit flag that it does not yet — and an unproved rule falls
 back to full evaluation. The proofs extend the existing shallow embedding of
 Ampersand's heterogeneous relation algebra (`proofs/spike/Ampersand_RA.thy`) with a
@@ -275,7 +309,7 @@ silently.
 
 ## Paper track (continuous)
 
-Decision OK-5: the work is documented for publication. Decisions go into
+Decision DC-5: the work is documented for publication. Decisions go into
 [DesignChoices.md](DesignChoices.md) at decision time, with the rejected
 alternatives; every phase ends with a written record in this folder; measurements
 ship with the scripts and data that produced them; proofs are versioned in
@@ -310,7 +344,7 @@ generated delta SQL against the proven engine.
 - **Schema migration.** Extra tables and a count column change `database.sql`; the
   model-hash reinstall mechanism covers prototypes, but document it.
 - **Scope of proof.** The delta rules earn trust twice: through the Phase 2 oracle
-  tests and through the Isabelle/HOL proof track (OK-4). The open modelling question
+  tests and through the Isabelle/HOL proof track (DC-4). The open modelling question
   is the Z-set semantics of the heterogeneous operators in Isabelle; until a rule's
   proof lands, the compiler treats it as unproved (full-evaluation fallback).
 

@@ -8,7 +8,7 @@ lives in git. Open questions sit at the bottom under "Still to decide".
 ## The transformation
 
 **The incremental transformation operates on relation-algebra terms inside the compiler; SQL is the target language the delta terms compile to.**
-*OK-1 · valid · 2026-08-13 · origin: issue #1682, [dbsp-paper-study.md](dbsp-paper-study.md), [ampersand-architecture-map.md](ampersand-architecture-map.md)*
+*DC-1 · valid · 2026-08-13 · origin: issue #1682, [dbsp-paper-study.md](dbsp-paper-study.md), [ampersand-architecture-map.md](ampersand-architecture-map.md)*
 
 The delta calculus lives at the `Expression` level, between `conjNF` and SQL
 generation. A delta term is an ordinary `Expression`, and the existing
@@ -23,7 +23,7 @@ generation. A delta term is an ordinary `Expression`, and the existing
    `distinct` — that are visible constructor by constructor in the AST, while
    the generated SQL has fused whole subterms into single SELECT statements.
 3. Terms at this level are testable against the in-memory evaluator without a
-   database, and provable in Isabelle/HOL (OK-4).
+   database, and provable in Isabelle/HOL (DC-4).
 4. Transforming the generated SQL instead was considered and rejected: it would
    require reconstructing the operator circuit out of SQL, a second delta-aware
    SQL generator beside the existing one, and it ties the transformation to the
@@ -34,10 +34,10 @@ untouched; the choice concerns compiler internals.
 
 *Impact in production:* the generated artifacts gain per-(conjunct, relation)
 delta queries next to the existing full violation queries; the prototype
-database and runtime contract grow accordingly (OK-3).
+database and runtime contract grow accordingly (DC-3).
 
 **A delta relation Δr is a fabricated `Relation` value behind `EDcD`, with its own `BinSQL` plug.**
-*OK-2 · valid · 2026-08-13 · origin: [data-structure-readiness.md](data-structure-readiness.md)*
+*DC-2 · valid · 2026-08-13 · origin: [data-structure-readiness.md](data-structure-readiness.md)*
 
 Each Δr carries the signature of r, a name outside the user namespace,
 `decusr = False`, and a filled `dechash`; its plug is the transaction's delta
@@ -62,12 +62,12 @@ models and are filtered by `decusr`.
 
 *Impact in production:* per relation one delta table (two columns plus weight)
 exists in the generated schema; the runtime fills it with the transaction's
-changed pairs (OK-3).
+changed pairs (DC-3).
 
 ## State and runtime
 
 **Violation state lives in MariaDB, in the `__conj_violation_cache__` table the runtime already maintains; the generated delta queries keep that table up to date incrementally, and the full violation queries remain as fallback and self-check.**
-*OK-3 · valid · 2026-08-13 · origin: [prototype-runtime-map.md](prototype-runtime-map.md), [ecosystem-and-video.md](ecosystem-and-video.md)*
+*DC-3 · valid · 2026-08-13 · origin: [prototype-runtime-map.md](prototype-runtime-map.md), [ecosystem-and-video.md](ecosystem-and-video.md)*
 
 The prototype framework persists a materialized violation set per conjunct in
 `__conj_violation_cache__` and refreshes it wholesale (DELETE+INSERT) at each
@@ -100,7 +100,7 @@ carries both along. The framework's commit path maintains the cache from delta
 queries instead of replacing it, also inside each ExecEngine iteration.
 
 **The compiler carries an in-memory incremental evaluator, exposed as the command `ampersand incremental-bench`, with per-transaction oracle verification.**
-*OK-6 · valid · 2026-08-13 · origin: user decision 2026-08-13, issue #1682*
+*DC-6 · valid · 2026-08-13 · origin: user decision 2026-08-13, issue #1682*
 
 The modules `Ampersand.FSpec.Incremental` and `Ampersand.FSpec.Incremental.ZSet`
 implement the delta calculus of [delta-calculus.md](delta-calculus.md) as a
@@ -127,7 +127,7 @@ the affected conjuncts on synthetic populations of chosen scales, and
 generated SQL is untouched.
 
 **A circuit node carries a set as output; weighted state stays local to the nodes that need it, and every construct without a proven delta rule runs as a recompute node.**
-*OK-7 · valid · 2026-08-13 · origin: [delta-calculus.md](delta-calculus.md), oracle runs of 2026-08-13*
+*DC-7 · valid · 2026-08-13 · origin: [delta-calculus.md](delta-calculus.md), oracle runs of 2026-08-13*
 
 Each node's output is a Z-set with all weights 1; pre-`distinct` integrals,
 composition's flipped index, and the product projections live inside the node
@@ -139,7 +139,7 @@ non-collapsible complements, and Kleene closures evaluate as recompute
 
 1. The goal is an engine that is correct on every model from day one and
    incremental on the common violation shapes; coverage grows per proven rule
-   (OK-4 gates this), and `circuitFallbacks` reports the coverage per conjunct.
+   (DC-4 gates this), and `circuitFallbacks` reports the coverage per conjunct.
 2. The oracle caught two real errors during construction, which the register
    records as the argument for keeping the oracle in every phase: a
    left/right-occurrence merge that silently dropped concept-population
@@ -210,7 +210,7 @@ or no `deltaQueries` → full re-evaluation (today's path); otherwise the delta
 protocol.
 
 **The engine's transaction domain is the full set of declared relations and concepts; all wiring is fixed at construction.**
-*OK-10 · valid · 2026-08-13 · origin: issue #1683, engine oracle property*
+*DC-10 · valid · 2026-08-13 · origin: issue #1683, engine oracle property*
 
 `mkEngine` receives the declared relations and fixes the feeder lists per
 term relation, the concept cones per relation, and the ISA-upward map for
@@ -238,7 +238,7 @@ that transaction.
 rule that delta plumbing exists per declared relation, populated or not.
 
 **The correctness of the incremental core rests on two machine-checked layers: Isabelle proves the model (whole-circuit induction included), and per-build QuickCheck properties bind the Haskell code to that model.**
-*OK-11 · valid · 2026-08-13 · origin: issue #1683, [correctness-argument.md](correctness-argument.md)*
+*DC-11 · valid · 2026-08-13 · origin: issue #1683, [correctness-argument.md](correctness-argument.md)*
 
 The session `Incremental_Delta` proves the delta rules, the whole-circuit
 induction (C1-C5) and the population mirror (P1-P5); the test-suite module
@@ -259,7 +259,7 @@ evidence.
 3. Proving against the literal Haskell (hs-to-coq-style translation) was
    rejected: no maintained toolchain for this GHC/stack setup.
 4. The property suite caught a real defect on its second random stream
-   (OK-10, consideration 2), which is the empirical argument for keeping it
+   (DC-10, consideration 2), which is the empirical argument for keeping it
    in `stack test` permanently.
 
 *Impact on the specification:* none.
@@ -267,10 +267,173 @@ evidence.
 *Impact in production:* none directly; the proofs and properties gate which
 constructs may leave the fallback route, and Phase 3 inherits a proven core.
 
+**The phase-4 shadow environment is an API-level copy of FC5: the delta-branch framework worktree mounted into a stock framework image, with host-generated generics and a replay endpoint that drives transactions through the full request pipeline.**
+*DC-12 · valid · 2026-08-14 · origin: [fase4-fc5-schaduwdraai.md](fase4-fc5-schaduwdraai.md), first shadow runs of 2026-08-14*
+
+The shadow run executes against a dedicated stack (own containers, ports and
+database) in which `/var/www` is the `feat-delta-conjunct-maintenance`
+worktree, the base image supplies only PHP and Apache, and the generics come
+from the delta-sql compiler on the host; an Angular frontend is absent.
+Replay transactions enter through `POST /admin/replay/txn`, an uncommitted
+route file that mutates relations via `Relation::addLink`/`deleteLink` and
+closes with `runExecEngine()->close()` — the same path interface edits
+follow. Replay pairs come from the exporter's view of the current
+population. The configuration deviates from FC5 production on two points:
+`session.loginEnabled` is false and `deltaConjunctMaintenance` stands on
+`shadow`.
+
+*Considerations:*
+
+1. The goal is to exercise exactly the framework code under test (the delta
+   recording in `MysqlDB`, the partition in `Transaction::close`,
+   `Conjunct::deltaMaintain`) on real FC5 generics, while FC5's own
+   containers, database and working copy stay untouched.
+2. A self-contained FC5 image (the road the phase-4 plan first named) was
+   considered and set aside: it requires a linux/amd64 build of the
+   unreleased delta compiler plus an Angular build, while the shadow run
+   drives the API only — the frontend takes no part in transaction
+   processing. The mounted worktree gives the same backend code byte for
+   byte.
+3. Sampling replay pairs from `populations.json` was tried and rejected: the
+   ExecEngine rewrites part of the script population at install, so a
+   replayed delete can hit a pair that no longer exists (observed as an
+   HTTP 500 on the first probe). The exporter reflects the actual state;
+   pairs that still drift mid-run are dropped from the stream.
+4. `loginEnabled` false lets the replay driver work without SIAM accounts.
+   Conjunct maintenance is role-independent, so the shadow comparison keeps
+   its meaning; the known artefact is a standing violation of the
+   PrototypeContext rule 'Active roles MUST be a subset of allowed roles'.
+
+*Impact on the specification:* none; FC5's model files are read, never
+changed.
+
+*Impact in production:* none; every published image keeps the switch on
+`off`, and the shadow stack is disposable.
+
+**The RAP validation of issue #1687 runs on two local deployments side by side: RAP as-is from `origin/main` on the v1 toolchain, and RAP from the modernized `feature/interactive-editor` sources on the published compiler v5.9.7 and framework v2.6.0.**
+*DC-13 · valid · 2026-08-15 · origin: issue #1687 step 1, [interface-queries.md](interface-queries.md)*
+
+The baseline (`:8081`) is the image the production pipeline would build:
+`origin/main` sources, prototype-framework v1.18.1, the framework's bundled
+compiler. The current-stack deployment (`:8089`) builds from RAP branch
+`incremental-evaluation` — based on `feature/interactive-editor`, whose
+sources already satisfy the current names-and-labels syntax — with the
+published images `ampersandtarski/ampersand:v5.9.7` and
+`prototype-framework:v2.6.0`. Each deployment owns its MariaDB and volumes;
+`docker-compose.1687.yml` in the RAP repo holds both.
+
+*Considerations:*
+
+1. The goal is a production-faithful baseline next to a current-stack RAP,
+   so that step 2 profiles real behaviour and step 4 can add the
+   incremental build as a third, comparable deployment.
+2. Modernizing `origin/main` afresh was considered and set aside: `main`
+   stops the current compiler at `src/RAP4.adl:196` (`UnexpectedChar '_'`,
+   names such as `pf_ifcRoles`), and the interactive-editor branch has this
+   conversion already behind it, verified by a clean
+   `ampersand proto` run and a working deployment.
+3. Building the baseline with the current compiler was rejected for the
+   same reason in reverse: the as-is baseline derives its value from being
+   the image production runs, old toolchain included.
+4. The RAP work lives on its own branch and worktree
+   (`~/git/RAP-incremental-evaluation`), so the interactive-editor line and
+   its running deployment on `:8088` stay undisturbed.
+
+*Impact on the specification:* none; both deployments compile the RAP4
+model as their branches carry it.
+
+*Impact in production:* none; both stacks are local and disposable. For
+step 4, the sources of RAP branch `incremental-evaluation` are the ones
+the incremental compiler must accept.
+
+**The RAP benchmark of issue #1687 compares two deployments that differ in exactly one setting — `transactions.deltaConjunctMaintenance` `off` versus `on` — on otherwise identical code, model, and data; every measurement travels the full request pipeline.**
+*DC-14 · valid · 2026-08-15 · origin: issue #1687 steps 2/4/5, [rap-bench/](rap-bench/)*
+
+Both instances mount the same framework worktree (branch
+`feat-delta-conjunct-maintenance`) and the same generics, generated once by
+the delta-sql compiler from RAP branch `incremental-evaluation`; only
+`project.yaml` differs, in the one switch. The harness in
+[rap-bench/](rap-bench/) drives three measurements per instance: the seed
+stream (batched script submissions through the replay endpoint) yields the
+transaction-close cost against a growing database; at three checkpoint
+sizes, repeated single-edit transactions yield the per-transaction cost at
+fixed size, and repeated interface GETs (`MyScripts` and `Nieuwscript` as
+point queries, `StudentScripts` as a computed expression over all
+accounts) yield the page-open cost. MariaDB's statement digest per phase
+names the dominating queries. Login is mimicked at the data level: the
+replay endpoint links `sessionAccount` and the SIAM rules grant the roles.
+
+*Considerations:*
+
+1. The goal is a publication-grade comparison: the article's claim —
+   per-transaction cost tracks the size of the change, not of the
+   database — needs a comparison in which incremental maintenance is the
+   only variable. The step-1 deployments differ in compiler, framework
+   *and* model, so they serve as production context, not as the
+   comparison pair.
+2. An earlier idea — running the harness against the as-is v1 baseline —
+   was set aside for the headline numbers for that reason; the model
+   drift between `origin/main` and the modernized sources (noted in the
+   step-1 log) disappears from the comparison entirely because both
+   instances serve the same generics.
+3. The API-level layout repeats DC-12 (FC5 shadow run): stock
+   framework image, mounted worktree, host-generated generics, replay
+   endpoint. What DC-12 validated for correctness (shadow, zero
+   mismatches), this stack measures for speed (off vs on).
+4. Real SIAM login through the login interface was considered and set
+   aside: it exercises password administration that contributes nothing
+   to the measured queries, and the data-level mimicry follows the same
+   ExecEngine role-granting rules a real login triggers.
+5. The delta path is verified operationally before each run: the
+   statement digest of the `on` instance shows the `delta_*` table
+   traffic; the `off` instance shows none.
+
+*Impact on the specification:* none; the RAP model is compiled as the
+branch carries it.
+
+*Impact in production:* none; the stack is local and disposable
+(`rap1687bench-*` containers, ports 8191/8192).
+
+**Interface queries stay unmaterialized: the compiler and framework keep answering every interface query with the existing placeholder queries, and the incremental machinery serves rules only.**
+*DC-15 · valid · 2026-08-15 · origin: issue #1687 step 3, [rap-bench/RESULTS.md](rap-bench/RESULTS.md)*
+
+The generated interface queries (`broadQueryWithPlaceholder`) remain the
+single read path for pages. No interface expression carries a materialized
+table, and `conjuncts.json`'s delta contract stays a rule-track artifact.
+
+*Considerations:*
+
+1. The goal of issue #1687's question 1 was to decide this on measurements
+   rather than on the cost model alone. The measurements agree with the
+   model: RAP's interface point queries (`MyScripts`, `Nieuwscript`) hold
+   a flat ~22 ms from 1 000 to 12 000 scripts — there is nothing for
+   maintenance to win, and every materialized view would add write
+   amplification on each of RAP's transactions.
+2. The one growing interface class — computed overview expressions such as
+   `StudentScripts`, 45→310 ms over the same span — was considered for
+   shared materialization with the delta stream and set aside: RAP
+   carries few such pages, they serve the Tutor overview role, and
+   0.3 s at production-like size does not buy the added moving parts.
+   The delta tables keep providing the change stream, so this choice can
+   be revisited per application with the same harness.
+3. Maintaining every interface expression (the Materialize/Feldera
+   default) was rejected outright by measurement 1; it is the
+   write-amplification case the issue's analysis predicted.
+4. Because no semantics-bearing code changes, no new proof obligation
+   arises; the deployed mechanism stays covered by PRF-6/PRF-7. A future
+   shared-materialization design would state its own claim first
+   (register discipline).
+
+*Impact on the specification:* none; models keep compiling unchanged.
+
+*Impact in production:* none today. The revisit trigger is written down:
+an application whose profiled interface load concentrates in computed
+overview expressions re-runs this decision with rap-bench numbers.
+
 ## Assurance and publication
 
 **Correctness of the delta calculus rests on our own Isabelle/HOL proofs in `proofs/`, with the Lean formalization of DBSP as inspiration.**
-*OK-4 · valid · 2026-08-13 · origin: [dbsp-paper-study.md](dbsp-paper-study.md), proofs/spike/, tchajed/database-stream-processing-theory*
+*DC-4 · valid · 2026-08-13 · origin: [dbsp-paper-study.md](dbsp-paper-study.md), proofs/spike/, tchajed/database-stream-processing-theory*
 
 Every delta rule of Phase 1 carries a machine-checked proof in Isabelle/HOL, or
 an explicit flag that it does not yet. The proofs build on the existing shallow
@@ -280,7 +443,7 @@ A claim counts as machine-checked only after we have run the proof ourselves.
 
 *Considerations:*
 
-1. The goal is paper-grade assurance (OK-5): the delta calculus is the
+1. The goal is paper-grade assurance (DC-5): the delta calculus is the
    theoretical core of the intended article, and its correctness argument must
    be ours to state and to check.
 2. The Lean formalization by Chajed proves the DBSP theorems we depend on
@@ -303,7 +466,7 @@ A claim counts as machine-checked only after we have run the proof ourselves.
 compiler may apply (an unproved rule falls back to full evaluation).
 
 **The research line is documented for publication: every phase leaves a written, reproducible record from which the article can be assembled.**
-*OK-5 · valid · 2026-08-13 · origin: user decision 2026-08-13*
+*DC-5 · valid · 2026-08-13 · origin: user decision 2026-08-13*
 
 Decisions stand in this register; study results, measurements and phase
 write-ups stand in `memorybank/incremental-evaluation/`; proofs stand in
@@ -327,7 +490,7 @@ draws on this material without a separate reconstruction effort.
 
 ## Still to decide
 
-- The venue and scope of the article (OK-5): compiler-engineering story,
+- The venue and scope of the article (DC-5): compiler-engineering story,
   formalization story, or both.
 - Whether delta maintenance runs per ExecEngine iteration from the start or
   first lands for user transactions only (prototype-runtime-map.md, §8).

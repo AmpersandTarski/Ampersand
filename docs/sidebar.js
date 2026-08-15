@@ -238,6 +238,16 @@ module.exports = {
             ]
         },
         {
+            label: 'The proof track',
+            type: 'category',
+            items: [
+                'ampersand/proofs/README',
+                'ampersand/proofs/incremental-evaluation',
+                'ampersand/proofs/incremental-sql',
+                'ampersand/proofs/kleene-operators',
+            ]
+        },
+        {
             type: 'doc',
             id: 'ampersand/future-plans'
         },

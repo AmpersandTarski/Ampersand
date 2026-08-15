@@ -8,8 +8,10 @@ on:
   pull_request:
     paths:
       - "docs/**"
+      - "proofs/**"
       - "scripts/check-docs-sidebar.js"
       - "scripts/check-docs-links.js"
+      - "scripts/check-proof-track.js"
       - ".github/workflows/docs-hygiene.yml"
   push:
     branches:
@@ -17,8 +19,10 @@ on:
       - documentation
     paths:
       - "docs/**"
+      - "proofs/**"
       - "scripts/check-docs-sidebar.js"
       - "scripts/check-docs-links.js"
+      - "scripts/check-proof-track.js"
       - ".github/workflows/docs-hygiene.yml"
 
 jobs:
@@ -33,3 +37,5 @@ jobs:
         run: node scripts/check-docs-sidebar.js
       - name: Check documentation links
         run: node scripts/check-docs-links.js
+      - name: Check proof track
+        run: node scripts/check-proof-track.js

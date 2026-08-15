@@ -127,6 +127,10 @@ reachable state.
 4. **Incremental Kleene closures (Phase 5)** — `proofs/kleene/
    IncrementalDelete.thy` already proves the deletion-side facts; wiring it
    into the engine replaces the closure recompute nodes.
-5. **Phase 3 (delta SQL)** — the S/Z/B lemmas carry over unchanged; the new
-   proof surface is the correspondence between the generated SQL and the Z-set
-   operations, plus the end-to-end Phase 4 measurement.
+5. **Phase 3 (delta SQL)** — the S/Z/B lemmas carry over unchanged. The
+   design shifted to delta-scoped re-evaluation (OK-8), so the proof surface
+   became candidate completeness, discharged 2026-08-14: K-obligations K1-K6,
+   the whole-term theorem and the per-relation decomposition in
+   `proofs/incremental/Candidates.thy` (register claim PRF-7). What remains
+   is the runtime-protocol statement (register claim PRF-6, stated) and the
+   end-to-end Phase 4 measurement.
