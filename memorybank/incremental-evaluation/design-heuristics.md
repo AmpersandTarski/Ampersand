@@ -40,6 +40,12 @@ recognizable. A compiler can therefore classify at generation time which
 queries are candidates for incremental maintenance, without measuring.
 Grounding: every one of RAP's 351 non-EE conjuncts timed cheap, and both
 expensive ones contain a cartesian term.
+*Refined by the #1690 corpus study:* the shape predicts the growth
+**exponent** (anchored probe, linear scan, product, recursion), not the
+threshold crossing — population size decides when a linear scan outgrows
+the protocol fee, and size is runtime knowledge. The workable form is a
+static scan profile judged against live table sizes (DC-17;
+[cost-gate/RESULTS.md](cost-gate/RESULTS.md), finding 3).
 
 **H3 — Deduplicate before you incrementalize.** RAP evaluates its
 expensive rule queries twice per transaction (repair engine + close).
@@ -96,12 +102,22 @@ Each hypothesis is falsifiable with instruments that already exist
   predicts which violation queries grow with database size, with
   precision and recall above 90%. *Test:* classifier output against
   measured scaling curves per conjunct on the same corpus.
+  *Outcome (2026-08-15): refuted as stated* — shape alone reached 21.7%
+  precision at 62.5% recall on the eight-model corpus. The refined,
+  confirmed form: shape fixes the growth exponent, and a static scan
+  profile combined with live table sizes reaches 100% recall at 98.6%
+  specificity, with every false positive within the bounded-damage band
+  ([cost-gate/RESULTS.md](cost-gate/RESULTS.md)).
 - **O3 (deduplication dividend).** Skipping the close's re-evaluation
   when the repair engine made no repairs after its last evaluation
   reduces median transaction latency on RAP-class workloads by 30–50% at
   production volume, with no change in commit decisions. *Test:* the
   one-line pipeline change behind a switch, replayed shadow-style like
-  the FC5 run, then rap-bench off/off+skip.
+  the FC5 run, then rap-bench off/off+skip. **Confirmed 2026-08-15:**
+  −37/−40/−41% median single-edit close at 1 000/4 000/12 000 scripts,
+  identical commit decisions and violation cache on a replayed stream
+  (rap-bench `data/o3-*`, [prototype#443](https://github.com/AmpersandTarski/prototype/issues/443),
+  framework branch `feat-skip-clean-conjuncts`).
 - **O4 (loop incrementality).** Feeding the repair engine's fixpoint from
   delta-maintained state makes transaction cost independent of database
   size for transactions with bounded repair sets. *Test:* Phase-5
@@ -125,7 +141,10 @@ Each hypothesis is falsifiable with instruments that already exist
   against its best pure mode. *Research line:* O2 and O7 together, plus
   the backfill/maintenance split, are issue
   [#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
-  (compile-time cost gate).
+  (compile-time cost gate). *Status (2026-08-15):* the research is
+  closed. The gate's form is DC-16 (case table) and DC-17 (cost-profile
+  contract); dominance holds pointwise on the corpus measurements, and
+  the end-to-end gated run moves to the implementation issue.
 
 ## Interfaces as materialized views (added 2026-08-15)
 
