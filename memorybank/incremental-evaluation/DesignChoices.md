@@ -494,6 +494,83 @@ live, RAP-class models keep every cheap conjunct on the integral route
 (no +6.6 ms regression) and route only the measured expensive class
 incrementally.
 
+**The structural class holds only where the DDL itself carries a uniqueness constraint, and the runtime keeps a sampled check on every conjunct it skips.**
+*DC-18 · valid · 2026-08-16 · origin: issue #1692 implementation*
+
+A conjunct is structurally enforced when it is the `UNI` property rule of a
+relation stored unflipped on a table's primary-key column, or the `INJ` rule
+of a relation stored flipped on such a column. Every other layout — link
+tables, specialization columns, and keys of a scalar type, which issue #341
+leaves without a primary key — carries no uniqueness constraint in the
+generated schema, so its conjunct keeps its query. The claim that the
+accepted layouts admit no violation is PRF-8 in the proof register, status
+`stated`. The runtime's skip route therefore has a switch of its own,
+separate from the rest of the gate, and a sampled fraction of the conjuncts
+it skips is verified against the database after all; a check that finds
+violations keeps the real result and reports the discrepancy.
+
+*Considerations:*
+
+1. The goal is that the one route which runs no query at all is safe to
+   deploy before its claim is proved, so the rest of the gate need not wait
+   for the proof.
+2. The corpus study found the structural case worth having: three of RAP's
+   four expensive conjuncts are `UNI` checks whose column layout already
+   enforces the property, at 60–70 ms each per transaction.
+3. A wider predicate — every `UNI` relation whose storage looks like a
+   column — was rejected. A specialization column holds `NULL` for the
+   siblings and carries no SQL constraint, so two rows could share a key
+   value; the violation set is then empty by convention rather than by
+   construction, and convention is what a skipped query stops checking.
+4. Skipping without a check was rejected as well: an unproved claim that
+   silences the only instrument that could refute it leaves a broken rule
+   indistinguishable from a holding one. Sampling keeps the cost near zero
+   while a defect still surfaces within a handful of transactions.
+
+*Impact on the specification:* none; the predicate reads the plug layout the
+compiler already derives, and no ADL construct changes meaning.
+
+*Impact in production:* a deployment that leaves
+`transactions.costGate.skipStructural` off runs exactly the queries it runs
+today. With it on, a RAP-class model drops its `UNI` and `INJ` property
+queries on key columns, and the self-check reports in the application log.
+
+**The compiler over-lists the tables a query scans, and the runtime weighs them against the optimizer's row estimates.**
+*DC-19 · valid · 2026-08-16 · origin: issue #1692 implementation*
+
+The scan profile of a conjunct names every table its violation query may read
+in full: the table of each relation occurrence, and the concept tables of
+every construct whose SQL ranges over whole populations — identities,
+cartesian products, complements, residuals, relative addition and diamonds.
+The runtime compares the largest of those tables against a configurable row
+count, and reads those sizes from `information_schema` rather than counting
+rows itself.
+
+*Considerations:*
+
+1. The goal is a judgement that is cheap enough to make on every conjunct at
+   every commit, since the gate sits in the hot path it exists to shorten.
+2. The two errors are not each other's mirror. A table listed that the query
+   does not really scan can send a cheap conjunct down the incremental route,
+   which costs the bounded protocol fee; a table left out can leave an
+   expensive conjunct on the integral route, which the corpus study measured
+   at 60–70 ms per transaction and growing with the database. Over-listing is
+   therefore the direction to err in.
+3. Exact counts were rejected: `COUNT(*)` on InnoDB is a full scan per table,
+   so the gate would spend the cost it is trying to save. The estimate is only
+   ever compared against a threshold in the tens of thousands, a distinction
+   it makes reliably.
+4. Sizes are read once per request and, when they cannot be read at all,
+   every scan conjunct falls back to the integral query — the route that is
+   correct under all circumstances.
+
+*Impact on the specification:* none; the scan profile is derived from the
+normalized term, so no model changes.
+
+*Impact in production:* the threshold is a setting
+(`transactions.costGate.scanThreshold`, default 30 000 rows), so a deployment
+whose tables grow past it changes route without recompiling its model.
+
 **Interface queries stay unmaterialized: the compiler and framework keep answering every interface query with the existing placeholder queries, and the incremental machinery serves rules only.**
 *DC-15 · valid · 2026-08-15 · origin: issue #1687 step 3, [rap-bench/RESULTS.md](rap-bench/RESULTS.md)*
 

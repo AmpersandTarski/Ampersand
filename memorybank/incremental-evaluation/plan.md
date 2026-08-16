@@ -242,10 +242,27 @@ framework against live table sizes (DC-16 case table, DC-17 contract).
 It also corrected the "all expensive queries are EE rules" reading: at
 96 000 scripts three non-EE UNI checks join the expensive class, and all
 three are structurally enforced by the table layout, so their optimal
-route is no query at all. The implementation is queued as its own
-feature issue. Refining the concept-affected fallback drops below
-these: on RAP it would unlock transactions into a path that loses anyway
-until (3) exists.
+route is no query at all. Refining the concept-affected fallback drops
+below these: on RAP it would unlock transactions into a path that loses
+anyway until (3) exists.
+
+*Status of the cost gate (2026-08-16, issue
+[#1692](https://github.com/AmpersandTarski/Ampersand/issues/1692)):* both
+halves of contract DC-17 are built and committed, on branch `cost-gate`
+in this repository and on branch `feat-cost-gate-routing` in the
+prototype repository. The compiler classifies every conjunct
+(`Ampersand.FSpec.Incremental.CostProfile`) and publishes the profile in
+`conjuncts.json`; the framework turns it into a route per conjunct at the
+close of a transaction, with the structural skip on its own switch and a
+sampled self-check behind it (DC-18, DC-19; claim PRF-8 `stated`).
+Everything is off by default. Verified: the Ampersand suite at 317/0 with
+the classification unit tests, and a smoke run of transactional-demo
+through the full request pipeline in which gate `off` and gate `on`
+produce identical commit decisions, data and violation cache while the
+skip route demonstrably fires. Open, and both dependent on uniting this
+gate with the delta maintenance of branch
+`feat-delta-conjunct-maintenance`: the end-to-end dominance run (R4) and
+the RAP 96 000-script reference points.
 
 ## To investigate before Phase 1
 
