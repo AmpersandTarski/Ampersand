@@ -15,6 +15,7 @@ import Ampersand.Test.IFC.IFCBinderTest (ifcBinderTest)
 import Ampersand.Test.IFC.IFCRegressionTest (ifcRegressionTest)
 import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
 import Ampersand.Test.Incremental.CandidateProperties (doAllCandidatePropertyTests)
+import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
 import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
@@ -26,6 +27,7 @@ test = do
   parserRoundtripTest
   incrementalPropertyTest
   candidatePropertyTest
+  costProfileTest
   stepReaderTest
   expressTest
   ifcBinderTest'
@@ -88,6 +90,18 @@ candidatePropertyTest = do
     else do
       logError "❗❗❗ Failed. Candidate-calculus property tests."
       exitWith (SomeTestsFailed ["Candidate-calculus property test failed!"])
+
+-- | The route classification of the cost gate (issue #1692): every DC-17
+--   route class on a miniature context, plus the structural counterexample.
+costProfileTest :: (HasRunner env) => RIO env ()
+costProfileTest = do
+  logInfo "Starting cost-profile classification tests."
+  success <- doAllCostProfileTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Cost-profile classification tests."
+      exitWith (SomeTestsFailed ["Cost-profile classification test failed!"])
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do
