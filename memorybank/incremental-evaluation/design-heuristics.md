@@ -293,6 +293,23 @@ Three things follow for the delta design:
   whole query. *Test:* a transactional interface over the rap-bench
   model with one global invariant, driven with buffers of 1, 5 and 20
   edits at the three database sizes, off versus on.
+  *Outcome (2026-08-17): the shape is confirmed, the mechanism is not
+  the one named.* The flat curve arrived without any delta maintenance,
+  from memoization alone: a dry-run round carries the verdicts of the
+  conjuncts it does not re-evaluate, and the next round hands them back
+  (prototype#445, OK-10, branch `feat-edit-scoped-validation`). Last
+  round of a 20-edit buffer, measured on the bench model at populations
+  sized so the expensive rule costs 25/150/495 ms per evaluation:
+  30.6 → 11.5 ms, 156.8 → 11.8 ms, 495.4 → 11.5 ms. The unrestricted
+  round tracks the population; the restricted one stays flat, so after
+  the first round the per-edit wait no longer depends on database size.
+  Conjuncts evaluated in that last round fell from 41 to 2, and every
+  commit decision was identical across twelve paired observations.
+  This holds only where the affected set leaves room: on an edit stream
+  that creates atoms, the same run measured 496.1 → 511.6 ms and 46 of
+  46 conjuncts, which is H8 and O11. Not measured on the three RAP
+  script sizes, and the timing is patch-sent to verdict-*available*,
+  not to verdict-rendered.
 - **O11 (carrier dependence).** Adding or removing an atom of concept
   `C` changes a conjunct's violation set only where the conjunct's term
   depends on `C`'s carrier set: `I[C]`, a `V` with `C` as an endpoint,
@@ -354,15 +371,21 @@ independent, and only the last one belongs to this research line.
    newest op can change a verdict; carrying per-conjunct verdicts across
    rounds bounds the work to that op. This is H3 applied to the
    dry-run cadence, and it needs no delta calculus.
-4. **Make the remaining round independent of database size.** Only
-   delta-maintained violation state removes the growing half. It cannot
-   touch the other half: the ~32 ms of request floor and transaction
-   machinery survives any query optimisation. So incremental evaluation
-   buys back the headroom under a 100 ms budget and keeps it as the
-   population grows; reaching well below that floor needs intervention 1,
-   or checks the browser can decide alone — which covers field format
-   and mandatory-field constraints, but not multiplicity over a whole
-   relation, since the browser does not hold the relation.
+4. **Make the remaining round independent of database size.** Two
+   mechanisms reach this, and intervention 3 turned out to be one of
+   them: carrying a round's verdicts forward already flattens the curve
+   wherever the affected set leaves room (O10's outcome), because
+   successive rounds replay the same buffer against an unchanged base,
+   which is what makes memoization valid here. Delta-maintained
+   violation state is the mechanism for what memoization cannot reach —
+   a base that has moved, an affected set that covers everything — and
+   for the ExecEngine loop, where each iteration writes. Neither touches
+   the other half of the budget: the ~32 ms of request floor and
+   transaction machinery survives any query optimisation. Reaching well
+   below that floor needs intervention 1, or checks the browser can
+   decide alone — which covers field format and mandatory-field
+   constraints, but not multiplicity over a whole relation, since the
+   browser does not hold the relation.
 
 ## Relation to the literature
 
