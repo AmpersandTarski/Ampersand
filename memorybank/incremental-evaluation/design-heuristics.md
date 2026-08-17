@@ -273,6 +273,58 @@ Three things follow for the delta design:
   model with one global invariant, driven with buffers of 1, 5 and 20
   edits at the three database sizes, off versus on.
 
+### What the user must stop noticing
+
+The felt quantity is the gap between leaving a field and seeing the SAVE
+state and the violation text settle. Fields patch on blur
+(`BaseAtomicComponent.class.ts:33,117`), so that gap competes with the
+user's own glance to the next field: under ~100 ms it never registers as
+waiting, and beyond ~1 s it breaks the working rhythm.
+
+That gap has not been measured. rap-bench times GET page opens and commit
+closes, never the dry-run cadence, so the figure below is a
+reconstruction from the measured decomposition of finding 3, not an
+observation. At 12 000 scripts on RAP a round plausibly costs ~20 ms of
+HTTP-plus-PHP floor (the flat 22 ms page opens), ~12 ms of transaction
+machinery (the measured non-growing share: writes, bookkeeping,
+rollback), and one evaluation of the expensive term at ~28 ms plus ~9 ms
+for the second — the ExecEngine's duplicate is absent because a dry run
+skips it. Of that ~70 ms, roughly half grows linearly with the
+population. Measuring it is O10's test and the precondition for
+everything below.
+
+Four interventions, in order of yield per unit of work. They are
+independent, and only the last one belongs to this research line.
+
+1. **Take the round off the critical path.** The verdict is only
+   *needed* at SAVE, where the server decides anyway and reports "not
+   saved" on rollback. Keeping SAVE clickable and letting the advisory
+   catch up turns *n+1* rounds into one and removes the felt wait
+   entirely, at the price of later feedback. Whether that price is
+   acceptable is a design question about the interface, not about
+   evaluation cost.
+2. **Coalesce and cancel the rounds that remain.** `runValidation`
+   (`ampersand-interface.class.ts:454`) starts a fresh `forkJoin` per
+   edit and cancels nothing, so the verdict that *arrives* last wins
+   rather than the one that was *sent* last. A slow server — that is,
+   a large database — makes it likelier that a stale "holds" overwrites
+   a fresh violation. Debounce plus `switchMap` semantics fixes the
+   ordering and cuts the load in the same change.
+3. **Evaluate only what the newest edit affects.** A round re-evaluates
+   every conjunct affected by the whole replayed buffer, while only the
+   newest op can change a verdict; carrying per-conjunct verdicts across
+   rounds bounds the work to that op. This is H3 applied to the
+   dry-run cadence, and it needs no delta calculus.
+4. **Make the remaining round independent of database size.** Only
+   delta-maintained violation state removes the growing half. It cannot
+   touch the other half: the ~32 ms of request floor and transaction
+   machinery survives any query optimisation. So incremental evaluation
+   buys back the headroom under a 100 ms budget and keeps it as the
+   population grows; reaching well below that floor needs intervention 1,
+   or checks the browser can decide alone — which covers field format
+   and mandatory-field constraints, but not multiplicity over a whole
+   relation, since the browser does not hold the relation.
+
 ## Relation to the literature
 
 The nuance is not new, but it is rarely quantified at the language level:
