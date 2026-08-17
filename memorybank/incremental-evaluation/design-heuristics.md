@@ -86,6 +86,27 @@ harvest latency only where H1's profile says so. Grounding: the push
 track of interface-queries.md, still open, unaffected by the latency
 results.
 
+**H8 — An affected-set approximation is a cost gate in disguise, and
+its coarsest term sets the bill.** Every scheme that evaluates "only
+what changed" is bounded from below by how precisely the system knows
+what changed. In Ampersand that knowledge is two lists the compiler
+emits: conjuncts per relation, and conjuncts per concept. The relation
+list is tight. The concept list is an over-approximation:
+`fSpecAllConjsPerConcept` (`ADL2FSpec.hs:229-237`) registers a conjunct
+against the source and target concept — and all their specializations —
+of every modifiable subterm, so a concept collects the conjuncts of
+every relation it is an endpoint of. Adding one atom of that concept
+then pulls all of them in (`Concept.php:583` → `Transaction.php:437` →
+`getAffectedConjuncts`, `Transaction.php:473`), and a field edit that
+introduces a new value adds an atom, so this is the ordinary case rather
+than the exception. Sharpen the approximation before building machinery
+behind it: a tighter affected set costs less than an incremental engine
+and raises the ceiling of every scheme downstream. Grounding: the
+concept fallback defeated the delta mode on RAP (RESULTS.md finding 3,
+`affectedConcepts: 1` on an ordinary edit) and then defeated the
+edit-scoped dry-run restriction of prototype#445 — one cause, two
+schemes, both times fatal.
+
 ## The hypotheses, phrased for further research
 
 Each hypothesis is falsifiable with instruments that already exist
@@ -272,6 +293,24 @@ Three things follow for the delta design:
   whole query. *Test:* a transactional interface over the rap-bench
   model with one global invariant, driven with buffers of 1, 5 and 20
   edits at the three database sizes, off versus on.
+- **O11 (carrier dependence).** Adding or removing an atom of concept
+  `C` changes a conjunct's violation set only where the conjunct's term
+  depends on `C`'s carrier set: `I[C]`, a `V` with `C` as an endpoint,
+  or a complement over a type with `C`. A conjunct that merely composes
+  relations with `C` as an endpoint is untouched, because a fresh atom
+  carries no pairs yet — while totality and surjectivity in the
+  direction of `C` are touched, and compile to terms containing exactly
+  those carrier-dependent shapes. The hypothesis is that deriving
+  `fSpecAllConjsPerConcept` from this criterion instead of from the
+  endpoints of every modifiable subterm shrinks the per-transaction
+  affected set materially on real models, with every commit decision
+  unchanged. *Test:* recompute the list in the compiler behind a switch,
+  then count affected conjuncts per transaction over the rap-bench
+  replay stream and diff the commit decisions and the persisted
+  violation cache. *Note:* this is semantics-bearing — it is the
+  affected-conjunct logic — so the task carries a proof obligation:
+  state the claim in `docs/proofs/README.md` as `stated` before
+  implementing, and plan the proof.
 
 ### What the user must stop noticing
 
