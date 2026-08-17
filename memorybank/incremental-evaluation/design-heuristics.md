@@ -177,8 +177,8 @@ classes with three different answers:
    and eviction. Defer until class 2 has proven itself.
 
 The change-stream side is already unified, which is what makes class 2
-cheap to build: every edit — interactive field edits and the batched
-commits of transactional interfaces alike — flows through
+cheap to build: every edit — interactive field edits, the dry-run replays
+and the final commit of a transactional interface alike — flows through
 `Relation::addLink/deleteLink`, exactly where the delta tables record;
 ExecEngine repairs travel the same road. One recorded change stream can
 therefore feed two consumers with the same candidate machinery: the rule
@@ -203,6 +203,75 @@ Two hypotheses extend the research program:
   storage and maintenance to the working set of open atoms, at eviction
   complexity that a prototype framework can carry. *Test:* only after O8;
   prototype on an atlas-style view over compiled scripts.
+
+## Transactional interfaces are a recurrence site (added 2026-08-17)
+
+A `TRANSACTIONAL INTERFACE` (Ampersand issue #1658) reads as a series of
+edits that reach the database as one change. That is the commit
+semantics, and it holds. The evaluation cadence is the opposite, and that
+is what decides the cost.
+
+The mechanics, verified in the framework at v2.7.0 (`eb6906fa`). The
+frontend buffers each edit client-side and, on **every** buffered edit,
+re-sends the **whole buffer so far** as a PATCH with `dryRun=true`
+(`frontend/src/app/shared/interfacing/ampersand-interface.class.ts:408`
+→ `:454` → `:449`); there is no debounce. The backend applies those ops
+for real inside a database transaction, skips the ExecEngine because a
+dry run must not fire side effects on uncommitted data
+(`backend/src/Ampersand/Controller/ResourceController.php:125`),
+evaluates every affected conjunct with its **full** violation query
+(`Transaction.php:327-328` → `Conjunct.php:191`), checks the invariants
+(`Transaction.php:332`) and rolls back (`Transaction.php:337`). SAVE is
+enabled from the answer, and the violation messages behind a disabled
+SAVE come from the same response
+(`ampersand-interface.class.ts:397,404`). SAVE then replays the same
+buffer once more without `dryRun` (`:488`).
+
+So a transactional interface of *n* edits costs *n* dry runs plus one
+commit: *n+1* rounds of full conjunct evaluation, over a monotonically
+growing affected-conjunct set, with *n(n+1)/2* pair writes replayed and
+rolled back. Batching moved the cost from *n* commits to *n+1*
+evaluations; it did not remove it. By H4 this is a structural recurrence
+— a loop, like the ExecEngine fixpoint — and therefore the second place
+in the stack where incremental maintenance has something to earn.
+
+Three things follow for the delta design:
+
+1. **The dry-run round is exactly the delta case.** Each round asks
+   "does the base state plus this buffer violate any invariant?" — a
+   question the maintained violation table answers from the base state
+   plus the buffer's Z-set, without touching database-sized relations.
+   Where the affected conjuncts are index-cheap (O1's majority) this
+   changes nothing worth measuring; where one of them is a global term,
+   today's per-edit feedback grows with the population and the
+   maintained form stays flat.
+2. **The net delta is smaller than the sum of the edits.** Retyping a
+   field, or adding and then removing a link, cancels in a Z-set. Full
+   re-evaluation cannot profit from that, since its cost never depended
+   on the change; delta evaluation profits from it for free. This is the
+   one respect in which "a series of changes as one change" is literally
+   true of the cost.
+3. **The SAVE gate needs violation *state*, not a violation *delta*.**
+   The ExecEngine can be fed new violations only (§4 of
+   prototype-runtime-map.md), but the hover text behind a disabled SAVE
+   lists every invariant violation that currently blocks the commit. The
+   maintained table must therefore carry the complete set. It does — the
+   correctness obligation is that the maintenance rides *inside* the
+   database transaction, so the rollback at `Transaction.php:337`
+   discards the dry run's maintenance along with its writes. Cache rows
+   already commit on the same connection just before COMMIT
+   (`Transaction.php:364-365`), so the delta tables inherit that
+   atomicity as long as they stay on that connection.
+
+- **O10 (transactional feedback).** For a transactional interface whose
+  affected conjuncts include an H2-expensive term, delta-maintained
+  violation state makes the per-edit SAVE-enabling latency independent
+  of database size, where full re-evaluation grows with it; and the
+  advantage compounds with buffer length, because the maintained form
+  processes the net Z-set of the buffer while re-evaluation repeats the
+  whole query. *Test:* a transactional interface over the rap-bench
+  model with one global invariant, driven with buffers of 1, 5 and 20
+  edits at the three database sizes, off versus on.
 
 ## Relation to the literature
 
