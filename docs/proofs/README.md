@@ -32,6 +32,7 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | [PRF-5](#prf-5) | A singleton relation is neither total nor surjective in general; the law that assumed so is refuted | machine-checked | [`proofs/kleene/SingletonSurjective.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/kleene/SingletonSurjective.thy) | TRAIL-3 |
 | [PRF-6](#prf-6) | The generated delta SQL and its maintenance protocol keep the violation records equal to full re-evaluation | stated | obligation stated in [Correctness of the incremental SQL queries](./incremental-sql.md); mathematical core discharged by [PRF-7](#prf-7) | TRAIL-4 |
 | [PRF-7](#prf-7) | The candidate calculus is complete: every pair whose membership in a rule term changes lies in the candidate set | machine-checked | [`proofs/incremental/Candidates.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/incremental/Candidates.thy), session `Incremental_Delta` | TRAIL-4 |
+| [PRF-8](#prf-8) | A relation stored on a unique key column cannot violate the multiplicity that layout enforces, so its violation query is empty in every database state | stated | obligation stated with the cost gate of issue #1692; carried in code by `structurallyEnforced` in `Ampersand.FSpec.Incremental.CostProfile` | TRAIL-4 |
 
 ### PRF-1 {#prf-1}
 
@@ -75,6 +76,12 @@ Two habits keep these statuses honest. A status is recorded only after the build
 
 *Artifact:* [`proofs/incremental/Candidates.thy`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/incremental/Candidates.thy); the obligation-to-lemma map is in the session's `README.md`. *Not proved:* the Haskell functions `widen`/`narrow`/`candidateTerms` that mirror the calculus — these are bound to the lemmas by a QuickCheck bridge (`Ampersand.Test.Incremental.CandidateProperties` in `stack test`, on the `delta-sql` branch with the code it tests) and exercised by the delta-SQL harness `ampersand incremental-bench --sql` — the SQL compilation of the candidate terms (shared with the full queries and guarded by `ampersand validate`), and the delta-table contract itself — that the runtime records every changed pair — which belongs to the protocol half of [PRF-6](#prf-6). The constancy of concept populations is an assumption of the theorems, discharged operationally by the concept-affected fallback.
 
+### PRF-8 {#prf-8}
+
+**A relation stored on a unique key column cannot violate the multiplicity that layout enforces, so its violation query is empty in every database state.** The generated schema stores a univalent relation as a column of a wide table whose key attribute carries the SQL `UNIQUE` constraint: the key atom occupies at most one row, and that row holds at most one value in the relation's column, so no state the schema admits contains two pairs with the same source. The claim is that, for exactly the storage layouts the predicate `structurallyEnforced` accepts — a `UNI` relation stored unflipped on a primary-key column, and dually an `INJ` relation stored flipped — the violation set of the generated property-rule conjunct is empty in every database state, reachable or not. The cost gate of issue #1692 rests on this claim when it routes such a conjunct as `structural` and runs no query at all; the runtime may take that route only behind its feature switch, and its sampled self-check keeps covering skipped conjuncts, so a defect in the claim would surface as an alarm rather than as silent drift.
+
+*Status:* stated — registered with the implementation, before any query is skipped, as the working method requires. *Boundary:* the claim covers only the accepted layouts; link tables, specialization columns (which carry no SQL uniqueness constraint), and scalar-represented keys are deliberately outside it and keep their query. *Planned vehicle:* Lean 4 — the statement is small, standalone, and needs only a model of the table shape.
+
 ## Trails
 
 | ID | Trail | The question it answers | Narrative | Claims visited |
@@ -82,7 +89,7 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | TRAIL-1 | From rules to running code | When I write a rule, where does its code end up, and is the enforcement machinery correct? | [From rules to running code](../reference-material/from-rules-to-running-code.md) | PRF-1, PRF-2 |
 | TRAIL-2 | Incremental evaluation | Can a system that maintains rule violations incrementally ever disagree with full re-evaluation? | [Incremental evaluation](./incremental-evaluation.md) | PRF-2, PRF-4 |
 | TRAIL-3 | The Kleene operators | What does Ampersand guarantee about transitive closure — its laws, its reduction, its maintenance? | [The Kleene operators](./kleene-operators.md) | PRF-3, PRF-4, PRF-5 |
-| TRAIL-4 | Correctness of the incremental SQL queries | When the runtime maintains its violation records by increments, what guarantees they never drift from the full queries that define them? | [Correctness of the incremental SQL queries](./incremental-sql.md) | PRF-1, PRF-2, PRF-6, PRF-7 |
+| TRAIL-4 | Correctness of the incremental SQL queries | When the runtime maintains its violation records by increments, what guarantees they never drift from the full queries that define them? | [Correctness of the incremental SQL queries](./incremental-sql.md) | PRF-1, PRF-2, PRF-6, PRF-7, PRF-8 |
 
 A trail's narrative need not live on this site. TRAIL-1 is anchored in the reference chapter that contributors already read; a future trail may be anchored in a published article, with the register linking the article to the claims it rests on. What the register guarantees is the connection: from any claim to every story that uses it, and from any story to every claim it stands on.
 
