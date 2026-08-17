@@ -8,7 +8,7 @@ CSVs stand in [data/](data/).
 
 ## Corpus and method
 
-Every conjunct violation query of eight models ran at two database sizes,
+Every conjunct violation query of seven models ran at two database sizes,
 timed server-side (`SHOW PROFILES`, query cache off, warm-up run
 discarded). The two sizes are the model's own population and an inflated
 copy in which every user table holds k copies of its rows, with per-copy
