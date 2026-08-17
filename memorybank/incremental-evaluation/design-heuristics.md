@@ -310,24 +310,47 @@ Three things follow for the delta design:
   46 conjuncts, which is H8 and O11. Not measured on the three RAP
   script sizes, and the timing is patch-sent to verdict-*available*,
   not to verdict-rendered.
-- **O11 (carrier dependence).** Adding or removing an atom of concept
-  `C` changes a conjunct's violation set only where the conjunct's term
-  depends on `C`'s carrier set: `I[C]`, a `V` with `C` as an endpoint,
-  or a complement over a type with `C`. A conjunct that merely composes
-  relations with `C` as an endpoint is untouched, because a fresh atom
-  carries no pairs yet — while totality and surjectivity in the
-  direction of `C` are touched, and compile to terms containing exactly
-  those carrier-dependent shapes. The hypothesis is that deriving
-  `fSpecAllConjsPerConcept` from this criterion instead of from the
-  endpoints of every modifiable subterm shrinks the per-transaction
-  affected set materially on real models, with every commit decision
-  unchanged. *Test:* recompute the list in the compiler behind a switch,
-  then count affected conjuncts per transaction over the rap-bench
-  replay stream and diff the commit decisions and the persisted
-  violation cache. *Note:* this is semantics-bearing — it is the
-  affected-conjunct logic — so the task carries a proof obligation:
-  state the claim in `docs/proofs/README.md` as `stated` before
-  implementing, and plan the proof.
+- **O11 (carrier dependence, with polarity).** Atom churn in concept
+  `C` reaches a conjunct only through the subterms whose denotation
+  follows `C`'s carrier set: `I[C]`, a `V` with `C` as an endpoint, a
+  complement over a type with `C`, and a reflexive closure on `C`. A
+  conjunct that merely composes relations with `C` as an endpoint needs
+  no entry: on creation the fresh atom carries no pairs, and on deletion
+  the cascade runs through `Relation::deleteAllLinks`, which registers
+  every touched relation as affected (`Relation.php:287`), so the tight
+  relation list already covers it.
+  *Sharpened by Stef, 2026-08-17, and the sharpening is polarity.* A
+  committed state satisfies its invariants, so every invariant
+  conjunct's violation set is empty when the transaction opens, and only
+  a change that can make it non-empty deserves an evaluation. Creating
+  an atom grows those carrier-dependent subterms, so it reaches only the
+  conjuncts where such a subterm occurs with **positive** polarity in
+  the violation term — for a rule `A |- B`, whose violations are
+  `A /\ -B`, that is an occurrence in the antecedent. Deleting an atom
+  shrinks them, so it reaches only **negative** occurrences, that is the
+  consequent. The two directions therefore need two different lists, and
+  `I[C]` in the antecedent is exactly the totality and surjectivity
+  case. Polarity rather than literal side is the criterion, since a
+  negation inside either operand flips it.
+  *The restriction holds for invariants, not for signals.* A signal
+  conjunct is meant to carry violations, so its cached set is non-empty
+  and has to track both growth and shrink; a conjunct serving any signal
+  rule keeps both polarities. The framework already separates
+  `invariantRuleNames` from `signalRuleNames` per conjunct
+  (`Conjunct.php:95-96`), so the compiler can emit the split lists the
+  runtime needs.
+  The hypothesis is that deriving `fSpecAllConjsPerConcept` this way,
+  instead of from the endpoints of every modifiable subterm
+  (`ADL2FSpec.hs:229-237`), shrinks the per-transaction affected set
+  materially on real models, with every commit decision unchanged.
+  *Test:* recompute the lists in the compiler behind a switch, then
+  count affected conjuncts per transaction over the rap-bench replay
+  stream and diff the commit decisions and the persisted violation
+  cache. *Note:* this is semantics-bearing — it is the affected-conjunct
+  logic — so the task carries a proof obligation: state the claim in
+  `docs/proofs/README.md` as `stated` before implementing, and plan the
+  proof. The polarity argument is a monotonicity argument and is the
+  natural shape for that proof.
 
 ### What the user must stop noticing
 
