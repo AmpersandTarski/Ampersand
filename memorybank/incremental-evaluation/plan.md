@@ -340,6 +340,14 @@ ship with the scripts and data that produced them; proofs are versioned in
 DBSP-style incrementalization of a relation-algebra rule engine, with a
 machine-checked delta calculus and measured order-of-magnitude gains.
 
+*Status (2026-08-30):* a first complete draft exists outside the
+repository, in Stef's publications folder (`cloudDrive/publicaties/2026
+Incremental Evaluation/`, `incremental.tex`, 18 pages, elsarticle as the
+JLAMP 2018 predecessor), with an `evidence/` folder holding a snapshot of
+`proofs/incremental/`, the observed build log, and a Lean 4 restatement of
+the article's derivations. Sources: this folder, `docs/proofs/README.md`,
+commit 9279c65e.
+
 ## When the referee can go
 
 `fullContents` carries three roles; each has its own dismantling criterion.
