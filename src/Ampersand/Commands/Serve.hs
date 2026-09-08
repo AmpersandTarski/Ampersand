@@ -37,11 +37,11 @@ import Network.HTTP.Types (Status, hContentType, status200, status400, status404
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified RIO.ByteString.Lazy as BL
-import RIO.Directory (removeFile)
+import RIO.Directory (createDirectoryIfMissing, getTemporaryDirectory, removeDirectoryRecursive, removeFile)
+import RIO.FilePath ((</>))
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import System.Environment (lookupEnv)
-import System.IO (openTempFile)
 
 -- | The environment constraints needed to run the daemon parse pipeline.
 type ServeEnv env =
@@ -84,6 +84,17 @@ newtype CheckReq = CheckReq Text
 
 instance JSON.FromJSON CheckReq where
   parseJSON = JSON.withObject "CheckReq" $ \v -> CheckReq <$> v .: "script"
+
+-- | De heenweg neemt naast het script een optionele naam aan. Die naam telt,
+--   want de compiler legt de oorsprong van elk element vast en leidt daar
+--   gegenereerde namen uit af. Wie dezelfde populatie wil als het commando op
+--   een bestand met die naam, geeft haar mee. Zonder naam wordt zij uit de
+--   inhoud afgeleid, zodat gelijke scripts gelijke uitvoer geven.
+data PopulationReq = PopulationReq Text (Maybe Text)
+
+instance JSON.FromJSON PopulationReq where
+  parseJSON = JSON.withObject "PopulationReq" $ \v ->
+    PopulationReq <$> v .: "script" <*> v JSON..:? "name"
 
 newtype FspecReq = FspecReq Text
 
@@ -134,8 +145,8 @@ handleImport = withDecoded $ \(FspecReq dump) -> do
 --   binnen zijn eigen container. Door het hier aan te bieden hoeft de compiler
 --   niet meer in de RAP-image te zitten.
 handlePopulation :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
-handlePopulation = withDecoded $ \(CheckReq script) ->
-  withTmpScript ".adl" script $ \fp -> do
+handlePopulation = withDecoded $ \(PopulationReq script mNaam) ->
+  withNamedScript (veiligeNaam mNaam) script $ \fp -> do
     env <- ask
     let metScript =
           set rootFileL (Roots (fp NE.:| []))
@@ -155,16 +166,52 @@ handlePopulation = withDecoded $ \(CheckReq script) ->
 
 -- | Write @content@ to a unique temp file with extension @ext@, run @action@
 --   on it, and clean up the file afterwards.
+-- De naam wordt uit de inhoud afgeleid en niet willekeurig gekozen. Dat is geen
+-- detail: de compiler legt van elk element de oorsprong vast, inclusief het pad
+-- van het bronbestand, en leidt daar gegenereerde namen uit af. Met een
+-- willekeurige naam levert hetzelfde script bij elk verzoek een andere populatie
+-- op, en dan sluit geen enkele round-trip-maat en werkt geen twin op inhoudshash.
+-- Twee gelijktijdige verzoeken met dezelfde inhoud delen dan één bestand met
+-- dezelfde inhoud, wat geen kwaad kan.
 withTmpScript :: String -> Text -> (FilePath -> RIO env a) -> RIO env a
 withTmpScript ext content =
   bracket
     ( do
-        (fp, h) <- liftIO $ openTempFile "." ("ampersand-serve" <> ext)
-        hClose h
+        let fp = "ampersand-serve-" <> show (abs (hash content)) <> ext
         writeFileUtf8 fp content
         pure fp
     )
     (\fp -> removeFile fp `catchAny` const (pure ()))
+
+-- | Schrijf @content@ onder deze basisnaam in een eigen map, draai @action@, en
+--   ruim die map daarna op. De map ligt onder de systeem-tijdelijke map en haar
+--   naam volgt uit de inhoud, zodat twee gelijke verzoeken hetzelfde pad krijgen
+--   en dus dezelfde populatie opleveren. De dienst schrijft nooit in haar eigen
+--   werkmap, zodat een naam van de aanroeper geen bestand van iemand anders raakt.
+withNamedScript :: FilePath -> Text -> (FilePath -> RIO env a) -> RIO env a
+withNamedScript naam content action =
+  bracket maak ruimOp (\(_, fp) -> action fp)
+  where
+    maak = do
+      basis <- liftIO getTemporaryDirectory
+      let map' = basis </> ("ampersand-serve-" <> show (abs (hash content)))
+      createDirectoryIfMissing True map'
+      let fp = map' </> naam
+      writeFileUtf8 fp content
+      pure (map', fp)
+    ruimOp (map', _) =
+      removeDirectoryRecursive map' `catchAny` const (pure ())
+
+-- | De naam die de aanroeper meegeeft, teruggebracht tot een veilige basisnaam
+--   zonder mappen. Zonder naam heet het script `script.adl`, net als bij RAP.
+veiligeNaam :: Maybe Text -> FilePath
+veiligeNaam mNaam = case mNaam of
+  Just n
+    | let kaal = T.unpack (T.takeWhileEnd (`notElem` ("/\\" :: String)) n),
+      not (null kaal),
+      kaal `notElem` [".", ".."] ->
+        kaal
+  _ -> "script.adl"
 
 -- | Type-check @content@ (written as a @ext@ file) via the daemon parse
 --   pipeline and return the resulting messages.
