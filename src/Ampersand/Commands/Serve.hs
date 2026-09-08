@@ -24,6 +24,8 @@ import Ampersand.Basics
 import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.Daemon.Parser (parseProject)
 import Ampersand.Daemon.Types (Load (..), Severity (..), isMessage)
+import Ampersand.FSpec.ToFSpec.CreateFspec (createFspec)
+import Ampersand.Output.ToJSON.ToJson (populationToJSON)
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.AtlasImport (parseJsonFile)
 import Ampersand.Misc.HasClasses
@@ -46,6 +48,7 @@ type ServeEnv env =
   ( HasDirOutput env,
     HasTrimXLSXOpts env,
     HasDaemonOpts env,
+    HasFSpecGenOpts env,
     HasRunner env
   )
 
@@ -58,7 +61,7 @@ runServe = do
   mPort <- liftIO $ lookupEnv "AMPERSAND_SERVE_PORT"
   let port = fromMaybe 8080 (mPort >>= readMaybe) :: Int
   logInfo $ "Ampersand serve: listening on http://0.0.0.0:" <> display port
-  logInfo "  GET /health | POST /check {script} | POST /translate {script,term} | POST /fspec {dump} | POST /import {dump}"
+  logInfo "  GET /health | POST /check {script} | POST /translate {script,term} | POST /fspec {dump} | POST /import {dump} | POST /population {script}"
   liftIO $ Warp.run port (waiApp env)
 
 waiApp :: (ServeEnv env) => env -> Wai.Application
@@ -71,6 +74,7 @@ waiApp env req respond = do
     ("POST", ["translate"]) -> runRIO env (handleTranslate body)
     ("POST", ["fspec"]) -> runRIO env (handleFspec body)
     ("POST", ["import"]) -> runRIO env (handleImport body)
+    ("POST", ["population"]) -> runRIO env (handlePopulation body)
     _ -> pure $ jsonResp status404 (JSON.object ["error" .= ("not found" :: Text)])
   respond resp
 
@@ -123,6 +127,29 @@ handleImport = withDecoded $ \(FspecReq dump) -> do
       jsonResp status200 (JSON.object ["ok" .= True, "adl" .= showP ctx])
     Errors errs ->
       jsonResp status200 (JSON.object ["ok" .= False, "diagnostics" .= map tshow (NE.toList errs)])
+
+-- | De heenweg (OK-30): een script als tekst in, de populatie van
+--   FormalAmpersand als JSON eruit. Dit is wat RAP tot nu toe deed met een
+--   eigen aanroep van het commando @ampersand population --build-recipe Grind@
+--   binnen zijn eigen container. Door het hier aan te bieden hoeft de compiler
+--   niet meer in de RAP-image te zitten.
+handlePopulation :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
+handlePopulation = withDecoded $ \(CheckReq script) ->
+  withTmpScript ".adl" script $ \fp -> do
+    env <- ask
+    let metScript =
+          set rootFileL (Roots (fp NE.:| []))
+            . set recipeL Grind
+    result <- local metScript createFspec
+    case result of
+      Checked fSpec _ ->
+        pure . Wai.responseLBS status200 [(hContentType, "application/json")] $
+          populationToJSON env fSpec
+      Errors errs ->
+        pure $
+          jsonResp
+            status200
+            (JSON.object ["ok" .= False, "diagnostics" .= map tshow (NE.toList errs)])
 
 -- Core ----------------------------------------------------------------------
 
