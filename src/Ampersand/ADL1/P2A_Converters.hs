@@ -62,6 +62,8 @@ isDanglingPurpose ctx purp =
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplEnforce nm -> Just nm `notElem` map enfName (ctxEnforces ctx <> concatMap ptenfs (ctxpats ctx))
+    -- A role exists when it maintains a rule or when an interface is meant for it.
+    ExplRole nm -> nm `notElem` map name (map arRole (toList (allRoleRules ctx)) <> concatMap ifcRoles (ctxifcs ctx))
     ExplContext nm ->
       ctxnm ctx
         /= nm
@@ -1265,6 +1267,7 @@ pCtx2aCtx
             pRefObj2aRefObj (PRef2Interface s) = pure $ ExplInterface s
             pRefObj2aRefObj (PRef2Context s) = pure $ ExplContext s
             pRefObj2aRefObj (PRef2Enforce s) = pure $ ExplEnforce s
+            pRefObj2aRefObj (PRef2Role s) = pure $ ExplRole s
 
       allConceptDefsOutPats :: ContextInfo -> Guarded [AConceptDef]
       allConceptDefsOutPats ci = traverse (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs

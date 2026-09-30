@@ -1383,7 +1383,7 @@ The built-in VIEW template for a property. It renders a `[PROP]` relation as a b
 
 Every thing in your model is there for a reason. A PURPOSE statement writes down that reason, so a reader of your model or of the generated documentation knows why the thing exists.
 
-The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, and enforcement rules. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
+The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, enforcement rules, and roles. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
 
 Other statements are part of such a thing. The `MEANING`, `MESSAGE`, and `VIOLATION` of a rule belong to that rule, the properties and the population of a relation belong to that relation, and the fields of an interface belong to that interface. A part serves the purpose of the thing it belongs to, so it needs no purpose of its own. When you feel a part needs its own reason, that often signals it deserves to be a thing of its own, with its own name.
 
@@ -1393,7 +1393,7 @@ Other statements are part of such a thing. The `MEANING`, `MESSAGE`, and `VIOLAT
 
 `{+` `<anything>` `+}`
 
-Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`, `ENFORCE`
+Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`, `ENFORCE`, `ROLE`
 
 The optional `<language>` and `<markup>` can be used to override the settings for language and markup. If omitted, these are inherited from the pattern or context where the PURPOSE statement is specified in.
 
@@ -1409,6 +1409,13 @@ PURPOSE RELATION accountOwner
    so accounts with the same owner are linked in this way.
 +}
 ```
+
+```text
+PURPOSE ROLE Contentmanager
+{+ Somebody must see to it that only approved articles are published. +}
+```
+
+A role exists in your script when it maintains a rule (`ROLE Contentmanager MAINTAINS ...`) or when an interface is meant for it (`INTERFACE ... FOR Contentmanager`).
 
 When defining the purpose of a relation, make sure that Ampersand can identify the relation unambiguously. If you have multiple relations `accountOwner`, add the signature to disambiguate it. For instance:
 

@@ -534,7 +534,8 @@ instance Arbitrary PRef2Obj where
         PRef2Pattern <$> uppercaseName,
         PRef2Interface <$> arbitrary,
         PRef2Context <$> uppercaseName,
-        PRef2Enforce <$> arbitrary
+        PRef2Enforce <$> arbitrary,
+        PRef2Role <$> arbitrary
       ]
 
 instance Arbitrary PMeaning where

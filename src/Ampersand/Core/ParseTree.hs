@@ -1274,6 +1274,7 @@ data PRef2Obj
   | PRef2Interface !Name
   | PRef2Context !Name
   | PRef2Enforce !Name
+  | PRef2Role !Name
   deriving (Show, Eq, Ord) -- only for fatal error messages
 
 -- instance Named PRef2Obj where

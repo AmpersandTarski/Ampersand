@@ -987,6 +987,9 @@ pPurpose =
         <|> PRef2Enforce
         <$ (pKey . toText1Unsafe) "ENFORCE"
         <*> pNameWithoutLabel EnforceName
+        <|> PRef2Role
+        <$ (pKey . toText1Unsafe) "ROLE"
+        <*> pNameWithoutLabel RoleName
 
 pInterfaceKey :: AmpParser Text1
 pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789

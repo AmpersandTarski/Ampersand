@@ -63,6 +63,10 @@ instance Motivated Pattern where
   isForObject x (ExplPattern str) = name x == str
   isForObject _ _ = False
 
+instance Motivated Role where
+  isForObject x (ExplRole str) = name x == str
+  isForObject _ _ = False
+
 instance Motivated Interface where
   isForObject x (ExplInterface str) = name x == str
   isForObject _ _ = False

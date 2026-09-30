@@ -1183,6 +1183,7 @@ data ExplObj
   | ExplInterface !Name
   | ExplContext !Name
   | ExplEnforce !Name
+  | ExplRole !Name
   deriving (Show, Eq, Typeable, Ord)
 
 instance Unique ExplObj where
@@ -1201,6 +1202,7 @@ instance Unique ExplObj where
                 (ExplInterface s) -> toText1Unsafe "an Interface named " <> fullName1 s
                 (ExplContext s) -> toText1Unsafe "a Context named " <> fullName1 s
                 (ExplEnforce s) -> toText1Unsafe "an Enforce named " <> fullName1 s
+                (ExplRole s) -> toText1Unsafe "a Role named " <> fullName1 s
             )
 
 data Expression

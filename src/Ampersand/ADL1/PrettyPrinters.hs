@@ -410,6 +410,7 @@ instance Pretty PRef2Obj where
     PRef2Interface nm -> text "INTERFACE" <~> nm
     PRef2Context nm -> text "CONTEXT" <~> nm
     PRef2Enforce nm -> text "ENFORCE" <~> nm
+    PRef2Role nm -> text "ROLE" <~> nm
 
 instance Pretty PMeaning where
   pretty (PMeaning markup) = text "MEANING" <~> markup

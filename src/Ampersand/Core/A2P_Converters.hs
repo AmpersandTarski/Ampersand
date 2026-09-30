@@ -382,6 +382,7 @@ aExplObj2PRef2Obj obj =
     ExplInterface str -> PRef2Interface str
     ExplContext str -> PRef2Context str
     ExplEnforce str -> PRef2Enforce str
+    ExplRole str -> PRef2Role str
 
 aAtomPair2pAtomPair :: AAtomPair -> PAtomPair
 aAtomPair2pAtomPair pr =

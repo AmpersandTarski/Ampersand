@@ -1,0 +1,16 @@
+CONTEXT PurposeRole IN ENGLISH
+-- A PURPOSE can document a role. A role exists when it maintains a rule or when an interface is meant for it.
+
+RELATION published[Article*Article] [PROP]
+RELATION approvedBy[Article*Editor]
+
+RULE publishApproved : published |- approvedBy;approvedBy~
+ROLE Contentmanager MAINTAINS publishApproved
+PURPOSE ROLE Contentmanager
+{+ Somebody must see to it that only approved articles are published. +}
+
+INTERFACE Articles FOR Reader : V[SESSION*Article] BOX [ approved : approvedBy ]
+PURPOSE ROLE Reader
+{+ Readers need an overview of the articles and who approved them. +}
+
+ENDCONTEXT
