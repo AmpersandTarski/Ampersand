@@ -287,14 +287,21 @@ Four steps, in this order.
    violation term is empty, growth of a carrier-dependent leaf can produce a
    violation only at a positive occurrence, and shrinkage only at a negative
    one. A monotonicity induction over the supported term class, with the
-   polarity flag threaded through complement and the residuals. *Exit:* the
+   polarity flag threaded through complement and the residuals. Lay the
+   claim's four carrier-dependent leaves alongside `affectedByInsOrDel`
+   (`ConceptStructure.hs:155-174`) before starting, so that the term class of
+   the proof is the term class of the compiler: `EBin` passes that filter, and
+   whether it depends on a concept's population is still open. *Exit:* the
    register row moves from `stated` to `machine-checked` after an observed
    `lake build`.
 2. **The compiler.** Add a variant of `fSpecAllConjsPerConcept` behind a
-   switch that emits two lists per concept — the conjuncts an atom creation
-   can break and the conjuncts a deletion can break — next to the existing
-   one, and split both by invariant versus signal. *Exit:* per-concept counts
-   for the corpus in `testing/`, next to today's counts.
+   switch that emits, per concept, two new lists covering the invariant
+   conjuncts: the ones an atom creation can break and the ones a deletion can
+   break. The signal conjuncts keep today's broad list as it is, since their
+   violation sets are meant to be non-empty and PRF-9 says nothing about
+   those. So the step adds two lists next to the existing one rather than
+   replacing one by four. *Exit:* per-concept counts for the corpus in
+   `testing/`, next to today's counts.
 3. **The framework.** The split needs a runtime that can use it.
    `Concept::addAtom` (`Concept.php:583`) and `Concept::deleteAtom`
    (`Concept.php:673`) both call one `addAffectedConcept`, so the direction
