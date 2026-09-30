@@ -202,3 +202,150 @@ The harvest map this yields:
 | s1000 | 1414 | 16.5 | 1476 | 16.5 |
 | s4000 | 5033 | 16.5 | 5096 | 16.5 |
 | s12000 | 14709 | 16.6 | 14742 | 16.5 |
+
+# O3: skip the close's re-evaluation of clean conjuncts (2026-08-15)
+
+This section decides hypothesis O3 of
+[../design-heuristics.md](../design-heuristics.md), implemented as
+`transactions.skipCleanConjuncts` in the prototype framework
+([prototype#443](https://github.com/AmpersandTarski/prototype/issues/443),
+branch `feat-skip-clean-conjuncts`, commit `da0cfaf9`). The transaction
+counts every registered mutation; each conjunct evaluation is stamped with
+the counter value; at close, a conjunct whose stamp still equals the
+counter — evaluated by the ExecEngine's last fixpoint iteration, with no
+repair after it — keeps its in-memory result instead of running the same
+violation query again.
+
+Same stack as above, one difference between the instances:
+`transactions.skipCleanConjuncts` `false` (:8191, "off") versus `true`
+(:8192, "off+skip"); `deltaConjunctMaintenance` stands on `off` in both.
+Versions in [data/o3-VERSIONS.txt](data/o3-VERSIONS.txt); raw CSVs and
+digests in [data/o3-off/](data/o3-off/), [data/o3-skip/](data/o3-skip/)
+and [data/o3-parity/](data/o3-parity/).
+
+## Verdict: O3 holds
+
+The single-edit close drops by 37–41% at every measured size, right in the
+hypothesis band of 30–50%, and the share grows with the database — because
+what the skip removes is precisely the size-proportional second evaluation:
+
+| scripts in db | off (ms) | off+skip (ms) | reduction |
+|---:|---:|---:|---:|
+| 1 000 | 9.9 | 6.2 | 37% |
+| 4 000 | 27.6 | 16.5 | 40% |
+| 12 000 | 73.9 | 43.8 | **41%** |
+
+The submittor-swap transaction (finding B's specimen: no concept churn,
+20 reps at 12 000) reproduces its baseline and confirms the same cut:
+median close 40.2 ms off (B measured 40.4) versus 25.8 ms off+skip (−36%).
+The seed stream (100 ops per transaction, so the per-close evaluations are
+amortized over 25 scripts) still gains 1.2–1.4× across the whole curve.
+Page opens stay put — MyScripts and Nieuwscript flat at ~25 ms, and
+StudentScripts grows identically in both modes — as they must, since the
+skip only touches the transaction close.
+
+## The digest shows the second evaluation gone
+
+The isolated digest of one content edit at 12 000 scripts
+([data/o3-off/single-edit-digest.tsv](data/o3-off/single-edit-digest.tsv),
+[data/o3-skip/single-edit-digest.tsv](data/o3-skip/single-edit-digest.tsv)):
+
+| statement | off | off+skip |
+|---|---|---|
+| expensive EE-rule violation query (~30 ms/exec) | **2 executions**, 59.7 ms | **1 execution**, 29.7 ms |
+| second violation query (~10 ms/exec) | 1 execution | 1 execution |
+| `DELETE FROM __conj_violation_cache__` (persist) | 3 statements | 3 statements |
+
+The one expensive query that finding C showed running twice per close now
+runs once; the conjunct that only the close evaluates still runs; and the
+violation-cache persist is statement-identical — the skipped conjunct's
+in-memory result reaches the cache exactly as a fresh evaluation would.
+
+## Shadow parity: decisions and cache identical
+
+A 15-transaction edit stream (content edits, submittor swaps both
+directions, a double-content attempt, script create/remove) replayed
+identically on both instances after the 12 000 seed:
+all 15 `committed`/`invariantsHold`/`affectedConjuncts` triples identical
+([data/o3-parity/decisions-off.txt](data/o3-parity/decisions-off.txt) vs
+[decisions-skip.txt](data/o3-parity/decisions-skip.txt)). Six directed
+probes behaved identically as well, each verified in the database rows:
+an orphan script (the Submittor EE rule assigned the session account on
+both), a UNI overwrite, an EE-repaired sequence, an EE-normalized ASY
+pair, a duplicate userid (INJ invariant: `committed=False`,
+`invariantsHold=False` on both — a genuine rollback under skip), and an
+unregistered EE function (same 500 on both).
+
+The persisted `__conj_violation_cache__` is identical — and the equality
+is grounded, not vacuous: a full `evaluate/all` over all 451 conjuncts on
+both databases persists zero violation rows on both sides, so both
+databases satisfy every conjunct and their caches agree row-for-row.
+RAP's ExecEngine repairs every API-reachable signal violation and
+invariants roll back, so a *non-empty* cache after a skipped close does
+not occur on this workload; the statement-identical persist in the digest
+above covers that path structurally.
+
+## Reading
+
+The engineering fix of harvest-map item 2 delivers what finding C
+promised: the 26–30 ms second evaluation of the expensive EE-rule query is
+gone, per affected transaction, at zero protocol overhead and with no
+change in any commit decision. Unlike the delta protocol (finding B, +6.6
+ms on eligible transactions), the skip has no per-conjunct machinery to
+pay for — it removes work without adding any. The measured configuration
+for RAP-class models is therefore `deltaConjunctMaintenance: off` +
+`skipCleanConjuncts: true`. The setting ships default-off in the
+framework; this measurement is the case for flipping it.
+
+## Full tables (analyze.py, off vs off+skip)
+
+| scripts in db | off (ms) | off+skip (ms) | off/skip |
+|---:|---:|---:|---:|
+| 0 | 61.4 | 56.0 | 1.1x |
+| 500 | 66.0 | 56.1 | 1.2x |
+| 1000 | 79.7 | 60.9 | 1.3x |
+| 1500 | 89.2 | 70.7 | 1.3x |
+| 2000 | 94.7 | 74.1 | 1.3x |
+| 2500 | 108.2 | 81.8 | 1.3x |
+| 3000 | 114.4 | 87.3 | 1.3x |
+| 3500 | 122.6 | 96.9 | 1.3x |
+| 4000 | 124.5 | 102.4 | 1.2x |
+| 4500 | 135.3 | 105.7 | 1.3x |
+| 5000 | 140.3 | 112.3 | 1.2x |
+| 5500 | 153.1 | 117.7 | 1.3x |
+| 6000 | 161.0 | 127.1 | 1.3x |
+| 6500 | 167.1 | 134.8 | 1.2x |
+| 7000 | 189.7 | 133.4 | 1.4x |
+| 7500 | 200.3 | 149.2 | 1.3x |
+| 8000 | 199.5 | 158.6 | 1.3x |
+| 8500 | 205.2 | 168.5 | 1.2x |
+| 9000 | 212.4 | 207.0 | 1.0x |
+| 9500 | 219.5 | 198.4 | 1.1x |
+| 10000 | 229.4 | 201.9 | 1.1x |
+| 10500 | 235.6 | 208.2 | 1.1x |
+| 11000 | 240.3 | 195.4 | 1.2x |
+| 11500 | 264.6 | 195.4 | 1.4x |
+
+(Seed stream: median closeMs per 100-op transaction.)
+
+| page | scripts in db | off (ms) | off+skip (ms) |
+|---|---:|---:|---:|
+| MyScripts | 1000 | 25.0 | 24.2 |
+| MyScripts | 4000 | 24.1 | 24.8 |
+| MyScripts | 12000 | 24.7 | 25.1 |
+| Nieuwscript | 1000 | 25.1 | 24.5 |
+| Nieuwscript | 4000 | 24.7 | 25.1 |
+| Nieuwscript | 12000 | 24.1 | 24.9 |
+| StudentScripts | 1000 | 48.6 | 49.4 |
+| StudentScripts | 4000 | 117.5 | 125.7 |
+| StudentScripts | 12000 | 328.7 | 340.5 |
+
+Measurement notes. The runs of this section used framework tree
+`bench-o3` (delta branch + the skip commit, nothing of v2.7.0), fresh
+databases, and the full 1 000 / 4 000 / 12 000 protocol on both
+instances; nothing was scaled down. The host slept once between the
+timed runs and the parity phase; the timing CSVs show no artifact
+(max/median ≤ 2.1 across all files, largest single value 285 ms), and
+the parity phase carries no timings. Absolute numbers sit a few
+percent above the #1687 tables (74 vs 69 ms off at 12 000) — different
+day, same shape.

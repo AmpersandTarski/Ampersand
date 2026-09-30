@@ -5,6 +5,7 @@
 module Ampersand.Output.ToJSON.Conjuncts (Conjuncts) where
 
 import Ampersand.ADL1
+import Ampersand.FSpec.Incremental.CostProfile (CostProfile (..), costClassText, costProfileFor)
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaQueriesFor, deltaTableName, withDeltaPlugs)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.Output.ToJSON.JSONutils
@@ -22,7 +23,13 @@ data JSONConjunct = JSONConjunct
     --   candidate query for delta-scoped re-evaluation. Nothing when the term
     --   falls outside the supported class; runtimes that do not know this
     --   field keep full re-evaluation.
-    cnjJSONdeltaQueries :: Maybe [JSONDeltaQuery]
+    cnjJSONdeltaQueries :: Maybe [JSONDeltaQuery],
+    -- | The compile-time cost profile of the violation query (issue #1692,
+    --   contract DC-17): the shape class plus the tables the query reads in
+    --   full. The runtime turns it into a route per conjunct by holding the
+    --   scan tables against its live table sizes; a runtime that does not
+    --   know this field keeps today's behaviour.
+    cnjJSONcostProfile :: JSONCostProfile
   }
   deriving (Generic, Show)
 
@@ -33,8 +40,17 @@ data JSONDeltaQuery = JSONDeltaQuery
   }
   deriving (Generic, Show)
 
+data JSONCostProfile = JSONCostProfile
+  { cstJSONclass :: Text,
+    cstJSONscanTables :: [Text]
+  }
+  deriving (Generic, Show)
+
 instance ToJSON JSONDeltaQuery where
   toJSON = amp2Jason
+
+instance ToJSON JSONCostProfile where
+  toJSON = genericToJSON ampersandDefault
 
 instance ToJSON JSONConjunct where
   toJSON = amp2Jason
@@ -52,7 +68,13 @@ instance JSON Conjunct JSONConjunct where
         cnjJSONsignalRuleNames = map fullName . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONinvariantRuleNames = map fullName . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONviolationsSQL = sqlQuery fSpec violTerm,
-        cnjJSONdeltaQueries = map (fromAmpersand env fSpec) <$> deltaQueriesFor violTerm
+        cnjJSONdeltaQueries = map (fromAmpersand env fSpec) <$> deltaQueriesFor violTerm,
+        cnjJSONcostProfile =
+          let profile = costProfileFor fSpec conj violTerm
+           in JSONCostProfile
+                { cstJSONclass = costClassText (cpClass profile),
+                  cstJSONscanTables = cpScanTables profile
+                }
       }
     where
       violTerm = conjNF env . notCpl . rcConjunct $ conj

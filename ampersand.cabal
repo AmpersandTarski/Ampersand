@@ -226,6 +226,7 @@ library
       Ampersand.Test.IFC.IFCRegressionTest
       Ampersand.Test.IFC.IFCWiringTest
       Ampersand.Test.Incremental.CandidateProperties
+      Ampersand.Test.Incremental.CostProfileTests
       Ampersand.Test.Incremental.Properties
       Ampersand.Test.Parser.ArbitraryTree
       Ampersand.Test.Parser.ParserTest
@@ -259,6 +260,7 @@ library
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
       Ampersand.FSpec.Incremental
+      Ampersand.FSpec.Incremental.CostProfile
       Ampersand.FSpec.Incremental.DeltaTerms
       Ampersand.FSpec.Incremental.Synthetic
       Ampersand.FSpec.Incremental.ZSet
