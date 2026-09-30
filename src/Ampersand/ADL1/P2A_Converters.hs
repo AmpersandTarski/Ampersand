@@ -61,6 +61,7 @@ isDanglingPurpose ctx purp =
     ExplViewDef nm -> nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
+    ExplEnforce nm -> Just nm `notElem` map enfName (ctxEnforces ctx <> concatMap ptenfs (ctxpats ctx))
     ExplContext nm ->
       ctxnm ctx
         /= nm
@@ -1117,6 +1118,8 @@ pCtx2aCtx
         mPat
         P_Enforce
           { pos = pos',
+            penfNm = mNm,
+            penfLbl = mLbl,
             penfRel = pRel,
             penfFlipped = isFlped,
             penfOp = oper,
@@ -1149,6 +1152,8 @@ pCtx2aCtx
             toAEnforce rel expr =
               AEnforce
                 { pos = pos',
+                  enfName = mNm,
+                  enfLabel = mLbl,
                   enfRel = rel,
                   enfOp = oper,
                   enfExpr = expr,
@@ -1258,6 +1263,7 @@ pCtx2aCtx
             pRefObj2aRefObj (PRef2Pattern s) = pure $ ExplPattern s
             pRefObj2aRefObj (PRef2Interface s) = pure $ ExplInterface s
             pRefObj2aRefObj (PRef2Context s) = pure $ ExplContext s
+            pRefObj2aRefObj (PRef2Enforce s) = pure $ ExplEnforce s
 
       allConceptDefsOutPats :: ContextInfo -> Guarded [AConceptDef]
       allConceptDefsOutPats ci = traverse (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs

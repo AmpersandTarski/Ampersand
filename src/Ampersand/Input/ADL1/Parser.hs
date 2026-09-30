@@ -196,6 +196,7 @@ suggestNamePart typ = toText1Unsafe . casing . T.map crapToSpace . text1ToText
     casing = case typ of
       ConceptName -> upper
       ContextName -> upper
+      EnforceName -> dontcare
       IdentName -> dontcare
       InterfaceName -> dontcare
       PatternName -> upper
@@ -337,17 +338,19 @@ data PatElem
   | Pp P_Population
   | Penf (P_Enforce TermPrim)
 
--- <Enforce> ::= 'ENFORCE' <Relation> ['~'] (':=' | ':<' | '>:' ) <Expression>
+-- <Enforce> ::= 'ENFORCE' [Name Label? ':'] <Relation> ['~'] (':=' | ':<' | '>:' ) <Expression>
 pEnforce :: AmpParser (P_Enforce TermPrim)
 pEnforce =
-  P_Enforce
+  build
     <$> currPos
     <* (pKey . toText1Unsafe) "ENFORCE"
+    <*> pMaybe (try (pNameWithOptionalLabelAndColon EnforceName)) -- `try`, because the name and the relation both start with an identifier.
     <*> (PNamedR <$> pNamedRel)
     <*> pIsThere ((pOperator . toText1Unsafe) "~")
     <*> pEnforceOperator
     <*> pTerm
   where
+    build orig mNmLbl = P_Enforce orig (fst <$> mNmLbl) (mNmLbl >>= snd)
     pEnforceOperator :: AmpParser EnforceOperator
     pEnforceOperator =
       fun
@@ -981,6 +984,9 @@ pPurpose =
         <|> PRef2Context
         <$ (pKey . toText1Unsafe) "CONTEXT"
         <*> pNameWithoutLabel ContextName
+        <|> PRef2Enforce
+        <$ (pKey . toText1Unsafe) "ENFORCE"
+        <*> pNameWithoutLabel EnforceName
 
 pInterfaceKey :: AmpParser Text1
 pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789

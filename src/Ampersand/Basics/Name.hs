@@ -187,6 +187,7 @@ nameOfSESSION =
 data NameType
   = ConceptName
   | ContextName
+  | EnforceName
   | IdentName
   | InterfaceName
   | PatternName
