@@ -161,7 +161,7 @@ the schema gains one materialized violation table per conjunct.
 full-query results on the test suite.
 
 *Status:* issue #1684, branch `delta-sql`. The design shifted from weighted
-caches to **delta-scoped re-evaluation** (OK-8): candidate queries name the
+caches to **delta-scoped re-evaluation** (DC-8): candidate queries name the
 pairs to recheck, the recheck runs the existing violation predicate, and the
 cache schema stays as it is. The candidate calculus (W/N envelopes + D-rules,
 [delta-calculus.md](delta-calculus.md) §7) lives in
@@ -234,12 +234,35 @@ provably recurs (26–29 ms per iteration on RAP); (2) skip the close's
 redundant re-evaluation when the ExecEngine made no repairs after its
 last evaluation — no new calculus, same size of prize; (3) a per-conjunct
 cost gate so candidate maintenance engages only where the full query is
-expensive — opened as issue
-[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
-(compile-time cost gate, with the backfill/maintenance split and the
-case table as R2). Refining the concept-affected fallback drops below
-these: on RAP it would unlock transactions into a path that loses anyway
-until (3) exists.
+expensive — researched and closed as issue
+[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690). The
+corpus study ([cost-gate/RESULTS.md](cost-gate/RESULTS.md)) settled the
+gate's form: a compile-time cost profile per conjunct, judged by the
+framework against live table sizes (DC-16 case table, DC-17 contract).
+It also corrected the "all expensive queries are EE rules" reading: at
+96 000 scripts three non-EE UNI checks join the expensive class, and all
+three are structurally enforced by the table layout, so their optimal
+route is no query at all. Refining the concept-affected fallback drops
+below these: on RAP it would unlock transactions into a path that loses
+anyway until (3) exists.
+
+*Status of the cost gate (2026-08-16, issue
+[#1692](https://github.com/AmpersandTarski/Ampersand/issues/1692)):* both
+halves of contract DC-17 are built and committed, on branch `cost-gate`
+in this repository and on branch `feat-cost-gate-routing` in the
+prototype repository. The compiler classifies every conjunct
+(`Ampersand.FSpec.Incremental.CostProfile`) and publishes the profile in
+`conjuncts.json`; the framework turns it into a route per conjunct at the
+close of a transaction, with the structural skip on its own switch and a
+sampled self-check behind it (DC-18, DC-19; claim PRF-8 `stated`).
+Everything is off by default. Verified: the Ampersand suite at 317/0 with
+the classification unit tests, and a smoke run of transactional-demo
+through the full request pipeline in which gate `off` and gate `on`
+produce identical commit decisions, data and violation cache while the
+skip route demonstrably fires. Open, and both dependent on uniting this
+gate with the delta maintenance of branch
+`feat-delta-conjunct-maintenance`: the end-to-end dominance run (R4) and
+the RAP 96 000-script reference points.
 
 ## To investigate before Phase 1
 
@@ -316,6 +339,14 @@ ship with the scripts and data that produced them; proofs are versioned in
 `proofs/`. The article is assembled from this material — candidate storyline:
 DBSP-style incrementalization of a relation-algebra rule engine, with a
 machine-checked delta calculus and measured order-of-magnitude gains.
+
+*Status (2026-08-30):* a first complete draft exists outside the
+repository, in Stef's publications folder (`cloudDrive/publicaties/2026
+Incremental Evaluation/`, `incremental.tex`, 18 pages, elsarticle as the
+JLAMP 2018 predecessor), with an `evidence/` folder holding a snapshot of
+`proofs/incremental/`, the observed build log, and a Lean 4 restatement of
+the article's derivations. Sources: this folder, `docs/proofs/README.md`,
+commit 9279c65e.
 
 ## When the referee can go
 

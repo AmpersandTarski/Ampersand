@@ -592,12 +592,15 @@ The purpose of this statement is to automatically modify the population of a rel
 Since ampersand 4.4.0 the syntax of this statement is:
 
 ```
-ENFORCE <RelationRef> <type>?
+ENFORCE (<name> <label>? :)?
+        <RelationRef> <type>?
         <operator>
         <Term>
 ```
 
 The `<operator>` can be one of **`:=`**, `:<`, or `>:` .
+
+The `<name>` is optional. Give an ENFORCE statement a name when you want to document why it exists, because a [PURPOSE statement](#the-purpose-statement) refers to it by that name. The optional `<label>` works as it does for a [rule](#the-rule-statement).
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
 
@@ -630,6 +633,14 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
    This statement ensures that the rule `canDrive |- hasCar /\ hasDriverLicense` is continuously enforced
    (only by depopulating `canDrive` whenever necessary).
 -}
+```
+
+```
+ENFORCE mayDrive LABEL "Only licensed car owners drive" : canDrive :< hasCar /\ hasDriverLicence
+PURPOSE ENFORCE mayDrive
+{+ Driving without a car or without a driver licence is not allowed,
+   so the system withdraws the permission to drive as soon as either one is missing.
++}
 ```
 
 #### Miscellaneous
@@ -1370,7 +1381,11 @@ The built-in VIEW template for a property. It renders a `[PROP]` relation as a b
 
 #### Semantics
 
-Most things in your model are in it for a reason. To document these, you should use the PURPOSE statement.
+Every thing in your model is there for a reason. A PURPOSE statement writes down that reason, so a reader of your model or of the generated documentation knows why the thing exists.
+
+The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, enforcement rules, and roles. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
+
+Other statements are part of such a thing. The `MEANING`, `MESSAGE`, and `VIOLATION` of a rule belong to that rule, the properties and the population of a relation belong to that relation, and the fields of an interface belong to that interface. A part serves the purpose of the thing it belongs to, so it needs no purpose of its own. When you feel a part needs its own reason, that often signals it deserves to be a thing of its own, with its own name.
 
 #### Syntax
 
@@ -1378,9 +1393,9 @@ Most things in your model are in it for a reason. To document these, you should 
 
 `{+` `<anything>` `+}`
 
-Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`
+Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`, `ENFORCE`, `ROLE`
 
-The optional and can be used to override the settings for language and markup. If omitted, these are inherited from the pattern of context where the PURPOSE statement is specified in.
+The optional `<language>` and `<markup>` can be used to override the settings for language and markup. If omitted, these are inherited from the pattern or context where the PURPOSE statement is specified in.
 
 #### Examples
 
@@ -1394,6 +1409,13 @@ PURPOSE RELATION accountOwner
    so accounts with the same owner are linked in this way.
 +}
 ```
+
+```text
+PURPOSE ROLE Contentmanager
+{+ Somebody must see to it that only approved articles are published. +}
+```
+
+A role exists in your script when it maintains a rule (`ROLE Contentmanager MAINTAINS ...`) or when an interface is meant for it (`INTERFACE ... FOR Contentmanager`).
 
 When defining the purpose of a relation, make sure that Ampersand can identify the relation unambiguously. If you have multiple relations `accountOwner`, add the signature to disambiguate it. For instance:
 

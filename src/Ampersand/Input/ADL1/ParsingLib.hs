@@ -306,6 +306,7 @@ pName typ =
         <*> case typ of
           ConceptName -> pUpperCaseID <?> "concept name (must start with uppercase letter)"
           ContextName -> pUpperCaseID <?> "context name (must start with uppercase letter)"
+          EnforceName -> pUnrestrictedID
           IdentName -> pUnrestrictedID
           InterfaceName -> pUnrestrictedID
           PatternName -> pUpperCaseID <?> "pattern name (must start with uppercase letter)"

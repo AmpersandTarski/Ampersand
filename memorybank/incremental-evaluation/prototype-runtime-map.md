@@ -56,7 +56,7 @@ backend/src/Ampersand/Controller/ResourceController.php:80-158):
    from the cache (ResourceController.php:142, see §2).
 
 A `dryRun=true` query param evaluates conjuncts + invariants and then rolls back
-(Transaction.php:286-289, 324-326). A `defer=true` param (bulk-load mode, OK-07)
+(Transaction.php:286-289, 324-326). A `defer=true` param (bulk-load mode, DC-07)
 commits without evaluating conjuncts at all (Transaction.php:302-313).
 
 ## 2. Conjunct evaluation and the existing violation cache
