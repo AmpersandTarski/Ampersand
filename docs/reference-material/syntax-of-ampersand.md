@@ -1383,7 +1383,7 @@ The built-in VIEW template for a property. It renders a `[PROP]` relation as a b
 
 Every thing in your model is there for a reason. A PURPOSE statement writes down that reason, so a reader of your model or of the generated documentation knows why the thing exists.
 
-The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, and enforcements. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
+The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, and enforcement rules. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
 
 Other statements are part of such a thing. The `MEANING`, `MESSAGE`, and `VIOLATION` of a rule belong to that rule, the properties and the population of a relation belong to that relation, and the fields of an interface belong to that interface. A part serves the purpose of the thing it belongs to, so it needs no purpose of its own. When you feel a part needs its own reason, that often signals it deserves to be a thing of its own, with its own name.
 

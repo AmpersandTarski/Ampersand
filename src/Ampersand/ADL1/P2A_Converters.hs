@@ -435,6 +435,7 @@ pCtx2aCtx
       uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       uniqueNames "interface" p_interfaces
+      uniqueNames "ENFORCE statement" [NamedEnforce nm (origin enf) | enf <- p_enfs <> concatMap pt_enfs p_patterns, Just nm <- [penfNm enf]]
       let actx =
             --  trace ("\n🔍 DEBUG allAConcepts created. Count: " <> tshow (length allAConcepts) <>
             --            "\n  Concepts with their aliases:" <>
@@ -1269,6 +1270,15 @@ pCtx2aCtx
       allConceptDefsOutPats ci = traverse (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
       allConceptDefs :: ContextInfo -> Guarded [AConceptDef]
       allConceptDefs ci = traverse (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
+
+-- | The name of a named ENFORCE statement, with its position, to check that such names are unique.
+data NamedEnforce = NamedEnforce !Name !Origin
+
+instance Named NamedEnforce where
+  name (NamedEnforce nm _) = nm
+
+instance Traced NamedEnforce where
+  origin (NamedEnforce _ orig) = orig
 
 data OpTree a
   = STbinary (OpTree a) (OpTree a) [a]

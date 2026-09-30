@@ -161,6 +161,9 @@ data P_Enforce a = P_Enforce
   }
   deriving (Show)
 
+instance Traced (P_Enforce a) where
+  origin P_Enforce {pos = orig} = orig
+
 instance Functor P_Enforce where fmap = fmapDefault
 
 instance Foldable P_Enforce where foldMap = foldMapDefault
