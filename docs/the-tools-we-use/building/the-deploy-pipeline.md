@@ -79,7 +79,7 @@ Two details make that work in practice, and both are easy to trip over when you 
 **The version line is normalized away before the dependency layer.** Every release bumps `version:` in `package.yaml`. Copying that file straight into the dependency layer would change the layer's checksum on every release and recompile all 231 packages — invalidating exactly the layer the cache is meant to protect. A small `manifest` stage rewrites the version to a constant first:
 
 ```docker
-FROM haskell:9.6.6 AS manifest
+FROM debian:bookworm-slim AS manifest
 COPY package.yaml /manifest/package.yaml
 RUN sed -i 's/^version:.*/version: 0.0.0/' /manifest/package.yaml
 ```
@@ -153,7 +153,7 @@ docker build . --tag myampersand
 Two things surprise people reading an intermediate layer:
 
 - Inside the `manifest` and dependency layers, `package.yaml` says `version: 0.0.0`. That is deliberate and does not reach the binary — `COPY .` restores the real file before `stack install`.
-- The `manifest` stage uses the full `haskell:9.6.6` image just to run one `sed`. It costs nothing, because that image is already pulled for the build stage.
+- The `manifest` stage uses the `debian:bookworm-slim` image just to run one `sed`. It costs nothing, because that image is already pulled for the build stage.
 
 When you add a step to the Dockerfile, put it *below* the dependency layer unless it genuinely belongs to the dependency set. A step added above it invalidates the layer on every build and hands back the 24 minutes.
 
