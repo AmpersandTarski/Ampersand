@@ -9,7 +9,6 @@ where
 import Ampersand.ADL1.Expression
   ( Expressions,
     anchorComplements,
-    hasUnanchoredComplement,
     deMorganECps,
     deMorganEIsc,
     deMorganERad,
@@ -19,6 +18,7 @@ import Ampersand.ADL1.Expression
     exprPrd2list,
     exprRad2list,
     exprUni2list,
+    hasUnanchoredComplement,
     insParentheses,
     isCpl,
     isFitForCrudC,
