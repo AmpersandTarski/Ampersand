@@ -365,6 +365,10 @@ instance Traced Pattern where
 
 data AEnforce = AEnforce
   { pos :: !Origin,
+    -- | The optional name of this ENFORCE statement, needed to refer to it (e.g. in a PURPOSE)
+    enfName :: !(Maybe Name),
+    -- | The optional label of this ENFORCE statement
+    enfLabel :: !(Maybe Label),
     enfRel :: !Relation,
     enfOp :: !EnforceOperator,
     enfExpr :: !Expression,
@@ -1178,6 +1182,8 @@ data ExplObj
   | ExplPattern !Name
   | ExplInterface !Name
   | ExplContext !Name
+  | ExplEnforce !Name
+  | ExplRole !Name
   deriving (Show, Eq, Typeable, Ord)
 
 instance Unique ExplObj where
@@ -1195,6 +1201,8 @@ instance Unique ExplObj where
                 (ExplPattern s) -> toText1Unsafe "a Pattern named " <> fullName1 s
                 (ExplInterface s) -> toText1Unsafe "an Interface named " <> fullName1 s
                 (ExplContext s) -> toText1Unsafe "a Context named " <> fullName1 s
+                (ExplEnforce s) -> toText1Unsafe "an Enforce named " <> fullName1 s
+                (ExplRole s) -> toText1Unsafe "a Role named " <> fullName1 s
             )
 
 data Expression

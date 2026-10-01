@@ -1,5 +1,5 @@
 name: ampersand
-version: 5.9.7
+version: 5.9.8
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
@@ -211,6 +211,7 @@ library:
     - Ampersand.Test.IFC.IFCRegressionTest
     - Ampersand.Test.IFC.IFCWiringTest
     - Ampersand.Test.Incremental.CandidateProperties
+    - Ampersand.Test.Incremental.CostProfileTests
     - Ampersand.Test.Incremental.Properties
     - Ampersand.Test.Parser.ArbitraryTree
     - Ampersand.Test.Parser.ParserTest

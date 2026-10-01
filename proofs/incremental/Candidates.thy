@@ -10,7 +10,7 @@ text \<open>
   re-evaluation, implemented by
   src/Ampersand/FSpec/Incremental/DeltaTerms.hs.
 
-  The design (OK-8) maintains the violation cache by re-running the existing
+  The design (DC-8) maintains the violation cache by re-running the existing
   violation predicate on a small CANDIDATE set of pairs. Correctness therefore
   needs one property only: candidate COMPLETENESS — every pair whose
   membership in a rule term differs between the old and the new database
@@ -30,7 +30,7 @@ text \<open>
   leaves. The constructor \<open>Cst\<close> covers \<open>EDcI\<close>, \<open>EDcV\<close>, \<open>EMp1\<close> and \<open>EBin\<close>:
   within the supported class the concept populations are unchanged (a
   transaction that touches a concept the conjunct mentions falls back to full
-  re-evaluation, OK-9), so these leaves denote the same set in the old and
+  re-evaluation, DC-9), so these leaves denote the same set in the old and
   the new state — as does the bounding rectangle \<open>A \<times> B\<close> of every typed
   complement.
 \<close>

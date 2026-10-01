@@ -245,8 +245,9 @@ instance Pretty (P_Rule TermPrim) where
         <~\> viol
 
 instance Pretty (P_Enforce TermPrim) where
-  pretty (P_Enforce _ rel flipped op expr) =
+  pretty (P_Enforce _ mNm lbl rel flipped op expr) =
     text "ENFORCE"
+      <+> maybe empty (\nm -> pretty nm <+> pretty lbl <+> text ":") mNm
       <+> pretty rel
       <+> (if flipped then text "~" else empty)
       <+> pretty op
@@ -408,6 +409,8 @@ instance Pretty PRef2Obj where
     PRef2Pattern nm -> text "PATTERN" <~> nm
     PRef2Interface nm -> text "INTERFACE" <~> nm
     PRef2Context nm -> text "CONTEXT" <~> nm
+    PRef2Enforce nm -> text "ENFORCE" <~> nm
+    PRef2Role nm -> text "ROLE" <~> nm
 
 instance Pretty PMeaning where
   pretty (PMeaning markup) = text "MEANING" <~> markup
