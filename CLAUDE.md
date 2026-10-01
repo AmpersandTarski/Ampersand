@@ -128,4 +128,5 @@ Machine-checked proofs are part of the deliverable, not an afterthought.
   interactive `ampersand validate` next to a running `stack test`) clobber each
   other's script and fail spuriously with exit 60 or a "Parse error on php
   result" fatal (exit 2). Serialize them: never run validate while the
-  regression suite is running.
+  regression suite is running; `scripts/test-local.sh` serializes suite runs
+  between terminals with a lock.
