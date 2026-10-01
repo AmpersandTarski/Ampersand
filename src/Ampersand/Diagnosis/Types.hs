@@ -27,6 +27,7 @@ module Ampersand.Diagnosis.Types
 where
 
 import Ampersand.Basics
+import Ampersand.FSpec.Oscillation (OscillationCycle)
 
 -- | A textual file:line marker.  Kept as a single 'Text' so renderers do
 -- not need to know about the source-position type.
@@ -245,7 +246,9 @@ data DiagnosticData = DiagnosticData
     ddConcepts :: ![ConceptDiag],
     ddRelations :: ![RelationDiag],
     ddRules :: ![RuleDiag],
-    ddInterfaces :: ![InterfaceDiag]
+    ddInterfaces :: ![InterfaceDiag],
+    -- | the risky cycles of automated rules found by the oscillation analysis
+    ddOscillations :: ![OscillationCycle]
   }
   deriving (Show, Eq)
 

@@ -34,6 +34,7 @@ import qualified Ampersand.Diagnosis.PatternGraph as PG
 import Ampersand.Diagnosis.Types
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations (HasMeaning (..), Motivated (..))
+import Ampersand.FSpec.Oscillation (oscillationCycles)
 import qualified Data.Text as T
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -48,7 +49,8 @@ extractDiagnostics lang fSpec =
       ddConcepts = conceptRows,
       ddRelations = relationRows,
       ddRules = ruleRows,
-      ddInterfaces = interfaceRows
+      ddInterfaces = interfaceRows,
+      ddOscillations = oscillationCycles fSpec
     }
   where
     ----------------------------------------------------------------
