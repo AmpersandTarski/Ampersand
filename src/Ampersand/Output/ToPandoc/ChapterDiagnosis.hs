@@ -324,14 +324,14 @@ chpDiagnosis env fSpec dd
                 Just d -> code ("ENFORCE " <> label d)
                 Nothing -> (str . l) (NL "ENFORCE-regel", EN "ENFORCE rule")
               _ -> code (label r)
-            -- The relation an ENFORCE-generated rule maintains; its formal
-            -- expression is 'subExpr |- rel' (InsPair) or 'rel |- subExpr'
-            -- (DelPair) by construction.
+            -- The relation an ENFORCE-generated rule maintains. Looked up in the
+            -- ENFORCE statement that generated the rule, because the term alone
+            -- cannot tell: the DelPair rule of `ENFORCE light := trigger` reads
+            -- `light |- trigger`, and both sides are relations.
             enforcedRel :: Rule -> Maybe Relation
-            enforcedRel r = case formalExpression r of
-              EInc (_, EDcD d) -> Just d
-              EInc (EDcD d, _) -> Just d
-              _ -> Nothing
+            enforcedRel r =
+              enfRel
+                <$> L.find (any ((== rrnm r) . rrnm) . enfRules) (allEnforces fSpec)
             sourceLink :: Rule -> Inlines
             sourceLink r =
               link

@@ -1,0 +1,9 @@
+CONTEXT EnforceRisk IN ENGLISH
+RELATION trigger[Room*Bulb]
+RELATION light[Room*Bulb]
+ENFORCE light := trigger
+ROLE ExecEngine MAINTAINS noLight
+RULE noLight : light /\ trigger |- -light
+VIOLATION ( TXT "{EX} DelPair;light;Room;", SRC I, TXT ";Bulb;", TGT I )
+POPULATION trigger CONTAINS [ ("r1","b1") ]
+ENDCONTEXT

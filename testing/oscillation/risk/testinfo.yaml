@@ -5,6 +5,8 @@
 # CI turns red — that is exactly the missed-oscillation regression we must catch.
 #   * insdel-cycle.adl        delete-driven: an InsPair/DelPair pair on one relation
 #   * create-merge-cycle.adl  create-driven: an InsAtom create vs a MrgAtoms merge (FC5)
+#   * enforce-risk.adl        ENFORCE-generated InsPair vs a DelPair rule; the Diagnosis
+#                             chapter must name both generated rules after `light`
 testCmds:
   - command: ampersand check --fail-on-oscillation
     exitcode: 45
