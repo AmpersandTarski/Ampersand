@@ -157,7 +157,7 @@ oscillationWarnings fSpec =
 --   and the Diagnosis-chapter diagram are both derived from this.
 oscillationCycles :: FSpec -> [OscillationCycle]
 oscillationCycles fSpec =
-  [ mkCycle comp | comp <- riskyComponents ]
+  [mkCycle comp | comp <- riskyComponents]
   where
     mkCycle :: NE.NonEmpty Rule -> OscillationCycle
     mkCycle comp =
