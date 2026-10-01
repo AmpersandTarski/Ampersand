@@ -16,6 +16,7 @@ module Ampersand.Input.ADL1.CtxError
     lexerWarning2Warning,
     mkBoxRowsnhWarning,
     mkCartesianProductWarning,
+    mkUnavoidableCartesianProductWarning,
     mkOscillationWarning,
     mkCaseProblemWarning,
     mkCrudForRefInterfaceError,
@@ -859,6 +860,37 @@ mkCartesianProductWarning orig context originalTerm fullExpr offending verboseEx
     endsInV (EBrk e) = endsInV e
     endsInV (EDcV _) = True
     endsInV _ = False
+
+-- | Warn about a conjunct whose violation query must compute a Cartesian
+--   product of two concept tables: its violation term contains a complement
+--   that has no complement-free sibling ("anchor") in the same intersection,
+--   so the anchored rewrite (issue #562) cannot turn it into an anti-join.
+--   Evaluating such a rule enumerates all source*target candidate pairs on
+--   every affected transaction.
+mkUnavoidableCartesianProductWarning ::
+  -- | Origin of (the first of) the rule(s) this conjunct maintains
+  Origin ->
+  -- | Names of the rules this conjunct maintains
+  NE.NonEmpty Text ->
+  -- | The violation term as offered to the SQL generator, pretty printed
+  Text ->
+  Warning
+mkUnavoidableCartesianProductWarning orig ruleNames term =
+  Warning orig
+    $ T.intercalate
+      "\n    "
+      [ "The violations of " <> rules <> " are computed with a Cartesian product of two",
+        "concept tables: a complement (-) in the violation term has no complement-free",
+        "term in the same intersection to bound it, so every evaluation enumerates all",
+        "source*target candidate pairs.",
+        "Violation term: " <> term,
+        "A bounding (positive) term in the rule keeps the query proportional to the",
+        "population of that term."
+      ]
+  where
+    rules = case ruleNames of
+      nm NE.:| [] -> "RULE " <> nm
+      nms -> "RULES " <> T.intercalate ", " (NE.toList nms)
 
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =

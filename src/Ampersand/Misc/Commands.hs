@@ -412,10 +412,16 @@ doOrDie theAction = do
     Checked a ws -> do
       mapM_ (logWarn . displayShow) ws
       failOnOsc <- view failOnOscillationL
-      case oscillationWarnings a of
-        oscWs
+      failOnCart <- view failOnCartesianProductL
+      env <- ask
+      let oscWs = oscillationWarnings a
+          cartWs = if failOnCart then cartesianProductWarnings env a else []
+      case () of
+        ()
           | failOnOsc && not (null oscWs) ->
               exitWith . OscillationRiskDetected $ concatMap (T.lines . tshow) oscWs
+          | not (null cartWs) ->
+              exitWith . CartesianProductDetected $ concatMap (T.lines . tshow) cartWs
           | otherwise -> theAction a
     Errors err ->
       exitWith
