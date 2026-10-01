@@ -61,6 +61,9 @@ isDanglingPurpose ctx purp =
     ExplViewDef nm -> nm `notElem` map name (viewDefs ctx)
     ExplPattern nm -> nm `notElem` map name (ctxpats ctx)
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
+    ExplEnforce nm -> Just nm `notElem` map enfName (ctxEnforces ctx <> concatMap ptenfs (ctxpats ctx))
+    -- A role exists when it maintains a rule or when an interface is meant for it.
+    ExplRole nm -> nm `notElem` map name (map arRole (toList (allRoleRules ctx)) <> concatMap ifcRoles (ctxifcs ctx))
     ExplContext nm ->
       ctxnm ctx
         /= nm
@@ -434,6 +437,7 @@ pCtx2aCtx
       uniqueNames "identity definition" $ p_identdefs <> concatMap pt_ids p_patterns
       uniqueNames "view definition" $ p_viewdefs <> concatMap pt_vds p_patterns
       uniqueNames "interface" p_interfaces
+      uniqueNames "ENFORCE statement" [NamedEnforce nm (origin enf) | enf <- p_enfs <> concatMap pt_enfs p_patterns, Just nm <- [penfNm enf]]
       let actx =
             --  trace ("\n🔍 DEBUG allAConcepts created. Count: " <> tshow (length allAConcepts) <>
             --            "\n  Concepts with their aliases:" <>
@@ -1117,6 +1121,8 @@ pCtx2aCtx
         mPat
         P_Enforce
           { pos = pos',
+            penfNm = mNm,
+            penfLbl = mLbl,
             penfRel = pRel,
             penfFlipped = isFlped,
             penfOp = oper,
@@ -1149,6 +1155,8 @@ pCtx2aCtx
             toAEnforce rel expr =
               AEnforce
                 { pos = pos',
+                  enfName = mNm,
+                  enfLabel = mLbl,
                   enfRel = rel,
                   enfOp = oper,
                   enfExpr = expr,
@@ -1258,11 +1266,22 @@ pCtx2aCtx
             pRefObj2aRefObj (PRef2Pattern s) = pure $ ExplPattern s
             pRefObj2aRefObj (PRef2Interface s) = pure $ ExplInterface s
             pRefObj2aRefObj (PRef2Context s) = pure $ ExplContext s
+            pRefObj2aRefObj (PRef2Enforce s) = pure $ ExplEnforce s
+            pRefObj2aRefObj (PRef2Role s) = pure $ ExplRole s
 
       allConceptDefsOutPats :: ContextInfo -> Guarded [AConceptDef]
       allConceptDefsOutPats ci = traverse (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) p_conceptdefs
       allConceptDefs :: ContextInfo -> Guarded [AConceptDef]
       allConceptDefs ci = traverse (pConcDef2aConcDef (conceptMap ci) deflangCtxt deffrmtCtxt) (p_conceptdefs <> concatMap pt_cds p_patterns)
+
+-- | The name of a named ENFORCE statement, with its position, to check that such names are unique.
+data NamedEnforce = NamedEnforce !Name !Origin
+
+instance Named NamedEnforce where
+  name (NamedEnforce nm _) = nm
+
+instance Traced NamedEnforce where
+  origin (NamedEnforce _ orig) = orig
 
 data OpTree a
   = STbinary (OpTree a) (OpTree a) [a]
