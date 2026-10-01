@@ -14,7 +14,7 @@ the typing invariant `term ⊆ V[A*B]`:
 - the difference desugaring of the SQL generator: `l − r = l ∩ (V − r)`
 - the worked example of issue #562:
   `x ∩ ((¬a ∪ ¬b) − c) = ((x − a) ∪ (x − b)) − c`
-- soundness of folding one anchor through several members, and preservation
-  of the typing invariant by an anchored result
+- soundness of folding one anchor through several members, and that an
+  anchored difference `g − e` stays inside `V` whenever the anchor `g` does
 
 Build: `isabelle build -D .`

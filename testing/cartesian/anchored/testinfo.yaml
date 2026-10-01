@@ -3,9 +3,11 @@
 # Each script here contains a rule whose violation term combines complements
 # with a complement-free member ("anchor") in the same intersection. The
 # rewrite must absorb every complement into an anchored difference, so the
-# generated violation queries contain no Cartesian product and
+# generated violation queries contain no unanchored complement and
 # `--fail-on-cartesian-product` must succeed (exit 0). If a future change
-# reintroduces the product, CI turns red.
+# reintroduces the product, CI turns red. The exit code measures unanchored
+# complements only: the composition V;"Anonymous" of PrototypeContext still
+# enumerates SESSION x Role, a different shape (noted in issue #562).
 #   * anchor-test.adl   the ENFORCE reproducer from issue #562: the violation
 #                       term  x /\ ((-a \/ -(f;st~)) - (I-f;f~);a)  must
 #                       compile to anti-joins anchored on x, not to V[S*E]

@@ -404,7 +404,7 @@ cartesianProductWarnings env fSpec =
   [ mkUnavoidableCartesianProductWarning
       (rrfps . NE.head . rc_orgRules $ conj)
       (fullName <$> rc_orgRules conj)
-      (showA violationTerm)
+      ((showA . insParentheses) violationTerm)
     | conj <- allConjuncts fSpec,
       let violationTerm = anchorComplements . conjNF env . notCpl . rcConjunct $ conj,
       hasUnanchoredComplement violationTerm
