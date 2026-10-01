@@ -25,9 +25,13 @@ maxLengthOfDatabaseTableName = 64
 shaLength :: Int
 shaLength = 7
 
+-- | The attributes that the concept table of `c` holds for `c`. A concept
+--   without a concept table has none (issue #1672).
 attributesOfConcept :: FSpec -> A_Concept -> [SqlAttribute]
-attributesOfConcept fSpec c =
-  [att | att <- NE.tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att) == c]
+attributesOfConcept fSpec c = case lookupCpt fSpec c of
+  [] -> []
+  (plug, _) : _ ->
+    [att | att <- NE.tail (plugAttributes plug), not (inKernel att), source (attExpr att) == c]
   where
     inKernel :: SqlAttribute -> Bool
     inKernel att =
@@ -42,8 +46,14 @@ attributesOfConcept fSpec c =
 
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set contains no concepts, a linktable is created.
-makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) => env -> A_Context -> [PlugSQL]
-makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE toevoegen is onjuist omdat ONE al in inspectedCandidateTables zit.
+--
+--   `neededConcepts` are the concepts that some generated query enumerates, as
+--   computed by `Ampersand.FSpec.ToFSpec.ConceptTables.conceptsNeedingATable`.
+--   A typology whose table would hold no relation columns and none of whose
+--   concepts is enumerated gets no table: such a table would only administrate
+--   atoms that nothing ever reads. See issue #1672.
+makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) => env -> A_Context -> [A_Concept] -> [PlugSQL]
+makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- ++tableForONE toevoegen is onjuist omdat ONE al in inspectedCandidateTables zit.
   where
     inspectedCandidateTables :: [PlugSQL]
     inspectedCandidateTables
@@ -105,8 +115,20 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
         -- Orphan relations are relations that cause link tables in the database,
         -- i.e relation that are neither univalent nor injective.
         comps =
-          map componentsForTypology (multiKernels (ctxInfo context))
+          (filter tableIsWorthGenerating . map componentsForTypology . multiKernels . ctxInfo $ context)
             <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+        -- A concept table earns its keep by storing relations, or by answering
+        -- "what are the atoms of this concept?" for a query that asks. A table
+        -- that does neither administrates atoms that nothing reads. (issue #1672)
+        tableIsWorthGenerating :: (Maybe Typology, [Relation]) -> Bool
+        tableIsWorthGenerating (mTypol, rels) =
+          not (null rels) || case mTypol of
+            Nothing -> True
+            Just typol -> any isNeeded (conceptsOfTypology typol)
+        -- Eq on A_Concept is alias intersection, so compare with `elem` rather
+        -- than through a Set (whose Ord instance compares whole alias sets).
+        isNeeded :: A_Concept -> Bool
+        isNeeded cpt = cpt `elem` neededConcepts
         componentsForTypology typol =
           (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
         componentsForOrphanRelation rel = (Nothing, [rel])
@@ -146,16 +168,7 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
         }
       where
         allConceptsInTable :: [A_Concept]
-        allConceptsInTable =
-          map aliasSetToConcept (tyCpts typol)
-        aliasSetToConcept :: Set.Set Name -> A_Concept
-        aliasSetToConcept aliasSet =
-          -- if null aliasSet then fatal "Empty alias set in concept table" else PlainConcept { aliases = aliasSet, typology = typol }
-          case Set.toList aliasSet of
-            [] -> fatal "Empty alias set in concept table"
-            nm : _
-              | nm == nameOfONE -> ONE
-              | otherwise -> PlainConcept {aliases = aliasSet, typology = typol}
+        allConceptsInTable = conceptsOfTypology typol
         determineWideTableName :: A_Concept -> SqlName
         determineWideTableName keyConcept =
           determineSqlName
@@ -335,6 +348,16 @@ makeGeneratedSqlPlugs env context = inspectedCandidateTables -- ++tableForONE to
     --           attUniq = True,
     --           attFlipped = False
     --         }
+    conceptsOfTypology :: Typology -> [A_Concept]
+    conceptsOfTypology typol = map aliasSetToConcept (tyCpts typol)
+      where
+        aliasSetToConcept :: Set.Set Name -> A_Concept
+        aliasSetToConcept aliasSet =
+          case Set.toList aliasSet of
+            [] -> fatal "Empty alias set in concept table"
+            nm : _
+              | nm == nameOfONE -> ONE
+              | otherwise -> PlainConcept {aliases = aliasSet, typology = typol}
     conceptTableOf :: Relation -> Maybe A_Concept
     conceptTableOf = fst . wayToStore env
     isStoredFlipped :: Relation -> Bool

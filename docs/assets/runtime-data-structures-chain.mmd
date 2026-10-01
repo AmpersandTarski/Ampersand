@@ -1,0 +1,38 @@
+graph LR
+  subgraph compile ["Compile time (Haskell)"]
+    ADL["ADL script"] --> PS["P-structure"] --> AS["A-structure"] --> FS["FSpec"]
+  end
+  subgraph artifacts ["Generated artifacts"]
+    GJ["generics/*.json<br/>+ database.sql"]
+    NG["Angular components<br/>+ interfaces.json"]
+  end
+  subgraph runtime ["Run time"]
+    subgraph db ["Database (MariaDB)"]
+      DB[("population:<br/>wide + narrow tables")]
+    end
+    subgraph backend ["Back-end (PHP, server)"]
+      PHP["PHP object graph<br/>(rebuilt per request)"]
+    end
+    subgraph api ["API (REST)"]
+      API["resource JSON"]
+    end
+    subgraph frontend ["Front-end (Angular, browser)"]
+      TREE["resource tree<br/>(one per interface)"]
+      DOM["DOM"]
+    end
+  end
+  FS --> GJ
+  FS --> NG
+  GJ --> DB
+  GJ --> PHP
+  NG --> TREE
+  DB <--> PHP
+  PHP <--> API
+  API <--> TREE
+  TREE <--> DOM
+  classDef ct fill:#e8f0fe,stroke:#5b8dd6
+  classDef gen fill:#fef7e0,stroke:#d6a55b
+  classDef rt fill:#e6f4ea,stroke:#5bb974
+  class ADL,PS,AS,FS ct
+  class GJ,NG gen
+  class DB,PHP,API,TREE,DOM rt

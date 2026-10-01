@@ -1,0 +1,22 @@
+graph LR
+  API["PHP back-end<br/>(REST API)"]
+  subgraph browser ["Angular application (browser)"]
+    IFC["generated interface component<br/>(extends AmpersandInterfaceComponent)"]
+    RES["resource tree<br/>(plain JSON objects)"]
+    BOX["box components<br/>(FORM, TABLE, TABS, ...)"]
+    ATO["atomic components<br/>(ALPHANUMERIC, OBJECT, ...)"]
+  end
+  DOM["DOM"]
+  API -->|"GET resource/..."| IFC
+  IFC -->|"setResource()"| RES
+  RES -->|"references"| BOX
+  BOX -->|"references"| ATO
+  ATO <-->|"ngModel"| DOM
+  ATO -->|"on blur: JSON-Patch"| IFC
+  IFC <-->|"PATCH, then mergeDeep<br/>into the same tree"| API
+  classDef beC fill:#e6f4ea,stroke:#5bb974
+  classDef ngC fill:#e8f0fe,stroke:#5b8dd6
+  classDef domC fill:#fef7e0,stroke:#d6a55b
+  class API beC
+  class IFC,RES,BOX,ATO ngC
+  class DOM domC

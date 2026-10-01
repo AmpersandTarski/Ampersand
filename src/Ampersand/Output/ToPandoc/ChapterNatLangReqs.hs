@@ -158,7 +158,7 @@ chpNatLangReqs env lev fSpec =
                 )
           where
             showCpt :: Numbered CptCont -> Inlines
-            showCpt = emph . text . fullName . cCpt . theLoad
+            showCpt = emph . text . showWlabel fSpec . cCpt . theLoad
             hasMultipleDefs :: Numbered CptCont -> Bool
             hasMultipleDefs x =
               case cCptDefs (theLoad x) of
@@ -235,7 +235,7 @@ chpNatLangReqs env lev fSpec =
             <> (pragmaShow . l) (NL " correspondeert met ", EN " corresponds to ")
             <> atomShow tgtAtom
             <> (pragmaShow . l) (NL " in de relatie ", EN " in relation ")
-            <> (atomShow . fullName) decl
+            <> (atomShow . label) decl
             <> "."
         Just pragma ->
           ( if T.null prL

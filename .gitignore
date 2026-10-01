@@ -85,6 +85,8 @@ local_config.yaml
 *.ghci
 testing_with_populations
 *.sh
+# Checked-in tooling under scripts/ is deliberate, so exempt it from *.sh
+!scripts/*.sh
 
 # Scratch / werkmateriaal (lokaal houden, niet committen) - expliciet benoemd
 # Analyse-notities (root)

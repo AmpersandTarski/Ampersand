@@ -41,6 +41,53 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 | [<purpose\>](#the-purpose-statement)       | a statement to describe the purpose of a context or a context element                            | ✅      | ✅      |
 | [<population\>](#the-population-statement) | a statement that sums up the initial population of a relation                                    | ✅      | ✅      |
 
+## The LABEL annotation
+
+#### Purpose
+
+A name in Ampersand is an identifier. It contains no spaces and it is often written in the language of the modeller. A `LABEL` gives such a name a readable alternative, for instance a term in the language of the reader. Ampersand then shows the label wherever it would otherwise show the name, so a reader sees familiar words while the script keeps working with its own identifiers.
+
+#### Syntax
+
+A label is optional and follows immediately after the name it belongs to.
+
+```text
+LABEL <String>
+```
+
+You can label the name of a context, a pattern, a concept, a relation, a rule, an identity, a view, an interface, a role, and an item in a box. In statements where a colon separates the name from the rest \(`RULE`, `IDENT`, `VIEW`\), the label comes before that colon.
+
+#### Semantics
+
+The label replaces the name in everything Ampersand produces for a human reader. This includes the pictures \(the object model, the logical data model, the conceptual diagrams and the classification diagram\), the functional design document and the user interface of a prototype. The technical data model is the one exception, because it depicts the tables and columns as they exist in the database and those carry the names.
+
+The name keeps its role wherever identity matters. Terms, rules and population statements refer to a concept or a relation by its name, and so do the generated database and the API. Changing a label therefore never changes the meaning of a script.
+
+A label identifies nothing, so two elements may carry the same label.
+
+#### Examples
+
+```text
+CONCEPT Building LABEL "Gebouw" "A building is a self-contained structure that is managed as a whole."
+CONCEPT Storey LABEL "Bouwlaag" "A storey is a horizontal level within a building, which groups spaces."
+```
+
+```text
+RELATION isPartOf[Storey*Building] LABEL "isOnderdeelVan" [UNI]
+```
+
+```text
+PATTERN Buildings LABEL "Gebouwen"
+   ...
+ENDPATTERN
+```
+
+A picture of this model shows a box `Bouwlaag` and a box `Gebouw`, connected by an edge `isOnderdeelVan`, within a frame called `Gebouwen`. A rule about the same relation is still written as `isPartOf[Storey*Building]`.
+
+#### Miscellaneous
+
+- Older scripts put a double quoted string where the name belongs, for example `PATTERN "Registration of Persons"`. Ampersand still accepts that form and warns about it. It derives a name from the string and keeps the string itself as the label, which is exactly what the warning suggests you write instead.
+
 ## The CONTEXT statement
 
 #### Purpose
@@ -208,7 +255,7 @@ A concept statement defines a concept in natural language. A concept is a name f
 #### Syntax:
 
 ```text
-CONCEPT <Uppercase identifier> <String> <String>?
+CONCEPT <Uppercase identifier> <label>? <String> <String>?
 ```
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
@@ -218,6 +265,7 @@ This statement may occur anywhere within a context, either inside or outside a p
 This statement means that there exists a concept called `<Uppercase identifier>` in the current context.
 
 - `<Uppercase identifier>` specifies the name of the concept.
+- `<label>?` is an \(optional\) [`LABEL`](#the-label-annotation), which gives the concept a readable name for the pictures, the documentation and the user interface.
 - `String` contains a definition of the concept. This definition is used by the documentation generator, which expects it to be a grammatically correct and complete sentence.
 - `String?` is an \(optional\) reference to the source of the definition. It is meant for traceability.
 
@@ -332,7 +380,7 @@ Each relation used in Ampersand has to be declared. This means that the develope
 ```
 RELATION <lower case identifier>
          '[' <upper case identifier> '*' <upper case identifier> ']'
-         <properties>? <pragma>? <meaning>?
+         <label>? <properties>? <pragma>? <meaning>?
 ```
 
 In the _**declaration**_ `RELATION owner[Person*Building]`, `owner` is the _**name**_ and `[Person*Building]` is the _**type**_ of the relation. Relation names start with a lower case character, to avoid confusion with concept names. The _**signature**_ of this relation is `owner[Person*Building]`. The signature identifies the relation within its context. The left hand concept, `Person`, is called the _**source**_ of the relation and the right concept, `Building`, is called the _**target**_.
@@ -343,7 +391,7 @@ A relation statement means that there exists a relation in the current context w
 
 A relation statement may occur anywhere inside a context, both inside and outside a pattern.
 
-The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. The `<meaning>`-part is discussed [here](#the-meaning-substatement\).
+The optional `<properties>` and `<pragma>`-parts are discussed in the sequel. The `<meaning>`-part is discussed [here](#the-meaning-substatement\). The optional `<label>`-part gives the relation a readable name, as described in [the `LABEL` annotation](#the-label-annotation).
 
 The name, source concept and target concept together identify a relation uniquely within its context. As a consequence, the name of a relation does not have to be unique. E.g. `name[Book*Name]` can be specified in the same context as `name[Person*Name]`. Because they have different source concepts, these are different relations.
 
@@ -544,12 +592,15 @@ The purpose of this statement is to automatically modify the population of a rel
 Since ampersand 4.4.0 the syntax of this statement is:
 
 ```
-ENFORCE <RelationRef> <type>?
+ENFORCE (<name> <label>? :)?
+        <RelationRef> <type>?
         <operator>
         <Term>
 ```
 
 The `<operator>` can be one of **`:=`**, `:<`, or `>:` .
+
+The `<name>` is optional. Give an ENFORCE statement a name when you want to document why it exists, because a [PURPOSE statement](#the-purpose-statement) refers to it by that name. The optional `<label>` works as it does for a [rule](#the-rule-statement).
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
 
@@ -582,6 +633,14 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
    This statement ensures that the rule `canDrive |- hasCar /\ hasDriverLicense` is continuously enforced
    (only by depopulating `canDrive` whenever necessary).
 -}
+```
+
+```
+ENFORCE mayDrive LABEL "Only licensed car owners drive" : canDrive :< hasCar /\ hasDriverLicence
+PURPOSE ENFORCE mayDrive
+{+ Driving without a car or without a driver licence is not allowed,
+   so the system withdraws the permission to drive as soon as either one is missing.
++}
 ```
 
 #### Miscellaneous
@@ -1322,7 +1381,11 @@ The built-in VIEW template for a property. It renders a `[PROP]` relation as a b
 
 #### Semantics
 
-Most things in your model are in it for a reason. To document these, you should use the PURPOSE statement.
+Every thing in your model is there for a reason. A PURPOSE statement writes down that reason, so a reader of your model or of the generated documentation knows why the thing exists.
+
+The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, enforcement rules, and roles. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
+
+Other statements are part of such a thing. The `MEANING`, `MESSAGE`, and `VIOLATION` of a rule belong to that rule, the properties and the population of a relation belong to that relation, and the fields of an interface belong to that interface. A part serves the purpose of the thing it belongs to, so it needs no purpose of its own. When you feel a part needs its own reason, that often signals it deserves to be a thing of its own, with its own name.
 
 #### Syntax
 
@@ -1330,9 +1393,9 @@ Most things in your model are in it for a reason. To document these, you should 
 
 `{+` `<anything>` `+}`
 
-Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`
+Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`, `ENFORCE`, `ROLE`
 
-The optional and can be used to override the settings for language and markup. If omitted, these are inherited from the pattern of context where the PURPOSE statement is specified in.
+The optional `<language>` and `<markup>` can be used to override the settings for language and markup. If omitted, these are inherited from the pattern or context where the PURPOSE statement is specified in.
 
 #### Examples
 
@@ -1346,6 +1409,13 @@ PURPOSE RELATION accountOwner
    so accounts with the same owner are linked in this way.
 +}
 ```
+
+```text
+PURPOSE ROLE Contentmanager
+{+ Somebody must see to it that only approved articles are published. +}
+```
+
+A role exists in your script when it maintains a rule (`ROLE Contentmanager MAINTAINS ...`) or when an interface is meant for it (`INTERFACE ... FOR Contentmanager`).
 
 When defining the purpose of a relation, make sure that Ampersand can identify the relation unambiguously. If you have multiple relations `accountOwner`, add the signature to disambiguate it. For instance:
 

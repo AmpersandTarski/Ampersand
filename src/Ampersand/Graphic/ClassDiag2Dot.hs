@@ -58,7 +58,7 @@ classdiagram2dot env cd =
           }
     }
   where
-    group2subgraph :: (Maybe Name, NonEmpty Class) -> Maybe (DotSubGraph MyDotNode)
+    group2subgraph :: (Maybe CdName, NonEmpty Class) -> Maybe (DotSubGraph MyDotNode)
     group2subgraph (x, clss) = do
       nm <- x
       Just
@@ -69,7 +69,7 @@ classdiagram2dot env cd =
               DotStmts
                 { attrStmts =
                     [ GraphAttrs
-                        [ Label . StrLabel . TL.fromStrict . fullName $ nm,
+                        [ Label . StrLabel . TL.fromStrict . label $ nm,
                           -- URL "https://ampersandtarski.github.io/",
                           BgColor [WC (X11Color GhostWhite) Nothing]
                         ]
@@ -79,6 +79,19 @@ classdiagram2dot env cd =
                   edgeStmts = []
                 }
           }
+
+    -- Does this class show an attribute of this name? An edge may attach to the
+    -- row of the attribute it belongs to, but only a relation that the picture
+    -- draws as an attribute has such a row. A relation drawn as an association
+    -- has none, and naming a port that does not exist makes Graphviz reject the
+    -- picture it is asked to draw.
+    hasAttribute :: Name -> Name -> Bool
+    hasAttribute clsNm attrNm =
+      or
+        [ any ((attrNm ==) . name) (clAtts cl)
+          | (cl, _) <- classes cd,
+            name cl == clsNm
+        ]
 
     class2node :: Class -> DotNode MyDotNode
     class2node cl =
@@ -111,7 +124,7 @@ classdiagram2dot env cd =
                     ( Html.Text
                         [ Html.Font
                             [Html.Color (X11Color Gray90)]
-                            [Html.Str . fromString . T.unpack . fullName $ cl]
+                            [Html.Str . fromString . T.unpack . label $ cl]
                         ]
                     )
                 ]
@@ -119,6 +132,8 @@ classdiagram2dot env cd =
               Html.Cells
                 [ Html.LabelCell
                     [ Html.Align Html.HLeft,
+                      -- The port ties the attribute to the edge that starts
+                      -- there, so it uses the name rather than the label.
                       Html.Port . PN . fromString . T.unpack . fullName $ a
                     ]
                     ( Html.Text
@@ -134,7 +149,7 @@ classdiagram2dot env cd =
                                 )
                                 <> " "
                             ),
-                          Html.Str . fromString . T.unpack . fullName $ a,
+                          Html.Str . fromString . T.unpack . label $ a,
                           Html.Str
                             . fromString
                             $ ( if isProp'
@@ -145,7 +160,7 @@ classdiagram2dot env cd =
                             . fromString
                             $ ( if isProp'
                                   then ""
-                                  else T.unpack . fullName . attTyp $ a
+                                  else T.unpack . label . attTyp $ a
                               )
                         ]
                     )
@@ -162,10 +177,12 @@ classdiagram2dot env cd =
             [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)]), -- No arrowHead
               HeadLabel (mult2Lable (assrhm ass)),
               TailLabel (mult2Lable (asslhm ass)),
-              Label . StrLabel . fromString . T.unpack . maybe mempty fullName . assrhr $ ass,
+              Label . StrLabel . fromString . T.unpack . maybe mempty label . assrhr $ ass,
               LabelFloat True
             ]
-              ++ [TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)]
+              ++ [ TailPort (LabelledPort (PN . fromString . T.unpack . fullName . assSrcPort $ ass) Nothing)
+                   | hasAttribute (assSrc ass) (assSrcPort ass)
+                 ]
         }
       where
         mult2Lable = StrLabel . fromString . mult2Str
@@ -207,7 +224,7 @@ classdiagram2dot env cd =
           Isa {} -> [(genspc gen, gengen gen)]
           IsE {} -> [(genspc gen, x) | x <- NE.toList $ genrhs gen]
 
-classesBySubgraph :: ClassDiag -> [(Maybe Name, NonEmpty Class)]
+classesBySubgraph :: ClassDiag -> [(Maybe CdName, NonEmpty Class)]
 classesBySubgraph = map foo . eqCl snd . classes
   where
     foo x = (snd . NE.head $ x, fst <$> x)
@@ -233,13 +250,13 @@ instance CdNode ClassDiag where
           )
       )
 
-instance CdNode (Name, NonEmpty Class) where
+instance CdNode (CdName, NonEmpty Class) where
   nodes = nodes . toList . snd
 
 instance CdNode Class where
   nodes cl = [name . clName $ cl]
 
-instance CdNode (Class, Maybe Name) where
+instance CdNode (Class, Maybe CdName) where
   nodes = nodes . fst
 
 instance (CdNode a) => CdNode [a] where

@@ -55,9 +55,11 @@ aCtx2pCtx ctx =
     }
 
 aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
-aEnforce2pEnforce (AEnforce orig rel op expr _ _) =
+aEnforce2pEnforce enf@(AEnforce orig _ _ rel op expr _ _) =
   P_Enforce
     { pos = orig,
+      penfNm = enfName enf,
+      penfLbl = enfLabel enf,
       penfRel = PNamedR . aRelation2pNamedRel $ rel,
       penfFlipped = False,
       penfOp = op,
@@ -379,6 +381,8 @@ aExplObj2PRef2Obj obj =
     ExplPattern str -> PRef2Pattern str
     ExplInterface str -> PRef2Interface str
     ExplContext str -> PRef2Context str
+    ExplEnforce str -> PRef2Enforce str
+    ExplRole str -> PRef2Role str
 
 aAtomPair2pAtomPair :: AAtomPair -> PAtomPair
 aAtomPair2pAtomPair pr =

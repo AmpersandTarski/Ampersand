@@ -14,6 +14,12 @@ contributors and is deliberately layered, so you can stop at the depth you need:
 - **[Part III — Do the two sides agree?](#part-iii--do-the-compiler-and-the-back-end-agree)**
   proves that the compiler and the back-end agree, exactly, on which conjuncts to
   re-check after a change — no missed violations and no wasted work.
+- **[Part IV — Paying for the change, not the database](#part-iv--paying-for-the-change-not-the-database)**
+  follows the work in progress that makes each re-check itself incremental: a
+  delta computation whose cost follows the size of the change, with the proofs
+  and measurements that exist today, the steps that remain before prototypes run
+  it, and what the measurements say about the rules for which it is worth
+  doing at all.
 
 ---
 
@@ -65,9 +71,12 @@ JSON files change.
 
 The compiler also computes **quads**, which wire each relation to the rules it can
 break. A quad records: *if this relation changes, then this rule may be violated,
-so check these conjuncts.* When the back-end mutates a relation, it uses the quads
-to run only the affected conjunct queries — not every rule. The wiring is computed
-once at compile time; the checking happens at runtime, inside the PHP transaction.
+so check these conjuncts.* The same wiring ships to the back-end as
+`affectedConjuncts` lists in `concepts.json` and `relations.json`. During a
+transaction the back-end only records which relations and concepts were touched;
+when the transaction closes it unions their lists and runs exactly those conjunct
+queries — not every rule. The wiring is computed once at compile time; the
+checking happens at runtime, inside the PHP transaction.
 
 ### Invariants versus signals
 
@@ -224,7 +233,8 @@ That subset is small and partly already enforced structurally by keys. The
 genuine win for "less back-end ↔ database traffic" is not triggers but **batching
 detection into a single round trip** — a stored procedure or one `UNION ALL` query
 that evaluates all affected conjuncts server-side — while rollback, repair and
-messaging stay in the back-end.
+messaging stay in the back-end. Part IV attacks the same cost from the other
+side: not fewer round trips, but smaller queries.
 
 This layering is deliberate: the compiler reasons about rules algebraically,
 generates *data* (JSON + SQL), and delegates *interpretation* to a generic
@@ -352,3 +362,259 @@ Taking the union over all of the transaction's changes gives
   the index (which the runtime never recomputes). There is no duplicated derivation
   to get out of step — which is the strongest form of the "compute once, ship the
   result" principle.
+
+*Proof track: [PRF-1 — the runtime re-checks exactly the affected conjuncts](../proofs/README.md#prf-1).*
+
+---
+
+## Part IV — Paying for the change, not the database
+
+Parts I–III describe every prototype Ampersand generates today, and Part III
+proved that the *selection* of conjuncts to re-check is exact. The check itself,
+however, is not proportional to the change: each selected conjunct re-runs its
+full violation query over the whole population. Insert one pair into a database
+of a million pairs, and the joins of Part II section 1 run over the million.
+
+The **incremental evaluation** work (issue
+[#1682](https://github.com/AmpersandTarski/Ampersand/issues/1682), branch
+`incremental-evaluation`) removes that mismatch: it computes the *change* of
+each violation set directly from the *change* in the population, in time
+proportional to the change. The theory is DBSP ("DBSP: Automatic Incremental
+View Maintenance for Rich Query Languages", arXiv 2203.16684, VLDB 2023) — a
+compile-time transformation that turns any relational-algebra query into its
+incremental form. Ampersand's rule terms are relational algebra over binary
+relations, so the theory applies without translation loss. This part gives the
+mechanism at the level of Part II and states precisely what exists today; the
+full rule table, the proofs and the raw measurements live in the repository,
+under `memorybank/incremental-evaluation/` and `proofs/incremental/`.
+
+### 1. Z-sets: sets that can express a change
+
+A **Z-set** maps each pair to an integer weight; pairs not mentioned have
+weight 0. An ordinary relation is a Z-set with all weights 1. A *change* is a
+small Z-set too: weight +1 means "this pair was inserted", −1 "this pair was
+deleted". One transaction thus becomes one small Z-set per touched relation,
+plus one per concept for atom creation and deletion — atom changes are deltas
+like any other, which is how the typology of Part III joins the calculus.
+
+The weights are not bookkeeping decoration; composition needs them. The pair
+`(x,y)` is in `r;s` when *some* intermediate `z` witnesses it, and there may be
+several. Deleting one witness must not delete the pair while another witness
+remains. The weight counts the witnesses, and a `distinct` step clips positive
+weights back to 1 where set semantics is required. Getting that clip right is
+the crux of the whole construction (rule D6 below).
+
+### 2. The delta rules
+
+Each conjunct's violation term is first desugared into a small core language:
+complements become differences from `V`, and the residuals `l/r`, `l\r`, the
+diamond and the relative addition become "no witness" compositions — the
+antijoin discipline that keeps `V[A×B]` from ever being materialized. The core
+term then becomes a **circuit**: one node per subterm, each holding exactly the
+state its delta rule needs. A transaction enters at the leaves (the changed
+relations and concepts) and propagates upward; each node emits the delta of its
+output. Three groups of rules cover the core:
+
+| Operators | Delta rule | State kept per node |
+| --- | --- | --- |
+| converse, union, difference | *linear*: the delta passes straight through, e.g. `Δ(a∪b) = Δa + Δb` | the weighted sum (for the `distinct` step) |
+| composition, intersection, cartesian product | *bilinear*: `Δ(a⊗b) = Δa⊗b_old + a_new⊗Δb` — evaluated by index lookups against the maintained inputs, never a full scan | composition also keeps a converse copy of its left input, so both lookup directions are indexed |
+| `distinct` (weights → set) | *zero-crossing*: a pair enters the set when its weight rises above 0 and leaves when it drops to 0; all other weight changes are invisible | the pre-`distinct` weights |
+
+Kleene closures (`*`, `+`) and the built-in operators have no delta rule yet:
+their nodes recompute from their — incrementally maintained — input whenever
+that input changed. That is the general discipline of the design: **a construct
+without a proven delta rule falls back to full evaluation**, so the route is
+never incorrect, only locally slower. Incremental closure maintenance is a
+planned phase of its own.
+
+The full table, with the desugaring identities and their derivations, is
+`memorybank/incremental-evaluation/delta-calculus.md`.
+
+### 3. What exists today: a proven, measured evaluator in the compiler
+
+`Ampersand.FSpec.Incremental` (with `Ampersand.FSpec.Incremental.ZSet`)
+implements the circuits in pure Haskell, next to the existing full evaluator
+`fullContents` — the compiler's in-memory equivalent of the violation SQL. The
+command `ampersand incremental-bench` builds the circuits for a model, runs a
+stream of random single-pair transactions through both evaluators, and in
+`--verify` mode compares the maintained violation set of every conjunct against
+a fresh full evaluation after every single transaction.
+
+The measured gap is the point of the whole exercise. Across a ×40 growth of the
+benchmark database (200 → 8 000 pairs per relation), the incremental step grows
+×6 (10 → 65 µs per transaction) while full re-evaluation grows ×1 200
+(1.65 ms → 1.98 s) — a speedup between ×166 and ×30 626, with zero mismatches
+on the verified runs. The incremental cost follows the size of the change; the
+full cost follows the size of the database. Raw data and method:
+`memorybank/incremental-evaluation/bench/RESULTS.md`.
+
+The delta rules are machine-checked. The Isabelle/HOL session
+`Incremental_Delta` in `proofs/incremental/` (six theories, no unproven gaps)
+covers the Z-set algebra, the bilinear expansions, the zero-crossing rule, the
+desugaring identities, and a whole-circuit induction: every state reachable
+from the empty database by transactions — the loading of the initial
+population included —
+yields exactly the set semantics of every term. The obligation-to-lemma map is
+in `proofs/incremental/README.md`. A QuickCheck suite in `stack test` states
+the same lemmas as properties over the actual Haskell functions, so the code
+is bound to the proofs on every build.
+
+*Proof track: [PRF-2 — the incremental evaluator is exact](../proofs/README.md#prf-2).*
+
+### 4. What remains before a prototype runs it
+
+The runtime seam is already in place. The prototype framework materializes
+violations per conjunct in a database table (`__conj_violation_cache__`) and
+refreshes it wholesale at each commit: delete all rows of the conjunct, re-run
+the full query, insert the result. Signal rules are *read* entirely from that
+table. Incremental evaluation therefore changes the refresh strategy of an
+existing store, not the architecture around it. Two steps remain:
+
+- **Delta SQL (compiler).** Derive, per (conjunct, touched relation), a
+  *candidate query*: an ordinary `Expression` naming the pairs whose
+  violation status may have changed, compiled with the same `selectExpr`
+  machinery of Part II — candidate terms are just terms over the base
+  relations and the transaction's changed pairs. The runtime settles each
+  candidate pair by re-running the conjunct's own violation predicate on it,
+  so the calculus owes one property: no changed pair escapes the candidates.
+  `conjuncts.json` grows an optional per-relation delta-query field; the
+  framework ignores unknown fields, so the contract stays backward
+  compatible.
+- **Runtime adoption (prototype framework).** Maintain the violation table by
+  applying row deltas instead of the wholesale refresh, and keep the full
+  queries as fallback and as periodic self-check. Confidence is built
+  operationally: a shadow-run period on a real application in which both routes
+  run, every divergence is logged, and users see only the old route. Which
+  conjuncts take the incremental route is decided per conjunct rather than per
+  application, for the reason section 5 gives.
+
+Until those steps land, Parts I–III describe every prototype in production,
+unchanged; this part describes the compiler's proven core and the route by
+which it reaches the runtime.
+
+*Proof track: [PRF-7 — the candidate calculus is complete](../proofs/README.md#prf-7).*
+
+*Proof track: [PRF-6 — the delta SQL maintains the violation records exactly](../proofs/README.md#prf-6).*
+
+### 5. When incremental maintenance pays, and when it does not
+
+The measurements of section 3 come from the compiler's in-memory evaluator:
+circuits in Haskell, one pair per transaction, no database in the loop. They
+show that the calculus is asymptotically right, and that is all they show. The
+first measurements against a real MariaDB, on real models, ran the other way.
+
+On FC5, a production model, a shadow run of 1 142 transactions through the full
+request pipeline produced identical violation sets by both routes — and a median
+transaction close of 4.2 ms incrementally against 3.1 ms for full
+re-evaluation. On RAP at 12 000 scripts, on an edit chosen to suit the delta
+route as well as possible (one pair swapped, no concept touched), the medians
+were 47.0 ms against 40.4 ms. At today's population sizes the incremental route
+lost both times.
+
+The cause is a fixed fee. Maintaining violations from a change means writing the
+transaction's touched pairs into delta tables, evaluating a candidate query per
+touched relation, and re-checking the candidates that come back. That costs
+5–15 ms per transaction whatever the database holds. It buys nothing when the
+query it replaces is itself cheap — and most queries are cheap. Of RAP's 451
+conjuncts, the 351 that no ExecEngine rule maintains (78% of them) all measure
+between 0 and 15 ms at 12 000 scripts, because their SQL is driven by an index.
+Paying up to 15 ms to save up to 15 ms is not a trade.
+
+The expensive queries are real, though, and they carry the entire prize. At
+96 000 scripts RAP has exactly four conjuncts above 20 ms: one cartesian
+ExecEngine term at 218 ms, and three univalence checks at 60–70 ms each. A route
+that engaged for those four and left the other 447 alone would pay for itself
+several times over. That is what the per-conjunct decision below is for.
+
+#### Two halves of one decision
+
+A corpus study of 1 384 violation queries across seven models, each measured at
+its own population and at an inflated copy of it, established how such a
+decision can be made
+(`memorybank/incremental-evaluation/cost-gate/RESULTS.md`). The result is a
+division of knowledge rather than a threshold.
+
+The **shape** of a term fixes how its cost grows as the database grows. A query
+pinned to a named atom stays flat; a query that reads a table in full grows
+with that table; a Kleene closure explodes — three queries of one test model run
+in under a millisecond on 5 nodes and blow through a 25-second statement cap on
+160. Shape is compile-time knowledge.
+
+The **population** fixes when that growth crosses the fee. It is runtime
+knowledge, it differs per deployment, and it keeps changing after the model
+ships, so no artifact generated at compile time can settle it.
+
+Neither half decides alone, and the study measured the difference between trying
+and not trying. A classifier on shape alone reached 21.7% precision at 62.5%
+recall — it missed more than a third of the expensive queries. The two-stage
+form, shape from the compiler and sizes from the runtime, missed none of them
+(100% recall, 98.6% specificity).
+
+So the compiler publishes what it can see and the runtime decides. Each entry in
+`conjuncts.json` carries an optional `costProfile`: a route class, and the
+tables the violation query reads in full.
+
+| class | what the shape says | route |
+| --- | --- | --- |
+| `anchored` | the term is pinned to a named atom, so the query is an index probe | the full query; it is already flat |
+| `scan` | the query reads the listed tables in full | the full query while those tables are small, incremental once the largest passes a configurable row count |
+| `recursive` | the term contains a Kleene closure | incremental, as soon as that route exists for closures |
+| `structural` | the table layout already makes the violation impossible | no query at all |
+
+The runtime reads table sizes from the optimizer's own statistics rather than
+counting rows, because an exact `COUNT(*)` on InnoDB is a full scan per table —
+the very cost the decision exists to avoid. An estimate is enough to tell a
+table of a few hundred rows from one of a hundred thousand, which is the only
+question being asked.
+
+#### The query that can never find anything
+
+Three of RAP's four expensive conjuncts are univalence checks on relations
+stored as a column of the `Script` table. A univalent relation stored that way
+occupies one column of a row whose key is unique: there is nowhere to put a
+second value. The violation set is empty in every state the schema admits, and
+the optimal route is not a faster query but no query.
+
+This is the one class that rests on an argument rather than on a measurement,
+and that argument is not yet a theorem. It stands on the register as PRF-8 with
+status *stated*, and the runtime treats it accordingly. The skip has a switch of
+its own, off by default and separate from the rest of the gate, so a deployment
+can use the routing without it. Behind that switch, a configurable fraction of
+the skipped conjuncts is evaluated after all and compared: a check that finds
+violations keeps the real result and logs the discrepancy. A defect in the
+claim therefore surfaces as an alarm, rather than as a rule that quietly stopped
+holding.
+
+*Proof track: [PRF-8 — a relation stored on a unique key column cannot break the multiplicity that layout enforces](../proofs/README.md#prf-8).*
+
+#### What this means for a prototype today
+
+Nothing changes on its own. The compiler emits the profiles for every model it
+compiles, and the framework ignores them unless a deployment switches the gate
+on; a model compiled before the contract carries no profiles at all, and then
+the framework does what it has always done. The incremental route itself is
+still the work of section 4, so a conjunct the gate marks for incremental
+maintenance currently receives its full query, with the decision recorded in the
+log. What the gate settles is the question section 4 left open: not whether an
+application uses incremental evaluation, but which of its rules do.
+
+### Where to look
+
+- The [proof track](../proofs/README.md) — the register of claims behind this
+  chapter, with the narrative trail
+  [Incremental evaluation](../proofs/incremental-evaluation.md).
+- `src/Ampersand/FSpec/Incremental.hs` and
+  `src/Ampersand/FSpec/Incremental/ZSet.hs` — the circuits, the delta
+  propagation, and the oracle comparison.
+- `src/Ampersand/Commands/IncrementalBench.hs` — the `incremental-bench`
+  command.
+- `src/Ampersand/Test/Incremental/Properties.hs` — the QuickCheck bridge that
+  runs in `stack test`.
+- `src/Ampersand/FSpec/Incremental/CostProfile.hs` — the route classification of
+  section 5, and `memorybank/incremental-evaluation/cost-gate/` for the corpus
+  study and the instruments that produced it.
+- `proofs/incremental/` — the Isabelle/HOL theories, with the
+  obligation-to-lemma table in its `README.md`.
+- `memorybank/incremental-evaluation/` — the delta calculus, the design-choice
+  register, the plan with phase status, and the benchmark data.

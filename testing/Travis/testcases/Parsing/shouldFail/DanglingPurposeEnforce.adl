@@ -1,0 +1,11 @@
+CONTEXT DanglingPurposeEnforce IN ENGLISH
+-- A PURPOSE ENFORCE must refer to a named ENFORCE statement that exists.
+
+RELATION r[A*B]
+RELATION s[A*B]
+
+ENFORCE rFromS : r >: s
+PURPOSE ENFORCE doesNotExist
+{+ This purpose refers to nothing. +}
+
+ENDCONTEXT

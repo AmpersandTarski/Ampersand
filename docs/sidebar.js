@@ -84,6 +84,11 @@ module.exports = {
             id: 'ampersand/reference-material/from-rules-to-running-code'
         },
         {
+            label: 'Data-model pictures',
+            type: 'doc',
+            id: 'ampersand/reference-material/data-model-pictures'
+        },
+        {
             label: 'Preprocessor',
             type: 'doc',
             id: 'ampersand/reference-material/the-preprocessor'
@@ -129,6 +134,7 @@ module.exports = {
                 'ampersand/the-tools-we-use/automation-of-releasing-ci-cd/github-packages',
                 'ampersand/the-tools-we-use/building/README',
                 'ampersand/the-tools-we-use/building/automated-builds',
+                'ampersand/the-tools-we-use/building/the-deploy-pipeline',
                 'ampersand/the-tools-we-use/building/building-an-ampersand-compiler-as-docker-image',
                 'ampersand/the-tools-we-use/building/haskell',
                 'ampersand/the-tools-we-use/openapi-generation',
@@ -234,6 +240,16 @@ module.exports = {
             type: 'category',
             items: [
                 'ampersand/ongoing-research/making-oscillation-risk-visible',
+            ]
+        },
+        {
+            label: 'The proof track',
+            type: 'category',
+            items: [
+                'ampersand/proofs/README',
+                'ampersand/proofs/incremental-evaluation',
+                'ampersand/proofs/incremental-sql',
+                'ampersand/proofs/kleene-operators',
             ]
         },
         {

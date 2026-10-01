@@ -9,7 +9,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers (nameSpaceFormalAmpersand)
 import Ampersand.Graphic.ClassDiag2Dot
-import Ampersand.Graphic.ClassDiagram (ClassDiag)
+import Ampersand.Graphic.ClassDiagram (ClassDiag (..))
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Misc.HasClasses
   ( FSpecFormat (Fdocx, Fhtml, Fpdf),
@@ -39,6 +39,7 @@ data PictureTyp
   | PTConceptualModelOfRule !Rule -- conceptual diagram of the rule in isolation of any context.
   | PTLogicalDataModelOfContext !Bool -- logical data model of the entire script
   | PTLogicalDataModelOfPattern !Pattern -- logical data model of the pattern
+  | PTObjectModelOfContext !Bool -- concepts and their relations, without attributes; entire script
   | PTTechnicalDataModel -- technical data model of the entire script
 
 data DotContent
@@ -73,6 +74,7 @@ instance Named PictureTyp where -- for displaying a fatal error
     PTConceptualModelOfRule r -> name r
     PTLogicalDataModelOfContext grouped -> mkName' $ "PTLogicalDM_" <> (if grouped then "grouped_by_patterns" else mempty)
     PTLogicalDataModelOfPattern pat -> mkName' $ "PTLogicalDM_" <> tshow (name pat)
+    PTObjectModelOfContext grouped -> mkName' $ "PTObjectModel_" <> (if grouped then "grouped_by_patterns" else mempty)
     PTTechnicalDataModel -> mkName' "PTTechnicalDataModel"
     where
       mkName' :: Text -> Name
@@ -82,73 +84,100 @@ instance Named PictureTyp where -- for displaying a fatal error
             Left msg -> fatal $ "Not a valid Name: " <> x <> " (" <> msg <> ")"
             Right (nm, _) -> nm
 
+-- | Give a class diagram the title that the document uses as the caption of the
+--   picture. The text inside the picture then follows the language of the text
+--   around it, and both say the same thing.
+titled :: Text -> ClassDiag -> ClassDiag
+titled txt cd = cd {cdLabel = Just (Name.Label txt)}
+
 makePicture :: (HasDocumentOpts env) => env -> FSpec -> PictureTyp -> Picture
 makePicture env fSpec pr =
   case pr of
     PTClassificationDiagram ->
-      Picture
-        { pType = PTClassificationDiagram,
-          pictureFileName = toBaseFileName "Classification",
-          forDataModelsOnlySwitch = False,
-          scale = scale',
-          dotContent = ClassDiagram $ clAnalysis fSpec,
-          dotProgName = Dot,
-          caption =
-            case outputLang' of
-              English -> "Classification of " <> fullName fSpec
-              Dutch -> "Classificatie van " <> fullName fSpec,
-          visualFocus = VContext
-        }
+      let cap = case outputLang' of
+            English -> "Classification of " <> label fSpec
+            Dutch -> "Classificatie van " <> label fSpec
+       in Picture
+            { pType = PTClassificationDiagram,
+              pictureFileName = toBaseFileName "Classification",
+              forDataModelsOnlySwitch = False,
+              scale = scale',
+              dotContent = ClassDiagram . titled cap $ clAnalysis fSpec,
+              dotProgName = Dot,
+              caption = cap,
+              visualFocus = VContext
+            }
     PTLogicalDataModelOfContext grouped ->
-      Picture
-        { pType = PTLogicalDataModelOfContext grouped,
-          pictureFileName = toBaseFileName $ "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
-          forDataModelsOnlySwitch = True,
-          scale = scale',
-          dotContent =
-            ClassDiagram
-              ( cdAnalysis
-                  grouped
-                  env
-                  fSpec
-                  (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec))
-              ),
-          dotProgName = Dot,
-          caption =
-            case outputLang' of
-              English -> "Logical data model of " <> fullName fSpec
-              Dutch -> "Logisch gegevensmodel van " <> fullName fSpec,
-          visualFocus = VContext
-        }
+      let cap = case outputLang' of
+            English -> "Logical data model of " <> label fSpec
+            Dutch -> "Logisch gegevensmodel van " <> label fSpec
+       in Picture
+            { pType = PTLogicalDataModelOfContext grouped,
+              pictureFileName = toBaseFileName $ "LogicalDataModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
+              forDataModelsOnlySwitch = True,
+              scale = scale',
+              dotContent =
+                ClassDiagram
+                  . titled cap
+                  $ cdAnalysis
+                    grouped
+                    env
+                    fSpec
+                    (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec)),
+              dotProgName = Dot,
+              caption = cap,
+              visualFocus = VContext
+            }
     PTLogicalDataModelOfPattern pat ->
-      Picture
-        { pType = PTLogicalDataModelOfPattern pat,
-          pictureFileName = toBaseFileName $ "LogicalDataModel-" <> (text1ToText . urlEncodedName . name) pat,
-          forDataModelsOnlySwitch = False,
-          scale = scale',
-          dotContent = ClassDiagram . cdAnalysis False env fSpec $ pat,
-          dotProgName = Dot,
-          caption =
-            case outputLang' of
-              English -> "Logical data model of " <> fullName pat
-              Dutch -> "Logisch gegevensmodel van " <> fullName pat,
-          visualFocus = VPattern
-        }
+      let cap = case outputLang' of
+            English -> "Logical data model of " <> label pat
+            Dutch -> "Logisch gegevensmodel van " <> label pat
+       in Picture
+            { pType = PTLogicalDataModelOfPattern pat,
+              pictureFileName = toBaseFileName $ "LogicalDataModel-" <> (text1ToText . urlEncodedName . name) pat,
+              forDataModelsOnlySwitch = False,
+              scale = scale',
+              dotContent = ClassDiagram . titled cap . cdAnalysis False env fSpec $ pat,
+              dotProgName = Dot,
+              caption = cap,
+              visualFocus = VPattern
+            }
+    PTObjectModelOfContext grouped ->
+      let cap = case outputLang' of
+            English -> "Object model of " <> label fSpec
+            Dutch -> "Objectmodel van " <> label fSpec
+       in Picture
+            { pType = PTObjectModelOfContext grouped,
+              pictureFileName = toBaseFileName $ "ObjectModel" <> if grouped then "_Grouped_By_Pattern" else mempty,
+              forDataModelsOnlySwitch = True,
+              scale = scale',
+              dotContent =
+                ClassDiagram
+                  . titled cap
+                  $ objectModelAnalysis
+                    grouped
+                    env
+                    fSpec
+                    (fromMaybe (fatal "No context found in FSpec") (originalContext fSpec)),
+              dotProgName = Dot,
+              caption = cap,
+              visualFocus = VContext
+            }
     PTTechnicalDataModel ->
-      Picture
-        { pType = PTTechnicalDataModel,
-          pictureFileName = toBaseFileName "TechnicalDataModel",
-          -- PTTechnicalDataModel is not included in datamodels-only mode by design.
-          forDataModelsOnlySwitch = False,
-          scale = scale',
-          dotContent = ClassDiagram $ tdAnalysis fSpec,
-          dotProgName = Dot,
-          caption =
-            case outputLang' of
-              English -> "Technical data model of " <> fullName fSpec
-              Dutch -> "Technisch gegevensmodel van " <> fullName fSpec,
-          visualFocus = VContext
-        }
+      let cap = case outputLang' of
+            English -> "Technical data model of " <> label fSpec
+            Dutch -> "Technisch gegevensmodel van " <> label fSpec
+       in Picture
+            { pType = PTTechnicalDataModel,
+              pictureFileName = toBaseFileName "TechnicalDataModel",
+              -- PTTechnicalDataModel is not included in datamodels-only mode by design.
+              forDataModelsOnlySwitch = False,
+              scale = scale',
+              dotContent = ClassDiagram . titled cap $ tdAnalysis fSpec,
+              dotProgName = Dot,
+              caption = cap,
+              visualFocus = VContext
+            }
     PTConceptualModelOfConcept cpt ->
       Picture
         { pType = PTConceptualModelOfConcept cpt,
@@ -159,8 +188,8 @@ makePicture env fSpec pr =
           dotProgName = graphVizCmdForConceptualGraph,
           caption =
             case outputLang' of
-              English -> "Concept diagram of " <> fullName cpt
-              Dutch -> "Conceptueel diagram van " <> fullName cpt,
+              English -> "Concept diagram of " <> labelOfConcept cpt
+              Dutch -> "Conceptueel diagram van " <> labelOfConcept cpt,
           visualFocus = VConcept
         }
     PTConceptualModelOfRelationsInPattern pat ->
@@ -173,8 +202,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Concept diagram of relations in " <> fullName pat
-              Dutch -> "Conceptueel diagram van relaties in " <> fullName pat,
+              English -> "Concept diagram of relations in " <> label pat
+              Dutch -> "Conceptueel diagram van relaties in " <> label pat,
           visualFocus = VRelation
         }
     PTConceptualModelOfRulesInPattern pat ->
@@ -187,8 +216,8 @@ makePicture env fSpec pr =
           dotProgName = Dot,
           caption =
             case outputLang' of
-              English -> "Concept diagram of the rules in " <> fullName pat
-              Dutch -> "Conceptueel diagram van regels in" <> fullName pat,
+              English -> "Concept diagram of the rules in " <> label pat
+              Dutch -> "Conceptueel diagram van regels in " <> label pat,
           visualFocus = VPattern
         }
     PTConceptualModelOfRule rul ->
@@ -201,13 +230,18 @@ makePicture env fSpec pr =
           dotProgName = graphVizCmdForConceptualGraph,
           caption =
             case outputLang' of
-              English -> "Concept diagram of rule " <> fullName rul
-              Dutch -> "Conceptueel diagram van regel " <> fullName rul,
+              English -> "Concept diagram of rule " <> label rul
+              Dutch -> "Conceptueel diagram van regel " <> label rul,
           visualFocus = VRule
         }
   where
     outputLang' :: Lang
     outputLang' = outputLang env fSpec
+    -- \| The text to show for a concept: its LABEL when the script defines one.
+    labelOfConcept :: A_Concept -> Text
+    labelOfConcept cpt = case conceptLabelInFSpec fSpec cpt of
+      Nothing -> fullName cpt
+      Just (Name.Label t) -> t
     scale' =
       case pr of
         PTClassificationDiagram -> "1.0"
@@ -217,6 +251,7 @@ makePicture env fSpec pr =
         PTConceptualModelOfConcept {} -> "0.7"
         PTLogicalDataModelOfContext {} -> "1.2"
         PTLogicalDataModelOfPattern {} -> "1.2"
+        PTObjectModelOfContext {} -> "1.2"
         PTTechnicalDataModel -> "1.2"
     graphVizCmdForConceptualGraph =
       -- Dot gives bad results, but there seems no way to fiddle with the length of edges.
@@ -301,6 +336,7 @@ conceptualStructure fSpec pr =
     PTClassificationDiagram -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTLogicalDataModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTLogicalDataModelOfPattern _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
+    PTObjectModelOfContext _ -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
     PTTechnicalDataModel -> fatal ("No conceptual graph defined for pictureReq " <> fullName pr <> ".")
   where
     isaEdges cpts = Set.fromList [(s, g) | (s, g) <- gs, (s `elem` cpts && g `elem` cpts) || s `elem` cpts]

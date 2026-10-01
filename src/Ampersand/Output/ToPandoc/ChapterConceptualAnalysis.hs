@@ -145,7 +145,7 @@ chpConceptualAnalysis env lev fSpec =
         -- Every subsection documents one concept with its identities and attributes. If there are no attributes, there is no subsection.
         caSubsections :: [(Blocks, [Relation])]
         caSubsections =
-          [ ( header 3 (str . fullName $ cl) <> identityBlocks cpt <> entityBlocks,
+          [ ( header 3 (str . label $ cl) <> identityBlocks cpt <> entityBlocks,
               entityRels
             )
             | (cl, cpt) <- entities,
@@ -179,7 +179,7 @@ chpConceptualAnalysis env lev fSpec =
               [ (plain . l) (NL "Attribuut", EN "Attribute"),
                 (plain . l) (NL "Betekenis", EN "Meaning")
               ]
-              ( [ [ (plain . text . fullName) attr,
+              ( [ [ (plain . text . label) attr,
                     defineRel rel
                   ]
                   | attr <- clAtts cl,
@@ -198,7 +198,7 @@ chpConceptualAnalysis env lev fSpec =
                     (r, s, t) <- [(rel, source rel, target rel), (rel, target rel, source rel)],
                     name r == name attr,
                     name cl == name s,
-                    attTyp attr == name t,
+                    name (attTyp attr) == name t,
                     (not . null . decMean) rel
                 ]
 
@@ -243,12 +243,12 @@ chpConceptualAnalysis env lev fSpec =
                           <> " "
                           <> if null cls
                             then tshow (sign rel)
-                            else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> (T.concat . map fullName) cls <> ")"
+                            else localize outputLang' (NL " (Attribuut van ", EN " (Attribute of ") <> T.concat cls <> ")"
                       ),
                     defineRel rel -- use "tshow.attType" for the technical type.
                   ]
                   | rel <- rels,
-                    let cls = [name cl | cl <- themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels]
+                    let cls = [label cl | cl <- themeClasses, (_, entRels) <- [caEntity cl], rel `elem` entRels]
                 ]
               )
           where

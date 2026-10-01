@@ -4,6 +4,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
+import Ampersand.FSpec.Incremental.DeltaTerms (deltaPlugs)
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
 import qualified RIO.List as L
@@ -20,6 +21,10 @@ databaseStructureSql fSpec =
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment =
   concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
+    -- delta tables for incremental violation maintenance (issue #1684):
+    -- one two-column table per relation occurring in a conjunct, holding the
+    -- transaction's touched pairs; empty outside transactions.
+    <> concatMap (tableSpec2Queries withComment . plug2TableSpec) (deltaPlugs fSpec)
     <> additionalDatabaseSettings
 
 dumpSQLqueries :: env -> FSpec -> Text

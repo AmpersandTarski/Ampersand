@@ -1,0 +1,36 @@
+graph TD
+  subgraph schema ["Schema layer: one object per definition, rebuilt per request from generics/*.json"]
+    App["AmpersandApp"] --> Model["Model"]
+    App --> Trans["Transaction"]
+    Trans --> EE["ExecEngine"]
+    Model --> Concept["Concept"]
+    Model --> Relation["Relation"]
+    Model --> Ifc["Ifc"]
+    Model --> Rule["Rule"]
+    Model --> Conjunct["Conjunct"]
+    Ifc --> IEO["InterfaceExprObject<br/>(tree, one node per BOX item)"]
+    Rule --> Conjunct
+  end
+  subgraph population ["Population layer: transient value objects"]
+    Res["Resource<br/>(extends Atom)"]
+    Atom["Atom"]
+    Lnk["Link"]
+  end
+  subgraph storage ["Persistent state"]
+    DB[("MariaDB<br/>(via MysqlDB plug)")]
+    Cache[("conjunct violation cache")]
+  end
+  Res -->|"extends"| Atom
+  Res -.->|"viewed through"| IEO
+  Atom -.->|"instance of"| Concept
+  Lnk -.->|"pair in"| Relation
+  Concept -->|"add/delete atom"| DB
+  Relation -->|"add/delete link"| DB
+  IEO -->|"compiled SQL"| DB
+  Conjunct -->|"violations"| Cache
+  classDef schemaC fill:#e8f0fe,stroke:#5b8dd6
+  classDef popC fill:#fef7e0,stroke:#d6a55b
+  classDef storeC fill:#e6f4ea,stroke:#5bb974
+  class App,Model,Concept,Relation,Ifc,Rule,Conjunct,IEO,Trans,EE schemaC
+  class Res,Atom,Lnk popC
+  class DB,Cache storeC

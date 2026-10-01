@@ -9,6 +9,8 @@ Give purpose and people will make sense of what you do.
 
 For this reason, we tell Ampersand users to provide as many `PURPOSE`-statements as possible, preferrably one for every definition in their script.
 
+Each thing you define with a name, such as a concept, a relation, a rule, or an interface, deserves a `PURPOSE`. The parts of such a thing, like the `MEANING` of a rule or the population of a relation, serve the purpose of the thing they belong to, so they need none of their own. The [PURPOSE statement](../reference-material/syntax-of-ampersand.md#the-purpose-statement) lists which things can have a purpose.
+
 The purpose of a `PURPOSE`-statement is to explain why something exists. The Ampersand compiler uses `PURPOSE`-statements only for generating documentation.
 It has no consequence in the generated prototype.
 

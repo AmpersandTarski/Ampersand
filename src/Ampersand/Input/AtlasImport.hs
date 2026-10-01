@@ -506,6 +506,8 @@ instance JSON.FromJSON (Guarded (P_Enforce TermPrim)) where
         pure
           $ P_Enforce
             { pos = OriginAtlas,
+              penfNm = Nothing,
+              penfLbl = Nothing,
               penfRel = PNamedR rel,
               penfFlipped = fromMaybe False mFlipped, -- Defaults to False if not provided
               penfOp = oper,

@@ -5,6 +5,7 @@ module Ampersand.Output.ToJSON.Relations (Relationz) where
 
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpecAux
+import Ampersand.FSpec.Incremental.DeltaTerms (deltaTableName)
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
 
@@ -24,7 +25,11 @@ data RelationJson = RelationJson
     relJSONaffectedConjuncts :: ![Text],
     relJSONmysqlTable :: !RelTableInfo,
     relJSONdefaultSrc :: ![Text],
-    relJSONdefaultTgt :: ![Text]
+    relJSONdefaultTgt :: ![Text],
+    -- | Optional (issue #1684): the table that holds this relation's touched
+    --   pairs during a transaction, for delta-scoped re-evaluation. Present
+    --   only for relations that occur in some conjunct.
+    relJSONdeltaTable :: !(Maybe Text)
   }
   deriving (Generic, Show)
 
@@ -74,7 +79,11 @@ instance JSON Relation RelationJson where
         relJSONaffectedConjuncts = maybe [] (map $ text1ToText . rc_id) . lookup dcl . allConjsPerDecl $ fSpec,
         relJSONmysqlTable = fromAmpersand env fSpec dcl,
         relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ decDefaults dcl,
-        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl
+        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl,
+        relJSONdeltaTable =
+          if isJust (lookup dcl (allConjsPerDecl fSpec))
+            then Just (deltaTableName dcl)
+            else Nothing
       }
     where
       bindedExp = EDcD dcl
@@ -97,13 +106,15 @@ instance JSON Relation RelTableInfo where
       }
     where
       (plug, relstore) = getRelationTableInfo fSpec dcl
-      (plugSrc, _) = getConceptTableInfo fSpec (source dcl)
-      (plugTrg, _) = getConceptTableInfo fSpec (target dcl)
+      -- A concept without a concept table is in no table at all, so it can
+      -- never be the table this relation is stored in (issue #1672).
+      plugSrc = fst <$> lookupConceptTable fSpec (source dcl)
+      plugTrg = fst <$> lookupConceptTable fSpec (target dcl)
       srcOrtgt :: Maybe Text
       srcOrtgt
-        | (plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
-        | plug == plugSrc = Just "src" -- relation in same table as src concept (UNI relations)
-        | plug == plugTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
+        | (Just plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
+        | Just plug == plugSrc = Just "src" -- relation in same table as src concept (UNI relations)
+        | Just plug == plugTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
         | otherwise = Nothing -- relations in n-n table (not UNI and not INJ)
 
 instance JSON SqlAttribute TableCol where
