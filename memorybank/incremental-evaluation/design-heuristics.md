@@ -312,26 +312,42 @@ Three things follow for the delta design:
   not to verdict-rendered.
 - **O11 (carrier dependence, with polarity).** Atom churn in concept
   `C` reaches a conjunct only through the subterms whose denotation
-  follows `C`'s carrier set: `I[C]`, a `V` with `C` as an endpoint, a
-  complement over a type with `C`, and a reflexive closure on `C`. A
-  conjunct that merely composes relations with `C` as an endpoint needs
-  no entry: on creation the fresh atom carries no pairs, and on deletion
-  the cascade runs through `Relation::deleteAllLinks`, which registers
-  every touched relation as affected (`Relation.php:287`), so the tight
-  relation list already covers it.
-  *Sharpened by Stef, 2026-08-17, and the sharpening is polarity.* A
-  committed state satisfies its invariants, so every invariant
-  conjunct's violation set is empty when the transaction opens, and only
-  a change that can make it non-empty deserves an evaluation. Creating
-  an atom grows those carrier-dependent subterms, so it reaches only the
-  conjuncts where such a subterm occurs with **positive** polarity in
-  the violation term — for a rule `A |- B`, whose violations are
-  `A /\ -B`, that is an occurrence in the antecedent. Deleting an atom
-  shrinks them, so it reaches only **negative** occurrences, that is the
-  consequent. The two directions therefore need two different lists, and
-  `I[C]` in the antecedent is exactly the totality and surjectivity
-  case. Polarity rather than literal side is the criterion, since a
-  negation inside either operand flips it.
+  follows the carrier set of `C` **or of a generalisation of `C`**: `I`,
+  `V`, a typed complement, and a reflexive closure, each on `C` or on a
+  concept above it. The generalisations belong in the criterion because
+  an atom of `C` is an atom of every concept above `C`, which is also
+  why `fSpecAllConjsPerConcept` already walks `smaller`
+  (`ADL2FSpec.hs:236-237`). A conjunct that merely composes relations
+  with `C` as an endpoint needs no entry: on creation the fresh atom
+  carries no pairs, and on deletion the cascade runs from
+  `Concept::deleteAtom` through `deleteAllLinksWithAtom`
+  (`Concept.php:688,770-780`) into `Relation::deleteAllLinks`, which
+  registers every touched relation as affected (`Relation.php:287`), so
+  the tight relation list already covers it.
+  *Sharpened by Stef, 2026-08-17, and the sharpening is polarity.* In a
+  state where every invariant holds, each invariant conjunct's violation
+  set is empty when the transaction opens, so only a change that can
+  make it non-empty deserves an evaluation. Creating an atom grows those
+  carrier-dependent subterms, so it reaches only the conjuncts where
+  such a subterm occurs with **positive** polarity in the violation term
+  — for a rule `A |- B`, whose violations are `A /\ -B`, that is an
+  occurrence in the antecedent. Deleting an atom shrinks them, so it
+  reaches only **negative** occurrences, that is the consequent. The two
+  directions therefore need two different lists, and `I[C]` in the
+  antecedent is exactly the totality and surjectivity case. Polarity
+  rather than literal side is the criterion: a complement flips it, and
+  so does the appropriate operand of a residual, so the criterion is a
+  walk over the term and not a look at which side of the `|-` something
+  sits.
+  *The empty base is a hypothesis, and the runtime can break it.* A
+  commit with `transactions.ignoreInvariantViolations` or the per-call
+  flag (`Transaction.php:342-347`) stores a state that violates its
+  invariants, the `defer` bulk-load mode commits without checking them
+  at all, and a reinstall or population import can leave the same trace.
+  In any state where an invariant conjunct already holds violations, the
+  shrinking direction matters too, so those cases keep the full list.
+  Detecting them is cheap: the runtime knows whether the conjunct's
+  cached violation set is empty.
   *The restriction holds for invariants, not for signals.* A signal
   conjunct is meant to carry violations, so its cached set is non-empty
   and has to track both growth and shrink; a conjunct serving any signal

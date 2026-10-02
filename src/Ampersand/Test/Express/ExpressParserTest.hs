@@ -24,8 +24,8 @@ import qualified RIO.Text as T
 -- | Root of the IFC EXPRESS schemas on the author's machine (handoff §6).
 schemaRoot :: FilePath
 schemaRoot =
-  "/Users/stef/Library/CloudStorage/GoogleDrive-stefjoosten1@gmail.com/"
-    <> "Mijn Drive/cloudDrive/Rijksvastgoedbedrijf/BIM/bronnen/ifc-schemas"
+  "/Users/stef/git/"
+    <> "BIM/bronnen/ifc-schemas"
 
 ifc43, ifc4, ifc2x3 :: FilePath
 ifc43 = schemaRoot <> "/IFC4.3/IFC4X3_ADD2.exp"
