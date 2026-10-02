@@ -152,8 +152,13 @@ openApiDoc env fSpec =
                 "operationId" .= ("patch" <> alnum nm),
                 "summary" .= ("Update \"" <> label ifc <> "\" via JSON-Patch operations."),
                 "description"
-                  .= ( "Array of patch operations; the allowed op per field follows x-crud (U -> replace/add/remove, C -> create)." ::
-                         Text
+                  .= ( "Array of patch operations; the allowed op per field follows x-crud "
+                         <> "(U -> replace/add/remove, C -> create). Every `path` names a field of "
+                         <> "#/components/schemas/"
+                         <> schemaName
+                         <> ", which also carries the x-ampersand-relation of each field; look the "
+                         <> "field name up there rather than deriving it from the model, because a "
+                         <> "path the interface does not have is answered with 500 today."
                      )
               ]
             <> ["parameters" .= pathParams | hasParam]
@@ -334,11 +339,53 @@ responses200 desc schemaName =
         : errResponses
     )
 
+-- | The error responses every operation can produce. The list mirrors the
+--   status codes that the prototype framework actually returns, which are
+--   decided in one place: @ExceptionHandler@ maps each Ampersand exception
+--   class to a status, and @ImportLockMiddleware@ answers 423 before the route
+--   is reached. Every one of these bodies conforms to the @Error@ schema.
+--
+--   The mapping in the framework is:
+--
+--     * @BadRequestException@, @JsonException@       -> 400
+--     * @SessionExpiredException@, and
+--       @AccessDeniedException@ while not logged in  -> 401
+--     * @AccessDeniedException@ while logged in      -> 403
+--     * @NotFoundException@ (e.g. @AtomNotFound@)    -> 404
+--     * @MethodNotAllowedException@                  -> 405
+--     * the import lock                              -> 423
+--     * every other Ampersand exception, among which
+--       @NotDefinedException@ and @FatalException@   -> 500
 errResponses :: [Pair]
 errResponses =
-  [ "400" .= e "Bad request.",
-    "403" .= e "Not authorized for this resource/role.",
-    "404" .= e "Resource not found."
+  [ "400"
+      .= e
+        ( "Bad request. The body is not valid JSON, exceeds the maximum request size, "
+            <> "names an unsupported patch operation, or carries a value of the wrong shape."
+        ),
+    "401"
+      .= e
+        ( "Not authenticated. The session has expired, or login is enabled and no user is "
+            <> "logged in. The body then also carries a `loginPage` to navigate to."
+        ),
+    "403" .= e "Forbidden. The active roles give no access to this resource.",
+    "404" .= e "Resource not found. The addressed atom does not exist.",
+    "405"
+      .= e
+        ( "Method not allowed. The interface does not grant the CRUD right that this "
+            <> "operation needs (read, create, update or delete)."
+        ),
+    "423"
+      .= e
+        ( "Locked. The application is in import mode; only the import and admin endpoints "
+            <> "are reachable until every invariant holds."
+        ),
+    "500"
+      .= e
+        ( "Internal server error. Every exception that the framework does not classify as a "
+            <> "client error lands here, so a request that the framework cannot make sense of "
+            <> "may be answered with this status rather than with 400."
+        )
   ]
   where
     e d =
@@ -407,7 +454,12 @@ sharedSchemas =
               [ "error" .= intSchema,
                 "msg" .= strSchema,
                 "html" .= object ["type" .= ("string" :: Text), "nullable" .= True],
-                "notifications" .= object ["type" .= ("object" :: Text), "additionalProperties" .= True]
+                "notifications" .= object ["type" .= ("object" :: Text), "additionalProperties" .= True],
+                "loginPage"
+                  .= object
+                    [ "type" .= ("string" :: Text),
+                      "description" .= ("Page to navigate to; present on a 401 when login is enabled." :: Text)
+                    ]
               ],
           "required" .= (["error", "msg"] :: [Text])
         ],
