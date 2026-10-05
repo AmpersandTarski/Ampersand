@@ -1,0 +1,6 @@
+CONTEXT Fail IN ENGLISH
+-- Rgs is not an alias, so Rgs.address is not a relation.
+INCLUDE "../contexts/registry.adl" AS Reg
+RELATION applicant[Permit*Reg.Person]
+RULE located : applicant |- applicant;Rgs.address;Rgs.address~
+ENDCONTEXT

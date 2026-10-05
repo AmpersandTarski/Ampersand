@@ -1,0 +1,12 @@
+CONTEXT Diamond IN ENGLISH
+PURPOSE CONTEXT Diamond
+{+ Two included contexts each include the context Towns.
+Each of them gets a copy of its own, so `Left.Geo.Town` and `Right.Geo.Town` are two concepts. +}
+
+INCLUDE "../contexts/registry_with_towns.adl" AS Left
+INCLUDE "../contexts/registry_with_towns.adl" AS Right
+
+RELATION twinned[Left.Geo.Town*Right.Geo.Town]
+POPULATION twinned[Left.Geo.Town*Right.Geo.Town] CONTAINS [ ("Enschede", "Heerlen") ]
+
+ENDCONTEXT

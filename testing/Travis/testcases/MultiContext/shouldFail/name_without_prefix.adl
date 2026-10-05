@@ -1,0 +1,6 @@
+CONTEXT Fail IN ENGLISH
+-- The relation name[Person*Name] of the included context is available as Reg.name only.
+INCLUDE "../contexts/registry.adl" AS Reg
+RELATION applicant[Permit*Reg.Person]
+RULE named : applicant |- applicant;name;name~
+ENDCONTEXT

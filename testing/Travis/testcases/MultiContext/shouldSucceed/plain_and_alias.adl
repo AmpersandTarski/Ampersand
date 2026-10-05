@@ -1,0 +1,13 @@
+CONTEXT Mixed IN ENGLISH
+PURPOSE CONTEXT Mixed
+{+ The same file is included once without and once with an alias.
+Without an alias its declarations become declarations of this context;
+with the alias Copy it is a context of its own. +}
+
+INCLUDE "../contexts/registry.adl"
+INCLUDE "../contexts/registry.adl" AS Copy
+
+RULE copied : name |- V[Person*Copy.Person];Copy.name;V[Copy.Name*Name]
+ROLE Clerk MAINTAINS copied
+
+ENDCONTEXT

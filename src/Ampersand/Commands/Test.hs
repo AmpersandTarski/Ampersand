@@ -17,6 +17,7 @@ import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
 import Ampersand.Test.Incremental.CandidateProperties (doAllCandidatePropertyTests)
 import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
 import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
+import Ampersand.Test.MultiContext.QualifyProperties (doAllQualifyPropertyTests)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
 import Ampersand.Test.Step.StepParserTest (stepParserTest)
@@ -28,6 +29,7 @@ test = do
   incrementalPropertyTest
   candidatePropertyTest
   costProfileTest
+  qualifyPropertyTest
   stepReaderTest
   expressTest
   ifcBinderTest'
@@ -102,6 +104,18 @@ costProfileTest = do
     else do
       logError "\x2757\x2757\x2757 Failed. Cost-profile classification tests."
       exitWith (SomeTestsFailed ["Cost-profile classification test failed!"])
+
+-- | The renaming behind @INCLUDE "file" AS alias@: an included context contributes
+--   names that are disjoint from the names of every other context.
+qualifyPropertyTest :: (HasRunner env) => RIO env ()
+qualifyPropertyTest = do
+  logInfo "Starting property tests of INCLUDE ... AS (qualified names)."
+  success <- doAllQualifyPropertyTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Property tests of INCLUDE ... AS."
+      exitWith (SomeTestsFailed ["Property test of INCLUDE ... AS failed!"])
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do

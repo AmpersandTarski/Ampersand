@@ -1,0 +1,29 @@
+CONTEXT Permits IN ENGLISH
+PURPOSE CONTEXT Permits
+{+ The permit system of the example in the article on multi-context information systems.
+It includes the population register under the alias Reg.
+Both contexts have a relation `address` and a concept `Address`, which mean different things:
+the home address of a person, and the site to which a permit applies.
+The prefix keeps them apart. +}
+
+INCLUDE "../contexts/registry.adl" AS Reg
+
+RELATION applicant[Permit*Reg.Person] [UNI,TOT]
+RELATION address[Permit*Address] [UNI]
+
+POPULATION applicant[Permit*Reg.Person] CONTAINS
+  [ ("permit1", "p1")
+  ; ("permit2", "p2")
+  ]
+POPULATION address[Permit*Address] CONTAINS
+  [ ("permit1", "Harbour Road 12")
+  ]
+
+-- A rule of this context over data of the included context.
+-- Person p2 has no address in the register, so permit2 violates this rule.
+-- A clerk has to restore it, which is why it is a business constraint.
+RULE located : applicant |- applicant;Reg.address;Reg.address~
+MEANING "Every applicant has an address in the register."
+ROLE Clerk MAINTAINS located
+
+ENDCONTEXT

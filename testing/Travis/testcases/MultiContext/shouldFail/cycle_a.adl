@@ -1,0 +1,5 @@
+CONTEXT CycleA IN ENGLISH
+-- This context includes a context that includes this context.
+INCLUDE "../contexts/cycle_b.adl" AS b
+RELATION r[A*B]
+ENDCONTEXT

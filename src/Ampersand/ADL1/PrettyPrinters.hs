@@ -69,6 +69,17 @@ listOf1 = listOf . NE.toList
 separate :: (Pretty a) => Text -> [a] -> Doc
 separate d xs = encloseSep empty empty ((text . T.unpack) d) $ map pretty xs
 
+-- | The name of a relation or a view as a script writes it.
+--   A name in a name space of a script is printed in full, so that the printed script
+--   denotes the same relation when it is parsed again.
+--   A name in a name space of the Ampersand system (such as PrototypeContext) is printed
+--   without it, as it always was: the terms that the compiler prints into generated files
+--   stay the same for existing scripts.
+printedName :: Name -> Text
+printedName nm
+  | isReservedName nm = localNameOf nm
+  | otherwise = fullName nm
+
 instance Pretty Name where
   pretty = text . T.unpack . fullName
 
@@ -138,7 +149,7 @@ instance Pretty P_Pattern where
 instance Pretty P_Relation where
   pretty (P_Relation nm sign lbl prps dflts pragma mean _) =
     text "RELATION"
-      <+> (text . T.unpack . localNameOf) nm
+      <+> (text . T.unpack . printedName) nm
       <> pretty sign <~> lbl
       <+> props
       <+> if null dflts
@@ -213,8 +224,8 @@ instance Pretty PBinOp where
 instance Pretty P_NamedRel where
   pretty (PNamedRel _ str mpSign) =
     case mpSign of -- This case statement prevents a space at the right side of the relation name.
-      Nothing -> (text . T.unpack . localNameOf) str
-      Just sgn -> (text . T.unpack . localNameOf) str <> pretty sgn
+      Nothing -> (text . T.unpack . printedName) str
+      Just sgn -> (text . T.unpack . printedName) str <> pretty sgn
 
 instance Pretty (PairView TermPrim) where
   pretty (PairView ss) = text "VIOLATION" <+> parens (listOf1 ss)
@@ -327,7 +338,7 @@ prettyObject objectKind obj =
     crud (Just cruds) = pretty cruds
     view :: Maybe Name -> Doc
     view Nothing = empty
-    view (Just v) = (text . T.unpack) ("<" <> localNameOf v <> ">")
+    view (Just v) = (text . T.unpack) ("<" <> printedName v <> ">")
     maybeQuoteLabel :: Maybe Text1 -> Doc
     maybeQuoteLabel lbl =
       case lbl of

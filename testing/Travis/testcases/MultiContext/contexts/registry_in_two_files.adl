@@ -1,0 +1,11 @@
+CONTEXT Registry IN ENGLISH
+PURPOSE CONTEXT Registry
+{+ A context that consists of two files, joined by a plain INCLUDE.
+A plain INCLUDE keeps its meaning: the two files form one context. +}
+
+INCLUDE "part_of_registry.adl"
+
+RELATION name[Person*Name] [UNI,TOT]
+POPULATION name[Person*Name] CONTAINS [ ("p1", "Peter") ]
+
+ENDCONTEXT

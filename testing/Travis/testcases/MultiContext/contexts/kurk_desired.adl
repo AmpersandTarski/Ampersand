@@ -1,0 +1,20 @@
+CONTEXT Kurk IN ENGLISH
+PURPOSE CONTEXT Kurk
+{+ The desired system of the proof of concept in
+"Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024).
+It differs from the existing system by one blocking invariant: `r` is total.
+The system starts with an empty database.
+
+During a migration the desired system is deployed while its new invariant does not hold yet.
+The migration context includes this file with the preprocessor variable `Migrating`,
+which leaves the new invariant out; the migration context states a relaxed version of it. +}
+
+RELATION r[A*B] [UNI]
+REPRESENT B TYPE ALPHANUMERIC
+
+--#IFNOT Migrating
+RULE totalR : I[A] |- r;r~
+MEANING "Every A is paired with a B."
+--#ENDIF
+
+ENDCONTEXT

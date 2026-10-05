@@ -22,6 +22,7 @@ import Ampersand.ADL1
     TermPrim,
     ctx_ds,
     ctx_ifcs,
+    ctx_nm,
     ctx_pops,
     mergeContexts,
   )
@@ -52,6 +53,12 @@ import Ampersand.Input.PreProcessor
   ( PreProcDefine,
     preProcess,
     processFlags,
+  )
+import Ampersand.Input.Qualify
+  ( checkForeignConcepts,
+    checkOwnership,
+    conceptNamesOf,
+    qualifyContext,
   )
 import Ampersand.Input.SemWeb.Turtle
 import Ampersand.Input.Xslx.XLSX (XlsxIfcSheet, parseXlsxFile, xlsxIfcSheet2pops)
@@ -109,7 +116,8 @@ parseFilesTransitive xs = do
           pcOrigin = Nothing,
           pcFileKind = Nothing,
           pcCanonical = canonical,
-          pcDefineds = Set.empty
+          pcDefineds = Set.empty,
+          pcAlias = Nothing
         }
 
 parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) => RIO env (Guarded P_Context)
@@ -120,7 +128,8 @@ parseFormalAmpersand = do
         pcOrigin = Just $ Origin "Formal Ampersand specification",
         pcFileKind = Just FormalAmpersand,
         pcCanonical = "FormalAmpersand.adl",
-        pcDefineds = Set.empty
+        pcDefineds = Set.empty,
+        pcAlias = Nothing
       }
     NE.:| []
 
@@ -132,7 +141,8 @@ parsePrototypeContext = do
         pcOrigin = Just $ Origin "Ampersand specific system context",
         pcFileKind = Just PrototypeContext,
         pcCanonical = "PrototypeContext.adl",
-        pcDefineds = Set.empty
+        pcDefineds = Set.empty,
+        pcAlias = Nothing
       }
     NE.:| []
 
@@ -140,20 +150,54 @@ parseThings ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
   NonEmpty ParseCandidate ->
   RIO env (Guarded P_Context)
-parseThings pcs = do
-  results <- parseADLs [] (NE.toList pcs)
+parseThings = parseContextTree []
+
+-- | Parse the files of one context, and the contexts it includes under an alias.
+--   A file that is included without an alias belongs to the same context (a union).
+--   A file that is included with an alias is the root of a context of its own.
+--   That context is parsed by a recursive call and its names get the alias as prefix,
+--   so that its contribution to the result is disjoint from everything else.
+parseContextTree ::
+  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
+  -- | The root files of the contexts in which this context is being included.
+  --   A context that would include one of these under an alias would contain itself.
+  [ParseCandidate] ->
+  NonEmpty ParseCandidate ->
+  RIO env (Guarded P_Context)
+parseContextTree ancestors pcs = do
+  results <- parseADLs parseAliased [] (NE.toList pcs)
   finalize results
   where
+    ancestors' = ancestors <> NE.toList pcs
+    parseAliased ::
+      (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
+      ParseCandidate ->
+      NamePart ->
+      RIO env (Guarded P_Context)
+    parseAliased pc alias
+      | bare `elem` ancestors' =
+          pure
+            $ mkErrorReadingINCLUDE
+              (pcOrigin pc)
+              [ "The file " <> T.pack (pcCanonical pc) <> " cannot be included as " <> namePartToText alias <> ",",
+                "  because this INCLUDE statement is part of that file or of a context that it includes.",
+                "  A context that is included under an alias gets a copy of its own. So, it cannot contain itself."
+              ]
+      | otherwise = fmap (qualifyContext [alias]) <$> parseContextTree ancestors' (bare NE.:| [])
+      where
+        bare = pc {pcAlias = Nothing}
     -- \| After collecting the results of all parsed files, we need to
     --   combine all graphs (if any) into a single P_Context. Then, we
     --   need to merge the contexts, and finally, we can
     --   return the resulting P_Context.
-    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasRunner env, HasTrimXLSXOpts env) => Guarded [(a, SingleFileResult)] -> RIO env (Guarded P_Context)
+    finalize :: (HasFSpecGenOpts env, HasDirOutput env, HasRunner env, HasTrimXLSXOpts env) => Guarded [(ParseCandidate, SingleFileResult)] -> RIO env (Guarded P_Context)
     finalize (Errors err) = pure (Errors err)
     finalize (Checked results warns) = do
       runner <- Ampersand.Basics.view runnerL
       doTrim <- Ampersand.Basics.view trimXLSXCellsL
-      let (contexts, ifcSheets, graphs) = partitionResults (map snd results)
+      let (contexts, ifcSheets, graphs) = partitionResults [r | (pc, r) <- results, isNothing (pcAlias pc)]
+          included = [(pc, alias, c) | (pc, FromADL c) <- results, Just alias <- [pcAlias pc]]
+          aliasChecks = checkAliases contexts included
       triplesCtx <- case graphs of
         [] -> pure Nothing
         h : tl -> do
@@ -168,11 +212,52 @@ parseThings pcs = do
              in case concat <$> traverse (xlsxIfcSheet2pops doTrim (ctx_ifcs merged) (ctx_ds merged)) ifcSheets of
                   Errors err -> Errors err
                   Checked pops ws3 -> Checked merged {ctx_pops = ctx_pops merged <> pops} (ws <> ws3)
-      pure $ case triplesCtx of
-        Nothing -> withXlsxIfcPops contexts warns
-        Just (Checked pCtx ws2) -> withXlsxIfcPops (contexts <> [pCtx]) (warns <> ws2)
-        Just (Errors err) -> Errors err
+      pure
+        $ aliasChecks
+        *> ( addIncluded [c | (_, _, c) <- included] <$> case triplesCtx of
+               Nothing -> withXlsxIfcPops contexts warns
+               Just (Checked pCtx ws2) -> withXlsxIfcPops (contexts <> [pCtx]) (warns <> ws2)
+               Just (Errors err) -> Errors err
+           )
       where
+        -- The contexts that are included under an alias are added last,
+        -- so that the name, the language and the markup of the including context prevail.
+        addIncluded :: [P_Context] -> P_Context -> P_Context
+        addIncluded cs merged = foldl' mergeContexts merged cs
+        checkAliases :: [P_Context] -> [(ParseCandidate, NamePart, P_Context)] -> Guarded ()
+        checkAliases own incl =
+          traverse_ aliasIsUnambiguous incl
+            *> traverse_ aliasDiffersFromContext incl
+            *> traverse_ aliasIsNotReserved incl
+            *> traverse_ (checkForeignConcepts [(alias, known alias) | (_, alias, _) <- incl]) own
+            *> traverse_ (checkOwnership [alias | (_, alias, _) <- incl]) own
+          where
+            known alias = Set.unions [conceptNamesOf c | (_, a, c) <- incl, a == alias]
+            aliasIsUnambiguous (pc, alias, _) =
+              case [pc' | (pc', alias', _) <- incl, alias' == alias, pc' {pcAlias = Nothing} /= pc {pcAlias = Nothing}] of
+                [] -> pure ()
+                other : _ ->
+                  mkErrorReadingINCLUDE
+                    (pcOrigin pc)
+                    [ "The alias " <> namePartToText alias <> " stands for two different files:",
+                      "  " <> T.pack (pcCanonical pc),
+                      "  " <> T.pack (pcCanonical other),
+                      "  Give each of them an alias of its own."
+                    ]
+            aliasIsNotReserved (pc, alias, _) =
+              when (isReservedNameSpace alias)
+                $ mkErrorReadingINCLUDE
+                  (pcOrigin pc)
+                  [ "The alias " <> namePartToText alias <> " is a name space of the Ampersand system.",
+                    "  Choose another alias."
+                  ]
+            aliasDiffersFromContext (pc, alias, _) =
+              when (alias `elem` map (localName . ctx_nm) own)
+                $ mkErrorReadingINCLUDE
+                  (pcOrigin pc)
+                  [ "The alias " <> namePartToText alias <> " is the name of the including context.",
+                    "  Choose another alias, so that it is clear which context a name belongs to."
+                  ]
         partitionResults :: [SingleFileResult] -> ([P_Context], [XlsxIfcSheet], [RDF TList])
         partitionResults = foldr step ([], [], [])
           where
@@ -198,27 +283,27 @@ parseThings pcs = do
 -- | Parses several ADL files
 parseADLs ::
   (HasTrimXLSXOpts env, HasLogFunc env) =>
+  -- | How to parse a file that is included under an alias, as a context of its own.
+  (ParseCandidate -> NamePart -> RIO env (Guarded P_Context)) ->
   -- | The list of files that have already been parsed
   [ParseCandidate] ->
   -- | A list of files that still are to be parsed.
   [ParseCandidate] ->
   -- | The resulting contexts and the ParseCandidate that is the source for that P_Context
   RIO env (Guarded [(ParseCandidate, SingleFileResult)])
-parseADLs parsedFilePaths fpIncludes =
+parseADLs parseAliased parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x : xs ->
       if x `elem` parsedFilePaths
-        then parseADLs parsedFilePaths xs
-        else whenCheckedM (parseSingleADL x) parseTheRest
+        then parseADLs parseAliased parsedFilePaths xs
+        else case pcAlias x of
+          Nothing -> whenCheckedM (parseSingleADL x) parseTheRest
+          Just alias -> whenCheckedM (parseAliased x alias) (\ctx -> parseTheRest (FromADL ctx, []))
       where
-        parseTheRest ::
-          (HasTrimXLSXOpts env, HasLogFunc env) =>
-          (SingleFileResult, [ParseCandidate]) ->
-          RIO env (Guarded [(ParseCandidate, SingleFileResult)])
         parseTheRest (ctx, includes) =
           whenCheckedM
-            (parseADLs (parsedFilePaths <> [x]) (includes <> xs))
+            (parseADLs parseAliased (parsedFilePaths <> [x]) (includes <> xs))
             (\rst -> pure . pure $ (x, ctx) : rst) -- return . pure . (:) (x,ctx)
 
 -- | ParseCandidate is intended to represent an INCLUDE-statement.
@@ -228,11 +313,12 @@ data ParseCandidate = ParseCandidate
     pcOrigin :: Maybe Origin,
     pcFileKind :: Maybe FileKind, -- In case the file is included into ampersand.exe, its FileKind.
     pcCanonical :: FilePath, -- The canonicalized path of the candicate
-    pcDefineds :: Set.Set PreProcDefine
+    pcDefineds :: Set.Set PreProcDefine,
+    pcAlias :: Maybe NamePart -- The alias, in case the file is included as a context of its own (INCLUDE "file" AS alias)
   }
 
 instance Eq ParseCandidate where
-  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b
+  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b && pcAlias a == pcAlias b
 
 -- | The result of parsing a single file. An .xlsx file additionally carries its raw
 --   interface-format worksheets ('XlsxIfcSheet'), which can only be resolved after all
@@ -374,7 +460,7 @@ parseSingleADL pc =
         fromGraph :: RDF TList -> SingleFileResult
         fromGraph = FromGraph
         include2ParseCandidate :: Include -> RIO env (Guarded ParseCandidate)
-        include2ParseCandidate (Include org str defs) = do
+        include2ParseCandidate (Include org str defs mAlias) = do
           let canonical = myNormalise (takeDirectory filePath </> str)
               defineds = processFlags (pcDefineds pc) (map T.unpack defs)
           return
@@ -384,7 +470,8 @@ parseSingleADL pc =
                   pcOrigin = Just org,
                   pcFileKind = pcFileKind pc,
                   pcCanonical = canonical,
-                  pcDefineds = defineds
+                  pcDefineds = defineds,
+                  pcAlias = mAlias
                 }
               []
         myNormalise :: FilePath -> FilePath

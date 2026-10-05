@@ -1,0 +1,23 @@
+CONTEXT Permits IN ENGLISH
+PURPOSE CONTEXT Permits
+{+ A chain of three contexts: Permits includes Registry, which includes Towns.
+The data of Towns is part of what Permits sees.
+Its things can be named in Permits through the two aliases, as `Reg.Geo.Town`. +}
+
+INCLUDE "../contexts/registry_with_towns.adl" AS Reg
+
+RELATION applicant[Permit*Reg.Person] [UNI,TOT]
+RELATION site[Permit*Reg.Geo.Town] [UNI]
+
+POPULATION applicant[Permit*Reg.Person] CONTAINS [ ("permit1", "p1") ]
+POPULATION site[Permit*Reg.Geo.Town] CONTAINS [ ("permit1", "Enschede") ]
+
+RULE local : site |- applicant;Reg.residence
+MEANING "A permit is for the town in which the applicant lives."
+ROLE Clerk MAINTAINS local
+
+RULE inProvince : site |- site;Reg.Geo.province;Reg.Geo.province~
+MEANING "The town of a permit lies in a province."
+ROLE Clerk MAINTAINS inProvince
+
+ENDCONTEXT

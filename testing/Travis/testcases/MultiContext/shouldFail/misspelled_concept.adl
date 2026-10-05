@@ -1,0 +1,6 @@
+CONTEXT Fail IN ENGLISH
+-- Reg.Persn does not exist in the included context.
+-- Without a check, this would silently introduce a new concept.
+INCLUDE "../contexts/registry.adl" AS Reg
+RELATION applicant[Permit*Reg.Persn]
+ENDCONTEXT

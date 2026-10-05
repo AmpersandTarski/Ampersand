@@ -43,6 +43,8 @@ module Ampersand.Input.ADL1.ParsingLib
     pDoubleQuotedString1,
     pName,
     pSingleWord,
+    pUpperCaseID,
+    pUnrestrictedID,
 
     -- * special parsers
     pAtomValInPopulation,

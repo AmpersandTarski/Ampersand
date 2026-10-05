@@ -1,0 +1,14 @@
+CONTEXT Keywords IN ENGLISH
+PURPOSE CONTEXT Keywords
+{+ The word AS is recognised after the file name of an INCLUDE statement only.
+Elsewhere it remains an ordinary identifier, so scripts that use it keep compiling. +}
+
+INCLUDE "../contexts/registry.adl" AS AS
+
+CONCEPT AS "An autonomous system on the internet."
+RELATION peers[AS*AS] [SYM]
+RELATION operator[AS*AS.Person] [UNI]
+POPULATION peers[AS*AS] CONTAINS [ ("AS1103", "AS3333") ; ("AS3333", "AS1103") ]
+POPULATION operator[AS*AS.Person] CONTAINS [ ("AS1103", "p1") ]
+
+ENDCONTEXT

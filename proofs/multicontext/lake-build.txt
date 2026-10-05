@@ -1,0 +1,28 @@
+command: lake build   (in proofs/multicontext)
+date: Mon Oct  5 21:34:40 CEST 2026
+Lean (version 4.34.1, arm64-apple-darwin24.6.0, commit 5045d0056413266e57c625dcd7c365b10e377c52, Release)
+fa880045bcf6716d8e9b22a89ea41bb86597e6951326a69f478a62e960cdd0c6  MultiContext.lean
+info: multicontext: no previous manifest, creating one from scratch
+info: toolchain not updated; already up-to-date
+✔ [2/3] Built MultiContext (1.7s)
+Build completed successfully (3 jobs).
+
+command: grep -c sorry MultiContext.lean
+0
+
+command: lake env lean Axioms.lean
+'MultiContext.qualified_names_suffice' does not depend on any axioms
+'MultiContext.restricted_view' depends on axioms: [propext, Quot.sound]
+'MultiContext.view_restr_reach' depends on axioms: [propext, Quot.sound]
+'MultiContext.truth_is_imported' depends on axioms: [propext, Quot.sound]
+'MultiContext.closure_has_concepts' does not depend on any axioms
+'MultiContext.wellTyped_view_iff' does not depend on any axioms
+'MultiContext.flattening' depends on axioms: [propext, Quot.sound]
+'MultiContext.reach_extension' does not depend on any axioms
+'MultiContext.view_extension' depends on axioms: [propext, Quot.sound]
+'MultiContext.frame' depends on axioms: [propext, Quot.sound]
+'MultiContext.non_interference' depends on axioms: [propext, Quot.sound]
+'MultiContext.not_affected' depends on axioms: [propext, Quot.sound]
+'MultiContext.preservation' depends on axioms: [propext, Quot.sound]
+'MultiContext.moment_of_completion' depends on axioms: [propext, Classical.choice, Quot.sound]
+'MultiContext.moment_of_completion_typed' does not depend on any axioms

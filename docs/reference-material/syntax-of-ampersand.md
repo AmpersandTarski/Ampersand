@@ -112,7 +112,7 @@ INCLUDE*
 ENDCONTEXT
 ```
 
-Other models included with the INCLUDE statement become part of the context they are included in.
+Other models included with the INCLUDE statement become part of the context they are included in, unless the statement gives them an alias. See [the INCLUDE statement](#the-include-statement).
 
 ###### Optional parts
 
@@ -168,7 +168,10 @@ INCLUDE "bar.xlsx"
 
 ```text
 INCLUDE <filename>
+INCLUDE <filename> AS <alias>
 ```
+
+The first form is described here, the second one under [Including a context under an alias](#including-a-context-under-an-alias).
 
 This statement specifies files that need to be included before compiling. The filename is given in double quotes, including a path that is relative to the position of the main adl-file. The main adl-file is the file that is called with the command Ampersand.
 
@@ -184,6 +187,64 @@ Make sure to include the adl-files before including xlsx-files.
 Included files may contain `INCLUDE`statements themselves. The files mentioned there are treated as though they were included in the main file. So their code is also part of the same context. Nested adl-files can have their own xlsx-files included.
 
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
+
+### Including a context under an alias
+
+```text
+INCLUDE <filename> AS <alias>
+```
+
+With an alias, the included file does not become part of your context.
+It is a context of its own, and everything it declares is available in your context under the alias as a prefix.
+
+Consider a register of persons, in a file `registry.adl`:
+
+```text
+CONTEXT Registry
+  RELATION name[Person*Name] [UNI,TOT]
+  RELATION address[Person*Address] [UNI]
+ENDCONTEXT
+```
+
+A system for permits uses the persons of that register, and it has an address of its own: the site to which a permit applies.
+
+```text
+CONTEXT Permits
+  INCLUDE "registry.adl" AS Reg
+
+  RELATION applicant[Permit*Reg.Person] [UNI,TOT]
+  RELATION address[Permit*Address] [UNI]
+
+  RULE located : applicant |- applicant;Reg.address;Reg.address~
+ENDCONTEXT
+```
+
+The name `Reg.Person` denotes the concept `Person` of the register, and `Reg.address` denotes the relation that pairs a person with a home address.
+The name `address` without a prefix denotes the relation that `Permits` declares itself.
+So, the two relations called `address` and the two concepts called `Address` stay apart, whatever names the two scripts choose.
+
+The difference with a plain `INCLUDE` is the difference between a union and a disjoint union.
+A plain `INCLUDE "registry.adl"` adds the declarations of the file to your context, so that a relation with the same name and signature in both files is one relation.
+With an alias, every concept, relation, rule, identity, view, interface, pattern and named `ENFORCE` statement of the included file gets the prefix, and so does every reference to them inside that file.
+The population of the included context comes along, and its rules hold for it as they do when the file is compiled by itself.
+
+A few things follow from this.
+
+- A name of the included context is available with its prefix only. `Person` in the script of `Permits` would be a new concept of `Permits`.
+- The alias follows the file name. It is an identifier of your choice, and it stands for one file within your context.
+- You can include the same file under two aliases. Each alias stands for a copy of its own, with its own population.
+- An included context can include other contexts. If `registry.adl` contains `INCLUDE "towns.adl" AS Geo`, then the towns are available in `Permits` as `Reg.Geo.Town`.
+- A context cannot include itself under an alias, directly or by way of another context, because it would have to contain a copy of itself.
+- The roles of the included context keep their names. A role is a function of a person in an organisation, which is the same person whichever context is asked.
+- The concept `SESSION` and the name space `PrototypeContext` belong to Ampersand itself and get no prefix.
+- A `REPRESENT` statement belongs in the context that declares the concept. The including context cannot state one for a concept with a prefix.
+- A `CLASSIFY` statement can relate concepts of different contexts. This is how the including context says that two concepts correspond, as in `CLASSIFY old.Person ISA new.Person`.
+- Preprocessor variables follow the alias: `INCLUDE "foo.adl" AS x --# [ "Developing" ]`.
+
+The compiler reports an alias that stands for two files, an alias that equals the name of your own context, and a concept name such as `Reg.Persn` that the included context does not have.
+
+The generated prototype stores the included context in the database of the including application.
+The command `ampersand export` shows what the compiler made of your script: one context without `INCLUDE` statements, in which every name carries its prefix.
 
 ## The PATTERN statement
 

@@ -228,16 +228,34 @@ data ContextElement
   | CIncl Include -- an INCLUDE statement
   | CEnf (P_Enforce TermPrim)
 
-data Include = Include Origin FilePath [Text]
+-- | An INCLUDE statement: its position, the file, the preprocessor variables,
+--   and the alias if the statement has the form @INCLUDE "file" AS alias@.
+--   Without an alias, the included file contributes to the including context (a union).
+--   With an alias, the included file is a context of its own,
+--   whose names are available in the including context with the alias as prefix.
+data Include = Include Origin FilePath [Text] (Maybe NamePart)
 
---- IncludeStatement ::= 'INCLUDE' Text
+--- IncludeStatement ::= 'INCLUDE' Text ('AS' Alias)? ('[' Text (',' Text)* ']')?
 pIncludeStatement :: AmpParser Include
 pIncludeStatement =
-  Include
+  build
     <$> currPos
     <* (pKey . toText1Unsafe) "INCLUDE"
     <*> (T.unpack <$> pDoubleQuotedString)
+    <*> pMaybe pAlias
     <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])
+  where
+    build orig file mAlias defs = Include orig file defs mAlias
+    -- "AS" is not a keyword, so that scripts that use AS as an identifier keep compiling.
+    -- It is recognised here by its position, directly after the file name.
+    pAlias :: AmpParser NamePart
+    pAlias = try (pUpperCaseID >>= isAS) *> (pUnrestrictedID >>= toNamePart) <?> "AS followed by an alias"
+    isAS :: Text1 -> AmpParser ()
+    isAS t = if text1ToText t == "AS" then pure () else fail "AS expected"
+    toNamePart :: Text1 -> AmpParser NamePart
+    toNamePart t = case try2Namepart (text1ToText t) of
+      Right np -> pure np
+      _ -> fail ("The alias " <> T.unpack (text1ToText t) <> " is not a valid name.")
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
