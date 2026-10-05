@@ -134,10 +134,23 @@ The service keeps each script in a directory of its own under the temporary dire
 The path of that directory appears in the `file` field and in the messages of the diagnostics.
 Two equal requests share a directory, so the second one waits until the first one has finished.
 
+## What a script can reach
+
+The service compiles scripts of callers it does not know, on a machine that is not theirs.
+For that reason a script can only `INCLUDE` files from the directory of its own request.
+That directory holds the script and nothing else,
+so in practice a request consists of one script without `INCLUDE` statements.
+An `INCLUDE` that names a file elsewhere is answered with an error on the line of that statement,
+whether the file exists or not:
+
+```
+This INCLUDE names a file outside the directory of the script.
+Here, the compiler reads no files outside that directory.
+```
+
+A caller with a script that consists of several files joins them into one script before it asks.
+
 ## Where to run it
 
-The service has no authentication, and a script can name any file with an `INCLUDE` statement.
-The compiler then reads that file from the machine on which the service runs,
-and reports in a diagnostic what it found there.
-So, run the service on a network that only its callers can reach,
-in a container that holds nothing but the compiler.
+The service has no authentication: whoever reaches the port can ask.
+So, run the service on a network that only its callers can reach.

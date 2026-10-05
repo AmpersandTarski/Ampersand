@@ -8,7 +8,8 @@
 --
 --   * equal requests yield equal answers, also when they arrive at the same
 --     moment (they share a scratch directory, see 'Ampersand.Commands.Serve');
---   * the service writes its scratch files outside its working directory.
+--   * the service writes its scratch files outside its working directory;
+--   * a script cannot make the service read a file of the machine it runs on.
 module Ampersand.Test.Serve.ServeTest
   ( serveTest,
   )
@@ -23,8 +24,8 @@ import qualified Data.Aeson as JSON
 import qualified Data.Aeson.KeyMap as KM
 import Network.HTTP.Types (Method, statusCode)
 import qualified RIO.ByteString.Lazy as BL
-import RIO.Directory (doesDirectoryExist)
-import RIO.FilePath (takeDirectory, takeFileName)
+import RIO.Directory (doesDirectoryExist, getTemporaryDirectory, removeFile)
+import RIO.FilePath (takeDirectory, takeFileName, (</>))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
@@ -49,6 +50,21 @@ badScript =
       "RULE r : owner;owner |- owner",
       "ENDCONTEXT"
     ]
+
+-- | A script that includes the file of that name, and is correct if the
+--   compiler reads that file.
+includingScript :: FilePath -> Text
+includingScript included =
+  T.unlines
+    [ "CONTEXT Library IN ENGLISH",
+      "INCLUDE " <> tshow included,
+      "ENDCONTEXT"
+    ]
+
+-- | The name of a file that the tests put next to the scratch directories,
+--   so outside the directory of any request.
+outsideFile :: FilePath
+outsideFile = "ampersand-serve-test-outside.adl"
 
 -- | Run all tests of the service. Returns 'True' when everything passes.
 serveTest :: (HasRunner env) => RIO env Bool
@@ -111,6 +127,13 @@ endpointChecks service = do
   population2 <- post "population" ["script" JSON..= goodScript]
   populationBad <- post "population" ["script" JSON..= badScript]
   simultaneous <- replicateConcurrently 8 (post "check" ["script" JSON..= goodScript])
+  outside <- (</> outsideFile) <$> getTemporaryDirectory
+  (includeAbsolute, includeClimbing, includePopulation) <-
+    bracket_ (writeFileUtf8 outside goodScript) (removeFile outside)
+      $ (,,)
+      <$> post "check" ["script" JSON..= includingScript outside]
+      <*> post "check" ["script" JSON..= includingScript (".." </> outsideFile)]
+      <*> post "population" ["script" JSON..= includingScript outside]
   let scratchDirs = map takeDirectory (diagnosticFiles checkBad)
   scratchLeft <- or <$> mapM doesDirectoryExist scratchDirs
   pure
@@ -132,7 +155,10 @@ endpointChecks service = do
       ( "a script is written in a scratch directory of its own",
         not (null scratchDirs) && all (L.isPrefixOf "ampersand-serve-" . takeFileName) scratchDirs
       ),
-      ("the scratch directory is gone after the request", not scratchLeft)
+      ("the scratch directory is gone after the request", not scratchLeft),
+      ("/check refuses an INCLUDE of a file elsewhere on the machine", isNotOk includeAbsolute),
+      ("/check refuses an INCLUDE that climbs out of the scratch directory", isNotOk includeClimbing),
+      ("/population refuses an INCLUDE of a file elsewhere on the machine", isNotOk includePopulation)
     ]
   where
     post endpoint = ask' "POST" [endpoint] . JSON.object

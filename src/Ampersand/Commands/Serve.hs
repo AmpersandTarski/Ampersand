@@ -85,8 +85,11 @@ type Reply = (Status, BL.ByteString)
 -- | The service itself: a method, a path and a request body in, a reply out.
 --   The web server wraps it, and the test suite asks it without a web server.
 newService :: (ServeEnv env) => env -> IO (Method -> [Text] -> BL.ByteString -> IO Reply)
-newService env = do
+newService env0 = do
   busy <- newTVarIO Set.empty
+  -- The service compiles scripts of callers it does not know, so a script may
+  -- only INCLUDE files from the scratch directory of its own request.
+  let env = set confineIncludesL True env0
   pure $ \method path body -> case (method, path) of
     ("GET", ["health"]) ->
       pure $ jsonResp status200 (JSON.object ["status" .= ("ok" :: Text)])
