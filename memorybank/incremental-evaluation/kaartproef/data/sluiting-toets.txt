@@ -1,0 +1,5 @@
+ingevoegd: [('Proef.d0.00001', 'Proef.d4.00002'), ('Proef.d0.00003', 'Proef.d0.00004')]
+gegenereerd: [('Proef.d0.00001', 'Proef.d4.00002'), ('Proef.d0.00003', 'Proef.d0.00004')]
+EXCEPT:      [('Proef.d0.00001', 'Proef.d4.00002'), ('Proef.d0.00003', 'Proef.d0.00004')]
+gelijk en precies de ingevoegde paren: True
+rijen in bereikt na terugrollen: ['10321']

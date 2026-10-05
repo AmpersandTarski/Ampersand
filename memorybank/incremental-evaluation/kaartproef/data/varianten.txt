@@ -1,0 +1,49 @@
+versie: 10.6.27-MariaDB-ubu2204
+
+== conj_182
+  V0 gegenereerd (left join, OR)     mediaan    2594.6 ms   (2602, 2595, 2579)
+  V1 left join, een IS NULL          mediaan    2372.1 ms   (2372, 2380, 2367)
+  V2 NOT EXISTS                      mediaan     136.5 ms   (139, 137, 136)
+  V3 EXCEPT                          mediaan     176.9 ms   (179, 177, 173)
+  V4 NOT IN                          mediaan     136.9 ms   (136, 137, 137)
+  rijen per variant met twee extra paren in l: {'V0': 2, 'V1': 2, 'V2': 2, 'V3': 2, 'V4': 2} | alle gelijk: True
+  EXPLAIN V0 gegenereerd (left join, OR):
+     1 | PRIMARY | bereikt | index | PRIMARY,bereikt_0,bereikt_1 | PRIMARY | 2044 | NULL | 10141 | Using where; Using index; Using tempor
+     1 | PRIMARY | <derived3> | ALL | NULL | NULL | NULL | NULL | 1600 | Using where; Using join buffer (flat, 
+     3 | DERIVED | <derived5> | ALL | NULL | NULL | NULL | NULL | 1600 | Using temporary
+     5 | DERIVED | hangtAf | index | PRIMARY,hangtAf_0,hangtAf_1 | PRIMARY | 2044 | NULL | 1600 | Using where; Using index
+     6 | RECURSIVE UNION | <derived5> | ALL | NULL | NULL | NULL | NULL | 1600 | Using where
+     6 | RECURSIVE UNION | hangtAf | ref | PRIMARY,hangtAf_0,hangtAf_1 | PRIMARY | 1022 | TransitiveClosure.tgt | 1 | Using where; Using index
+     NULL | UNION RESULT | <union5,6> | ALL | NULL | NULL | NULL | NULL | NULL | 
+  EXPLAIN V3 EXCEPT:
+     1 | PRIMARY | bereikt | index | PRIMARY,bereikt_0,bereikt_1 | PRIMARY | 2044 | NULL | 10141 | Using where; Using index
+     3 | EXCEPT | <derived4> | ALL | NULL | NULL | NULL | NULL | 1600 | 
+     4 | DERIVED | <derived6> | ALL | NULL | NULL | NULL | NULL | 1600 | Using temporary
+     6 | DERIVED | hangtAf | index | PRIMARY,hangtAf_0,hangtAf_1 | PRIMARY | 2044 | NULL | 1600 | Using where; Using index
+     7 | RECURSIVE UNION | <derived6> | ALL | NULL | NULL | NULL | NULL | 1600 | Using where
+     7 | RECURSIVE UNION | hangtAf | ref | PRIMARY,hangtAf_0,hangtAf_1 | PRIMARY | 1022 | TransitiveClosure.tgt | 1 | Using where; Using index
+     NULL | UNION RESULT | <union6,7> | ALL | NULL | NULL | NULL | NULL | NULL | 
+     NULL | EXCEPT RESULT | <except1,3> | ALL | NULL | NULL | NULL | NULL | NULL | 
+
+== conj_203
+  V0 gegenereerd (left join, OR)     mediaan     223.8 ms   (224, 225, 221)
+  V1 left join, een IS NULL          mediaan     191.7 ms   (192, 190, 192)
+  V2 NOT EXISTS                      mediaan     131.3 ms   (135, 129, 131)
+  V3 EXCEPT                          mediaan      47.8 ms   (48, 48, 48)
+  V4 NOT IN                          mediaan      48.6 ms   (47, 49, 49)
+  rijen per variant met twee extra paren in l: {'V0': 2, 'V1': 2, 'V2': 2, 'V3': 2, 'V4': 2} | alle gelijk: True
+  EXPLAIN V0 gegenereerd (left join, OR):
+     1 | PRIMARY | moetEerst | index | PRIMARY,moetEerst_0,moetEerst_1 | PRIMARY | 2044 | NULL | 347 | Using where; Using index; Using tempor
+     1 | PRIMARY | <derived4> | ALL | NULL | NULL | NULL | NULL | 11141 | Using where; Distinct
+     1 | PRIMARY | Artefact | eq_ref | PRIMARY,Artefact,Artefact_45 | PRIMARY | 1022 | fence0.tgt | 1 | Using where; Distinct
+     4 | DERIVED | Artefact | index | PRIMARY,Artefact | Artefact_29 | 9 | NULL | 1000 | Using where; Using index
+     5 | UNION | bereikt | index | PRIMARY,bereikt_0,bereikt_1 | PRIMARY | 2044 | NULL | 10141 | Using where; Using index
+     NULL | UNION RESULT | <union4,5> | ALL | NULL | NULL | NULL | NULL | NULL | 
+  EXPLAIN V3 EXCEPT:
+     1 | PRIMARY | moetEerst | index | PRIMARY,moetEerst_0,moetEerst_1 | PRIMARY | 2044 | NULL | 347 | Using where; Using index
+     3 | EXCEPT | <derived5> | ALL | NULL | NULL | NULL | NULL | 11141 | Using where
+     3 | EXCEPT | Artefact | eq_ref|filter | PRIMARY,Artefact,Artefact_45 | Artefact|Artefact_45 | 1022|1023 | fence0.tgt | 1 (4%) | Using where; Using rowid filter
+     5 | DERIVED | Artefact | index | PRIMARY,Artefact | Artefact_29 | 9 | NULL | 1000 | Using where; Using index
+     6 | UNION | bereikt | index | PRIMARY,bereikt_0,bereikt_1 | PRIMARY | 2044 | NULL | 10141 | Using where; Using index
+     NULL | UNION RESULT | <union5,6> | ALL | NULL | NULL | NULL | NULL | NULL | 
+     NULL | EXCEPT RESULT | <except1,3> | ALL | NULL | NULL | NULL | NULL | NULL | 

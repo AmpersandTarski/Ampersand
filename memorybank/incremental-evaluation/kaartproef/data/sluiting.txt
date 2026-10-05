@@ -1,0 +1,13 @@
+uitkomsten (aantal rijen): ['0', '0', '0', '10321', '10321', '10321', '0', '0', '0', '0', '0', '0']
+a. gegenereerd (bereikt left join sluiting)      2520.1 ms
+a. gegenereerd (bereikt left join sluiting)      2514.7 ms
+a. gegenereerd (bereikt left join sluiting)      2502.9 ms
+b. alleen de sluiting                              35.8 ms
+b. alleen de sluiting                              35.2 ms
+b. alleen de sluiting                              35.4 ms
+c. bereikt EXCEPT sluiting                        136.2 ms
+c. bereikt EXCEPT sluiting                        135.4 ms
+c. bereikt EXCEPT sluiting                        135.3 ms
+d. conj_135 (sluiting left join bereikt)           70.1 ms
+d. conj_135 (sluiting left join bereikt)           70.6 ms
+d. conj_135 (sluiting left join bereikt)           70.9 ms

@@ -264,6 +264,27 @@ gate with the delta maintenance of branch
 `feat-delta-conjunct-maintenance`: the end-to-end dominance run (R4) and
 the RAP 96 000-script reference points.
 
+*Status (2026-10-05, the Artefactenkaart trial —
+[kaartproef/RESULTS.md](kaartproef/RESULTS.md)):* the first model in which
+a closure under `ENFORCE` dominates a write confirms the harvest order and
+adds an item in front of it.
+At 10 141 pairs in the closure, one write that adds a dependency takes
+8.7 s; one conjunct of `ENFORCE bereikt := hangtAf+` takes 7.6 s of it and
+has no candidate queries, so the delta protocol changes nothing there and
+is 5–30% slower than `off` overall.
+The closure itself costs 36 ms.
+The generated query for `r |- s+` costs 2.5 s because it left-joins a
+stored table to an unindexed derived table; written with `EXCEPT` the same
+question costs 136 ms.
+So for this class of model the order is:
+(0) the SQL shape of a rule whose consequent is a closure, in the compiler,
+with no incremental machinery and a proof obligation for the rewritten
+query;
+(1) and (2) as above, of which (2) is measured again here at 27–33%;
+then the closure maintained from the changed pairs.
+The population of the trial is synthetic; a run on the team's population
+waits for a dump that its owner takes with `kaartproef/momentopname.sh`.
+
 ### Phase 6 — Sharpening the affected set (claim PRF-9)
 
 One over-approximation has now defeated two independent schemes. On RAP it

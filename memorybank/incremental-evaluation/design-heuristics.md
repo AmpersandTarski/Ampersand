@@ -367,6 +367,45 @@ Three things follow for the delta design:
   `docs/proofs/README.md` as `stated` before implementing, and plan the
   proof. The polarity argument is a monotonicity argument and is the
   natural shape for that proof.
+- **O12 (stored results without views).** Posed by Stef on 5 October
+  2026: an Ampersand database uses no SQL views; does that explain why
+  the gain of incremental maintenance stays away?
+  A view in the sense of incremental view maintenance is a stored result
+  that must stay equal to a query while its base relations change.
+  A generated database has no SQL view (0 on the Artefactenkaart model,
+  247 tables), yet it holds two kinds of stored result of exactly that
+  sort: the violation table of every conjunct, and every relation that
+  an `ENFORCE` rule computes, such as `bereikt := hangtAf+`.
+  Both are kept equal to their query by evaluating the query in full and
+  writing the difference.
+  So the hypothesis, as it can be tested, reads: the gain stays away
+  because the stored results that are expensive to refresh are the
+  `ENFORCE` relations, which the ExecEngine recomputes in full and which
+  the delta protocol does not reach, while the stored results the
+  protocol does reach, the violation tables, are cheap to recompute.
+  The absence of SQL views is then a symptom and no cause: a plain SQL
+  view would recompute at every read, and MariaDB maintains no
+  materialised view incrementally.
+  *Test:* on a model with closures under `ENFORCE`, trace one write and
+  attribute its time to the ExecEngine, the close and the conjuncts,
+  under `off` and `on`.
+  **Confirmed on the Artefactenkaart model, 2026-10-05**
+  ([kaartproef/RESULTS.md](kaartproef/RESULTS.md), synthetic population):
+  at 10 141 pairs in `bereikt` a write that adds a dependency takes
+  8.7 s, of which 66% in the ExecEngine and 33% in the close; one
+  conjunct of `ENFORCE bereikt := hangtAf+`, with no candidate queries,
+  takes 7.6 s of it; `on` is 5–30% slower than `off` at every size, and
+  where the protocol applies its machinery costs more than the full
+  query it replaces (close 410 ms against 207 ms).
+  *Two findings beside the hypothesis.* The closure itself costs 36 ms;
+  the generated query for `r |- s+` costs 2.5 s because it left-joins a
+  stored table to an unindexed derived table, and the same question
+  written with `EXCEPT` costs 136 ms. And `skipCleanConjuncts` (O3)
+  takes 27–33% off the same write, as on RAP.
+  *What follows:* the order of work on such a model is the query shape
+  first, O3 second, and incremental maintenance of the closure (O4,
+  Phase 5) third; the candidate protocol for the close comes after all
+  three.
 
 ### What the user must stop noticing
 

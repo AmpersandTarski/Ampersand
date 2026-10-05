@@ -24,6 +24,9 @@ Contents:
   track, and the RAP validation plan.
 - [rap-bench/](rap-bench/) — the RAP validation of issue #1687: the harness,
   the off/on measurements, and their reading.
+- [kaartproef/](kaartproef/) — the trial on the model of the
+  Artefactenkaart (5 October 2026): the harness, the measurements under
+  five settings, and where the time of one write goes.
 - [design-heuristics.md](design-heuristics.md) — the general design
   heuristics (H1–H7) and research hypotheses (O1–O7) that the RAP
   validation yields; the article's discussion section in the making.

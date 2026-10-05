@@ -1,0 +1,31 @@
+sleutels conjunct: ['costProfile', 'deltaQueries', 'id', 'invariantRuleNames', 'signalRuleNames', 'violationsSQL']
+sleutels rules.json: ['invariants', 'signals']
+conjuncts: 270
+relaties: 177 met deltaTable: 143
+met deltaQueries: 259 zonder: 11
+kostenklasse: Counter({'scan': 178, 'structural': 68, 'anchored': 16, 'recursive': 8})
+klasse x delta: Counter({('scan', True): 178, ('structural', True): 68, ('anchored', True): 13, ('recursive', False): 8, ('anchored', False): 3})
+soort x delta: Counter({('inv', True): 173, ('+sig', True): 86, ('+sig', False): 9, ('inv', False): 2})
+
+conjuncts zonder deltaQueries:
+  conj_9 anchored ['GroeneClaimNieuw'] sqllen 9192
+  conj_11 recursive ['Compute1824296216183214005'] sqllen 1911
+  conj_105 recursive ['Compute4001449768186773490'] sqllen 2280
+  conj_135 recursive ['Compute7199776112205604801'] sqllen 864
+  conj_136 recursive ['Compute6548677737563809502'] sqllen 853
+  conj_182 recursive ['Compute1620968772356522804'] sqllen 947
+  conj_210 recursive ['Compute6764083355912544351'] sqllen 2363
+  conj_218 recursive ['Compute8354798944443792306'] sqllen 1994
+  conj_223 recursive ['Compute4564039697795718707'] sqllen 936
+  conj_238 anchored ['GeldigOordeel'] sqllen 1002
+  conj_247 anchored ['GeldigeKenmerkstatus'] sqllen 1038
+
+recursive:
+  conj_11 False ['Compute1824296216183214005']
+  conj_105 False ['Compute4001449768186773490']
+  conj_135 False ['Compute7199776112205604801']
+  conj_136 False ['Compute6548677737563809502']
+  conj_182 False ['Compute1620968772356522804']
+  conj_210 False ['Compute6764083355912544351']
+  conj_218 False ['Compute8354798944443792306']
+  conj_223 False ['Compute4564039697795718707']

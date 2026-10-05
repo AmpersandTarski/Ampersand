@@ -1,0 +1,60 @@
+# Proefstack voor de meting van incrementele evaluatie op een kopie van de Artefactenkaart.
+# Eigen namen en poorten; raakt de stack van het team (:8160) niet.
+#   kaart 8196, jaeger 8198
+name: ie-kaartproef
+
+volumes:
+  db-data:
+
+networks:
+  proef:
+
+services:
+  prototype:
+    container_name: ie-kaartproef-prototype
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: project/Dockerfile
+      args:
+        - PROTOTYPE_FRAMEWORK_VERSION=local-pin-v598
+    depends_on:
+      - prototype-db
+    ports:
+      - "127.0.0.1:8196:80"
+    networks:
+      - proef
+    volumes:
+      - ./project.proef.yaml:/var/www/backend/config/project.yaml
+    environment:
+      - AMPERSAND_DEBUG_MODE=true
+      - AMPERSAND_DBHOST=prototype-db
+      - AMPERSAND_DBUSER=ampersand
+      - AMPERSAND_DBPASS=${PROEF_DB_PASS}
+      - AMPERSAND_SERVER_URL=http://localhost:8196
+      - OTEL_SDK_DISABLED=${PROEF_OTEL_DISABLED:-true}
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+
+  prototype-db:
+    container_name: ie-kaartproef-prototype-db
+    image: mariadb:10.6
+    command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL"]
+    environment:
+      - MYSQL_ROOT_PASSWORD=${PROEF_DB_PASS}
+      - MYSQL_USER=ampersand
+      - MYSQL_PASSWORD=${PROEF_DB_PASS}
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db-init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - proef
+
+  jaeger:
+    container_name: ie-kaartproef-jaeger
+    image: jaegertracing/jaeger:2.4.0
+    ports:
+      - "127.0.0.1:8198:16686"
+    networks:
+      - proef
