@@ -161,7 +161,7 @@ the schema gains one materialized violation table per conjunct.
 full-query results on the test suite.
 
 *Status:* issue #1684, branch `delta-sql`. The design shifted from weighted
-caches to **delta-scoped re-evaluation** (OK-8): candidate queries name the
+caches to **delta-scoped re-evaluation** (DC-8): candidate queries name the
 pairs to recheck, the recheck runs the existing violation predicate, and the
 cache schema stays as it is. The candidate calculus (W/N envelopes + D-rules,
 [delta-calculus.md](delta-calculus.md) §7) lives in
@@ -234,12 +234,95 @@ provably recurs (26–29 ms per iteration on RAP); (2) skip the close's
 redundant re-evaluation when the ExecEngine made no repairs after its
 last evaluation — no new calculus, same size of prize; (3) a per-conjunct
 cost gate so candidate maintenance engages only where the full query is
-expensive — opened as issue
-[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690)
-(compile-time cost gate, with the backfill/maintenance split and the
-case table as R2). Refining the concept-affected fallback drops below
-these: on RAP it would unlock transactions into a path that loses anyway
-until (3) exists.
+expensive — researched and closed as issue
+[#1690](https://github.com/AmpersandTarski/Ampersand/issues/1690). The
+corpus study ([cost-gate/RESULTS.md](cost-gate/RESULTS.md)) settled the
+gate's form: a compile-time cost profile per conjunct, judged by the
+framework against live table sizes (DC-16 case table, DC-17 contract).
+It also corrected the "all expensive queries are EE rules" reading: at
+96 000 scripts three non-EE UNI checks join the expensive class, and all
+three are structurally enforced by the table layout, so their optimal
+route is no query at all. Refining the concept-affected fallback drops
+below these: on RAP it would unlock transactions into a path that loses
+anyway until (3) exists.
+
+*Status of the cost gate (2026-08-16, issue
+[#1692](https://github.com/AmpersandTarski/Ampersand/issues/1692)):* both
+halves of contract DC-17 are built and committed, on branch `cost-gate`
+in this repository and on branch `feat-cost-gate-routing` in the
+prototype repository. The compiler classifies every conjunct
+(`Ampersand.FSpec.Incremental.CostProfile`) and publishes the profile in
+`conjuncts.json`; the framework turns it into a route per conjunct at the
+close of a transaction, with the structural skip on its own switch and a
+sampled self-check behind it (DC-18, DC-19; claim PRF-8 `stated`).
+Everything is off by default. Verified: the Ampersand suite at 317/0 with
+the classification unit tests, and a smoke run of transactional-demo
+through the full request pipeline in which gate `off` and gate `on`
+produce identical commit decisions, data and violation cache while the
+skip route demonstrably fires. Open, and both dependent on uniting this
+gate with the delta maintenance of branch
+`feat-delta-conjunct-maintenance`: the end-to-end dominance run (R4) and
+the RAP 96 000-script reference points.
+
+### Phase 6 — Sharpening the affected set (claim PRF-9)
+
+One over-approximation has now defeated two independent schemes. On RAP it
+erased the benefit of delta-conjunct maintenance, because an ordinary edit
+reports `affectedConcepts: 1` and the concept fallback fires
+([rap-bench/RESULTS.md](rap-bench/RESULTS.md), finding 3). It then erased
+the edit-scoped dry-run restriction of
+[prototype#445](https://github.com/AmpersandTarski/prototype/issues/445),
+measured at 46 of 46 conjuncts on an edit stream that creates atoms, against
+2 of 41 on one that does not. The cause is one function:
+`fSpecAllConjsPerConcept` (`ADL2FSpec.hs:229-237`) registers a conjunct
+against the source and target concept of every modifiable leaf, plus their
+specializations, so a concept collects the conjuncts of every relation it
+bounds. Heuristic H8 and hypothesis O11 in
+[design-heuristics.md](design-heuristics.md) carry the reasoning; claim
+PRF-9 in `docs/proofs/README.md` carries the proof obligation.
+
+Four steps, in this order.
+
+1. **The Lean statement.** Formalise PRF-9: in a state where a conjunct's
+   violation term is empty, growth of a carrier-dependent leaf can produce a
+   violation only at a positive occurrence, and shrinkage only at a negative
+   one. A monotonicity induction over the supported term class, with the
+   polarity flag threaded through complement and the residuals. Lay the
+   claim's four carrier-dependent leaves alongside `affectedByInsOrDel`
+   (`ConceptStructure.hs:155-174`) before starting, so that the term class of
+   the proof is the term class of the compiler: `EBin` passes that filter, and
+   whether it depends on a concept's population is still open. *Exit:* the
+   register row moves from `stated` to `machine-checked` after an observed
+   `lake build`.
+2. **The compiler.** Add a variant of `fSpecAllConjsPerConcept` behind a
+   switch that emits, per concept, two new lists covering the invariant
+   conjuncts: the ones an atom creation can break and the ones a deletion can
+   break. The signal conjuncts keep today's broad list as it is, since their
+   violation sets are meant to be non-empty and PRF-9 says nothing about
+   those. So the step adds two lists next to the existing one rather than
+   replacing one by four. *Exit:* per-concept counts for the corpus in
+   `testing/`, next to today's counts.
+3. **The framework.** The split needs a runtime that can use it.
+   `Concept::addAtom` (`Concept.php:583`) and `Concept::deleteAtom`
+   (`Concept.php:673`) both call one `addAffectedConcept`, so the direction
+   is lost at registration; the invariant/signal separation the conjuncts
+   already carry (`Conjunct.php:95-96`) becomes load-bearing here. A conjunct
+   whose cached violation set is non-empty keeps both lists, which is how the
+   boundary of PRF-9 is honoured at runtime. *Exit:* commit decisions and
+   persisted violation cache identical with the switch on and off, on a
+   replayed edit stream.
+4. **The measurement.** Affected-conjunct count per transaction over the
+   rap-bench replay stream, at the three database sizes, with the commit-diff
+   and cache-diff of step 3 alongside. *Exit:* O11 decided, and the
+   atom-creating edit stream of prototype#445 re-measured to see whether its
+   restriction now has room.
+
+Step 2 can land before step 3 without breaking anything: the framework reads
+`concepts.json` with plain `json_decode` and array indexing and ignores
+fields it does not know
+([prototype-runtime-map.md](prototype-runtime-map.md) §6). Step 2 changes a
+file outside `docs/`, so it needs a `ReleaseNotes.md` entry; the notes and
+register entries of this phase do not.
 
 ## To investigate before Phase 1
 
@@ -316,6 +399,14 @@ ship with the scripts and data that produced them; proofs are versioned in
 `proofs/`. The article is assembled from this material — candidate storyline:
 DBSP-style incrementalization of a relation-algebra rule engine, with a
 machine-checked delta calculus and measured order-of-magnitude gains.
+
+*Status (2026-08-30):* a first complete draft exists outside the
+repository, in Stef's publications folder (`cloudDrive/publicaties/2026
+Incremental Evaluation/`, `incremental.tex`, 18 pages, elsarticle as the
+JLAMP 2018 predecessor), with an `evidence/` folder holding a snapshot of
+`proofs/incremental/`, the observed build log, and a Lean 4 restatement of
+the article's derivations. Sources: this folder, `docs/proofs/README.md`,
+commit 9279c65e.
 
 ## When the referee can go
 

@@ -2,6 +2,8 @@
 
 module Ampersand.ADL1.Expression
   ( Expressions,
+    anchorComplements,
+    hasUnanchoredComplement,
     subst,
     primitives,
     subExpressions,
@@ -31,8 +33,181 @@ where
 
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
+import RIO.List (delete, sortOn)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+
+-- | The anchored-complement rewrite (issue #562).
+--
+--   The SQL generator translates a complement @-e@ that is not the direct
+--   operand of an intersection or difference via the closed world V[A*B]:
+--   a Cartesian product of two concept tables. When the complement occurs
+--   inside an intersection that also has a complement-free member g (the
+--   "anchor"), that product is avoidable: @g /\ -e = g - e@, which compiles
+--   into an anti-join that only enumerates the tuples of g. The DBMS cannot
+--   perform this rewrite itself, because the intersection members reach it
+--   as separately materialized derived tables.
+--
+--   This pass pushes every anchor through unions and differences until each
+--   reachable complement is absorbed into an anchored difference:
+--
+--     * R1 (absorb):     @g /\ -e          = g - e@
+--     * R2 (distribute): @g /\ (p \/ q)    = (g /\ p) \/ (g /\ q)@,
+--                        applied only when p or q contains a reachable
+--                        complement (guard against pointless tree growth)
+--     * R3 (push):       @g /\ (p - q)     = (g /\ p) - q@
+--
+--   R1 follows from @-e = V - e@ and @g /\ V = g@ (every well-typed term is
+--   contained in V of its signature); R2 is distributivity; R3 is
+--   associativity of @/\@ with @p - q = p /\ -q@. Each rule preserves the
+--   signature of the term, so well-typedness is preserved. Termination: R1
+--   removes a complement; R2 and R3 move an anchor strictly closer to the
+--   complements in a finite tree. proofs/anchoredComplements/AnchoredRewrite.thy
+--   machine-checks R1, R2 and R3 (Isabelle/HOL).
+--
+--   Complements that this pass cannot reach (no anchor available, or the
+--   complement is hidden inside e.g. a composition) are left untouched; for
+--   those the Cartesian product is semantically necessary.
+anchorComplements :: Expression -> Expression
+anchorComplements expr =
+  case expr of
+    EIsc {} -> anchorIsc . fmap anchorComplements . exprIsc2list $ expr
+    EEqu (l, r) -> EEqu (anchorComplements l, anchorComplements r)
+    EInc (l, r) -> EInc (anchorComplements l, anchorComplements r)
+    EUni (l, r) -> EUni (anchorComplements l, anchorComplements r)
+    EDif (l, r) -> EDif (anchorComplements l, anchorComplements r)
+    ELrs (l, r) -> ELrs (anchorComplements l, anchorComplements r)
+    ERrs (l, r) -> ERrs (anchorComplements l, anchorComplements r)
+    EDia (l, r) -> EDia (anchorComplements l, anchorComplements r)
+    ECps (l, r) -> ECps (anchorComplements l, anchorComplements r)
+    ERad (l, r) -> ERad (anchorComplements l, anchorComplements r)
+    EPrd (l, r) -> EPrd (anchorComplements l, anchorComplements r)
+    EKl0 e -> EKl0 (anchorComplements e)
+    EKl1 e -> EKl1 (anchorComplements e)
+    EFlp e -> EFlp (anchorComplements e)
+    ECpl e -> ECpl (anchorComplements e)
+    EBrk e -> anchorComplements e
+    EDcD {} -> expr
+    EDcI {} -> expr
+    EBin {} -> expr
+    EDcV {} -> expr
+    EMp1 {} -> expr
+  where
+    -- Rewrite one intersection, given its flattened members (each already
+    -- rewritten). If a member with a reachable complement and an anchor are
+    -- both present, fold the anchor through the needy members; otherwise the
+    -- intersection is left as it is.
+    anchorIsc :: NE.NonEmpty Expression -> Expression
+    anchorIsc ms =
+      case (needy, anchors) of
+        (_ : _, g : _) ->
+          intersect (foldl' anchor g needy NE.:| delete g rest)
+        _ -> intersect members
+      where
+        members = exprIsc2list . intersect $ ms -- re-flatten: members rewritten by anchorComplements may be intersections again
+        (needy, rest) = NE.partition hasReachableCpl members
+        anchors = sortOn anchorRank . filter isAnchor $ rest
+        intersect :: NE.NonEmpty Expression -> Expression
+        intersect (h NE.:| tl) = foldl' (./\.) h tl
+
+    -- Anchors must be complement-free and must not be shielded from this
+    -- rewrite for other reasons: V *is* the Cartesian product, and Mp1
+    -- members (singleton values) get dedicated, cheaper treatment in the
+    -- SQL generator's intersection case.
+    isAnchor :: Expression -> Bool
+    isAnchor e = case e of
+      EDcV {} -> False
+      EMp1 {} -> False
+      ECpl {} -> False
+      _ -> not (hasReachableCpl e)
+
+    -- Prefer a stored relation over other terms as the anchor: it is a
+    -- directly indexed table and typically small.
+    anchorRank :: Expression -> Int
+    anchorRank e = case e of
+      EDcD {} -> 0
+      EFlp EDcD {} -> 0
+      EDcI {} -> 1
+      _ -> 2
+
+    -- A complement counts as reachable when R1-R3 can move an anchor onto
+    -- it: through unions, through intersections, and through the left-hand
+    -- side of a difference. Complements of Mp1 and V are excluded: they do
+    -- not make the SQL generator compute a Cartesian product.
+    hasReachableCpl :: Expression -> Bool
+    hasReachableCpl e = case e of
+      ECpl EMp1 {} -> False
+      ECpl EDcV {} -> False
+      ECpl _ -> True
+      EBrk x -> hasReachableCpl x
+      EUni (l, r) -> hasReachableCpl l || hasReachableCpl r
+      EIsc (l, r) -> hasReachableCpl l || hasReachableCpl r
+      EDif (l, _) -> hasReachableCpl l
+      _ -> False
+
+    -- anchor g m = an expression equivalent to g /\ m in which the anchor g
+    -- has been pushed onto every reachable complement of m (rules R1-R3).
+    anchor :: Expression -> Expression -> Expression
+    anchor g m = case m of
+      EBrk x -> anchor g x
+      ECpl x
+        | hasReachableCpl m -> g .-. x -- R1
+      EUni (l, r)
+        | hasReachableCpl m -> anchor g l .\/. anchor g r -- R2 (guarded)
+      EDif (l, r)
+        | hasReachableCpl l -> anchor g l .-. r -- R3
+      EIsc {} -> anchorIsc (g NE.<| exprIsc2list m)
+      _ -> g ./\. m
+
+-- | True when the expression, offered to the SQL generator as it is, makes
+--   the generator enumerate all pairs of two concept tables to compute a
+--   complement. On the output of 'anchorComplements' this identifies exactly
+--   the complements for which no anchor was available, so the product is
+--   semantically necessary:
+--
+--     * a surviving @ECpl e@ node: it is compiled via the closed world
+--       V[A*B] (except for the complements of a singleton value, of I and
+--       of V, which have dedicated, product-free translations);
+--     * a difference @V - e@: the image of an un-anchorable complement
+--       under the conjunctive normal form, compiled with V as its
+--       left-hand table.
+--
+--   The right-hand side of any other difference @l - e@ is a complement in
+--   anchored position (an anti-join bounded by l), so it does not count;
+--   its subexpressions are still inspected.
+hasUnanchoredComplement :: Expression -> Bool
+hasUnanchoredComplement expr =
+  case expr of
+    ECpl e -> case e of
+      EMp1 {} -> False
+      EDcV {} -> False
+      EDcI {} -> False
+      _ -> True
+    EDif (l, r) -> isTopV l || hasUnanchoredComplement l || hasUnanchoredComplement r
+    EEqu (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    EInc (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    EIsc (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    EUni (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    ELrs (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    ERrs (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    EDia (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    ECps (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    ERad (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    EPrd (l, r) -> hasUnanchoredComplement l || hasUnanchoredComplement r
+    EKl0 e -> hasUnanchoredComplement e
+    EKl1 e -> hasUnanchoredComplement e
+    EFlp e -> hasUnanchoredComplement e
+    EBrk e -> hasUnanchoredComplement e
+    EDcD {} -> False
+    EDcI {} -> False
+    EBin {} -> False
+    EDcV {} -> False
+    EMp1 {} -> False
+  where
+    isTopV :: Expression -> Bool
+    isTopV (EDcV _) = True
+    isTopV (EBrk e) = isTopV e
+    isTopV _ = False
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to a

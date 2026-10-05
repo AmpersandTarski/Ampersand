@@ -17,8 +17,9 @@ contributors and is deliberately layered, so you can stop at the depth you need:
 - **[Part IV — Paying for the change, not the database](#part-iv--paying-for-the-change-not-the-database)**
   follows the work in progress that makes each re-check itself incremental: a
   delta computation whose cost follows the size of the change, with the proofs
-  and measurements that exist today and the steps that remain before prototypes
-  run it.
+  and measurements that exist today, the steps that remain before prototypes run
+  it, and what the measurements say about the rules for which it is worth
+  doing at all.
 
 ---
 
@@ -481,10 +482,12 @@ existing store, not the architecture around it. Two steps remain:
   framework ignores unknown fields, so the contract stays backward
   compatible.
 - **Runtime adoption (prototype framework).** Maintain the violation table by
-  applying row deltas instead of the wholesale refresh, keep the full queries
-  as fallback and as periodic self-check, and switch per application — after a
-  shadow-run period on a real application in which both routes run, every
-  divergence is logged, and users see only the old route.
+  applying row deltas instead of the wholesale refresh, and keep the full
+  queries as fallback and as periodic self-check. Confidence is built
+  operationally: a shadow-run period on a real application in which both routes
+  run, every divergence is logged, and users see only the old route. Which
+  conjuncts take the incremental route is decided per conjunct rather than per
+  application, for the reason section 5 gives.
 
 Until those steps land, Parts I–III describe every prototype in production,
 unchanged; this part describes the compiler's proven core and the route by
@@ -493,6 +496,108 @@ which it reaches the runtime.
 *Proof track: [PRF-7 — the candidate calculus is complete](../proofs/README.md#prf-7).*
 
 *Proof track: [PRF-6 — the delta SQL maintains the violation records exactly](../proofs/README.md#prf-6).*
+
+### 5. When incremental maintenance pays, and when it does not
+
+The measurements of section 3 come from the compiler's in-memory evaluator:
+circuits in Haskell, one pair per transaction, no database in the loop. They
+show that the calculus is asymptotically right, and that is all they show. The
+first measurements against a real MariaDB, on real models, ran the other way.
+
+On FC5, a production model, a shadow run of 1 142 transactions through the full
+request pipeline produced identical violation sets by both routes — and a median
+transaction close of 4.2 ms incrementally against 3.1 ms for full
+re-evaluation. On RAP at 12 000 scripts, on an edit chosen to suit the delta
+route as well as possible (one pair swapped, no concept touched), the medians
+were 47.0 ms against 40.4 ms. At today's population sizes the incremental route
+lost both times.
+
+The cause is a fixed fee. Maintaining violations from a change means writing the
+transaction's touched pairs into delta tables, evaluating a candidate query per
+touched relation, and re-checking the candidates that come back. That costs
+5–15 ms per transaction whatever the database holds. It buys nothing when the
+query it replaces is itself cheap — and most queries are cheap. Of RAP's 451
+conjuncts, the 351 that no ExecEngine rule maintains (78% of them) all measure
+between 0 and 15 ms at 12 000 scripts, because their SQL is driven by an index.
+Paying up to 15 ms to save up to 15 ms is not a trade.
+
+The expensive queries are real, though, and they carry the entire prize. At
+96 000 scripts RAP has exactly four conjuncts above 20 ms: one cartesian
+ExecEngine term at 218 ms, and three univalence checks at 60–70 ms each. A route
+that engaged for those four and left the other 447 alone would pay for itself
+several times over. That is what the per-conjunct decision below is for.
+
+#### Two halves of one decision
+
+A corpus study of 1 384 violation queries across seven models, each measured at
+its own population and at an inflated copy of it, established how such a
+decision can be made
+(`memorybank/incremental-evaluation/cost-gate/RESULTS.md`). The result is a
+division of knowledge rather than a threshold.
+
+The **shape** of a term fixes how its cost grows as the database grows. A query
+pinned to a named atom stays flat; a query that reads a table in full grows
+with that table; a Kleene closure explodes — three queries of one test model run
+in under a millisecond on 5 nodes and blow through a 25-second statement cap on
+160. Shape is compile-time knowledge.
+
+The **population** fixes when that growth crosses the fee. It is runtime
+knowledge, it differs per deployment, and it keeps changing after the model
+ships, so no artifact generated at compile time can settle it.
+
+Neither half decides alone, and the study measured the difference between trying
+and not trying. A classifier on shape alone reached 21.7% precision at 62.5%
+recall — it missed more than a third of the expensive queries. The two-stage
+form, shape from the compiler and sizes from the runtime, missed none of them
+(100% recall, 98.6% specificity).
+
+So the compiler publishes what it can see and the runtime decides. Each entry in
+`conjuncts.json` carries an optional `costProfile`: a route class, and the
+tables the violation query reads in full.
+
+| class | what the shape says | route |
+| --- | --- | --- |
+| `anchored` | the term is pinned to a named atom, so the query is an index probe | the full query; it is already flat |
+| `scan` | the query reads the listed tables in full | the full query while those tables are small, incremental once the largest passes a configurable row count |
+| `recursive` | the term contains a Kleene closure | incremental, as soon as that route exists for closures |
+| `structural` | the table layout already makes the violation impossible | no query at all |
+
+The runtime reads table sizes from the optimizer's own statistics rather than
+counting rows, because an exact `COUNT(*)` on InnoDB is a full scan per table —
+the very cost the decision exists to avoid. An estimate is enough to tell a
+table of a few hundred rows from one of a hundred thousand, which is the only
+question being asked.
+
+#### The query that can never find anything
+
+Three of RAP's four expensive conjuncts are univalence checks on relations
+stored as a column of the `Script` table. A univalent relation stored that way
+occupies one column of a row whose key is unique: there is nowhere to put a
+second value. The violation set is empty in every state the schema admits, and
+the optimal route is not a faster query but no query.
+
+This is the one class that rests on an argument rather than on a measurement,
+and that argument is not yet a theorem. It stands on the register as PRF-8 with
+status *stated*, and the runtime treats it accordingly. The skip has a switch of
+its own, off by default and separate from the rest of the gate, so a deployment
+can use the routing without it. Behind that switch, a configurable fraction of
+the skipped conjuncts is evaluated after all and compared: a check that finds
+violations keeps the real result and logs the discrepancy. A defect in the
+claim therefore surfaces as an alarm, rather than as a rule that quietly stopped
+holding.
+
+*Proof track: [PRF-8 — a relation stored on a unique key column cannot break the multiplicity that layout enforces](../proofs/README.md#prf-8).*
+
+#### What this means for a prototype today
+
+Nothing changes on its own. The compiler emits the profiles for every model it
+compiles, and the framework ignores them unless a deployment switches the gate
+on; a model compiled before the contract carries no profiles at all, and then
+the framework does what it has always done. The incremental route itself is
+still the work of section 4, so a conjunct the gate marks for incremental
+maintenance currently receives its full query, with the decision recorded in the
+log. What the gate settles is the question section 4 left open: not whether an
+application uses incremental evaluation, but which of its rules do.
 
 ### Where to look
 
@@ -506,6 +611,9 @@ which it reaches the runtime.
   command.
 - `src/Ampersand/Test/Incremental/Properties.hs` — the QuickCheck bridge that
   runs in `stack test`.
+- `src/Ampersand/FSpec/Incremental/CostProfile.hs` — the route classification of
+  section 5, and `memorybank/incremental-evaluation/cost-gate/` for the corpus
+  study and the instruments that produced it.
 - `proofs/incremental/` — the Isabelle/HOL theories, with the
   obligation-to-lemma table in its `README.md`.
 - `memorybank/incremental-evaluation/` — the delta calculus, the design-choice

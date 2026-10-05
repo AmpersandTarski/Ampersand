@@ -32,7 +32,7 @@
 --
 -- Boundary, matching the theory: the concept populations are held constant
 -- (one concept, a fixed atom universe) — the concept-affected fallback
--- (OK-9) discharges that assumption at run time.  The delta sets are
+-- (DC-9) discharges that assumption at run time.  The delta sets are
 -- generated as supersets of the symmetric difference, mirroring the
 -- delta-table contract (a touched-but-unchanged pair may be present).
 module Ampersand.Test.Incremental.CandidateProperties
@@ -141,7 +141,7 @@ allPairs :: PairSet
 allPairs = Set.fromList [(x, y) | x <- univ, y <- univ]
 
 -- | Naive evaluation of the supported term class.  @EDcI@\/@EDcV@ range over
---   the fixed universe (constant concept populations, the OK-9 assumption).
+--   the fixed universe (constant concept populations, the DC-9 assumption).
 refEval :: State -> Expression -> PairSet
 refEval st e = case e of
   EDcD d -> Map.findWithDefault Set.empty d st

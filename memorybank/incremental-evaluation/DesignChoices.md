@@ -157,7 +157,7 @@ non-collapsible complements, and Kleene closures evaluate as recompute
 delta-SQL generation of Phase 3.
 
 **Delta SQL maintains the violation cache by delta-scoped re-evaluation: generated candidate queries name the pairs to recheck, and the recheck runs the existing violation predicate.**
-*OK-8 · valid · 2026-08-13 · origin: issue #1684, [delta-calculus.md](delta-calculus.md) §7*
+*DC-8 · valid · 2026-08-13 · origin: issue #1684, [delta-calculus.md](delta-calculus.md) §7*
 
 Per (conjunct, relation) the compiler emits one candidate query over the
 current tables plus the delta tables (one two-column table per relation,
@@ -188,7 +188,7 @@ today's `__conj_violation_cache__`, unchanged.
 fields; a framework that ignores them behaves exactly as today.
 
 **A transaction that changes concept populations keeps full re-evaluation for the conjuncts it affects; delta queries serve the relation-triggered case.**
-*OK-9 · valid · 2026-08-13 · origin: issue #1684, [prototype-runtime-map.md](prototype-runtime-map.md)*
+*DC-9 · valid · 2026-08-13 · origin: issue #1684, [prototype-runtime-map.md](prototype-runtime-map.md)*
 
 The runtime's existing concept-affected trigger (`concepts.json`,
 `affectedConjuncts`) remains the route for atom creation and deletion; the
@@ -393,6 +393,183 @@ branch carries it.
 
 *Impact in production:* none; the stack is local and disposable
 (`rap1687bench-*` containers, ports 8191/8192).
+
+**Every stored rule result knows four routes — structural, integral, incremental, and skip-on-clean — and the optimal route is a property of the (query, moment) pair, not of the application.**
+*DC-16 · valid · 2026-08-15 · origin: issue #1690 step 2, [cost-gate/RESULTS.md](cost-gate/RESULTS.md)*
+
+The case table below is the measured answer to research question R2 of
+issue #1690. Per consumer and moment it names the route that the corpus
+study found optimal. "Structural" means: the relation's storage layout
+already enforces the property, so the violation set is empty by
+construction and no query runs. "Scan profile" means: the set of tables
+the query must read in full, statically derivable from the term.
+
+| what is being computed | at which moment | optimal route |
+| --- | --- | --- |
+| stored rule result | first build (install, rebuild) | integral; it doubles as oracle |
+| stored rule result, structurally enforced (UNI/INJ in table layout) | any | structural — no query |
+| stored rule result, anchored term (EMp1/session anchor) | refresh at commit | integral; cost is an index probe |
+| stored rule result, linear scan | refresh at commit | integral while the scanned tables stay small; incremental once they outgrow the protocol fee |
+| stored rule result, Kleene term | refresh at commit | incremental (Phase-5 semi-naive route); measured >25 s at 160 rows, so integral is not an option at any real size |
+| ExecEngine rule check | every repair-loop iteration | Phase-5 loop work; the gate's vocabulary carries over |
+| interface point query | page open | integral (placeholder query); DC-15 stands |
+| overview page (session-rooted or global body) | refresh while materialized | O8 candidates, own research line; same classifier marks them |
+
+*Considerations:*
+
+1. The goal is a per-query, per-moment routing vocabulary that every later
+   consumer (commit refresh, ExecEngine loop, interface materialization)
+   uses unchanged, so the gate is built once (criterion W4 of the issue).
+2. The corpus study grounds every row: RAP's four expensive conjuncts are
+   three structurally-enforced UNI checks plus one cartesian EE term;
+   the Kleene testcases explode at toy sizes; anchored terms stay flat
+   ([cost-gate/RESULTS.md](cost-gate/RESULTS.md), findings 1–3).
+3. What the compiler cannot know is measured too: population sizes decide
+   when a linear scan crosses the protocol fee, and they change after
+   deployment. The routing decision therefore names sizes explicitly
+   (DC-17) instead of pretending the compiler can finish the job.
+4. A uniform per-application switch (today's state) was rejected by
+   measurement: both uniform modes lose somewhere in the same application
+   (#1687: `on` loses 6.6 ms on cheap conjuncts; `off` forgoes the
+   expensive ones).
+
+*Impact on the specification:* none; models keep compiling unchanged.
+
+*Impact in production:* none until DC-17's contract ships; the table is
+the design baseline the feature issue implements against.
+
+**The generated contract carries one optional cost profile per conjunct — route class and scan tables — and the framework turns it into a route with one comparison against the table sizes it already has.**
+*DC-17 · valid · 2026-08-15 · origin: issue #1690 step 3, [cost-gate/RESULTS.md](cost-gate/RESULTS.md)*
+
+`conjuncts.json` gains one optional field per conjunct:
+
+```json
+"costProfile": {
+  "class": "structural" | "anchored" | "scan" | "recursive",
+  "scanTables": ["Script", ...]
+}
+```
+
+The compiler derives the class from the normalized term and the plug
+layout; `scanTables` lists the tables the violation query reads in full.
+The framework's gate is a single rule per conjunct at commit time:
+`structural` runs no query; `anchored` stays integral; `scan` goes
+incremental exactly when the largest scan table exceeds a configurable
+row threshold (default 30 000) and stays integral below it; `recursive`
+goes incremental as soon as the Phase-5 route exists and stays integral
+until then. The integral query keeps its two other roles unchanged:
+first build and self-check oracle. A runtime that does not know the field
+keeps today's behaviour.
+
+*Considerations:*
+
+1. The goal is the smallest contract on which the framework can follow
+   the per-query choice (research question R3), with the division of
+   knowledge the corpus study measured: the term's shape is compile-time
+   knowledge, the population size is runtime knowledge, and the gate
+   needs both (v2 classifier: recall 100 %, specificity 98.6 %; the pure
+   compile-time v1 reached 21.7 % precision at 62.5 % recall).
+2. Sizes beat timings on the runtime side: measured cost proved
+   environment-sensitive (a restored copy flipped conj_269 from 26–29 ms
+   to 0.3 ms), while table sizes are stable, already known to the
+   runtime, and explainable. Timing bookkeeping (direction C of the
+   issue) remains available later as a diagnostic layer, per direction D.
+3. A bare `recommended: yes/no` flag was rejected: it bakes the
+   population size of the generation moment into the artifact, and the
+   study shows exactly that size changing after deployment.
+4. Route selection chooses between proven routes and adds no proof
+   burden — with one exception: the `structural` class asserts that the
+   violation set is empty by storage layout. That claim enters the proof
+   register (status `stated`) with the implementation issue, before any
+   query is skipped (knock-out K1 of the issue).
+5. The classification lands in generated files, so the chosen route per
+   rule is visible and reproducible from the model alone (criterion W1).
+
+*Impact on the specification:* none; ADL syntax and rule semantics are
+untouched.
+
+*Impact in production:* the feature issue implements the field and the
+gate behind a switch; until then generated artifacts are unchanged. Once
+live, RAP-class models keep every cheap conjunct on the integral route
+(no +6.6 ms regression) and route only the measured expensive class
+incrementally.
+
+**The structural class holds only where the DDL itself carries a uniqueness constraint, and the runtime keeps a sampled check on every conjunct it skips.**
+*DC-18 · valid · 2026-08-16 · origin: issue #1692 implementation*
+
+A conjunct is structurally enforced when it is the `UNI` property rule of a
+relation stored unflipped on a table's primary-key column, or the `INJ` rule
+of a relation stored flipped on such a column. Every other layout — link
+tables, specialization columns, and keys of a scalar type, which issue #341
+leaves without a primary key — carries no uniqueness constraint in the
+generated schema, so its conjunct keeps its query. The claim that the
+accepted layouts admit no violation is PRF-8 in the proof register, status
+`stated`. The runtime's skip route therefore has a switch of its own,
+separate from the rest of the gate, and a sampled fraction of the conjuncts
+it skips is verified against the database after all; a check that finds
+violations keeps the real result and reports the discrepancy.
+
+*Considerations:*
+
+1. The goal is that the one route which runs no query at all is safe to
+   deploy before its claim is proved, so the rest of the gate need not wait
+   for the proof.
+2. The corpus study found the structural case worth having: three of RAP's
+   four expensive conjuncts are `UNI` checks whose column layout already
+   enforces the property, at 60–70 ms each per transaction.
+3. A wider predicate — every `UNI` relation whose storage looks like a
+   column — was rejected. A specialization column holds `NULL` for the
+   siblings and carries no SQL constraint, so two rows could share a key
+   value; the violation set is then empty by convention rather than by
+   construction, and convention is what a skipped query stops checking.
+4. Skipping without a check was rejected as well: an unproved claim that
+   silences the only instrument that could refute it leaves a broken rule
+   indistinguishable from a holding one. Sampling keeps the cost near zero
+   while a defect still surfaces within a handful of transactions.
+
+*Impact on the specification:* none; the predicate reads the plug layout the
+compiler already derives, and no ADL construct changes meaning.
+
+*Impact in production:* a deployment that leaves
+`transactions.costGate.skipStructural` off runs exactly the queries it runs
+today. With it on, a RAP-class model drops its `UNI` and `INJ` property
+queries on key columns, and the self-check reports in the application log.
+
+**The compiler over-lists the tables a query scans, and the runtime weighs them against the optimizer's row estimates.**
+*DC-19 · valid · 2026-08-16 · origin: issue #1692 implementation*
+
+The scan profile of a conjunct names every table its violation query may read
+in full: the table of each relation occurrence, and the concept tables of
+every construct whose SQL ranges over whole populations — identities,
+cartesian products, complements, residuals, relative addition and diamonds.
+The runtime compares the largest of those tables against a configurable row
+count, and reads those sizes from `information_schema` rather than counting
+rows itself.
+
+*Considerations:*
+
+1. The goal is a judgement that is cheap enough to make on every conjunct at
+   every commit, since the gate sits in the hot path it exists to shorten.
+2. The two errors are not each other's mirror. A table listed that the query
+   does not really scan can send a cheap conjunct down the incremental route,
+   which costs the bounded protocol fee; a table left out can leave an
+   expensive conjunct on the integral route, which the corpus study measured
+   at 60–70 ms per transaction and growing with the database. Over-listing is
+   therefore the direction to err in.
+3. Exact counts were rejected: `COUNT(*)` on InnoDB is a full scan per table,
+   so the gate would spend the cost it is trying to save. The estimate is only
+   ever compared against a threshold in the tens of thousands, a distinction
+   it makes reliably.
+4. Sizes are read once per request and, when they cannot be read at all,
+   every scan conjunct falls back to the integral query — the route that is
+   correct under all circumstances.
+
+*Impact on the specification:* none; the scan profile is derived from the
+normalized term, so no model changes.
+
+*Impact in production:* the threshold is a setting
+(`transactions.costGate.scanThreshold`, default 30 000 rows), so a deployment
+whose tables grow past it changes route without recompiling its model.
 
 **Interface queries stay unmaterialized: the compiler and framework keep answering every interface query with the existing placeholder queries, and the incremental machinery serves rules only.**
 *DC-15 · valid · 2026-08-15 · origin: issue #1687 step 3, [rap-bench/RESULTS.md](rap-bench/RESULTS.md)*

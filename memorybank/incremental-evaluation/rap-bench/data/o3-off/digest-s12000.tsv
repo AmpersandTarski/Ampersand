@@ -1,0 +1,40 @@
+21225.5	1000	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+9392.4	960	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `fence0` . `src` AS `src` , `fence3` . `tgt` AS `tgt` FROM ( SELECT `Script` AS `
+2314.2	340	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+2116.1	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+1880.4	1600	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `fence0` . `src` AS `
+1879.8	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+1027.4	960	SELECT DISTINCTROW `fence0` . `src` AS `src` , `fence2` . `tgt` AS `tgt` FROM ( SELECT `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `t1` . `src` 
+1003.6	960	SELECT DISTINCTROW `notIns` . `Account` AS `src` , `notIns` . `Account` AS `tgt` FROM `Account` AS `notIns` WHERE ( `notIns` . `Account` NOT IN ( SELECT `src` F
+972.7	343	COMMIT 
+951.3	960	SELECT DISTINCTROW `notIns` . `Account` AS `src` , `notIns` . `Account` AS `tgt` FROM `Account` AS `notIns` WHERE ( `notIns` . `Account` NOT IN ( SELECT `src` F
+931.9	960	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `fence0` . `src` AS `src` , `fence1` . `tgt` AS `tgt` FROM ( SELECT `SESSION` AS 
+900.5	960	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `Account` AS `src` , `Account` AS `tgt` FROM `Account` WHERE `Account` IS NOT NUL
+823.2	960	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `Account` AS `src` , `accIsActive` AS `tgt` FROM `Account` WHERE ( `Account` IS N
+705.0	35279	DELETE FROM `__conj_violation_cache__` WHERE `conjId` IN (?) 
+631.1	960	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `fence0` . `src` AS `src` , `fence3` . `tgt` AS `tgt` FROM ( SELECT `SESSION` AS 
+620.4	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+587.5	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+586.0	960	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+493.7	8000	UPDATE `Script` SET `submittor` = ? WHERE `Script` = ? 
+460.7	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+451.8	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+417.5	8000	UPDATE `Account` SET `accUserid` = ? WHERE `Account` = ? 
+407.3	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+407.1	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+406.2	8000	INSERT INTO `Script` ( `Script` ) VALUES (?) ON DUPLICATE KEY UPDATE `Script` = ? 
+400.0	8040	UPDATE `Script` SET `content` = ? WHERE `Script` = ? 
+385.1	8000	UPDATE `Script` SET `submitted` = ? WHERE `Script` = ? 
+354.9	960	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+354.1	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+335.3	403	UPDATE `SESSION` SET `PrototypeContext.lastAccess` = ? WHERE `SESSION` = ? 
+334.2	8800	UPDATE `Account` SET `accIsActive` = ? WHERE `Account` = ? 
+324.2	960	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+313.5	960	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `fence0` . `src` AS `src` , `fence1` . `tgt` AS `tgt` FROM ( SELECT `someDummyNam
+300.1	964	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+299.5	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t
+287.4	320	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `Account` AS `src` , `accIsActive` AS `tgt` FROM `Account` WHERE ( `Account` IS N
+284.0	960	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `subIntersect0` . `
+280.7	320	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `accIsActive` AS `src` , `Account` AS `tgt` FROM `Account` WHERE ( `Account` IS N
+279.6	320	SELECT DISTINCTROW `t1` . `src` AS `src` , `t1` . `tgt` AS `tgt` FROM ( SELECT `Account` AS `src` , `accIsInitialized` AS `tgt` FROM `Account` WHERE ( `Account`
+278.7	320	SELECT DISTINCTROW `someDummyNameBecauseMySQLNeedsOne` . `src` AS `src` , `someDummyNameBecauseMySQLNeedsOne` . `tgt` AS `tgt` FROM ( SELECT `src` AS `src` , `t

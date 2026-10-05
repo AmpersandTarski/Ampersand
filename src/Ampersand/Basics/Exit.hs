@@ -42,6 +42,8 @@ data AmpersandExit
     InvariantRuleViolated [Text]
   | -- | The ExecEngine rules carry an oscillation risk and --fail-on-oscillation is set.
     OscillationRiskDetected [Text]
+  | -- | A violation query computes a Cartesian product and --fail-on-cartesian-product is set.
+    CartesianProductDetected [Text]
   | -- | There is no configuration file.
     NoConfigurationFile [Text]
   | -- | While running the daemon, somehow the list of files to watch is empty.
@@ -91,6 +93,8 @@ info x =
       (SE.ExitFailure 40, "ERROR: No prototype generated because of rule violations." : map ("  " <>) msg)
     OscillationRiskDetected msg ->
       (SE.ExitFailure 45, "ERROR: oscillation risk detected (--fail-on-oscillation)." : map ("  " <>) msg)
+    CartesianProductDetected msg ->
+      (SE.ExitFailure 46, "ERROR: Cartesian product in violation query detected (--fail-on-cartesian-product)." : map ("  " <>) msg)
     -- Exit code 50 can be reused. Formerly used for FailedToInstallComposer (php dependencies for prototype framework)
     PHPExecutionFailed msg ->
       (SE.ExitFailure 60, msg)

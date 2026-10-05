@@ -150,6 +150,10 @@ data EnforceOperator
 
 data P_Enforce a = P_Enforce
   { pos :: !Origin,
+    -- | The optional name of this ENFORCE statement, needed to refer to it (e.g. in a PURPOSE)
+    penfNm :: !(Maybe Name),
+    -- | The optional label of this ENFORCE statement
+    penfLbl :: !(Maybe Label),
     penfRel :: !a,
     penfFlipped :: !Bool,
     penfOp :: !EnforceOperator,
@@ -157,13 +161,16 @@ data P_Enforce a = P_Enforce
   }
   deriving (Show)
 
+instance Traced (P_Enforce a) where
+  origin P_Enforce {pos = orig} = orig
+
 instance Functor P_Enforce where fmap = fmapDefault
 
 instance Foldable P_Enforce where foldMap = foldMapDefault
 
 instance Traversable P_Enforce where
-  traverse f (P_Enforce orig rel flipped op expr) =
-    (\r e -> P_Enforce orig r flipped op e)
+  traverse f (P_Enforce orig nm lbl rel flipped op expr) =
+    (\r e -> P_Enforce orig nm lbl r flipped op e)
       <$> f rel
       <*> traverse f expr
 
@@ -1266,6 +1273,8 @@ data PRef2Obj
   | PRef2Pattern !Name
   | PRef2Interface !Name
   | PRef2Context !Name
+  | PRef2Enforce !Name
+  | PRef2Role !Name
   deriving (Show, Eq, Ord) -- only for fatal error messages
 
 -- instance Named PRef2Obj where

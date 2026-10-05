@@ -1,0 +1,13 @@
+# Regression tests for the anchored-complement rewrite (issue #562): the
+# MUST-STAY-DETECTED cases. Each script here contains a rule whose violation
+# term has no complement-free member at all, so the Cartesian product is
+# semantically necessary and no rewrite may claim otherwise:
+# `--fail-on-cartesian-product` must fail with the dedicated exit code (46),
+# and the modeler gets a warning that the rule costs |source|*|target| per
+# evaluation. If a future change silences this, CI turns red — that would be
+# a false claim of anchoredness.
+#   * bare-complement.adl   RULE -r |- s: the violation term -r /\ -s offers
+#                           nothing to anchor on
+testCmds:
+  - command: ampersand check --fail-on-cartesian-product
+    exitcode: 46

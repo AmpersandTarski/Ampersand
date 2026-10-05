@@ -23,6 +23,7 @@ fSpecGenOptsParser isForDaemon =
     <*> knownRecipeP
     <*> allowInvariantViolationsP
     <*> failOnOscillationP
+    <*> failOnCartesianProductP
   where
     rootsP :: Parser Roots
     rootsP =
@@ -165,6 +166,19 @@ fSpecGenOptsParser isForDaemon =
         )
         mempty
 
+    failOnCartesianProductP :: Parser Bool
+    failOnCartesianProductP =
+      boolFlags
+        False
+        "fail-on-cartesian-product"
+        ( "fail (exit code 46) when the SQL of a rule's violation query "
+            <> "computes a Cartesian product of two concept tables. Off by "
+            <> "default (the product is reported as a warning). Intended for "
+            <> "regression tests that assert via the exit code that all "
+            <> "complements in violation queries are anchored."
+        )
+        mempty
+
 defFSpecGenOpts :: NonEmpty FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl =
   FSpecGenOpts
@@ -176,5 +190,6 @@ defFSpecGenOpts rootAdl =
       xtrimXLSXCells = True,
       xrecipe = Standard,
       xallowInvariantViolations = False,
-      xfailOnOscillation = False
+      xfailOnOscillation = False,
+      xfailOnCartesianProduct = False
     }

@@ -51,7 +51,7 @@ a few seconds.
 - `Candidates.thy` (same set-level house style) is a deep embedding of the
   supported term class of `DeltaTerms.hs` (branch `delta-sql`): relation
   leaves plus state-independent leaves (`Cst`, covering `EDcI`/`EDcV`/
-  `EMp1`/`EBin` under the concept-fallback assumption OK-9), closed under
+  `EMp1`/`EBin` under the concept-fallback assumption DC-9), closed under
   union, intersection, difference, composition, converse and typed
   complement. The locale `delta_transaction` fixes an old state, a new state
   and per relation a delta set, with one assumption: every changed pair is
@@ -127,7 +127,7 @@ Notes per obligation:
   pairs, delete only present ones.
 - **K1-K6** were labelled C1-C6 until 2026-08-14; renamed because C1-C5
   already name the whole-circuit obligations above. Completeness is the only
-  property the delta-SQL route needs (OK-8, delta-scoped re-evaluation): the
+  property the delta-SQL route needs (DC-8, delta-scoped re-evaluation): the
   runtime settles every candidate pair by re-running the conjunct's own
   violation predicate, so a too-large candidate set costs time, never
   correctness. No typing or adequacy premises are needed: the typed
@@ -163,7 +163,7 @@ Notes per obligation:
   changed pair — which belongs to the protocol half of register claim
   PRF-6. Constancy of the concept populations is an assumption of the
   theorems, discharged operationally by the concept-affected fallback
-  (OK-9).
+  (DC-9).
 
 ## Working notes for future proof sessions
 
