@@ -146,6 +146,19 @@ spec is generated. The build target is passed to the framework as `global.produc
 which keeps generation and publication consistent. See the prototype documentation and
 [Generating an OpenAPI description](the-tools-we-use/openapi-generation.md) for details.
 
+### serve
+
+Keeps the compiler running as an HTTP/JSON service, so that other programs can ask it questions.
+
+```bash
+ampersand serve
+```
+
+Use this command when a program rather than a person calls the compiler,
+for instance an editor that checks a script while the user is typing.
+The service listens on port 8080, or on the port in the environment variable `AMPERSAND_SERVE_PORT`.
+See [Running the compiler as a service](the-tools-we-use/ampersand-as-a-service.md) for the questions it answers.
+
 ### documentation
 
 Generates documentation from your specification.
