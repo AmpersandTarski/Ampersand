@@ -264,6 +264,66 @@ gate with the delta maintenance of branch
 `feat-delta-conjunct-maintenance`: the end-to-end dominance run (R4) and
 the RAP 96 000-script reference points.
 
+### Phase 6 — Sharpening the affected set (claim PRF-9)
+
+One over-approximation has now defeated two independent schemes. On RAP it
+erased the benefit of delta-conjunct maintenance, because an ordinary edit
+reports `affectedConcepts: 1` and the concept fallback fires
+([rap-bench/RESULTS.md](rap-bench/RESULTS.md), finding 3). It then erased
+the edit-scoped dry-run restriction of
+[prototype#445](https://github.com/AmpersandTarski/prototype/issues/445),
+measured at 46 of 46 conjuncts on an edit stream that creates atoms, against
+2 of 41 on one that does not. The cause is one function:
+`fSpecAllConjsPerConcept` (`ADL2FSpec.hs:229-237`) registers a conjunct
+against the source and target concept of every modifiable leaf, plus their
+specializations, so a concept collects the conjuncts of every relation it
+bounds. Heuristic H8 and hypothesis O11 in
+[design-heuristics.md](design-heuristics.md) carry the reasoning; claim
+PRF-9 in `docs/proofs/README.md` carries the proof obligation.
+
+Four steps, in this order.
+
+1. **The Lean statement.** Formalise PRF-9: in a state where a conjunct's
+   violation term is empty, growth of a carrier-dependent leaf can produce a
+   violation only at a positive occurrence, and shrinkage only at a negative
+   one. A monotonicity induction over the supported term class, with the
+   polarity flag threaded through complement and the residuals. Lay the
+   claim's four carrier-dependent leaves alongside `affectedByInsOrDel`
+   (`ConceptStructure.hs:155-174`) before starting, so that the term class of
+   the proof is the term class of the compiler: `EBin` passes that filter, and
+   whether it depends on a concept's population is still open. *Exit:* the
+   register row moves from `stated` to `machine-checked` after an observed
+   `lake build`.
+2. **The compiler.** Add a variant of `fSpecAllConjsPerConcept` behind a
+   switch that emits, per concept, two new lists covering the invariant
+   conjuncts: the ones an atom creation can break and the ones a deletion can
+   break. The signal conjuncts keep today's broad list as it is, since their
+   violation sets are meant to be non-empty and PRF-9 says nothing about
+   those. So the step adds two lists next to the existing one rather than
+   replacing one by four. *Exit:* per-concept counts for the corpus in
+   `testing/`, next to today's counts.
+3. **The framework.** The split needs a runtime that can use it.
+   `Concept::addAtom` (`Concept.php:583`) and `Concept::deleteAtom`
+   (`Concept.php:673`) both call one `addAffectedConcept`, so the direction
+   is lost at registration; the invariant/signal separation the conjuncts
+   already carry (`Conjunct.php:95-96`) becomes load-bearing here. A conjunct
+   whose cached violation set is non-empty keeps both lists, which is how the
+   boundary of PRF-9 is honoured at runtime. *Exit:* commit decisions and
+   persisted violation cache identical with the switch on and off, on a
+   replayed edit stream.
+4. **The measurement.** Affected-conjunct count per transaction over the
+   rap-bench replay stream, at the three database sizes, with the commit-diff
+   and cache-diff of step 3 alongside. *Exit:* O11 decided, and the
+   atom-creating edit stream of prototype#445 re-measured to see whether its
+   restriction now has room.
+
+Step 2 can land before step 3 without breaking anything: the framework reads
+`concepts.json` with plain `json_decode` and array indexing and ignores
+fields it does not know
+([prototype-runtime-map.md](prototype-runtime-map.md) §6). Step 2 changes a
+file outside `docs/`, so it needs a `ReleaseNotes.md` entry; the notes and
+register entries of this phase do not.
+
 ## To investigate before Phase 1
 
 - **Runtime ground truth** — done, see [prototype-runtime-map.md](prototype-runtime-map.md).
