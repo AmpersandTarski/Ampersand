@@ -105,8 +105,9 @@ commandLineHandler currentDir _progName args =
       addCommand''
         Serve
         ( "Run Ampersand as an HTTP/JSON service for editors and RAP. "
-            <> "Exposes /check, /translate and /fspec, returning structured "
-            <> "diagnostics as JSON. Port via AMPERSAND_SERVE_PORT (default 8080)."
+            <> "Exposes /health, /check, /translate, /fspec, /import and "
+            <> "/population, with JSON in and out. Port via "
+            <> "AMPERSAND_SERVE_PORT (default 8080)."
         )
         serveCmd
         daemonOptsParser

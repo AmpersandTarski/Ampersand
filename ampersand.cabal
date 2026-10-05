@@ -232,6 +232,7 @@ library
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks
       Ampersand.Test.Regression
+      Ampersand.Test.Serve.ServeTest
       Ampersand.Test.Step.StepParserTest
       MainApps
       Options.Applicative.Builder.Extra

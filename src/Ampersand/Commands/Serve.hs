@@ -8,38 +8,48 @@
 -- It exposes the same parse+typecheck pipeline as @ampersand daemon@
 -- (`Ampersand.Daemon.Parser.parseProject`), but driven by HTTP requests
 -- instead of file-watching, and returning structured `Load` diagnostics as
--- JSON instead of rendering to a terminal. This is the network front-end of
--- the "one daemon, two front-ends" design (see the RAP architecture doc, §5).
+-- JSON instead of rendering to a terminal. The daemon core thus has two
+-- front-ends: the file watcher for an editor, and this service for callers
+-- such as RAP that have a script in memory rather than on disk.
 --
 -- Endpoints:
 --
---   * @GET  \/health@               — liveness probe
---   * @POST \/check@    {script}    — type-check a full ADL script
---   * @POST \/translate@{script,term} — type-check a single term in the script's context
---   * @POST \/fspec@    {dump}      — build the FSpec twin from an Atlas population dump (cap 1)
---   * @POST \/import@   {dump}      — reconstruct an .adl script from an Atlas population dump (workstream A)
-module Ampersand.Commands.Serve (runServe) where
+--   * @GET  \/health@                     — liveness probe
+--   * @POST \/check@      {script}        — type-check a full ADL script
+--   * @POST \/translate@  {script,term}   — type-check a single term in the script's context
+--   * @POST \/fspec@      {dump}          — validate an Atlas population dump
+--   * @POST \/import@     {dump}          — reconstruct an .adl script from an Atlas population dump
+--   * @POST \/population@ {script[,name]} — the population of the script in terms of FormalAmpersand
+module Ampersand.Commands.Serve
+  ( runServe,
+    newService,
+    Reply,
+    spliceProbe,
+    safeName,
+  )
+where
 
 import Ampersand.Basics
 import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.Daemon.Parser (parseProject)
 import Ampersand.Daemon.Types (Load (..), Severity (..), isMessage)
 import Ampersand.FSpec.ToFSpec.CreateFspec (createFspec)
-import Ampersand.Output.ToJSON.ToJson (populationToJSON)
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.AtlasImport (parseJsonFile)
 import Ampersand.Misc.HasClasses
+import Ampersand.Output.ToJSON.ToJson (populationToJSON)
 import Ampersand.Types.Config (ExtendedRunner, HasRunner)
+import Data.Aeson ((.:), (.:?), (.=))
 import qualified Data.Aeson as JSON
-import Data.Aeson ((.:), (.=))
 import Data.Text (splitOn)
-import Network.HTTP.Types (Status, hContentType, status200, status400, status404)
+import Network.HTTP.Types (Method, Status, hContentType, status200, status400, status404)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified RIO.ByteString.Lazy as BL
-import RIO.Directory (createDirectoryIfMissing, getTemporaryDirectory, removeDirectoryRecursive, removeFile)
+import RIO.Directory (createDirectoryIfMissing, getTemporaryDirectory, removeDirectoryRecursive)
 import RIO.FilePath ((</>))
 import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import System.Environment (lookupEnv)
 
@@ -52,6 +62,10 @@ type ServeEnv env =
     HasRunner env
   )
 
+-- | The scratch directories that a request is working in right now. A request
+--   waits while another request holds the directory it needs; see 'withScript'.
+type Busy = TVar (Set FilePath)
+
 -- | Entry point, wired into the CLI as @ampersand serve@. Reuses 'DaemonOpts'
 --   (so 'parseProject' is satisfied) and listens on @AMPERSAND_SERVE_PORT@
 --   (default 8080).
@@ -62,21 +76,32 @@ runServe = do
   let port = fromMaybe 8080 (mPort >>= readMaybe) :: Int
   logInfo $ "Ampersand serve: listening on http://0.0.0.0:" <> display port
   logInfo "  GET /health | POST /check {script} | POST /translate {script,term} | POST /fspec {dump} | POST /import {dump} | POST /population {script}"
-  liftIO $ Warp.run port (waiApp env)
+  service <- liftIO $ newService env
+  liftIO $ Warp.run port (waiApp service)
 
-waiApp :: (ServeEnv env) => env -> Wai.Application
-waiApp env req respond = do
-  body <- Wai.strictRequestBody req
-  resp <- case (Wai.requestMethod req, Wai.pathInfo req) of
+-- | What the service answers to a request: a status and a JSON document.
+type Reply = (Status, BL.ByteString)
+
+-- | The service itself: a method, a path and a request body in, a reply out.
+--   The web server wraps it, and the test suite asks it without a web server.
+newService :: (ServeEnv env) => env -> IO (Method -> [Text] -> BL.ByteString -> IO Reply)
+newService env = do
+  busy <- newTVarIO Set.empty
+  pure $ \method path body -> case (method, path) of
     ("GET", ["health"]) ->
       pure $ jsonResp status200 (JSON.object ["status" .= ("ok" :: Text)])
-    ("POST", ["check"]) -> runRIO env (handleCheck body)
-    ("POST", ["translate"]) -> runRIO env (handleTranslate body)
-    ("POST", ["fspec"]) -> runRIO env (handleFspec body)
-    ("POST", ["import"]) -> runRIO env (handleImport body)
-    ("POST", ["population"]) -> runRIO env (handlePopulation body)
+    ("POST", ["check"]) -> runRIO env (handleCheck busy body)
+    ("POST", ["translate"]) -> runRIO env (handleTranslate busy body)
+    ("POST", ["fspec"]) -> runRIO env (handleFspec busy body)
+    ("POST", ["import"]) -> runRIO env (handleImport busy body)
+    ("POST", ["population"]) -> runRIO env (handlePopulation busy body)
     _ -> pure $ jsonResp status404 (JSON.object ["error" .= ("not found" :: Text)])
-  respond resp
+
+waiApp :: (Method -> [Text] -> BL.ByteString -> IO Reply) -> Wai.Application
+waiApp service req respond = do
+  body <- Wai.strictRequestBody req
+  (status, reply) <- service (Wai.requestMethod req) (Wai.pathInfo req) body
+  respond $ Wai.responseLBS status [(hContentType, "application/json")] reply
 
 -- Request bodies ------------------------------------------------------------
 
@@ -85,16 +110,15 @@ newtype CheckReq = CheckReq Text
 instance JSON.FromJSON CheckReq where
   parseJSON = JSON.withObject "CheckReq" $ \v -> CheckReq <$> v .: "script"
 
--- | De heenweg neemt naast het script een optionele naam aan. Die naam telt,
---   want de compiler legt de oorsprong van elk element vast en leidt daar
---   gegenereerde namen uit af. Wie dezelfde populatie wil als het commando op
---   een bestand met die naam, geeft haar mee. Zonder naam wordt zij uit de
---   inhoud afgeleid, zodat gelijke scripts gelijke uitvoer geven.
+-- | Next to the script, @\/population@ takes an optional file name. The name
+--   matters, because the compiler records the origin of every element and
+--   derives generated names from it. A caller who wants the same population as
+--   the command yields on a file of that name, passes the name along.
 data PopulationReq = PopulationReq Text (Maybe Text)
 
 instance JSON.FromJSON PopulationReq where
   parseJSON = JSON.withObject "PopulationReq" $ \v ->
-    PopulationReq <$> v .: "script" <*> v JSON..:? "name"
+    PopulationReq <$> v .: "script" <*> v .:? "name"
 
 newtype FspecReq = FspecReq Text
 
@@ -109,115 +133,107 @@ instance JSON.FromJSON TranslateReq where
 
 -- Handlers ------------------------------------------------------------------
 
-handleCheck :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
-handleCheck = withDecoded $ \(CheckReq script) -> do
-  msgs <- checkText ".adl" script
+handleCheck :: (ServeEnv env) => Busy -> BL.ByteString -> RIO env Reply
+handleCheck busy = withDecoded $ \(CheckReq script) -> do
+  msgs <- checkText busy "script.adl" script
   pure $ resultResp msgs Nothing
 
-handleFspec :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
-handleFspec = withDecoded $ \(FspecReq dump) -> do
-  -- A .json file is dispatched to the Atlas importer by the parser, so this
-  -- both validates and builds the twin's P_Context from the population dump.
-  msgs <- checkText ".json" dump
+handleFspec :: (ServeEnv env) => Busy -> BL.ByteString -> RIO env Reply
+handleFspec busy = withDecoded $ \(FspecReq dump) -> do
+  -- The parser dispatches a .json file to the Atlas importer, so checking the
+  -- dump as a .json file validates it as an Atlas population.
+  msgs <- checkText busy "script.json" dump
   pure $ resultResp msgs Nothing
 
-handleTranslate :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
-handleTranslate = withDecoded $ \(TranslateReq script term) -> do
-  msgs <- checkText ".adl" (spliceProbe script term)
+handleTranslate :: (ServeEnv env) => Busy -> BL.ByteString -> RIO env Reply
+handleTranslate busy = withDecoded $ \(TranslateReq script term) -> do
+  msgs <- checkText busy "script.adl" (spliceProbe script term)
   pure $ resultResp msgs (Just term)
 
--- | Atlas-import (workstream A): reconstruct an .adl script from an Atlas
---   population dump. Reuses the compiler's AtlasImport (JSON -> P_Context) and
---   the pretty-printer (showP). This makes the daemon the single compiler
---   service for both term-checking (B) and the Atlas-editor round-trip (A).
-handleImport :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
-handleImport = withDecoded $ \(FspecReq dump) -> do
-  result <- withTmpScript ".json" dump parseJsonFile
+-- | Reconstruct an .adl script from an Atlas population dump. Reuses the
+--   compiler's AtlasImport (JSON -> P_Context) and the pretty-printer (showP),
+--   so the way back from population to text has no second implementation.
+handleImport :: Busy -> BL.ByteString -> RIO env Reply
+handleImport busy = withDecoded $ \(FspecReq dump) -> do
+  result <- withScript busy "script.json" dump parseJsonFile
   pure $ case result of
     Checked ctx _ ->
       jsonResp status200 (JSON.object ["ok" .= True, "adl" .= showP ctx])
     Errors errs ->
       jsonResp status200 (JSON.object ["ok" .= False, "diagnostics" .= map tshow (NE.toList errs)])
 
--- | De heenweg (OK-30): een script als tekst in, de populatie van
---   FormalAmpersand als JSON eruit. Dit is wat RAP tot nu toe deed met een
---   eigen aanroep van het commando @ampersand population --build-recipe Grind@
---   binnen zijn eigen container. Door het hier aan te bieden hoeft de compiler
---   niet meer in de RAP-image te zitten.
-handlePopulation :: (ServeEnv env) => BL.ByteString -> RIO env Wai.Response
-handlePopulation = withDecoded $ \(PopulationReq script mNaam) ->
-  withNamedScript (veiligeNaam mNaam) script $ \fp -> do
+-- | A script as text in, its population in terms of FormalAmpersand as JSON
+--   out. This is what @ampersand population --build-recipe Grind
+--   --output-format json@ writes to a file. Offering it here lets a caller
+--   such as RAP obtain the population without a compiler in its own image.
+handlePopulation :: (ServeEnv env) => Busy -> BL.ByteString -> RIO env Reply
+handlePopulation busy = withDecoded $ \(PopulationReq script mName) ->
+  withScript busy (safeName mName) script $ \fp -> do
     env <- ask
-    let metScript =
+    let withThisScript =
           set rootFileL (Roots (fp NE.:| []))
             . set recipeL Grind
-    result <- local metScript createFspec
+    result <- local withThisScript createFspec
     case result of
       Checked fSpec _ ->
-        pure . Wai.responseLBS status200 [(hContentType, "application/json")] $
-          populationToJSON env fSpec
+        pure (status200, populationToJSON env fSpec)
       Errors errs ->
-        pure $
-          jsonResp
+        pure
+          $ jsonResp
             status200
             (JSON.object ["ok" .= False, "diagnostics" .= map tshow (NE.toList errs)])
 
 -- Core ----------------------------------------------------------------------
 
--- | Write @content@ to a unique temp file with extension @ext@, run @action@
---   on it, and clean up the file afterwards.
--- De naam wordt uit de inhoud afgeleid en niet willekeurig gekozen. Dat is geen
--- detail: de compiler legt van elk element de oorsprong vast, inclusief het pad
--- van het bronbestand, en leidt daar gegenereerde namen uit af. Met een
--- willekeurige naam levert hetzelfde script bij elk verzoek een andere populatie
--- op, en dan sluit geen enkele round-trip-maat en werkt geen twin op inhoudshash.
--- Twee gelijktijdige verzoeken met dezelfde inhoud delen dan één bestand met
--- dezelfde inhoud, wat geen kwaad kan.
-withTmpScript :: String -> Text -> (FilePath -> RIO env a) -> RIO env a
-withTmpScript ext content =
-  bracket
-    ( do
-        let fp = "ampersand-serve-" <> show (abs (hash content)) <> ext
-        writeFileUtf8 fp content
-        pure fp
-    )
-    (\fp -> removeFile fp `catchAny` const (pure ()))
+-- | Write @content@ to a file called @fileName@ in a scratch directory of its own,
+--   run @action@ on that file, and remove the directory afterwards.
+--
+--   The directory lies under the system's temporary directory, never in the
+--   working directory of the service, so a name chosen by the caller cannot
+--   touch a file that belongs to someone else.
+--
+--   The name of the directory is derived from the content rather than chosen at
+--   random. The compiler records the origin of every element, including the
+--   path of the source file, and derives generated names from it. With a random
+--   path the same script would yield a different population on every request;
+--   with this path, equal requests yield equal results.
+--
+--   Equal requests therefore share a directory. A request that finds its
+--   directory in use waits until the other request has removed it, so no
+--   request ever sees its script disappear halfway.
+withScript :: Busy -> FilePath -> Text -> (FilePath -> RIO env a) -> RIO env a
+withScript busy fileName content action = do
+  base <- liftIO getTemporaryDirectory
+  let dir = base </> ("ampersand-serve-" <> show (abs (hash content)))
+      claim = atomically $ do
+        inUse <- readTVar busy
+        checkSTM (dir `Set.notMember` inUse)
+        writeTVar busy (Set.insert dir inUse)
+      release = do
+        removeDirectoryRecursive dir `catchAny` const (pure ())
+        atomically $ modifyTVar' busy (Set.delete dir)
+  bracket_ claim release $ do
+    createDirectoryIfMissing True dir
+    let fp = dir </> fileName
+    writeFileUtf8 fp content
+    action fp
 
--- | Schrijf @content@ onder deze basisnaam in een eigen map, draai @action@, en
---   ruim die map daarna op. De map ligt onder de systeem-tijdelijke map en haar
---   naam volgt uit de inhoud, zodat twee gelijke verzoeken hetzelfde pad krijgen
---   en dus dezelfde populatie opleveren. De dienst schrijft nooit in haar eigen
---   werkmap, zodat een naam van de aanroeper geen bestand van iemand anders raakt.
-withNamedScript :: FilePath -> Text -> (FilePath -> RIO env a) -> RIO env a
-withNamedScript naam content action =
-  bracket maak ruimOp (\(_, fp) -> action fp)
-  where
-    maak = do
-      basis <- liftIO getTemporaryDirectory
-      let map' = basis </> ("ampersand-serve-" <> show (abs (hash content)))
-      createDirectoryIfMissing True map'
-      let fp = map' </> naam
-      writeFileUtf8 fp content
-      pure (map', fp)
-    ruimOp (map', _) =
-      removeDirectoryRecursive map' `catchAny` const (pure ())
-
--- | De naam die de aanroeper meegeeft, teruggebracht tot een veilige basisnaam
---   zonder mappen. Zonder naam heet het script `script.adl`, net als bij RAP.
-veiligeNaam :: Maybe Text -> FilePath
-veiligeNaam mNaam = case mNaam of
+-- | The file name that the caller passes, reduced to a base name without
+--   directories. Without a usable name the script is called @script.adl@.
+safeName :: Maybe Text -> FilePath
+safeName mName = case mName of
   Just n
-    | let kaal = T.unpack (T.takeWhileEnd (`notElem` ("/\\" :: String)) n),
-      not (null kaal),
-      kaal `notElem` [".", ".."] ->
-        kaal
+    | let bare = T.unpack (T.takeWhileEnd (`notElem` ("/\\" :: String)) n),
+      not (null bare),
+      bare `notElem` [".", ".."] ->
+        bare
   _ -> "script.adl"
 
--- | Type-check @content@ (written as a @ext@ file) via the daemon parse
---   pipeline and return the resulting messages.
-checkText :: (ServeEnv env) => String -> Text -> RIO env [Load]
-checkText ext content =
-  withTmpScript ext content (\fp -> filter isMessage . fst <$> parseProject fp)
+-- | Type-check @content@ (written to a file called @fileName@) via the daemon
+--   parse pipeline and return the resulting messages.
+checkText :: (ServeEnv env) => Busy -> FilePath -> Text -> RIO env [Load]
+checkText busy fileName content =
+  withScript busy fileName content (fmap (filter isMessage . fst) . parseProject)
 
 -- | Splice the term into the script as a probe rule, just before the last
 --   @ENDCONTEXT@, so the type-checker reports any error in the term in context.
@@ -249,9 +265,9 @@ spliceProbe script term =
 
 withDecoded ::
   (JSON.FromJSON a) =>
-  (a -> RIO env Wai.Response) ->
+  (a -> RIO env Reply) ->
   BL.ByteString ->
-  RIO env Wai.Response
+  RIO env Reply
 withDecoded action body = case JSON.eitherDecode body of
   Left e -> pure $ jsonResp status400 (JSON.object ["error" .= T.pack e])
   Right a -> action a
@@ -259,18 +275,18 @@ withDecoded action body = case JSON.eitherDecode body of
 -- | @{ "ok": Bool, "diagnostics": [Load], "term"?: Text }@.
 --   @ok@ reflects the absence of /errors/; warnings are reported but do not
 --   make the result not-ok.
-resultResp :: [Load] -> Maybe Text -> Wai.Response
+resultResp :: [Load] -> Maybe Text -> Reply
 resultResp msgs mTerm =
-  jsonResp status200 . JSON.object $
-    [ "ok" .= not (any isErrorMsg msgs),
-      "diagnostics" .= msgs
-    ]
-      <> maybe [] (\t -> ["term" .= t]) mTerm
+  jsonResp status200
+    . JSON.object
+    $ [ "ok" .= not (any isErrorMsg msgs),
+        "diagnostics" .= msgs
+      ]
+    <> maybe [] (\t -> ["term" .= t]) mTerm
 
 isErrorMsg :: Load -> Bool
 isErrorMsg Message {loadSeverity = Error} = True
 isErrorMsg _ = False
 
-jsonResp :: Status -> JSON.Value -> Wai.Response
-jsonResp st v =
-  Wai.responseLBS st [(hContentType, "application/json")] (JSON.encode v)
+jsonResp :: Status -> JSON.Value -> Reply
+jsonResp st v = (st, JSON.encode v)

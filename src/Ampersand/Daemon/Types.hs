@@ -65,7 +65,7 @@ isLoadConfig LoadConfig {} = True
 isLoadConfig _ = False
 
 -- | JSON serialization, so the daemon's diagnostics can be returned over HTTP
---   (the same payload that a future LSP front-end will use). See D4.
+--   by @ampersand serve@.
 instance ToJSON Severity where
   toJSON Warning = String "warning"
   toJSON Error = String "error"
