@@ -37,6 +37,38 @@ theorem reach_vis {inc : K → K → Prop} {k j i : K}
   | inl h => exact h ▸ h₁
   | inr h => exact Reach.step h₁ h
 
+/-- `Plus inc k j`: context `k` reaches `j` by one or more include steps. -/
+inductive Plus (inc : K → K → Prop) (k : K) : K → Prop
+  | single {j : K} : inc k j → Plus inc k j
+  | step {j i : K} : Plus inc k j → inc j i → Plus inc k i
+
+theorem Plus.trans {inc : K → K → Prop} {k j i : K}
+    (h₁ : Plus inc k j) (h₂ : Plus inc j i) : Plus inc k i := by
+  induction h₂ with
+  | single h => exact Plus.step h₁ h
+  | step _ hinc ih => exact Plus.step ih hinc
+
+/-- `inc* = I ∪ inc+`, from left to right. -/
+theorem reach_eq_or_plus {inc : K → K → Prop} {k j : K}
+    (h : Reach inc k j) : k = j ∨ Plus inc k j := by
+  induction h with
+  | refl => exact Or.inl rfl
+  | step _ hinc ih =>
+    cases ih with
+    | inl e => exact Or.inr (Plus.single (e ▸ hinc))
+    | inr p => exact Or.inr (Plus.step p hinc)
+
+/-- Lemma "Inclusion order": if inclusion is acyclic, `inc*` is antisymmetric.
+    With `Reach.refl` and `Reach.trans`, it is a partial order. -/
+theorem reach_antisymm {inc : K → K → Prop} (hac : ∀ k, ¬ Plus inc k k) {k j : K}
+    (h₁ : Reach inc k j) (h₂ : Reach inc j k) : k = j := by
+  cases reach_eq_or_plus h₁ with
+  | inl e => exact e
+  | inr p₁ =>
+    cases reach_eq_or_plus h₂ with
+    | inl e => exact e.symm
+    | inr p₂ => exact absurd (Plus.trans p₁ p₂) (hac k)
+
 end Reachability
 
 /-! ## Facts, fragments, restriction -/
@@ -330,9 +362,9 @@ theorem moment_of_completion_typed (o : Symbols K R C) (inc : K → K → Prop)
 
 end Fragments
 
-/-! ## Names in scope -/
+/-! ## References -/
 
-/-- A name as a script writes it: simple, or qualified by an alias. -/
+/-- A reference as a script writes it: a local name, or a prefix with a local name. -/
 inductive QName (N : Type)
   | simple : N → QName N
   | qual : N → N → QName N
@@ -340,45 +372,79 @@ inductive QName (N : Type)
 section Names
 variable {K N T Kd : Type}
 
-/-- The scope of context `k`.  `incP k j q b` says that the include statements
-    of `k`, extended with `k` itself under its own name, contain `⟨j, q, b⟩`;
-    `b = true` stands for an include without the keyword QUALIFIED.
+/-- The scope of context `k`.  `pre k p j` says that some include statement of `k`
+    includes `j` and has `p` as a prefix: `p` is the name of `j` or the alias of the statement.
     The things that context `j` declares are the things with owner `j`. -/
-inductive Scope (own : T → K) (nm : T → N) (incP : K → K → N → Bool → Prop) (k : K) :
+inductive Scope (own : T → K) (nm : T → N) (pre : K → N → K → Prop) (k : K) :
     QName N → T → Prop
-  | qualified {j : K} {q : N} {b : Bool} {x : T} :
-      incP k j q b → own x = j → Scope own nm incP k (.qual q (nm x)) x
-  | opened {j : K} {q : N} {x : T} :
-      incP k j q true → own x = j → Scope own nm incP k (.simple (nm x)) x
+  | local {x : T} : own x = k → Scope own nm pre k (.simple (nm x)) x
+  | prefixed {j : K} {p : N} {x : T} :
+      pre k p j → own x = j → Scope own nm pre k (.qual p (nm x)) x
 
-/-- A name with a prefix arises from the first rule only. -/
-theorem scope_qualified (own : T → K) (nm : T → N) (incP : K → K → N → Bool → Prop) (k : K)
-    (m : QName N) (y : T) (h : Scope own nm incP k m y) (q n : N) (hm : m = .qual q n) :
-    ∃ j b, incP k j q b ∧ own y = j ∧ nm y = n := by
+/-- A reference with a prefix arises from the second rule only. -/
+theorem scope_prefixed (own : T → K) (nm : T → N) (pre : K → N → K → Prop) (k : K)
+    (m : QName N) (y : T) (h : Scope own nm pre k m y) (p n : N) (hm : m = .qual p n) :
+    ∃ j, pre k p j ∧ own y = j ∧ nm y = n := by
   cases h with
-  | qualified hinc hy =>
+  | «local» _ => cases hm
+  | prefixed hpre hy =>
     injection hm with h1 h2
-    exact ⟨_, _, h1 ▸ hinc, hy, h2⟩
-  | opened _ _ => cases hm
+    exact ⟨_, h1 ▸ hpre, hy, h2⟩
 
-/-- Theorem "Qualified names suffice". -/
-theorem qualified_names_suffice (own : T → K) (nm : T → N) (kind : T → Kd)
-    (incP : K → K → N → Bool → Prop) (k : K)
+/-- A reference without a prefix arises from the first rule only. -/
+theorem scope_local (own : T → K) (nm : T → N) (pre : K → N → K → Prop) (k : K)
+    (m : QName N) (y : T) (h : Scope own nm pre k m y) (n : N) (hm : m = .simple n) :
+    own y = k ∧ nm y = n := by
+  cases h with
+  | «local» hy =>
+    injection hm with h1
+    exact ⟨hy, h1⟩
+  | prefixed _ _ => cases hm
+
+/-- Theorem "References are unambiguous", for a reference without a prefix. -/
+theorem local_reference_unambiguous (own : T → K) (nm : T → N) (kind : T → Kd)
+    (pre : K → N → K → Prop) (k : K)
     (hid : ∀ x y, own x = own y → nm x = nm y → kind x = kind y → x = y)
-    (halias : ∀ j j' q b b', incP k j q b → incP k j' q b' → j = j')
-    {j : K} {q : N} {b : Bool} {x : T} (hinc : incP k j q b) (hx : own x = j) :
-    Scope own nm incP k (.qual q (nm x)) x ∧
-    ∀ y, kind y = kind x → Scope own nm incP k (.qual q (nm x)) y → y = x := by
-  refine ⟨Scope.qualified hinc hx, ?_⟩
-  intro y hkind hs
-  have ⟨j', b', hinc', hy, hn⟩ := scope_qualified own nm incP k _ y hs q (nm x) rfl
-  have hj : j' = j := halias j' j q b' b hinc' hinc
-  apply hid y x
-  · calc own y = j' := hy                    -- y is declared by the context with alias q
-      _ = j := hj                            -- an alias stands for one context
-      _ = own x := hx.symm
-  · exact hn
+    {n : N} {x y : T} (hx : Scope own nm pre k (.simple n) x)
+    (hy : Scope own nm pre k (.simple n) y) (hkind : kind x = kind y) : x = y := by
+  have ⟨ox, nx⟩ := scope_local own nm pre k _ x hx n rfl
+  have ⟨oy, ny⟩ := scope_local own nm pre k _ y hy n rfl
+  exact hid x y (ox.trans oy.symm) (nx.trans ny.symm) hkind
+
+/-- Theorem "References are unambiguous", for a reference with a prefix
+    that fits one included context. -/
+theorem reference_unambiguous (own : T → K) (nm : T → N) (kind : T → Kd)
+    (pre : K → N → K → Prop) (k : K)
+    (hid : ∀ x y, own x = own y → nm x = nm y → kind x = kind y → x = y)
+    {p n : N} (hproper : ∀ j j', pre k p j → pre k p j' → j = j')
+    {x y : T} (hx : Scope own nm pre k (.qual p n) x)
+    (hy : Scope own nm pre k (.qual p n) y) (hkind : kind x = kind y) : x = y := by
+  have ⟨j, hj, ox, nx⟩ := scope_prefixed own nm pre k _ x hx p n rfl
+  have ⟨j', hj', oy, ny⟩ := scope_prefixed own nm pre k _ y hy p n rfl
+  have hjj : j = j' := hproper j j' hj hj'
+  apply hid x y
+  · calc own x = j := ox
+      _ = j' := hjj                          -- the prefix fits one context
+      _ = own y := oy.symm
+  · exact nx.trans ny.symm
   · exact hkind
+
+/-- Theorem "References are complete": if every included context has a prefix that fits
+    no other included context, every thing of an included context has a reference
+    that denotes it. -/
+theorem reference_complete (own : T → K) (nm : T → N) (kind : T → Kd)
+    (pre : K → N → K → Prop) (inc : K → K → Prop) (k : K)
+    (hid : ∀ x y, own x = own y → nm x = nm y → kind x = kind y → x = y)
+    (hdist : ∀ j, inc k j → ∃ p, pre k p j ∧ ∀ j', pre k p j' → j' = j)
+    (x : T) (hx : inc k (own x)) :
+    ∃ p, Scope own nm pre k (.qual p (nm x)) x ∧
+      ∀ y, kind y = kind x → Scope own nm pre k (.qual p (nm x)) y → y = x := by
+  have ⟨p, hp, huniq⟩ := hdist (own x) hx
+  refine ⟨p, Scope.prefixed hp rfl, ?_⟩
+  intro y hkind hy
+  have hproper : ∀ j j', pre k p j → pre k p j' → j = j' :=
+    fun j j' hj hj' => (huniq j hj).trans (huniq j' hj').symm
+  exact reference_unambiguous own nm kind pre k hid hproper hy (Scope.prefixed hp rfl) hkind
 
 end Names
 

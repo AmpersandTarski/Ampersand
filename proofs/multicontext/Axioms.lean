@@ -1,6 +1,9 @@
 import MultiContext
 open MultiContext
-#print axioms qualified_names_suffice
+#print axioms reach_antisymm
+#print axioms local_reference_unambiguous
+#print axioms reference_unambiguous
+#print axioms reference_complete
 #print axioms restricted_view
 #print axioms view_restr_reach
 #print axioms truth_is_imported

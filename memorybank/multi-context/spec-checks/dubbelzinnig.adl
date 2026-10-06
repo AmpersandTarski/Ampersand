@@ -1,0 +1,9 @@
+CONTEXT FormalAmpersand IN ENGLISH
+-- The reference Kurk.A, written in Migration: the prefix Kurk fits two included contexts.
+INCLUDE "migratie.adl"
+POPULATION FormalAmpersand.writtenIn[FormalAmpersand.Reference*FormalAmpersand.Context] CONTAINS [ ("refKurkA", "ctxM") ]
+POPULATION FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name] CONTAINS [ ("refKurkA", "Kurk") ]
+POPULATION FormalAmpersand.localName[FormalAmpersand.Reference*FormalAmpersand.Name] CONTAINS [ ("refKurkA", "A") ]
+POPULATION FormalAmpersand.denotes[FormalAmpersand.Reference*FormalAmpersand.Context] CONTAINS [ ("refKurkA", "ctxNew") ]
+POPULATION FormalAmpersand.refersTo[FormalAmpersand.Reference*FormalAmpersand.Declaration] CONTAINS [ ("refKurkA", "newA") ]
+ENDCONTEXT
