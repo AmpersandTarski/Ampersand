@@ -15,6 +15,7 @@ module Ampersand.Input.Qualify
     conceptNamesOf,
     traverseNames,
     NameUse (..),
+
     -- * Systems of contexts
     ContextKey,
     SystemNode (..),
@@ -43,8 +44,10 @@ data NameUse
     ClassifyUse
   | -- | the name of a concept in a REPRESENT statement
     RepresentUse
+  | -- | the name of an interface, where it is defined or where it is referred to
+    InterfaceUse
   | -- | the name of any other thing that a context declares:
-    --   a relation, rule, identity, view, interface, pattern or enforcement
+    --   a relation, rule, identity, view, pattern or enforcement
     ThingUse
   deriving (Eq, Show)
 
@@ -64,6 +67,7 @@ conceptNamesOf = getConst . traverseNames collect
   where
     collect use nm = Const $ case use of
       ThingUse -> Set.empty
+      InterfaceUse -> Set.empty
       _ -> Set.singleton nm
 
 -- | A context is identified by the file in which it is found and by its name.
@@ -214,10 +218,12 @@ flattenSystem sys = do
   where
     posOf k = fromMaybe OriginUnknown (listToMaybe (maybe [] (ctx_pos . nodeCtx) (Map.lookup k (sysNodes sys))))
     -- The interfaces of a context are the user interface of its own application.
+    -- They stay in the joined context until the types have been checked, because an interface
+    -- tells that the atoms of a concept are objects, and a concept has one type in every context.
+    -- The type checker leaves them out of its result.
     withoutInterfaces ctx =
       ctx
-        { ctx_ifcs = [],
-          ctx_ps = filter (not . isInterfacePurpose) (ctx_ps ctx),
+        { ctx_ps = filter (not . isInterfacePurpose) (ctx_ps ctx),
           ctx_pats = [pat {pt_xps = filter (not . isInterfacePurpose) (pt_xps pat)} | pat <- ctx_pats ctx]
         }
     isInterfacePurpose p = case pexObj p of
@@ -256,7 +262,8 @@ relabel sys labelOf k ctx = addWarnings unused (checks *> pure (runIdentity (tra
     checks :: Guarded ()
     checks =
       traverse_ ambiguous (L.nub [nm | (_, nm) <- uses, take 1 (nameSpaceOf nm) `elem` map pure improper])
-        *> traverse_ unknownConcept (L.nub [(nm, t) | (use, nm) <- uses, use /= ThingUse, Just t <- [targetOf nm]])
+        *> traverse_ unknownConcept (L.nub [(nm, t) | (use, nm) <- uses, use `notElem` [ThingUse, InterfaceUse], Just t <- [targetOf nm]])
+        *> traverse_ foreignInterface (L.nub [nm | (InterfaceUse, nm) <- uses, isJust (targetOf nm)])
         *> traverse_ foreignRepresent (L.nub [nm | (RepresentUse, nm) <- uses, isJust (targetOf nm)])
     ambiguous nm =
       mkSystemError
@@ -274,6 +281,13 @@ relabel sys labelOf k ctx = addWarnings unused (checks *> pure (runIdentity (tra
           [ "The name " <> fullName nm <> " does not denote a concept.",
             "  The context " <> snd t <> " has no concept " <> fullName (withoutPrefix nm) <> "."
           ]
+    -- The interfaces of a context are the user interface of its own application.
+    foreignInterface nm =
+      mkSystemError
+        (ctx_pos ctx)
+        [ "The name " <> fullName nm <> " refers to an interface of another context.",
+          "  The interfaces of a context belong to its own application, so another context cannot use them."
+        ]
     -- A REPRESENT statement determines how the atoms of a concept are stored,
     -- so only the context that owns a concept can state it.
     foreignRepresent nm =
@@ -401,7 +415,7 @@ traverseNames f ctx =
         <*> traverse (conceptAs ClassifyUse) (generics g)
     interface ifc =
       (\nm obj -> ifc {ifc_Name = nm, ifc_Obj = obj})
-        <$> thing (ifc_Name ifc)
+        <$> f InterfaceUse (ifc_Name ifc)
         <*> boxItem (ifc_Obj ifc)
     boxItem item = case item of
       P_BxTxt {} -> pure item
@@ -412,7 +426,7 @@ traverseNames f ctx =
           <*> traverse subIfc (obj_msub item)
     subIfc si = case si of
       P_Box {} -> (\items -> si {si_box = items}) <$> traverse boxItem (si_box si)
-      P_InterfaceRef {} -> (\nm -> si {si_str = nm}) <$> thing (si_str si)
+      P_InterfaceRef {} -> (\nm -> si {si_str = nm}) <$> f InterfaceUse (si_str si)
     purpose p = (\obj -> p {pexObj = obj}) <$> ref2Obj (pexObj p)
     ref2Obj r = case r of
       PRef2ConceptDef nm -> PRef2ConceptDef <$> f ConceptUse nm
@@ -421,7 +435,7 @@ traverseNames f ctx =
       PRef2IdentityDef nm -> PRef2IdentityDef <$> thing nm
       PRef2ViewDef nm -> PRef2ViewDef <$> thing nm
       PRef2Pattern nm -> PRef2Pattern <$> thing nm
-      PRef2Interface nm -> PRef2Interface <$> thing nm
+      PRef2Interface nm -> PRef2Interface <$> f InterfaceUse nm
       PRef2Context _ -> pure r
       PRef2Enforce nm -> PRef2Enforce <$> thing nm
       PRef2Role _ -> pure r

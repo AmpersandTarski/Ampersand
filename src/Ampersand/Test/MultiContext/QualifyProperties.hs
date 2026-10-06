@@ -214,12 +214,12 @@ emptied ctx =
       ctx_enfs = []
     }
 
--- | The interfaces of an included context are not joined, and neither are the purposes of those interfaces.
+-- | The purposes of the interfaces of an included context are not joined.
+--   The interfaces themselves are, until the types have been checked.
 withoutInterfaces :: P_Context -> P_Context
 withoutInterfaces ctx =
   ctx
-    { ctx_ifcs = [],
-      ctx_ps = filter (not . isInterfacePurpose) (ctx_ps ctx),
+    { ctx_ps = filter (not . isInterfacePurpose) (ctx_ps ctx),
       ctx_pats = [pat {pt_xps = filter (not . isInterfacePurpose) (pt_xps pat)} | pat <- ctx_pats ctx]
     }
   where
@@ -254,9 +254,9 @@ prop_diamond (Alias b) (Alias c) (Alias d) ctx =
           [("V", emptied ctx), ("B", emptied ctx), ("C", emptied ctx), ("D", ctx)]
           [("V", "B", b), ("V", "C", c), ("B", "D", d), ("C", "D", d)]
       )
-    $ \result ->
-      conjoin
-        [ counterexample "the names of the shared context" $ case Set.toList (Set.map (take 1 . nameSpaceOf) (Set.filter (not . isReservedName) (Set.fromList (namesOf result)))) of
-            prefixes -> property (length prefixes <= 1),
-          counterexample "the relations of the shared context" (length (ctx_ds result) <= length (ctx_ds ctx))
-        ]
+      $ \result ->
+        conjoin
+          [ counterexample "the names of the shared context" $ case Set.toList (Set.map (take 1 . nameSpaceOf) (Set.filter (not . isReservedName) (Set.fromList (namesOf result)))) of
+              prefixes -> property (length prefixes <= 1),
+            counterexample "the relations of the shared context" (length (ctx_ds result) <= length (ctx_ds ctx))
+          ]

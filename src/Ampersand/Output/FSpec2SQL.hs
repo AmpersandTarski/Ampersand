@@ -2,11 +2,11 @@ module Ampersand.Output.FSpec2SQL (dumpSQLqueries, databaseStructureSql) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Core.ParseTree (foreignContexts)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaPlugs)
 import Ampersand.FSpec.SQL
-import Ampersand.Core.ParseTree (foreignContexts)
 import Ampersand.FSpec.ToFSpec.ADL2Plug (foreignTable)
 import Ampersand.Prototype.TableSpec
 import qualified RIO.List as L

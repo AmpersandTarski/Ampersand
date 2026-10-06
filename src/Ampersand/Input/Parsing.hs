@@ -624,6 +624,7 @@ myNormalise fp = joinDrive drive . joinPath $ f [] dirs <> [file]
           [] -> fatal ("Illegal filePath: " <> tshow fp)
           _ : reverseInit -> f (reverse reverseInit) xs -- reduce a/b/c/../d/ to a/b/d/
       | otherwise = f (ds <> [x]) xs
+
 is :: FilePath -> FilePath -> Bool
 is str fp = case L.stripPrefix str fp of
   Just [chr] -> chr `elem` pathSeparators

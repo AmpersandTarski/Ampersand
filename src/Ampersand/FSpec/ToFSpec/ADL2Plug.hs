@@ -9,6 +9,7 @@ module Ampersand.FSpec.ToFSpec.ADL2Plug
   )
 where
 
+import qualified Algebra.Graph.AdjacencyMap as Graph
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
@@ -16,7 +17,6 @@ import Ampersand.Core.AbstractSyntaxTree (Guarded (..), makeTypologies)
 import Ampersand.Core.ParseTree (foreignContexts, foreignLabelViews)
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
-import qualified Algebra.Graph.AdjacencyMap as Graph
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set

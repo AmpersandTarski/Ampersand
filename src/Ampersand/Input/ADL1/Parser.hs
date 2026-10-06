@@ -275,7 +275,7 @@ pFile = partitionEithers <$> many1 (Left <$> pInclusion <|> Right <$> pContext) 
   where
     -- What follows the last context has to be a context or an inclusion statement as well.
     -- Without this check, a statement with a mistake in it would be ignored in silence.
-    atEnd = pEndOfFile <|> (() <$ pContext)
+    atEnd = pEndOfFile <|> void pContext
 
 --- InclusionStatement ::= 'CONTEXT' Name (',' Name)* 'INCLUDES' InclusionItem (',' InclusionItem)*
 --- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)?
@@ -296,12 +296,9 @@ pInclusion = do
     pItem =
       build
         <$> pNameWithoutLabel ContextName
-        <*> committed (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
-        <*> committed (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
-    -- Once the word FROM or AS has been read, what follows it is required.
-    committed :: AmpParser a -> AmpParser (Maybe a)
-    committed parser = Just <$> parser <|> pure Nothing
-    build nm mFrom mAlias = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom) mAlias
+        <*> pMaybe (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
+        <*> pMaybe (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
+    build nm mFrom = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom)
     pWord :: Text -> AmpParser ()
     pWord w = try (pUpperCaseID >>= isWord) <?> T.unpack w
       where
