@@ -11,6 +11,8 @@ module Ampersand.Core.ParseTree
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
+    mkFileMeta,
+    foreignContextFiles,
     mkLabelViewMeta,
     foreignLabelViews,
     P_RoleRule (..),
@@ -178,6 +180,22 @@ foreignLabelViews ms =
     | m <- ms,
       mtName m == labelViewMetaName,
       [owner, here, there] <- [T.words (mtVal m)]
+  ]
+
+-- | The metadata by which a joined context says in which file a context that it contains is found.
+fileMetaName :: Text1
+fileMetaName = toText1Unsafe "multicontext.file"
+
+mkFileMeta :: Origin -> NamePart -> FilePath -> MetaData
+mkFileMeta orig lbl file = MetaData orig fileMetaName (namePartToText lbl <> " " <> T.pack file)
+
+-- | The file of every context that a joined context contains besides the compiled one: label and file.
+foreignContextFiles :: [MetaData] -> [(Text, Text)]
+foreignContextFiles ms =
+  [ (lbl, T.drop 1 rest)
+    | m <- ms,
+      mtName m == fileMetaName,
+      let (lbl, rest) = T.break (== ' ') (mtVal m)
   ]
 
 instance Traced MetaData where

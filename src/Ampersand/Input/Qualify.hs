@@ -204,6 +204,7 @@ flattenSystem sys = do
       { ctx_metas =
           ctx_metas joined
             <> [mkForeignMeta (posOf k) l (snd k) | (k, l) <- labels]
+            <> [mkFileMeta (posOf k) l (fst k) | (k, l) <- labels]
             <> [ mkLabelViewMeta (posOf g) owner here there
                  | (owner, theirs) <- views,
                    (g, there) <- theirs,
