@@ -26,7 +26,7 @@ The statement stands outside every `CONTEXT` block:
    which organises the text of a script, and a relation between contexts.
    FormalAmpersand itself consists of eleven files that `INCLUDE` joins into one context.
 2. Every existing script relies on `INCLUDE` as a union.
-   The generated backend files of the 207 scripts in `testing/Travis/testcases` that the compiler accepts are identical before and after, apart from the banner with the compiler version (measured with `memorybank/tools/compare_compiler_output.sh` against the commit this branch started from).
+   For the 207 scripts in `testing/Travis/testcases` that the compiler accepts, `memorybank/tools/compare_compiler_output.sh` reports "identical apart from printed terms" against the commit this branch started from, and no script as different. Printed terms are the comments in generated SQL and the normalisation steps in `interfaces.json` (DC-10).
 3. The statement stands outside the block, so that a reader sees that it concerns more than one context.
 4. Rejected: `INCLUDE "file" AS alias` inside a block, which the first build had.
    It made a file the unit of inclusion, where the unit is a context.
@@ -299,6 +299,9 @@ counted from 1 for contexts with the same name.
    which is the method of the 2024 paper.
 3. All applications use one database user with all rights.
    Rights per context, derived from what a context reads and writes, are a next step.
+4. Docker builds from the directory that contains both the scripts and the output.
+   The command warns if that is another directory than the one with the scripts,
+   which happens when the output directory lies outside it.
 
 *Impact on the specification:* none.
 
@@ -348,7 +351,10 @@ unless it is a name space of Ampersand itself.**
    (the core team chose `MODULE` on 24 February 2023).
 2. How an application notices a change that another application made in a database it reads.
    Rules are evaluated on the current data, and the stored signals of a rule over another database are refreshed when the application next evaluates that rule.
-3. Database rights per context, and databases on different servers.
+3. Refusing a write that the specification does not allow.
+   An application reaches a table of another context through a view, and nothing stops it from changing that table.
+   The relation `writes` of the specification says what it may write: in the plug, in the rights of the database user, or in both.
+   Databases on different servers belong here too.
 4. Whether an including context writes a database directly, as it does now, or through the API of its owner.
 5. Error positions: the checks of DC-3, DC-4 and DC-8 report the first line of the context,
    because a name in the parse tree carries no position.

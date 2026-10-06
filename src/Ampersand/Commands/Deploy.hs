@@ -70,6 +70,14 @@ deploy fSpec = do
         writeFileUtf8 file content
         logInfo $ "  " <> display (T.pack (makeRelative outDir file))
   logInfo $ "Generating the deployment of " <> display (T.intercalate ", " (map mName members)) <> " in " <> display (T.pack outDir)
+  when (buildDir /= scripts)
+    . logWarn
+    $ "Docker builds from "
+    <> display (T.pack buildDir)
+    <> ", the directory that contains both your scripts and the output. "
+    <> "Choose an output directory inside "
+    <> display (T.pack scripts)
+    <> " to keep what Docker reads small."
   forM_ members $ \m ->
     write (outDir </> T.unpack (mId m) </> "Dockerfile")
       $ dockerfile m (toPosix (makeRelative buildDir scripts)) (toPosix (makeRelative scripts rootFile))
@@ -244,6 +252,8 @@ envExample members =
     <> [ "",
          "MYSQL_ROOT_PASSWORD=ampersand",
          "MYSQL_AMPERSAND_PASSWORD=ampersand",
+         "# The prototype framework. It has to know the setting AMPERSAND_CONTEXT_DBNAMES,",
+         "# and its compiler has to know systems of contexts (the option --context).",
          "FRAMEWORK_IMAGE=ampersandtarski/prototype-framework:latest"
        ]
 
@@ -303,6 +313,11 @@ readme members composeFile =
          "",
          "`install.sh` installs the applications in this order: " <> T.intercalate ", " (map mId (installOrder members)) <> ".",
          "A context is installed after every context it reaches, because its database contains views on their tables.",
+         "",
+         "The images build on the prototype framework that `FRAMEWORK_IMAGE` names.",
+         "That framework has to know the setting `AMPERSAND_CONTEXT_DBNAMES`,",
+         "and the compiler in it has to know systems of contexts.",
+         "With an older framework, the installation of an application that reads another database fails on an unknown database.",
          "",
          "## The names of the databases",
          "",
