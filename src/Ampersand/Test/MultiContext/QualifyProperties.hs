@@ -240,23 +240,37 @@ prop_noInclusion ctx =
         length (ctx_metas result) === length (ctx_metas ctx)
       ]
 
+-- | An arbitrary context can declare two views, rules or interfaces with the same name and no position.
+--   The compiler tells such declarations apart by their position, and gives up on them when it joins contexts.
+--   A script that is read from a file always has positions, so the properties leave such doubles out.
+withoutDoubles :: P_Context -> P_Context
+withoutDoubles ctx =
+  ctx
+    { ctx_vs = L.nubBy ((==) `on` vd_nm) (ctx_vs ctx),
+      ctx_rs = L.nubBy ((==) `on` rr_nm) (ctx_rs ctx),
+      ctx_ifcs = L.nubBy ((==) `on` ifc_Name) (ctx_ifcs ctx)
+    }
+
 prop_included :: Alias -> P_Context -> Property
-prop_included (Alias a) ctx =
+prop_included (Alias a) arbitraryCtx =
   joined (systemOf [("V", emptied ctx), ("J", ctx)] [("V", "J", a)]) $ \result ->
     Set.fromList (namesOf result) === Set.fromList (namesOf (qualifyContext [a] (withoutInterfaces ctx)))
+  where
+    ctx = withoutDoubles arbitraryCtx
 
 prop_diamond :: Alias -> Alias -> Alias -> P_Context -> Property
-prop_diamond (Alias b) (Alias c) (Alias d) ctx =
-  b
-    /= c
-    ==> joined
-      ( systemOf
-          [("V", emptied ctx), ("B", emptied ctx), ("C", emptied ctx), ("D", ctx)]
-          [("V", "B", b), ("V", "C", c), ("B", "D", d), ("C", "D", d)]
-      )
-      $ \result ->
-        conjoin
-          [ counterexample "the names of the shared context" $ case Set.toList (Set.map (take 1 . nameSpaceOf) (Set.filter (not . isReservedName) (Set.fromList (namesOf result)))) of
-              prefixes -> property (length prefixes <= 1),
-            counterexample "the relations of the shared context" (length (ctx_ds result) <= length (ctx_ds ctx))
-          ]
+prop_diamond (Alias b) (Alias c) (Alias d) arbitraryCtx =
+  let ctx = withoutDoubles arbitraryCtx
+   in b
+        /= c
+        ==> joined
+          ( systemOf
+              [("V", emptied ctx), ("B", emptied ctx), ("C", emptied ctx), ("D", ctx)]
+              [("V", "B", b), ("V", "C", c), ("B", "D", d), ("C", "D", d)]
+          )
+          $ \result ->
+            conjoin
+              [ counterexample "the names of the shared context" $ case Set.toList (Set.map (take 1 . nameSpaceOf) (Set.filter (not . isReservedName) (Set.fromList (namesOf result)))) of
+                  prefixes -> property (length prefixes <= 1),
+                counterexample "the relations of the shared context" (length (ctx_ds result) <= length (ctx_ds ctx))
+              ]
