@@ -168,10 +168,10 @@ INCLUDE "bar.xlsx"
 
 ```text
 INCLUDE <filename>
-INCLUDE <filename> AS <alias>
 ```
 
-The first form is described here, the second one under [Including a context under an alias](#including-a-context-under-an-alias).
+`INCLUDE` brings in the text of a file.
+To let one context use the declarations and the data of another context, see [Systems of contexts](#systems-of-contexts).
 
 This statement specifies files that need to be included before compiling. The filename is given in double quotes, including a path that is relative to the position of the main adl-file. The main adl-file is the file that is called with the command Ampersand.
 
@@ -188,14 +188,30 @@ Included files may contain `INCLUDE`statements themselves. The files mentioned t
 
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
 
-### Including a context under an alias
+## Systems of contexts
+
+#### Purpose
+
+One script describes one information system: a context with one database.
+Some systems consist of several information systems, each with a database and rules of its own, in which one system uses what another one defines and stores.
+A system for permits uses the persons of a population register that another organisation keeps.
+A migration needs the existing system and the desired system at the same time.
+For that purpose a context can include another context.
+
+#### Syntax and meaning
 
 ```text
-INCLUDE <filename> AS <alias>
+CONTEXT <context> INCLUDES <context>
+CONTEXT <context>, <context> INCLUDES <context> FROM <filename> AS <alias>, <context>
 ```
 
-With an alias, the included file does not become part of your context.
-It is a context of its own, and everything it declares is available in your context under the alias as a prefix.
+The statement stands outside every `CONTEXT ... ENDCONTEXT` block, because it relates contexts.
+`CONTEXT A, B INCLUDES C, D` says that `A` and `B` each include `C` and `D`.
+The part with `FROM` tells in which file the included context is to be found; you leave it out if that context is in the same file.
+The part with `AS` gives the included context a second name, an alias, for use in the including context.
+
+If `A` includes `B`, everything that `B` declares is available in `A`, and so is the population of `B`.
+The script of `A` refers to a thing of `B` by putting the name of `B`, or the alias, in front of it.
 
 Consider a register of persons, in a file `registry.adl`:
 
@@ -209,42 +225,77 @@ ENDCONTEXT
 A system for permits uses the persons of that register, and it has an address of its own: the site to which a permit applies.
 
 ```text
-CONTEXT Permits
-  INCLUDE "registry.adl" AS Reg
+CONTEXT Permits INCLUDES Registry FROM "registry.adl"
 
-  RELATION applicant[Permit*Reg.Person] [UNI,TOT]
+CONTEXT Permits
+  RELATION applicant[Permit*Registry.Person] [UNI,TOT]
   RELATION address[Permit*Address] [UNI]
 
-  RULE located : applicant |- applicant;Reg.address;Reg.address~
+  RULE located : applicant |- applicant;Registry.address;Registry.address~
+  ROLE Clerk MAINTAINS located
 ENDCONTEXT
 ```
 
-The name `Reg.Person` denotes the concept `Person` of the register, and `Reg.address` denotes the relation that pairs a person with a home address.
+The name `Registry.Person` denotes the concept `Person` of the register, and `Registry.address` denotes the relation that pairs a person with a home address.
 The name `address` without a prefix denotes the relation that `Permits` declares itself.
 So, the two relations called `address` and the two concepts called `Address` stay apart, whatever names the two scripts choose.
 
-The difference with a plain `INCLUDE` is the difference between a union and a disjoint union.
-A plain `INCLUDE "registry.adl"` adds the declarations of the file to your context, so that a relation with the same name and signature in both files is one relation.
-With an alias, every concept, relation, rule, identity, view, interface, pattern and named `ENFORCE` statement of the included file gets the prefix, and so does every reference to them inside that file.
-The population of the included context comes along, and its rules hold for it as they do when the file is compiled by itself.
+#### One context, one database
 
-A few things follow from this.
+Every context has a database of its own and an application of its own, so that it can be deployed by itself.
+Each fact is stored once: a pair in the database of the context that declares the relation, and an atom in the database of the context that declares the concept.
+A context reads the databases of the contexts it includes, directly or indirectly.
+A term can therefore read several databases: in `applicant;Registry.address` the pairs of `applicant` come from the database of the permits and the pairs of `address` from the database of the register.
 
-- A name of the included context is available with its prefix only. `Person` in the script of `Permits` would be a new concept of `Permits`.
-- The alias follows the file name. It is an identifier of your choice, and it stands for one file within your context.
-- You can include the same file under two aliases. Each alias stands for a copy of its own, with its own population.
-- An included context can include other contexts. If `registry.adl` contains `INCLUDE "towns.adl" AS Geo`, then the towns are available in `Permits` as `Reg.Geo.Town`.
-- A context cannot include itself under an alias, directly or by way of another context, because it would have to contain a copy of itself.
-- The roles of the included context keep their names. A role is a function of a person in an organisation, which is the same person whichever context is asked.
-- The concept `SESSION` and the name space `PrototypeContext` belong to Ampersand itself and get no prefix.
-- A `REPRESENT` statement belongs in the context that declares the concept. The including context cannot state one for a concept with a prefix.
-- A `CLASSIFY` statement can relate concepts of different contexts. This is how the including context says that two concepts correspond, as in `CLASSIFY old.Person ISA new.Person`.
-- Preprocessor variables follow the alias: `INCLUDE "foo.adl" AS x --# [ "Developing" ]`.
+A context that is included by two contexts remains one context with one database.
+If the register and a register of shops both include a context `Towns`, the town of a shop and the town in which a person lives are atoms of one concept, `Towns.Town`.
 
-The compiler reports an alias that stands for two files, an alias that equals the name of your own context, and a concept name such as `Reg.Persn` that the included context does not have.
+#### Names
 
-The generated prototype stores the included context in the database of the including application.
-The command `ampersand export` shows what the compiler made of your script: one context without `INCLUDE` statements, in which every name carries its prefix.
+- The name of a context identifies the context. Everything between `CONTEXT Foo` and `ENDCONTEXT` belongs to the context `Foo`, and a file can contain several contexts and several fragments of one context.
+- A name of an included context carries a prefix. `Person` in the script of `Permits` would be a new concept of `Permits`.
+- Without an alias, the prefix is the name of the included context. With an alias, both the alias and the name can be used.
+- A prefix names a context that is included directly. If `Registry` includes `Towns`, then `Permits` sees the towns: they are the target of a relation of the register. To refer to `Towns.Town` itself, `Permits` states that it includes `Towns`. That adds no database.
+- If a context includes two contexts with the same name, the compiler demands an alias for each. A migration is the usual case: the existing and the desired system are two versions of one context.
+
+```text
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+```
+
+- Inclusion has no cycles: a context cannot include itself, directly or by way of another context. That is what lets a context be deployed without the contexts that include it.
+- The roles keep their names in every context, and so do the concept `SESSION` and the name space `PrototypeContext`, which belong to Ampersand itself.
+- The interfaces of a context are the user interface of its own application. Another context cannot refer to them.
+- Preprocessor variables follow the file name: `Kurk FROM "desired.adl" [ "Migrating" ] AS new`.
+
+#### Rules, classifications and writing
+
+A rule is guarded by the application of the context that declares it.
+An including context sees the rule and can rely on it.
+
+A rule of your context can depend on data of another context, as `located` does.
+The other application can then change that data without knowing of your rule, and your application cannot refuse the change.
+That is why `located` is assigned to a role: a clerk restores it.
+
+A context writes in the database of a context it includes in two cases.
+
+- An `ENFORCE` rule of your context on a relation of the other context adds pairs to that relation.
+- A `CLASSIFY` statement whose generic concept belongs to the other context.
+  `CLASSIFY old.Person ISA new.Person` says that every person of the existing system is a person of the desired system.
+  The two concepts keep a table each, and your application stores every atom of `old.Person` in the table of `new.Person` as well.
+
+A `REPRESENT` statement belongs in the context that declares the concept.
+
+#### `INCLUDE` and `INCLUDES`
+
+`INCLUDE "file"` relates files: it brings in the text of a file, which becomes part of the context in which the statement stands.
+`CONTEXT A INCLUDES B` relates contexts: `B` stays a context of its own, with its own database.
+
+#### Compiling and deploying
+
+`ampersand check`, `proto` and the other commands compile the first context in the file you give them, together with the contexts it reaches.
+The option `--context` compiles another context of the system, by its name or alias in that file.
+The command [`ampersand deploy`](../the-command-line-tool.md#deploy) generates a compose file and a Dockerfile for every context.
 
 ## The PATTERN statement
 

@@ -19,7 +19,7 @@ The view of a context is the union of the fragments of the contexts it reaches b
 | Theorem in Lean | What it says | Where the compiler relies on it |
 | --- | --- | --- |
 | `reach_antisymm` | If inclusion is acyclic, its closure is a partial order. | The order in which contexts are compiled and deployed. |
-| `local_reference_unambiguous`, `reference_unambiguous`, `reference_complete` | A reference denotes at most one thing of each kind, and every thing of an included context has a reference. | Name resolution of `Context.name`. |
+| `local_reference_unambiguous`, `reference_unambiguous`, `reference_complete` | A reference denotes at most one thing of each kind, and every thing of an included context has a reference. | Name resolution of `Context.name` (`Ampersand.Input.Qualify`). |
 | `restricted_view`, `view_restr_reach` | A view restricted to what an included context reaches is the view of that context. | Used by the theorems below. |
 | `truth_is_imported` | A rule of an included context has the same violations in the including context. | The rules of an included context are kept as they are. |
 | `closure_has_concepts`, `wellTyped_view_iff`, `flattening` | A context with everything it reaches is one information system precisely when each reached context is consistent. | The compiler renames and merges, and then compiles one context. |
@@ -46,9 +46,10 @@ The model treats the violations of a rule,
 the rules of a context and the include statements as given functions and predicates.
 Finiteness of populations plays no part in the proofs and is left out of the model.
 
-The compiler does not implement this model.
-Its statement `INCLUDE "file" AS alias` gives every alias a copy of the included context,
-and the cases in `testing/Travis/testcases/MultiContext/` test that behaviour.
+The compiler is bound to this model by tests:
+the cases in `testing/Travis/testcases/MultiContext/`,
+the property suite `Ampersand.Test.MultiContext.QualifyProperties`,
+and the scenarios in `test/multi-context` of the prototype framework, which run a system with one database per context.
 The translation of a classification across contexts into a write,
 and the equality of a query over several databases with the same query on one database, are not proved.
 

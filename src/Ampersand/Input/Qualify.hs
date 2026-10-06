@@ -226,7 +226,7 @@ flattenSystem sys = do
 
 -- | Rename the names in the script of one context to the names of the joined context, and check its prefixes.
 relabel :: System -> (ContextKey -> NameSpace) -> ContextKey -> P_Context -> Guarded P_Context
-relabel sys labelOf k ctx = checks *> pure (runIdentity (traverseNames (const (Identity . rename)) ctx))
+relabel sys labelOf k ctx = addWarnings unused (checks *> pure (runIdentity (traverseNames (const (Identity . rename)) ctx)))
   where
     proper = properPrefixes sys k
     improper = [p | (p, _) <- prefixesOf sys k, p `notElem` map fst proper]
@@ -247,6 +247,12 @@ relabel sys labelOf k ctx = checks *> pure (runIdentity (traverseNames (const (I
     targetOfIn t nm = case nameSpaceOf nm of
       h : _ -> L.lookup h (properPrefixes sys t)
       [] -> Nothing
+    -- An included context that no name of this script refers to. A name with the alias counts for the context.
+    unused =
+      [ mkUnusedInclusionWarning (edgeOrigin e) (snd k) (namePartToText (edgeName e))
+        | e : _ <- L.groupBy ((==) `on` edgeTarget) (L.sortOn edgeTarget (Map.findWithDefault [] k (sysEdges sys))),
+          edgeTarget e `notElem` [t | (_, nm) <- uses, Just t <- [targetOf nm]]
+      ]
     checks :: Guarded ()
     checks =
       traverse_ ambiguous (L.nub [nm | (_, nm) <- uses, take 1 (nameSpaceOf nm) `elem` map pure improper])

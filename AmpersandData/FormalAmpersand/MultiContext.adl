@@ -3,6 +3,7 @@ CONTEXT FormalAmpersand IN ENGLISH
 -- Its mathematical counterpart is the article "Multi-Context Information Systems in Ampersand" (2026).
 -- The two are kept consistent: every RULE below corresponds to a requirement or a theorem in the article.
 --
+-- The compiler implements this specification (Ampersand.Input.Qualify and Ampersand.FSpec.ToFSpec.ADL2Plug).
 -- FormalAmpersand.adl does not include this file yet, so the compiler embeds it without using it.
 -- A comment that starts with OPEN marks a choice that awaits a decision by Stef Joosten.
 --
@@ -50,8 +51,7 @@ PATTERN FormalAmpersand.ContextsAndDatabases
 
     RELATION FormalAmpersand.database[FormalAmpersand.Context*FormalAmpersand.Database] [UNI,TOT,INJ,SUR]
     MEANING "Every context has one database of its own, and every database realises one context. No population is stored twice."
-    -- OPEN (versions): the name of a database contains the name and the version of its context.
-    --   Where a version comes from, and when a new version means a new database, awaits a decision.
+    -- The name of a database is a fact of the deployment. By default it consists of the name of the context and its version.
 ENDPATTERN
 
 PURPOSE PATTERN FormalAmpersand.Inclusion

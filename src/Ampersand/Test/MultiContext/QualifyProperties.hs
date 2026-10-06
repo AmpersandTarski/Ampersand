@@ -1,17 +1,17 @@
--- | Property tests for the renaming behind @INCLUDE "file" AS alias@.
+-- | Property tests for joining the contexts of a system (@CONTEXT A INCLUDES B@).
 --
---   An included context contributes to the including context with all of its names
---   prefixed by the alias ('qualifyContext'). The properties below state, for arbitrary
---   contexts, what makes that contribution a /disjoint/ union:
+--   The compiler joins the context it compiles with every context that this one reaches.
+--   A thing of another context gets the label of that context as a prefix ('flattenSystem').
+--   The properties below state, for arbitrary contexts:
 --
---   * every name gets the prefix, and nothing else changes;
---   * the renaming is injective, so it identifies no two things;
---   * two different aliases yield names that have nothing in common,
---     apart from the names that belong to the Ampersand system itself;
---   * a nested include (@x@ inside @y@) yields the names @y.x.n@;
+--   * giving every name a prefix ('qualifyContext') changes nothing else, identifies no two things,
+--     and yields disjoint names for two prefixes;
+--   * a context that includes nothing is joined to itself;
+--   * an included context contributes its names with the prefix, and nothing else;
+--   * a context that is reached along two paths contributes its names once;
 --   * the renamed context can be printed and parsed again.
 --
---   They are the executable counterparts of the theorem "qualified names suffice"
+--   They are the executable counterparts of the theorems on references
 --   in the Lean session @proofs/multicontext@ (proof-track claim PRF-11).
 module Ampersand.Test.MultiContext.QualifyProperties
   ( doAllQualifyPropertyTests,
@@ -26,6 +26,7 @@ import Ampersand.Input.Parsing (parseCtx)
 import Ampersand.Input.Qualify
 import Ampersand.Test.Parser.ArbitraryTree ()
 import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -60,7 +61,10 @@ properties =
     ("A nested include yields the names of both aliases.", property prop_nested),
     ("The name of the context and the kinds of names are preserved.", property prop_preserves),
     ("A qualified context can be printed and parsed again.", property prop_roundtrip),
-    ("The concept names are among the names.", property prop_conceptNames)
+    ("The concept names are among the names.", property prop_conceptNames),
+    ("A context that includes nothing is joined to itself.", property prop_noInclusion),
+    ("An included context contributes its names with the prefix.", property prop_included),
+    ("A context that is reached along two paths contributes its names once.", property prop_diamond)
   ]
 
 -- | An alias as a script can write it. The reserved name spaces are left out,
@@ -175,3 +179,84 @@ prop_conceptNames ctx =
   counterexample
     (show (L.sort (Set.toList (conceptNamesOf ctx))))
     (conceptNamesOf ctx `Set.isSubsetOf` Set.fromList (namesOf ctx))
+
+-- | A system of contexts for a test: the viewer comes first, and an edge is includer, included and alias.
+systemOf :: [(Text, P_Context)] -> [(Text, Text, NamePart)] -> System
+systemOf nodes edges =
+  System
+    { sysViewer = key (maybe "" fst (listToMaybe nodes)),
+      sysNodes = Map.fromList [(key nm, SystemNode (key nm) ctx) | (nm, ctx) <- nodes],
+      sysEdges =
+        Map.fromListWith
+          (flip (<>))
+          [(key from, [SystemEdge OriginUnknown (key target) alias (Just alias)]) | (from, target, alias) <- edges]
+    }
+  where
+    key nm = (T.unpack nm <> ".adl", nm)
+
+-- | A context without declarations, with the name and the language of the given one.
+emptied :: P_Context -> P_Context
+emptied ctx =
+  ctx
+    { ctx_pats = [],
+      ctx_rs = [],
+      ctx_ds = [],
+      ctx_cs = [],
+      ctx_ks = [],
+      ctx_rrules = [],
+      ctx_reprs = [],
+      ctx_vs = [],
+      ctx_gs = [],
+      ctx_ifcs = [],
+      ctx_ps = [],
+      ctx_pops = [],
+      ctx_metas = [],
+      ctx_enfs = []
+    }
+
+-- | The interfaces of an included context are not joined, and neither are the purposes of those interfaces.
+withoutInterfaces :: P_Context -> P_Context
+withoutInterfaces ctx =
+  ctx
+    { ctx_ifcs = [],
+      ctx_ps = filter (not . isInterfacePurpose) (ctx_ps ctx),
+      ctx_pats = [pat {pt_xps = filter (not . isInterfacePurpose) (pt_xps pat)} | pat <- ctx_pats ctx]
+    }
+  where
+    isInterfacePurpose p = case pexObj p of
+      PRef2Interface _ -> True
+      _ -> False
+
+joined :: System -> (P_Context -> Property) -> Property
+joined sys check = case flattenSystem sys of
+  Errors err -> counterexample (show (NE.toList err)) False
+  Checked ctx _ -> check ctx
+
+prop_noInclusion :: P_Context -> Property
+prop_noInclusion ctx =
+  joined (systemOf [("V", ctx)] []) $ \result ->
+    conjoin
+      [ namesOf result === namesOf ctx,
+        length (ctx_metas result) === length (ctx_metas ctx)
+      ]
+
+prop_included :: Alias -> P_Context -> Property
+prop_included (Alias a) ctx =
+  joined (systemOf [("V", emptied ctx), ("J", ctx)] [("V", "J", a)]) $ \result ->
+    Set.fromList (namesOf result) === Set.fromList (namesOf (qualifyContext [a] (withoutInterfaces ctx)))
+
+prop_diamond :: Alias -> Alias -> Alias -> P_Context -> Property
+prop_diamond (Alias b) (Alias c) (Alias d) ctx =
+  b
+    /= c
+    ==> joined
+      ( systemOf
+          [("V", emptied ctx), ("B", emptied ctx), ("C", emptied ctx), ("D", ctx)]
+          [("V", "B", b), ("V", "C", c), ("B", "D", d), ("C", "D", d)]
+      )
+    $ \result ->
+      conjoin
+        [ counterexample "the names of the shared context" $ case Set.toList (Set.map (take 1 . nameSpaceOf) (Set.filter (not . isReservedName) (Set.fromList (namesOf result)))) of
+            prefixes -> property (length prefixes <= 1),
+          counterexample "the relations of the shared context" (length (ctx_ds result) <= length (ctx_ds ctx))
+        ]

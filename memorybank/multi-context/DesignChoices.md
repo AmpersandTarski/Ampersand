@@ -1,87 +1,120 @@
 # Design choices — multi-context Ampersand
 
-Register of design choices for including a context in another context (issue [#1509](https://github.com/AmpersandTarski/Ampersand/issues/1509), phase 2 of [#1307](https://github.com/AmpersandTarski/Ampersand/issues/1307)).
+Register of design choices for systems of contexts (issue [#1509](https://github.com/AmpersandTarski/Ampersand/issues/1509), phase 2 of [#1307](https://github.com/AmpersandTarski/Ampersand/issues/1307)).
 Numbers are stable and never reused; the current state stands here, the history lives in git.
-The plan of approach is [plan.md](plan.md);
-its decisions D1 to D7 are the questions that these choices answer.
+The specification is `AmpersandData/FormalAmpersand/MultiContext.adl`,
+and the mathematics is in the article *Multi-Context Information Systems in Ampersand* (2026).
 
-The choices below were made on 5 October 2026 by the AI agent that built the first phases,
-while Stef Joosten was unavailable.
-Each one is the option that the plan recommends, or a deviation that the build made necessary,
-and each is marked *provisional* until Stef and the core team confirm it.
+A choice marked *decided* was taken by Stef Joosten on 6 October 2026.
+A choice marked *provisional* was taken during the build by the AI agent that built it,
+and waits for confirmation by Stef and the core team.
 Open questions sit at the bottom under "Still to decide".
 
-## Syntax and names
+## The language
 
-**A plain `INCLUDE` keeps its meaning;
-`INCLUDE "file" AS alias` includes the file as a context of its own.**
-*DC-1 · provisional · 2026-10-05 · origin: plan D1*
+**A context includes another context with a statement of its own: `CONTEXT A INCLUDES B`.
+`INCLUDE "file"` keeps its meaning.**
+*DC-1 · decided · 2026-10-06*
 
-A plain `INCLUDE` adds the declarations of the file to the including context, as it always did.
-With an alias, every name that the included file declares is available under the alias as a prefix,
-and under that name only.
+The statement stands outside every `CONTEXT` block:
+`CONTEXT A, B INCLUDES C FROM "file" AS alias, D`.
+`INCLUDE "file"` brings in the text of a file, which becomes part of the context in which it stands.
 
 *Considerations:*
 
-1. Every existing script and every regression case relies on the union.
-   This choice changes none of them:
-   the generated backend files of all 204 scripts in `testing/Travis/testcases` that the compiler accepts are byte-identical before and after, the model hash included (measured with `memorybank/tools/compare_compiler_output.sh`; the other 17 scripts are refused by both builds in the same way).
-2. The brief of 5 October 2026 and the article give every `INCLUDE` the new meaning,
-   with a keyword `QUALIFIED` to ask for prefixes only.
-   That option would change the meaning of every script in
-   which two files declare the same relation; how many scripts that touches has not been measured.
-3. The literature study found that Haskell users ask for prefixes as the default,
-   and that Haskell cannot change its default any more.
-   With this choice the new form always has a prefix, so the question of the default does not arise.
-4. A separate keyword for the new form was rejected:
-   it adds a keyword and gives nothing that `AS` does not give.
+1. Two relations were easily confused under one keyword: a relation between files,
+   which organises the text of a script, and a relation between contexts.
+   FormalAmpersand itself consists of eleven files that `INCLUDE` joins into one context.
+2. Every existing script relies on `INCLUDE` as a union.
+   The generated backend files of the 207 scripts in `testing/Travis/testcases` that the compiler accepts are identical before and after, apart from the banner with the compiler version (measured with `memorybank/tools/compare_compiler_output.sh` against the commit this branch started from).
+3. The statement stands outside the block, so that a reader sees that it concerns more than one context.
+4. Rejected: `INCLUDE "file" AS alias` inside a block, which the first build had.
+   It made a file the unit of inclusion, where the unit is a context.
 
-*Impact on the specification:* one new form of the `INCLUDE` statement.
-The article needs a revision of its section on syntax; its definitions and theorems are unaffected.
+*Impact on the specification:* the pattern `Inclusion` of `MultiContext.adl`.
 
 *Impact in production:* none for existing scripts.
 
-**`AS` is recognised by its position and is no keyword.**
-*DC-2 · provisional · 2026-10-05 · origin: build*
-
-The parser reads `AS` as an identifier that directly follows the file name of an `INCLUDE` statement.
+**The words `INCLUDES`, `FROM` and `AS` are recognised by their position and are no keywords.**
+*DC-2 · provisional · 2026-10-06*
 
 *Considerations:*
 
-1. A new keyword would invalidate every script that uses `AS` as the name of a concept.
-   The regression case `as_is_no_keyword.adl` does so.
-2. No context element starts with an identifier in upper case, so the position is unambiguous.
+1. A new keyword would invalidate every script that uses the word as the name of a concept.
+   The regression case `as_is_no_keyword.adl` uses all three.
+2. After `CONTEXT` and a name, no context element can start with an identifier in upper case,
+   so the position is unambiguous.
 
-*Impact on the specification:* none beyond DC-1.
+*Impact on the specification:* none.
 
 *Impact in production:* none.
 
-**An alias stands for one file within a context, differs from the name of that context,
-and is no name space of Ampersand itself.**
-*DC-3 · provisional · 2026-10-05 · origin: article, definition of a multi-context system*
+**The name of a context identifies the context.
+Two versions of a context are two contexts.**
+*DC-11 · decided · 2026-10-06*
 
-The compiler reports the three cases as errors.
+Everything between `CONTEXT Foo` and `ENDCONTEXT` belongs to the context `Foo`.
+A file can contain several contexts and several fragments of one context;
+fragments with the same name are united.
+The compiler identifies a context by its name together with the file after `FROM`,
+which stands for the version.
 
 *Considerations:*
 
-1. The first two are the conditions under
-   which a qualified name denotes exactly one thing (proof-track claim PRF-11, theorem `qualified_names_suffice`).
-2. The third one keeps the renaming injective:
-   the names in `PrototypeContext` and `FormalAmpersand` get no prefix,
-   so an alias with that name would let a renamed name coincide with one of them.
-   The property suite found this.
+1. The existing and the desired system in a migration are two versions of one context:
+   both scripts say `CONTEXT Kurk`. They have a database each.
+2. Ampersand makes no statement about version management.
+   Which version runs on which database is decided at deployment (DC-13).
+3. A file that `INCLUDE` brings in keeps contributing to the including context whatever its header says,
+   as before. Two of the files of FormalAmpersand have the header `CONTEXT RAP`.
 
-*Impact on the specification:* three error messages.
+*Impact on the specification:* a context is determined by its name and its version.
 
 *Impact in production:* none.
 
-**A concept name that starts with an alias has to exist in the included context.**
-*DC-4 · provisional · 2026-10-05 · origin: build*
+**The prefix of a name is the name of the included context. An alias is a second name.**
+*DC-3 · decided · 2026-10-06*
+
+Without `AS`, the things of an included context are referred to with its name as a prefix.
+With `AS`, both the alias and the name can be used.
+If a context includes two contexts with the same name, the compiler demands an alias for each,
+and reports the name as ambiguous where a script uses it.
+An alias cannot be a name space of Ampersand itself.
+
+*Considerations:*
+
+1. The developer reads `Registry.Person` as the person of the register.
+   A freely chosen alias as the only prefix would hide that.
+2. The requirement in general: every inclusion has a prefix that fits no other context that the same context includes.
+   It is the condition under which every thing of an included context has a reference (proof-track claim PRF-11, `reference_complete`).
+
+*Impact on the specification:* the rules `PrefixDefinition` and `EveryInclusionCanBeNamed`.
+
+*Impact in production:* none.
+
+**A prefix names a context that is included directly.**
+*DC-5 · provisional · 2026-10-06*
+
+If `Registry` includes `Towns`, then `Permits` sees the towns without being able to name them.
+To refer to `Towns.Town`, `Permits` states that it includes `Towns`.
+
+*Considerations:*
+
+1. Stating the inclusion costs one line and adds no database (DC-6).
+2. Rejected: a prefix that follows a path of inclusions, such as `Registry.Towns.Town`.
+   It adds no expressive power and makes a script depend on the inclusions in other scripts.
+
+*Impact on the specification:* the rule `DenotesDefinition`.
+
+*Impact in production:* none.
+
+**A concept name with a prefix has to exist in the included context.**
+*DC-4 · provisional · 2026-10-05*
 
 *Considerations:*
 
 1. Ampersand declares a concept by using it.
-   Without this check, `Reg.Persn` would silently become a new concept.
+   Without this check, `Registry.Persn` would silently become a new concept.
 2. A misspelled relation needs no check of its own,
    since the type checker reports an undeclared relation.
 
@@ -89,107 +122,157 @@ The compiler reports the three cases as errors.
 
 *Impact in production:* none.
 
-**A name can be reached through two aliases, as in `Reg.Geo.Town`.**
-*DC-5 · provisional · 2026-10-05 · origin: build; deviates from the article*
-
-If `registry.adl` includes `towns.adl` as `Geo`,
-a script that includes `registry.adl` as `Reg` can write `Reg.Geo.Town`.
+**Inclusion has no cycles.**
+*DC-12 · decided · 2026-10-06*
 
 *Considerations:*
 
-1. The article follows Haskell and gives the things of the inner context no name in the outer one.
-2. With DC-6, the inner context is a private part of the included context,
-   so naming it reveals nothing that the outer context could not already see.
-3. Stef expected this form in 2023 (`old.gnu.foo`, comment on issue #1307),
-   and the literature study found that Haskell users ask for it.
-4. Forbidding it would need a rule to tell an alias from a name space that a script chose itself,
-   which the syntax cannot tell apart.
+1. A context must be deployable without the contexts that include it.
+   In a cycle, no context could be deployed before the others.
+2. The closure of an acyclic relation is a partial order (PRF-11, `reach_antisymm`),
+   which gives the order of compilation and installation.
 
-*Impact on the specification:* the article says that names are not transitive;
-the compiler allows it.
+*Impact on the specification:* the rule `InclusionIsAcyclic`.
 
 *Impact in production:* none.
 
-## Instances and storage
-
-**Every alias stands for a copy of the included context,
-which the including application stores in its own database.**
-*DC-6 · provisional · 2026-10-05 · origin: plan D3, D4 and D5*
-
-Including one file under two aliases gives two copies with separate populations.
-The compiler renames the included context and merges it into the including one,
-so that the rest of the pipeline compiles a single context.
-
-*Considerations:*
-
-1. The plan distinguishes an instance that is private to the including application from an instance that several applications share.
-   A private instance is touched by one application only,
-   so storing it in the database of that application cannot be observed from outside.
-2. This is the flattening theorem of the article put to work:
-   a context with everything it reaches is one information system.
-3. It needs no change in the prototype framework and no new deployment files,
-   and it covers the migration case,
-   in which the migration system serves the existing and the desired system.
-4. A shared instance, such as one register for several applications, needs a database of its own,
-   a deployment descriptor and generated grants.
-   That is the next phase of the plan.
-5. A context cannot include itself under an alias, directly or indirectly:
-   it would have to contain a copy of itself.
-   A cycle becomes possible with shared instances.
-
-*Impact on the specification:* none; a script does not say where a context is stored.
-
-*Impact in production:* one database per application, as today.
-
 **Roles, the concept SESSION and the name spaces of Ampersand itself get no prefix.**
-*DC-7 · provisional · 2026-10-05 · origin: build*
+*DC-7 · provisional · 2026-10-05*
 
 *Considerations:*
 
 1. A role is a function of a person in an organisation.
    The clerk of the permit system is the same clerk when a rule of the register asks for one.
-2. SESSION and `PrototypeContext` belong to the application that serves the user,
-   of which there is one.
+2. SESSION and `PrototypeContext` belong to the application that serves the user.
 
-*Impact on the specification:* an included context that assigns a rule to a role assigns it to the role with that name in the including application.
+*Impact on the specification:* a rule of an included context that is assigned to a role is assigned to the role with that name in the including application.
 
 *Impact in production:* none.
 
-**Only the context that declares a concept can state a `REPRESENT` for it;
-a `CLASSIFY` can relate concepts of different contexts.**
-*DC-8 · provisional · 2026-10-05 · origin: plan D6; deviates from it for `CLASSIFY`*
+**The interfaces of a context belong to its own application.**
+*DC-14 · provisional · 2026-10-06*
+
+The compiler does not join the interfaces of an included context, so another context cannot refer to them.
 
 *Considerations:*
 
-1. The plan recommends a strict start: `CLASSIFY` within one owner, `REPRESENT`,
-   `VIEW` and `IDENT` by the owner, no `POPULATION` across contexts.
-2. The migration case cannot be written that way.
-   The concepts `old.A` and `new.A` are different concepts,
-   and the copy rule `new.r >: old.r - copyR` type-checks only if the script says how they correspond.
-   `CLASSIFY old.A ISA new.A` says it.
-3. The article carries instances across by a rule that enforces a concept.
-   Ampersand has no such rule, and a classification does what that rule would do.
-4. With DC-6, the including application is the only one that touches the included context,
-   so `POPULATION`, `VIEW` and `IDENT` for its things do no harm.
-   They have to be reconsidered for shared instances.
-5. `REPRESENT` stays with the owner,
-   because two contexts that disagree on the representation of one concept cannot both be right.
+1. An interface is the user interface of the application of its context.
+   Joined into the including application, it would show up in a navigation menu where nobody asked for it.
+2. Views and identities are joined, because they say how an atom of an included concept is shown.
 
-*Impact on the specification:* one error message, for a `REPRESENT` of a concept with an alias.
+*Impact on the specification:* none; `MultiContext.adl` does not cover interfaces.
 
 *Impact in production:* none.
 
-**A relaxed version of an included context is selected with a preprocessor variable.**
-*DC-9 · provisional · 2026-10-05 · origin: build, migration case*
+## Storage
 
-The migration context includes the desired system as `INCLUDE "desired.adl" AS new --# [ "Migrating" ]`, and the desired system guards its new blocking invariant with `--#IFNOT Migrating`.
+**Every context has one database, and each fact is stored once.**
+*DC-6 · decided · 2026-10-06*
+
+A pair is stored in the database of the context that declares the relation,
+and an atom in the database of the context that declares the concept.
+A context that is reached along two paths is one context with one database.
+
+*Considerations:*
+
+1. A fact must be updated in one place only.
+2. Rejected: a copy of the included context per inclusion, which the first build had.
+   In a diamond of inclusions it yields two concepts where one is meant,
+   so that a rule that composes relations of both sides is a type error.
+
+*Impact on the specification:* `database` is a bijection; the patterns `OwnershipAndVisibility` and `ReadingAndWriting`.
+
+*Impact in production:* one database per context.
+
+**The tables of a context are a function of its own declarations.**
+*DC-15 · provisional · 2026-10-06*
+
+In a system of contexts the compiler makes the tables per owner.
+A relation is folded into the table of a concept only if both belong to the same context,
+a classification that relates concepts of two contexts does not make them share a table,
+and every concept gets a table.
+
+*Considerations:*
+
+1. The context that owns a table and a context that reads it have to agree on its layout.
+   They are compiled separately, so the layout cannot depend on who reads it.
+2. Since v5.9.4 a concept gets a table only if a query of its own context reads it.
+   An including context may read a concept that its owner never reads.
+   The option `--all-concept-tables` therefore gives every concept a table; `ampersand deploy` sets it.
+3. Rejected: one table per relation and per concept everywhere.
+   It is simpler, and gives up the wide tables inside a context.
+
+*Impact on the specification:* none.
+
+*Impact in production:* a context that others include is compiled with `--all-concept-tables`.
+
+**A table of another context is a view, and the name of its database is filled in at deployment.**
+*DC-13 · decided for the names, provisional for the views · 2026-10-06*
+
+`database.sql` creates the tables of the compiled context.
+For a table of another context it creates a view on that table,
+with the placeholder `"{{db:<label>}}"` where the name of the database belongs.
+The framework replaces it at installation, from `AMPERSAND_CONTEXT_DBNAMES`.
+
+*Considerations:*
+
+1. Ampersand makes no statement about version management, so the compiler cannot know the name of a database.
+   The framework already takes the name of its own database from the environment.
+2. With a view, every query, insert and delete that the compiler generates keeps working unchanged,
+   and reads or writes the one table in the database of its owner.
+3. MariaDB evaluates a query over several databases on one server, and a transaction over them is atomic.
+   Databases on different servers are outside this design.
+4. An unresolved placeholder is an unknown database, so a missing setting fails at installation with a message that names the context.
+
+*Impact on the specification:* none; the specification says that a database belongs to one context.
+
+*Impact in production:* the databases of a system share one database server.
+
+**A classification that relates concepts of two contexts writes.**
+*DC-8 · decided · 2026-10-06*
+
+`CLASSIFY S ISA G` keeps a table for S and a table for G, each in the database of its owner.
+The application of the context that states the classification stores every atom of S in the table of G as well.
+Only the context that declares a concept can state a `REPRESENT` for it.
+
+*Considerations:*
+
+1. A migration needs to tell the type checker that a concept of the existing system and a concept of the desired system correspond: `CLASSIFY old.A ISA new.A`.
+2. The application that owns S does not know of the classification.
+   So the application that states it brings new atoms across before it evaluates its rules,
+   as it restores any other transactional invariant.
+3. Two contexts that disagree on the representation of one concept cannot both be right.
+
+*Impact on the specification:* the rule `WritesDefinition`; the article gives the classification as a transactional invariant.
+
+*Impact in production:* the framework restores such classifications at the start of every run of the ExecEngine.
+
+**The compiled context contains the rules of every context it reaches.**
+*DC-16 · provisional · 2026-10-06*
+
+*Considerations:*
+
+1. A context that writes in the database of another context has to keep the invariants of that context.
+   It can, because a rule has the same violations in every context that reaches it (PRF-11, `truth_is_imported`).
+2. The framework evaluates a rule only when a transaction touches something it depends on,
+   so the rules of a context that is only read cost nothing.
+3. The initial population is that of the compiled context alone; every context installs its own.
+
+*Impact on the specification:* none.
+
+*Impact in production:* a signal of a rule of an included context shows up in the including application as well.
+
+**A relaxed version of an included context is selected with a preprocessor variable.**
+*DC-9 · provisional · 2026-10-05*
+
+The migration context includes the desired system as `Kurk FROM "desired.adl" [ "Migrating" ] AS new`,
+and the desired system guards its new blocking invariant with `--#IFNOT Migrating`.
 
 *Considerations:*
 
 1. During a migration the desired system is deployed while its new invariants do not hold yet.
    The article calls such a context not guarded.
-2. The preprocessor exists and already passes variables through an `INCLUDE` statement,
-   so this needs no new language construct.
+2. The preprocessor exists and already passes variables to an included file.
 3. It asks the desired system to mark its new invariants.
    A generator of migration scripts, the stated next step of the 2024 paper, can do that marking.
 
@@ -197,29 +280,63 @@ The migration context includes the desired system as `INCLUDE "desired.adl" AS n
 
 *Impact in production:* none.
 
-## Printing
+## Deployment
+
+**`ampersand deploy` generates a compose file and a Dockerfile per context.**
+*DC-17 · provisional · 2026-10-06*
+
+The compose file has one MariaDB server and one service per context.
+The name of a database comes from the environment, with a default of the context name and a version,
+counted from 1 for contexts with the same name.
+`install.sh` installs a context after every context it includes.
+
+*Considerations:*
+
+1. A context is compiled inside its image, together with the scripts of the contexts it reaches,
+   with the options `--context` and `--all-concept-tables`.
+2. A new name of a database means a new, empty database.
+   So a new version runs next to the old one until its data has been migrated,
+   which is the method of the 2024 paper.
+3. All applications use one database user with all rights.
+   Rights per context, derived from what a context reads and writes, are a next step.
+
+*Impact on the specification:* none.
+
+*Impact in production:* one container per context.
+
+## Inside the compiler
+
+**The compiler joins the compiled context and the contexts it reaches into one context.**
+*DC-18 · provisional · 2026-10-06*
+
+A thing of another context gets one prefix: the label that the compiled context has for that context,
+which is the alias, or else the name.
+The joined context carries, as `META` data, the label, the name and the file of every other context,
+and how those contexts call one another.
+
+*Considerations:*
+
+1. The type checker, the normaliser and the SQL generator keep working on one context.
+   This is the flattening theorem of the article (PRF-11, `flattening`).
+2. A context that is reached along two paths gets one label, so its things are joined once.
+3. The metadata lets the table generator know the owner of every thing without a change in the data structures of the compiler,
+   and `ampersand export` shows it.
+
+*Impact on the specification:* none.
+
+*Impact in production:* none.
 
 **The printer writes the name space of a relation and of a view,
 unless it is a name space of Ampersand itself.**
-*DC-10 · provisional · 2026-10-05 · origin: build*
+*DC-10 · provisional · 2026-10-05*
 
 *Considerations:*
 
 1. The printer dropped the name space of a relation and of a view reference,
    so an exported script with such names did not parse back to the same model.
-2. The export of a script with an aliased include is the flattened single context,
-   which serves as the oracle for the meaning of the include.
-   It has to be a script that the compiler accepts.
-3. The compiler prints terms into the files it generates: as comments in the SQL,
-   as normalisation steps in `interfaces.json` and as formal expressions in `rules.json`.
+2. The compiler prints terms into the files it generates.
    Every prototype contains rules of `PrototypeContext`,
    so printing that name space would change those texts in every generated prototype.
-   The printer therefore leaves the name spaces `PrototypeContext` and `FormalAmpersand` out,
-   as it always did.
-   With this exception, the generated files of the existing regression scripts are byte-identical before and after (see DC-1).
-4. The exception is an inconsistency:
-   an exported script that contains relations of `PrototypeContext` still loses their name space.
-   It existed before this change.
 
 *Impact on the specification:* none.
 
@@ -227,16 +344,12 @@ unless it is a name space of Ampersand itself.**
 
 ## Still to decide
 
-1. DC-1 against the brief: should a plain `INCLUDE` become the include relation after all?
-   (plan D1)
-2. `CONTEXT` or `MODULE` as the unit that gets a name space.
-   (plan D2; the core team chose `MODULE` on 24 February 2023)
-3. Shared instances: the deployment descriptor, a database per instance, generated grants,
-   and the command `ampersand deploy`.
-   (plan D3, D4, D5 and phases P4 to P6)
-4. How an application notices a change in a shared instance.
-   (plan D7)
-5. Whether an including context writes a shared instance directly or through its interfaces.
-   (literature study, question 6)
-6. Error positions: the checks of DC-4 and DC-8 report the first line of the file,
+1. `CONTEXT` or `MODULE` as the unit that gets a name space
+   (the core team chose `MODULE` on 24 February 2023).
+2. How an application notices a change that another application made in a database it reads.
+   Rules are evaluated on the current data, and the stored signals of a rule over another database are refreshed when the application next evaluates that rule.
+3. Database rights per context, and databases on different servers.
+4. Whether an including context writes a database directly, as it does now, or through the API of its owner.
+5. Error positions: the checks of DC-3, DC-4 and DC-8 report the first line of the context,
    because a name in the parse tree carries no position.
+6. A warning for a context name that is covered by an alias and never used.
