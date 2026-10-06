@@ -11,6 +11,8 @@ module Ampersand.Core.ParseTree
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
+    mkLabelViewMeta,
+    foreignLabelViews,
     P_RoleRule (..),
     Role (..),
     P_Enforce (..),
@@ -158,6 +160,24 @@ foreignContexts ms =
     | m <- ms,
       mtName m == foreignMetaName,
       let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
+
+-- | The metadata by which a joined context says how one of the contexts it contains calls another one.
+--   Its value holds three labels: that of the first context and that of the second context in the compiled context,
+--   and the label that the first context has for the second one.
+labelViewMetaName :: Text1
+labelViewMetaName = toText1Unsafe "multicontext.label"
+
+mkLabelViewMeta :: Origin -> NamePart -> NamePart -> NamePart -> MetaData
+mkLabelViewMeta orig owner here there =
+  MetaData orig labelViewMetaName (T.unwords (map namePartToText [owner, here, there]))
+
+foreignLabelViews :: [MetaData] -> [(Text, Text, Text)]
+foreignLabelViews ms =
+  [ (owner, here, there)
+    | m <- ms,
+      mtName m == labelViewMetaName,
+      [owner, here, there] <- [T.words (mtVal m)]
   ]
 
 instance Traced MetaData where

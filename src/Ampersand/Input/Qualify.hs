@@ -198,8 +198,20 @@ flattenSystem sys = do
   viewer <- renamed (sysViewer sys)
   others <- traverse (fmap withoutInterfaces . renamed . fst) labels
   let joined = foldl' mergeContexts viewer others
-  pure joined {ctx_metas = ctx_metas joined <> [mkForeignMeta (fromMaybe OriginUnknown (listToMaybe (ctx_pos (nodeCtx (node k))))) l (snd k) | (k, l) <- labels]}
+  views <- traverse (\(k, l) -> (,) l <$> systemLabels sys {sysViewer = k}) labels
+  pure
+    joined
+      { ctx_metas =
+          ctx_metas joined
+            <> [mkForeignMeta (posOf k) l (snd k) | (k, l) <- labels]
+            <> [ mkLabelViewMeta (posOf g) owner here there
+                 | (owner, theirs) <- views,
+                   (g, there) <- theirs,
+                   Just here <- [L.lookup g labels]
+               ]
+      }
   where
+    posOf k = fromMaybe OriginUnknown (listToMaybe (maybe [] (ctx_pos . nodeCtx) (Map.lookup k (sysNodes sys))))
     -- The interfaces of a context are the user interface of its own application.
     withoutInterfaces ctx =
       ctx

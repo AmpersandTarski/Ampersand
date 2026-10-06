@@ -4,6 +4,8 @@ module Ampersand.Prototype.TableSpec
   ( TableSpec (tsCmnt),
     getTableName,
     plug2TableSpec,
+    createViewSql,
+    databasePlaceholder,
     tableSpec2Queries,
     dropTableIfExistsSql,
     showColumsSql,
@@ -125,6 +127,30 @@ createTableSql withComment tSpec
         <> " /* "
         <> (T.pack . show . fstype) att
         <> " */"
+
+-- | The place in a query where the name of the database of another context belongs.
+--   The compiler does not know that name: the prototype framework fills it in when it installs the
+--   database, from the deployment. The argument is the label of the other context.
+databasePlaceholder :: Text -> Text
+databasePlaceholder lbl = doubleQuote ("{{db:" <> lbl <> "}}")
+
+-- | A table that another context owns is known in this database as a view on that table.
+--   So every query of this context reads and writes the one table, in the database of its owner.
+createViewSql :: Bool -> Text -> Text -> TableSpec -> SqlQuery
+createViewSql withComment lbl remote tSpec
+  | withComment =
+      SqlQueryPretty
+        $ commentBlockSQL (tsCmnt tSpec <> ["", "This table belongs to the context " <> lbl <> "."])
+        <> [statement]
+  | otherwise = SqlQueryPlain statement
+  where
+    statement =
+      "CREATE VIEW "
+        <> doubleQuote (tsName tSpec)
+        <> " AS SELECT * FROM "
+        <> databasePlaceholder lbl
+        <> "."
+        <> doubleQuote remote
 
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec =

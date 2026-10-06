@@ -16,6 +16,8 @@ fSpecGenOptsParser isForDaemon =
   FSpecGenOpts
     <$> rootsP
     <*> sqlBinTablesP
+    <*> allConceptTablesP
+    <*> compiledContextP
     <*> genInterfacesP
     <*> namespaceP
     <*> crudP
@@ -47,6 +49,29 @@ fSpecGenOptsParser isForDaemon =
             <> "database, for testing purposes."
         )
         mempty
+
+    allConceptTablesP :: Parser Bool
+    allConceptTablesP =
+      boolFlags
+        False
+        "all-concept-tables"
+        ( "Give every concept a table, also if no query of this context reads it. "
+            <> "Use this for a context that other contexts include."
+        )
+        mempty
+
+    compiledContextP :: Parser Text
+    compiledContextP =
+      strOption
+        ( long "context"
+            <> metavar "CONTEXT"
+            <> value ""
+            <> help
+              ( "The context to compile, if the script is a system of contexts: "
+                  <> "the name of a context that the first context in the root file reaches, or its alias. "
+                  <> "By default the first context in the root file is compiled."
+              )
+        )
 
     genInterfacesP :: Parser Bool
     genInterfacesP =
@@ -184,6 +209,8 @@ defFSpecGenOpts rootAdl =
   FSpecGenOpts
     { xrootFile = Roots rootAdl,
       xsqlBinTables = False,
+      xallConceptTables = False,
+      xcompiledContext = "",
       xgenInterfaces = False,
       xnamespace = "",
       xdefaultCrud = (True, True, True, True),

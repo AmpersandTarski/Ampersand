@@ -119,7 +119,9 @@ instance JSON A_Concept (Maybe TableCols) where
           }
       where
         -- A generalization without a table of its own contributes no column.
-        cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
+        -- A generalization in a table of its own contributes no column either: that is the case
+        -- for a generalization that another context owns, which is stored in the database of that context.
+        cols = filter ((== cptTable) . fst) . concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
     _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
 
 instance JSON ViewDef View where

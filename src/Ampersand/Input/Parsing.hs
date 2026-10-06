@@ -63,6 +63,7 @@ import Ampersand.Input.Qualify
     SystemEdge (..),
     SystemNode (..),
     flattenSystem,
+    systemLabels,
   )
 import Ampersand.Input.SemWeb.Turtle
 import Ampersand.Input.Xslx.XLSX (XlsxIfcSheet, parseXlsxFile, xlsxIfcSheet2pops)
@@ -112,7 +113,8 @@ parseFilesTransitive xs = do
   canonical <- liftIO . mapM canonicalizePath . getRoots $ xs
   let candidates = mkCandidate curDir <$> canonical
   do
-    result <- parseThings candidates
+    wanted <- Ampersand.Basics.view compiledContextL
+    result <- parseThings wanted candidates
     return (candidates, result)
   where
     mkCandidate :: FilePath -> FilePath -> ParseCandidate
@@ -128,7 +130,7 @@ parseFilesTransitive xs = do
 
 parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) => RIO env (Guarded P_Context)
 parseFormalAmpersand = do
-  parseThings
+  parseThings ""
     $ ParseCandidate
       { pcBasePath = Nothing,
         pcOrigin = Just $ Origin "Formal Ampersand specification",
@@ -141,7 +143,7 @@ parseFormalAmpersand = do
 
 parsePrototypeContext :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) => RIO env (Guarded P_Context)
 parsePrototypeContext = do
-  parseThings
+  parseThings ""
     $ ParseCandidate
       { pcBasePath = Nothing,
         pcOrigin = Just $ Origin "Ampersand specific system context",
@@ -157,22 +159,40 @@ parsePrototypeContext = do
 --   (see 'flattenSystem'). Without an inclusion statement, the result is the context as it is written.
 parseThings ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
+  -- | The context to compile, by its name or its alias in the root file. Empty: the context that the root file starts with.
+  Text ->
   NonEmpty ParseCandidate ->
   RIO env (Guarded P_Context)
-parseThings roots = do
-  gViewer <- loadNode roots
-  case gViewer of
+parseThings wanted roots = do
+  gRoot <- loadNode roots
+  case gRoot of
     Errors err -> pure (Errors err)
-    Checked viewer ws -> do
-      gSys <- growSystem [] (Map.singleton (loadedKey viewer) viewer)
+    Checked root ws -> do
+      gSys <- growSystem [] (Map.singleton (loadedKey root) root)
       pure . addWarnings ws $ do
         (nodes, edges) <- gSys
-        flattenSystem
-          System
-            { sysViewer = loadedKey viewer,
-              sysNodes = Map.map (\n -> SystemNode (loadedKey n) (loadedCtx n)) nodes,
-              sysEdges = edges
-            }
+        let sys =
+              System
+                { sysViewer = loadedKey root,
+                  sysNodes = Map.map (\n -> SystemNode (loadedKey n) (loadedCtx n)) nodes,
+                  sysEdges = edges
+                }
+        viewer <- choose sys
+        flattenSystem sys {sysViewer = viewer}
+  where
+    choose :: System -> Guarded ContextKey
+    choose sys
+      | T.null wanted || wanted == snd (sysViewer sys) = pure (sysViewer sys)
+      | otherwise = do
+          labels <- systemLabels sys
+          case [k | (k, l) <- labels, namePartToText l == wanted] of
+            k : _ -> pure k
+            [] ->
+              mkErrorReadingINCLUDE
+                Nothing
+                [ "The option --context asks for the context " <> wanted <> ".",
+                  "  The context " <> snd (sysViewer sys) <> " reaches: " <> T.intercalate ", " (map (namePartToText . snd) labels) <> "."
+                ]
 
 -- | A context as it has been read: the files with the same context name, and the files they INCLUDE.
 data LoadedNode = LoadedNode
