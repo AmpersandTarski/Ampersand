@@ -1,11 +1,11 @@
+CONTEXT TooEarly INCLUDES Kurk FROM "../contexts/kurk_existing.adl" AS old,
+                          Kurk FROM "../contexts/kurk_desired.adl" AS new
 CONTEXT TooEarly IN ENGLISH
 PURPOSE CONTEXT TooEarly
 {+ The desired system of the migration case is included with its blocking invariant
 while the violations have not been repaired: a2 and a3 are paired with no B.
 The compiler refuses this, which is why a migration needs an intermediate system. +}
 
-INCLUDE "../contexts/kurk_existing.adl" AS old
-INCLUDE "../contexts/kurk_desired.adl" AS new
 
 CLASSIFY old.A ISA new.A
 CLASSIFY old.B ISA new.B

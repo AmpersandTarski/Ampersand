@@ -1,5 +1,0 @@
-CONTEXT Reg IN ENGLISH
--- The alias equals the name of the including context.
-INCLUDE "../contexts/registry.adl" AS Reg
-RELATION applicant[Permit*Reg.Person]
-ENDCONTEXT

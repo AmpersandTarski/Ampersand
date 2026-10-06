@@ -1,6 +1,6 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS X,
+                      Towns FROM "../contexts/towns.adl" AS X
 CONTEXT Fail IN ENGLISH
 -- One alias stands for two different files.
-INCLUDE "../contexts/registry.adl" AS X
-INCLUDE "../contexts/towns.adl" AS X
 RELATION lives[X.Person*X.Town]
 ENDCONTEXT

@@ -1,10 +1,10 @@
+CONTEXT Preview INCLUDES Kurk FROM "../contexts/kurk_desired.adl" [ "Migrating" ] AS new
 CONTEXT Preview IN ENGLISH
 PURPOSE CONTEXT Preview
 {+ An INCLUDE statement with an alias can set preprocessor variables for the included file.
 With the variable `Migrating`, the desired system comes without its new invariant,
 so that this context may hold an atom of A that is paired with no B. +}
 
-INCLUDE "../contexts/kurk_desired.adl" AS new --# [ "Migrating" ]
 
 POPULATION new.A CONTAINS [ "a1" ]
 

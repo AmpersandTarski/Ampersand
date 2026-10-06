@@ -1,27 +1,35 @@
--- | Qualifying the names of an included context.
+-- | Systems of contexts.
 --
---   The statement @INCLUDE "foo.adl" AS x@ makes everything that the context in
---   @foo.adl@ declares available in the including context under the prefix @x.@.
---   The compiler realises this by renaming: every name of the included context gets
---   the alias as its name space, after which the two contexts can be merged without
---   any of their names coinciding. So, the included context contributes a disjoint
---   set of concepts, relations and rules, where a plain @INCLUDE@ contributes to a union.
+--   The statement @CONTEXT A INCLUDES B@ makes everything that context @B@ declares
+--   available in context @A@, under the name of @B@ (or an alias) as a prefix.
+--   Every context has one database. So, a context that is reached along two paths is one context.
 --
---   This module contains that renaming, as a traversal over the names of a 'P_Context',
---   and the checks on the use of aliases that can be done before type checking.
+--   The compiler compiles one context at a time, which we call the viewer.
+--   It joins the declarations of the viewer and of every context that the viewer reaches
+--   into a single context, in which every thing of another context carries one prefix:
+--   the label that the viewer has for that context. This module contains that renaming,
+--   as a traversal over the names of a 'P_Context', and the checks on the use of prefixes.
+--   The specification is @AmpersandData/FormalAmpersand/MultiContext.adl@.
 module Ampersand.Input.Qualify
   ( qualifyContext,
     conceptNamesOf,
-    checkForeignConcepts,
-    checkOwnership,
     traverseNames,
     NameUse (..),
+    -- * Systems of contexts
+    ContextKey,
+    SystemNode (..),
+    SystemEdge (..),
+    System (..),
+    flattenSystem,
+    systemLabels,
   )
 where
 
 import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError
+import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -58,60 +66,206 @@ conceptNamesOf = getConst . traverseNames collect
       ThingUse -> Set.empty
       _ -> Set.singleton nm
 
--- | A concept name that starts with an alias must exist in the context of that alias.
---   Without this check, a misspelled name such as @Reg.Persn@ would silently
---   introduce a new concept, because Ampersand declares concepts by using them.
-checkForeignConcepts ::
-  -- | the alias, with the concept names of the (qualified) included context
-  [(NamePart, Set.Set Name)] ->
-  -- | a context as it was parsed from the including script
-  P_Context ->
-  Guarded ()
-checkForeignConcepts aliases ctx =
-  case concatMap unknowns aliases of
-    [] -> pure ()
-    h : tl -> Errors (h NE.:| tl)
+-- | A context is identified by the file in which it is found and by its name.
+--   Two versions of one context carry the same name and are found in different files.
+type ContextKey = (FilePath, Text)
+
+-- | One context of a system, as its script states it.
+data SystemNode = SystemNode
+  { nodeKey :: !ContextKey,
+    -- | the declarations of the context, with the names as its own script writes them
+    nodeCtx :: !P_Context
+  }
+
+-- | One inclusion: an item of a statement @CONTEXT A INCLUDES B FROM "file" AS alias@.
+data SystemEdge = SystemEdge
+  { edgeOrigin :: !Origin,
+    edgeTarget :: !ContextKey,
+    -- | the name of the included context
+    edgeName :: !NamePart,
+    edgeAlias :: !(Maybe NamePart)
+  }
+
+-- | A system of contexts, seen from one of them.
+data System = System
+  { -- | the context that is being compiled
+    sysViewer :: !ContextKey,
+    sysNodes :: !(Map.Map ContextKey SystemNode),
+    sysEdges :: !(Map.Map ContextKey [SystemEdge])
+  }
+
+-- | The prefixes by which the script of a context can call the contexts it includes.
+prefixesOf :: System -> ContextKey -> [(NamePart, ContextKey)]
+prefixesOf sys k =
+  L.nub
+    [ (p, edgeTarget e)
+      | e <- Map.findWithDefault [] k (sysEdges sys),
+        p <- maybeToList (edgeAlias e) <> [edgeName e]
+    ]
+
+-- | A prefix is proper if it fits one included context.
+properPrefixes :: System -> ContextKey -> [(NamePart, ContextKey)]
+properPrefixes sys k = [(p, t) | (p, t) <- ps, length (L.nub [t' | (p', t') <- ps, p' == p]) == 1]
   where
-    used = Set.toList (conceptNamesOf ctx)
-    unknowns (alias, known) =
-      [ mkAliasError
+    ps = prefixesOf sys k
+
+-- | The contexts that the viewer reaches, the viewer excluded, nearest first.
+--   The result is an error if a context includes itself, directly or indirectly.
+reached :: System -> Guarded [ContextKey]
+reached sys = cycles *> pure (drop 1 (bfs [sysViewer sys] [sysViewer sys]))
+  where
+    succs k = L.nub (map edgeTarget (Map.findWithDefault [] k (sysEdges sys)))
+    bfs seen frontier = case frontier of
+      [] -> seen
+      k : ks ->
+        let new = [t | t <- succs k, t `notElem` seen]
+         in bfs (seen <> new) (ks <> new)
+    cycles = dfs [] (sysViewer sys)
+    dfs :: [ContextKey] -> ContextKey -> Guarded ()
+    dfs path k
+      | k `elem` path =
+          mkSystemError
+            [origin e | e <- Map.findWithDefault [] k (sysEdges sys)]
+            [ "The context " <> snd k <> " includes itself:",
+              "  " <> T.intercalate " includes " (map snd ([k] <> reverse (takeWhile (/= k) path) <> [k])) <> ".",
+              "  A context must be deployable without the contexts that include it, so inclusion has no cycles."
+            ]
+      | otherwise = traverse_ (dfs (k : path)) (succs k)
+
+instance Traced SystemEdge where
+  origin = edgeOrigin
+
+-- | The label that the viewer has for every context it reaches.
+--   The label is the prefix that the things of that context carry in the joined context.
+--   For a context that the viewer includes, it is the alias, or else the name of that context.
+--   A context that the viewer reaches in more steps gets its name, with a number if that name is taken.
+systemLabels :: System -> Guarded [(ContextKey, NamePart)]
+systemLabels sys = do
+  ks <- reached sys
+  traverse_ canBeNamed (sysViewer sys : ks)
+  pure (foldl' assign [] ks)
+  where
+    direct = Map.findWithDefault [] (sysViewer sys) (sysEdges sys)
+    proper = properPrefixes sys (sysViewer sys)
+    assign :: [(ContextKey, NamePart)] -> ContextKey -> [(ContextKey, NamePart)]
+    assign acc k = acc <> [(k, fresh (preferred k))]
+      where
+        taken = map snd acc
+        fresh p = case [c | c <- p : [postpend (tshow n) p | n <- [2 :: Int ..]], c `notElem` taken, not (isReservedNameSpace c)] of
+          c : _ -> c
+          [] -> fatal "An infinite list has a first element."
+    preferred :: ContextKey -> NamePart
+    preferred k =
+      case [p | e <- direct, edgeTarget e == k, p <- maybeToList (edgeAlias e) <> [edgeName e], (p, k) `elem` proper] of
+        p : _ -> p
+        [] -> case [edgeName e | es <- Map.elems (sysEdges sys), e <- es, edgeTarget e == k] of
+          n : _ -> n
+          [] -> fatal ("The context " <> snd k <> " is reached without an inclusion.")
+    -- Every inclusion needs a prefix that fits no other context that the same context includes.
+    canBeNamed :: ContextKey -> Guarded ()
+    canBeNamed k = traverse_ check (Map.findWithDefault [] k (sysEdges sys))
+      where
+        check e =
+          traverse_ notReserved (edgeAlias e)
+            *> hasProperPrefix e
+        notReserved alias =
+          when (isReservedNameSpace alias)
+            $ mkSystemError
+              [origin e | e <- Map.findWithDefault [] k (sysEdges sys), edgeAlias e == Just alias]
+              [ "The alias " <> namePartToText alias <> " is a name space of the Ampersand system.",
+                "  Choose another alias."
+              ]
+        hasProperPrefix e =
+          when (null [() | (_, t) <- properPrefixes sys k, t == edgeTarget e])
+            $ mkSystemError
+              [edgeOrigin e]
+              [ "The context " <> snd k <> " includes two contexts with the name " <> namePartToText (edgeName e) <> ".",
+                "  Give each of them a name of its own, by adding AS followed by an alias."
+              ]
+
+-- | Join the declarations of the viewer and of every context it reaches into one context.
+--   A thing of the viewer keeps its name. A thing of another context gets the label of that context as a prefix.
+--   A context that is reached along two paths contributes its declarations once.
+--   The joined context carries, as metadata, the label and the name of every context it contains besides the viewer.
+flattenSystem :: System -> Guarded P_Context
+flattenSystem sys = do
+  labels <- systemLabels sys
+  let labelOf k = [l | Just l <- [L.lookup k labels]]
+      node k = case Map.lookup k (sysNodes sys) of
+        Just n -> n
+        Nothing -> fatal ("The context " <> snd k <> " has not been read.")
+      renamed k = relabel sys labelOf k (nodeCtx (node k))
+  viewer <- renamed (sysViewer sys)
+  others <- traverse (fmap withoutInterfaces . renamed . fst) labels
+  let joined = foldl' mergeContexts viewer others
+  pure joined {ctx_metas = ctx_metas joined <> [mkForeignMeta (fromMaybe OriginUnknown (listToMaybe (ctx_pos (nodeCtx (node k))))) l (snd k) | (k, l) <- labels]}
+  where
+    -- The interfaces of a context are the user interface of its own application.
+    withoutInterfaces ctx =
+      ctx
+        { ctx_ifcs = [],
+          ctx_ps = filter (not . isInterfacePurpose) (ctx_ps ctx),
+          ctx_pats = [pat {pt_xps = filter (not . isInterfacePurpose) (pt_xps pat)} | pat <- ctx_pats ctx]
+        }
+    isInterfacePurpose p = case pexObj p of
+      PRef2Interface _ -> True
+      _ -> False
+
+-- | Rename the names in the script of one context to the names of the joined context, and check its prefixes.
+relabel :: System -> (ContextKey -> NameSpace) -> ContextKey -> P_Context -> Guarded P_Context
+relabel sys labelOf k ctx = checks *> pure (runIdentity (traverseNames (const (Identity . rename)) ctx))
+  where
+    proper = properPrefixes sys k
+    improper = [p | (p, _) <- prefixesOf sys k, p `notElem` map fst proper]
+    targetOf nm = case nameSpaceOf nm of
+      h : _ -> L.lookup h proper
+      [] -> Nothing
+    rename nm
+      | isReservedName nm = nm
+      | otherwise = case (nameSpaceOf nm, targetOf nm) of
+          (_ : rest, Just t) -> withNameSpace (labelOf t <> rest) (plain nm)
+          _ -> withNameSpace (labelOf k) nm
+    plain nm = mkName (nameType nm) (localName nm NE.:| [])
+    withoutPrefix nm = withNameSpace (drop 1 (nameSpaceOf nm)) (plain nm)
+    uses = getConst (traverseNames (\use nm -> Const [(use, nm)]) ctx)
+    ownConcepts t = case Map.lookup t (sysNodes sys) of
+      Nothing -> Set.empty
+      Just n -> Set.filter (isNothing . targetOfIn t) (conceptNamesOf (nodeCtx n))
+    targetOfIn t nm = case nameSpaceOf nm of
+      h : _ -> L.lookup h (properPrefixes sys t)
+      [] -> Nothing
+    checks :: Guarded ()
+    checks =
+      traverse_ ambiguous (L.nub [nm | (_, nm) <- uses, take 1 (nameSpaceOf nm) `elem` map pure improper])
+        *> traverse_ unknownConcept (L.nub [(nm, t) | (use, nm) <- uses, use /= ThingUse, Just t <- [targetOf nm]])
+        *> traverse_ foreignRepresent (L.nub [nm | (RepresentUse, nm) <- uses, isJust (targetOf nm)])
+    ambiguous nm =
+      mkSystemError
+        (ctx_pos ctx)
+        [ "The name " <> fullName nm <> " is ambiguous.",
+          "  The context " <> snd k <> " includes two contexts with the name " <> T.intercalate "." (map namePartToText (take 1 (nameSpaceOf nm))) <> ".",
+          "  Use the alias of the context you mean."
+        ]
+    -- Ampersand declares a concept by using it. Without this check, a misspelled name
+    -- such as @Registry.Persn@ would silently become a new concept.
+    unknownConcept (nm, t) =
+      when (withoutPrefix nm `Set.notMember` ownConcepts t)
+        $ mkSystemError
           (ctx_pos ctx)
           [ "The name " <> fullName nm <> " does not denote a concept.",
-            "  The context that is included as " <> namePartToText alias <> " has no concept " <> localNameOf nm <> "."
+            "  The context " <> snd t <> " has no concept " <> fullName (withoutPrefix nm) <> "."
           ]
-        | nm <- used,
-          take 1 (nameSpaceOf nm) == [alias],
-          nm `Set.notMember` known
-      ]
+    -- A REPRESENT statement determines how the atoms of a concept are stored,
+    -- so only the context that owns a concept can state it.
+    foreignRepresent nm =
+      mkSystemError
+        (ctx_pos ctx)
+        [ "A REPRESENT statement mentions the concept " <> fullName nm <> ", which belongs to another context.",
+          "  Only the context that declares a concept can state how it is represented."
+        ]
 
--- | A REPRESENT statement determines how the atoms of a concept are stored.
---   So, only the context that owns a concept may state it.
---   A CLASSIFY statement may relate concepts of different contexts.
---   The including context needs that to say which concepts of two included contexts correspond,
---   for instance that every atom of a concept in an existing system is an atom of
---   the concept with the same name in the system that replaces it.
-checkOwnership :: [NamePart] -> P_Context -> Guarded ()
-checkOwnership aliases ctx =
-  case getConst (traverseNames collect ctx) of
-    [] -> pure ()
-    h : tl -> Errors (h NE.:| tl)
-  where
-    isForeign nm = take 1 (nameSpaceOf nm) `elem` map pure aliases
-    collect use nm = Const $ case use of
-      RepresentUse
-        | isForeign nm ->
-            [ mkAliasError
-                (ctx_pos ctx)
-                [ "A REPRESENT statement mentions the concept " <> fullName nm <> ", which belongs to an included context.",
-                  "  Only the context that declares a concept can state how it is represented."
-                ]
-            ]
-      _ -> []
-
-mkAliasError :: [Origin] -> [Text] -> CtxError
-mkAliasError origs msg = case mkErrorReadingINCLUDE (listToMaybe origs) msg :: Guarded () of
-  Errors (e NE.:| _) -> e
-  Checked _ _ -> fatal ("mkErrorReadingINCLUDE is supposed to yield an error: " <> T.unlines msg)
+mkSystemError :: [Origin] -> [Text] -> Guarded a
+mkSystemError origs = mkErrorReadingINCLUDE (listToMaybe origs)
 
 -- | Visit every name in a context that refers to a concept or to another thing
 --   that a context declares. Roles and the name of the context itself are not visited.

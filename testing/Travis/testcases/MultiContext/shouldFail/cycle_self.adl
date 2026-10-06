@@ -1,5 +1,5 @@
+CONTEXT Fail INCLUDES Fail FROM "cycle_self.adl" AS me
 CONTEXT Fail IN ENGLISH
 -- A context that includes itself under an alias would contain itself.
-INCLUDE "cycle_self.adl" AS me
 RELATION r[A*B]
 ENDCONTEXT

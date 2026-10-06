@@ -1,0 +1,7 @@
+CONTEXT Migration INCLUDES Kurk FROM "../contexts/kurk_existing.adl" AS old,
+                           Kurk FROM "../contexts/kurk_desired.adl" AS new
+CONTEXT Migration IN ENGLISH
+-- With an alias, the name of the context remains usable where it fits one context.
+-- Here it fits two.
+RELATION done[Kurk.A*new.A]
+ENDCONTEXT

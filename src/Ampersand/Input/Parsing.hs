@@ -30,6 +30,7 @@ import Ampersand.Basics
 import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.Input.ADL1.CtxError
   ( Guarded (..),
+    Warning,
     addWarnings,
     mkErrorReadingINCLUDE,
     mkParserStateWarning,
@@ -37,7 +38,9 @@ import Ampersand.Input.ADL1.CtxError
   )
 import Ampersand.Input.ADL1.Parser
   ( Include (..),
-    pContext,
+    Inclusion (..),
+    InclusionItem (..),
+    pFile,
     pRule,
     pTerm,
   )
@@ -55,10 +58,11 @@ import Ampersand.Input.PreProcessor
     processFlags,
   )
 import Ampersand.Input.Qualify
-  ( checkForeignConcepts,
-    checkOwnership,
-    conceptNamesOf,
-    qualifyContext,
+  ( ContextKey,
+    System (..),
+    SystemEdge (..),
+    SystemNode (..),
+    flattenSystem,
   )
 import Ampersand.Input.SemWeb.Turtle
 import Ampersand.Input.Xslx.XLSX (XlsxIfcSheet, parseXlsxFile, xlsxIfcSheet2pops)
@@ -86,9 +90,11 @@ import RIO.FilePath
     splitPath,
     takeDirectory,
     takeExtension,
+    takeFileName,
     (</>),
   )
 import qualified RIO.List as L
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -117,7 +123,7 @@ parseFilesTransitive xs = do
           pcFileKind = Nothing,
           pcCanonical = canonical,
           pcDefineds = Set.empty,
-          pcAlias = Nothing
+          pcSelect = FirstContext
         }
 
 parseFormalAmpersand :: (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) => RIO env (Guarded P_Context)
@@ -129,7 +135,7 @@ parseFormalAmpersand = do
         pcFileKind = Just FormalAmpersand,
         pcCanonical = "FormalAmpersand.adl",
         pcDefineds = Set.empty,
-        pcAlias = Nothing
+        pcSelect = FirstContext
       }
     NE.:| []
 
@@ -142,50 +148,148 @@ parsePrototypeContext = do
         pcFileKind = Just PrototypeContext,
         pcCanonical = "PrototypeContext.adl",
         pcDefineds = Set.empty,
-        pcAlias = Nothing
+        pcSelect = FirstContext
       }
     NE.:| []
 
+-- | Parse the context in the given files, and every context that it reaches by inclusion.
+--   The result is one context, in which every thing of another context carries a prefix
+--   (see 'flattenSystem'). Without an inclusion statement, the result is the context as it is written.
 parseThings ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
   NonEmpty ParseCandidate ->
   RIO env (Guarded P_Context)
-parseThings = parseContextTree []
+parseThings roots = do
+  gViewer <- loadNode roots
+  case gViewer of
+    Errors err -> pure (Errors err)
+    Checked viewer ws -> do
+      gSys <- growSystem [] (Map.singleton (loadedKey viewer) viewer)
+      pure . addWarnings ws $ do
+        (nodes, edges) <- gSys
+        flattenSystem
+          System
+            { sysViewer = loadedKey viewer,
+              sysNodes = Map.map (\n -> SystemNode (loadedKey n) (loadedCtx n)) nodes,
+              sysEdges = edges
+            }
 
--- | Parse the files of one context, and the contexts it includes under an alias.
---   A file that is included without an alias belongs to the same context (a union).
---   A file that is included with an alias is the root of a context of its own.
---   That context is parsed by a recursive call and its names get the alias as prefix,
---   so that its contribution to the result is disjoint from everything else.
-parseContextTree ::
+-- | A context as it has been read: the files with the same context name, and the files they INCLUDE.
+data LoadedNode = LoadedNode
+  { loadedKey :: !ContextKey,
+    loadedRoot :: !ParseCandidate,
+    loadedCtx :: !P_Context,
+    -- | the files that this context consists of
+    loadedFiles :: ![FilePath],
+    -- | the inclusion statements in those files, each with its file and the names of the contexts in that file
+    loadedStmts :: ![(FilePath, [Name], Inclusion)]
+  }
+
+-- | Read the contexts that the inclusion statements ask for, until nothing new is found.
+--   An inclusion statement can stand in any file of the system.
+--   Its names are resolved in the file where it stands.
+growSystem ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
-  -- | The root files of the contexts in which this context is being included.
-  --   A context that would include one of these under an alias would contain itself.
-  [ParseCandidate] ->
-  NonEmpty ParseCandidate ->
-  RIO env (Guarded P_Context)
-parseContextTree ancestors pcs = do
-  results <- parseADLs parseAliased [] (NE.toList pcs)
-  finalize results
+  [Warning] ->
+  Map.Map ContextKey LoadedNode ->
+  RIO env (Guarded (Map.Map ContextKey LoadedNode, Map.Map ContextKey [SystemEdge]))
+growSystem ws nodes =
+  case wanted of
+    Errors err -> pure (Errors err)
+    Checked es _ ->
+      case L.nubBy ((==) `on` fst) [(edgeTarget e, pc) | (_, e, pc) <- es, edgeTarget e `Map.notMember` nodes] of
+        [] -> pure (Checked (nodes, Map.fromListWith (flip (<>)) [(k, [e]) | (k, e, _) <- es]) ws)
+        new -> do
+          loaded <- mapM (\(k, pc) -> fmap (\n -> n {loadedKey = k}) <$> loadNode (pc NE.:| [])) new
+          case sequenceA loaded of
+            Errors err -> pure (Errors err)
+            Checked ns ws' -> growSystem (ws <> ws') (foldl' (\m n -> Map.insert (loadedKey n) n m) nodes ns)
   where
-    ancestors' = ancestors <> NE.toList pcs
-    parseAliased ::
-      (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
-      ParseCandidate ->
-      NamePart ->
-      RIO env (Guarded P_Context)
-    parseAliased pc alias
-      | bare `elem` ancestors' =
-          pure
-            $ mkErrorReadingINCLUDE
-              (pcOrigin pc)
-              [ "The file " <> T.pack (pcCanonical pc) <> " cannot be included as " <> namePartToText alias <> ",",
-                "  because this INCLUDE statement is part of that file or of a context that it includes.",
-                "  A context that is included under an alias gets a copy of its own. So, it cannot contain itself."
-              ]
-      | otherwise = fmap (qualifyContext [alias]) <$> parseContextTree ancestors' (bare NE.:| [])
+    stmts :: [(LoadedNode, FilePath, [Name], Inclusion)]
+    stmts = L.nubBy ((==) `on` (\(_, f, _, st) -> (f, incOrigin st))) [(n, f, blocks, st) | n <- Map.elems nodes, (f, blocks, st) <- loadedStmts n]
+    wanted :: Guarded [(ContextKey, SystemEdge, ParseCandidate)]
+    wanted = concat <$> traverse edgesOf stmts
+    edgesOf (n, file, blocks, st) =
+      concat
+        <$> sequenceA
+          [ traverse (edge includer) (NE.toList (incItems st))
+            | includer <- L.nub (concatMap includerKeys (NE.toList (incIncluders st)))
+          ]
       where
-        bare = pc {pcAlias = Nothing}
+        -- The context before the word INCLUDES is a context in this file,
+        -- or a context that an inclusion statement in this file names with FROM.
+        includerKeys :: Name -> [ContextKey]
+        includerKeys nm =
+          case [loadedKey m | m <- Map.elems nodes, file `elem` loadedFiles m, snd (loadedKey m) == fullName nm] of
+            [] -> filter (`Map.member` nodes) (map fst (viaItems (localName nm)))
+            ks -> ks
+        viaItems :: NamePart -> [(ContextKey, ParseCandidate)]
+        viaItems np =
+          L.nubBy
+            ((==) `on` fst)
+            [ target f' item g
+              | (_, f', _, st') <- stmts,
+                f' == file,
+                item <- NE.toList (incItems st'),
+                Just g <- [itFrom item],
+                localName (itName item) == np || itAlias item == Just np
+            ]
+        target :: FilePath -> InclusionItem -> FilePath -> (ContextKey, ParseCandidate)
+        target f item g =
+          ( (canonical, fullName (itName item)),
+            (loadedRoot n)
+              { pcBasePath = Just f,
+                pcOrigin = Just (incOrigin st),
+                pcCanonical = canonical,
+                pcDefineds = processFlags Set.empty (map T.unpack (itDefs item)),
+                pcSelect = TheContext (itName item)
+              }
+          )
+          where
+            canonical = myNormalise (takeDirectory f </> g)
+        edge :: ContextKey -> InclusionItem -> Guarded (ContextKey, SystemEdge, ParseCandidate)
+        edge includer item = do
+          (k, pc) <- case itFrom item of
+            Just g -> pure (target file item g)
+            Nothing
+              | itName item `elem` blocks -> pure (target file item (takeFileName file))
+              | otherwise -> case viaItems (localName (itName item)) of
+                  [x] -> pure x
+                  [] ->
+                    mkErrorReadingINCLUDE
+                      (Just (incOrigin st))
+                      [ "The context " <> fullName (itName item) <> " is not in this file.",
+                        "  Say where it is to be found, by adding FROM followed by the name of its file."
+                      ]
+                  _ ->
+                    mkErrorReadingINCLUDE
+                      (Just (incOrigin st))
+                      [ "The name " <> fullName (itName item) <> " stands for two contexts in this file.",
+                        "  Use the alias of the context you mean."
+                      ]
+          pure (includer, SystemEdge (incOrigin st) k (localName (itName item)) (itAlias item), pc)
+
+-- | Parse the files of one context.
+--   A file that is included with INCLUDE belongs to the same context (a union).
+loadNode ::
+  (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
+  NonEmpty ParseCandidate ->
+  RIO env (Guarded LoadedNode)
+loadNode pcs = do
+  results <- parseADLs [] (NE.toList pcs)
+  gCtx <- finalize results
+  pure $ do
+    rs <- results
+    ctx <- gCtx
+    pure
+      LoadedNode
+        { loadedKey = (pcCanonical (NE.head pcs), fullName (ctx_nm ctx)),
+          loadedRoot = NE.head pcs,
+          loadedCtx = ctx,
+          loadedFiles = map (pcCanonical . fst) rs,
+          loadedStmts = [(pcCanonical pc, fiBlocks info, st) | (pc, FromADL _ info) <- rs, st <- fiInclusions info]
+        }
+  where
     -- \| After collecting the results of all parsed files, we need to
     --   combine all graphs (if any) into a single P_Context. Then, we
     --   need to merge the contexts, and finally, we can
@@ -195,9 +299,7 @@ parseContextTree ancestors pcs = do
     finalize (Checked results warns) = do
       runner <- Ampersand.Basics.view runnerL
       doTrim <- Ampersand.Basics.view trimXLSXCellsL
-      let (contexts, ifcSheets, graphs) = partitionResults [r | (pc, r) <- results, isNothing (pcAlias pc)]
-          included = [(pc, alias, c) | (pc, FromADL c) <- results, Just alias <- [pcAlias pc]]
-          aliasChecks = checkAliases contexts included
+      let (contexts, ifcSheets, graphs) = partitionResults (map snd results)
       triplesCtx <- case graphs of
         [] -> pure Nothing
         h : tl -> do
@@ -212,56 +314,15 @@ parseContextTree ancestors pcs = do
              in case concat <$> traverse (xlsxIfcSheet2pops doTrim (ctx_ifcs merged) (ctx_ds merged)) ifcSheets of
                   Errors err -> Errors err
                   Checked pops ws3 -> Checked merged {ctx_pops = ctx_pops merged <> pops} (ws <> ws3)
-      pure
-        $ aliasChecks
-        *> ( addIncluded [c | (_, _, c) <- included] <$> case triplesCtx of
-               Nothing -> withXlsxIfcPops contexts warns
-               Just (Checked pCtx ws2) -> withXlsxIfcPops (contexts <> [pCtx]) (warns <> ws2)
-               Just (Errors err) -> Errors err
-           )
+      pure $ case triplesCtx of
+        Nothing -> withXlsxIfcPops contexts warns
+        Just (Checked pCtx ws2) -> withXlsxIfcPops (contexts <> [pCtx]) (warns <> ws2)
+        Just (Errors err) -> Errors err
       where
-        -- The contexts that are included under an alias are added last,
-        -- so that the name, the language and the markup of the including context prevail.
-        addIncluded :: [P_Context] -> P_Context -> P_Context
-        addIncluded cs merged = foldl' mergeContexts merged cs
-        checkAliases :: [P_Context] -> [(ParseCandidate, NamePart, P_Context)] -> Guarded ()
-        checkAliases own incl =
-          traverse_ aliasIsUnambiguous incl
-            *> traverse_ aliasDiffersFromContext incl
-            *> traverse_ aliasIsNotReserved incl
-            *> traverse_ (checkForeignConcepts [(alias, known alias) | (_, alias, _) <- incl]) own
-            *> traverse_ (checkOwnership [alias | (_, alias, _) <- incl]) own
-          where
-            known alias = Set.unions [conceptNamesOf c | (_, a, c) <- incl, a == alias]
-            aliasIsUnambiguous (pc, alias, _) =
-              case [pc' | (pc', alias', _) <- incl, alias' == alias, pc' {pcAlias = Nothing} /= pc {pcAlias = Nothing}] of
-                [] -> pure ()
-                other : _ ->
-                  mkErrorReadingINCLUDE
-                    (pcOrigin pc)
-                    [ "The alias " <> namePartToText alias <> " stands for two different files:",
-                      "  " <> T.pack (pcCanonical pc),
-                      "  " <> T.pack (pcCanonical other),
-                      "  Give each of them an alias of its own."
-                    ]
-            aliasIsNotReserved (pc, alias, _) =
-              when (isReservedNameSpace alias)
-                $ mkErrorReadingINCLUDE
-                  (pcOrigin pc)
-                  [ "The alias " <> namePartToText alias <> " is a name space of the Ampersand system.",
-                    "  Choose another alias."
-                  ]
-            aliasDiffersFromContext (pc, alias, _) =
-              when (alias `elem` map (localName . ctx_nm) own)
-                $ mkErrorReadingINCLUDE
-                  (pcOrigin pc)
-                  [ "The alias " <> namePartToText alias <> " is the name of the including context.",
-                    "  Choose another alias, so that it is clear which context a name belongs to."
-                  ]
         partitionResults :: [SingleFileResult] -> ([P_Context], [XlsxIfcSheet], [RDF TList])
         partitionResults = foldr step ([], [], [])
           where
-            step (FromADL c) (cs, ss, gs) = (c : cs, ss, gs)
+            step (FromADL c _) (cs, ss, gs) = (c : cs, ss, gs)
             step (FromXlsx c s) (cs, ss, gs) = (c : cs, s <> ss, gs)
             step (FromGraph g) (cs, ss, gs) = (cs, ss, g : gs)
         bar :: [P_Context] -> P_Context
@@ -283,27 +344,23 @@ parseContextTree ancestors pcs = do
 -- | Parses several ADL files
 parseADLs ::
   (HasTrimXLSXOpts env, HasLogFunc env) =>
-  -- | How to parse a file that is included under an alias, as a context of its own.
-  (ParseCandidate -> NamePart -> RIO env (Guarded P_Context)) ->
   -- | The list of files that have already been parsed
   [ParseCandidate] ->
   -- | A list of files that still are to be parsed.
   [ParseCandidate] ->
   -- | The resulting contexts and the ParseCandidate that is the source for that P_Context
   RIO env (Guarded [(ParseCandidate, SingleFileResult)])
-parseADLs parseAliased parsedFilePaths fpIncludes =
+parseADLs parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
     x : xs ->
       if x `elem` parsedFilePaths
-        then parseADLs parseAliased parsedFilePaths xs
-        else case pcAlias x of
-          Nothing -> whenCheckedM (parseSingleADL x) parseTheRest
-          Just alias -> whenCheckedM (parseAliased x alias) (\ctx -> parseTheRest (FromADL ctx, []))
+        then parseADLs parsedFilePaths xs
+        else whenCheckedM (parseSingleADL x) parseTheRest
       where
         parseTheRest (ctx, includes) =
           whenCheckedM
-            (parseADLs parseAliased (parsedFilePaths <> [x]) (includes <> xs))
+            (parseADLs (parsedFilePaths <> [x]) (includes <> xs))
             (\rst -> pure . pure $ (x, ctx) : rst) -- return . pure . (:) (x,ctx)
 
 -- | ParseCandidate is intended to represent an INCLUDE-statement.
@@ -314,17 +371,35 @@ data ParseCandidate = ParseCandidate
     pcFileKind :: Maybe FileKind, -- In case the file is included into ampersand.exe, its FileKind.
     pcCanonical :: FilePath, -- The canonicalized path of the candicate
     pcDefineds :: Set.Set PreProcDefine,
-    pcAlias :: Maybe NamePart -- The alias, in case the file is included as a context of its own (INCLUDE "file" AS alias)
+    pcSelect :: Selection -- Which of the contexts in the file are meant
   }
 
+-- | A file can contain several contexts. A selection says which of them are read.
+data Selection
+  = -- | the context that the file starts with: the file is the root of a script
+    FirstContext
+  | -- | everything in the file: the file is included with INCLUDE, which brings in its text
+    WholeFile
+  | -- | the context with this name: the file is named after FROM in an inclusion statement
+    TheContext Name
+  deriving (Eq)
+
 instance Eq ParseCandidate where
-  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b && pcAlias a == pcAlias b
+  a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b && pcSelect a == pcSelect b
+
+-- | What a script file contains besides the selected context.
+data FileInfo = FileInfo
+  { -- | the inclusion statements in the file
+    fiInclusions :: ![Inclusion],
+    -- | the names of the contexts in the file
+    fiBlocks :: ![Name]
+  }
 
 -- | The result of parsing a single file. An .xlsx file additionally carries its raw
 --   interface-format worksheets ('XlsxIfcSheet'), which can only be resolved after all
 --   contexts are merged (because the INTERFACE definitions live in sibling .adl files).
 data SingleFileResult
-  = FromADL P_Context
+  = FromADL P_Context FileInfo
   | FromXlsx P_Context [XlsxIfcSheet]
   | FromGraph (RDF TList)
 
@@ -417,7 +492,7 @@ parseSingleADL pc =
           let -- TODO: This should be cleaned up. Probably better to do all the file reading
               --       first, then parsing and typechecking of each module, building a tree P_Contexts
               meat :: Guarded (SingleFileResult, [Include])
-              meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= guardedFromContext . parseCtx filePath . T.pack
+              meat = preProcess filePath (pcDefineds pc) (T.unpack fileContents) >>= parseScriptFile filePath . T.pack >>= chooseContexts
               proces :: Guarded (SingleFileResult, [Include]) -> RIO env (Guarded (SingleFileResult, [ParseCandidate]))
               proces (Errors err) = pure (Errors err)
               proces (Checked (ctxts, includes) ws) =
@@ -451,16 +526,37 @@ parseSingleADL pc =
                     $ mkErrorReadingINCLUDE
                       (pcOrigin pc)
                       ["No bundled EXPRESS schema found for " <> schemaName <> " (looked for " <> T.pack schemaFile <> ")."]
-        guardedFromContext :: Guarded (P_Context, [Include]) -> Guarded (SingleFileResult, [Include])
-        guardedFromContext gIn = do
-          (ctx, includes) <- gIn
-          return (fromContext ctx, includes)
+        -- \| Take from the file the contexts that the candidate asks for.
+        --   Fragments with the same context name are united.
+        chooseContexts :: ([Inclusion], [(P_Context, [Include])]) -> Guarded (SingleFileResult, [Include])
+        chooseContexts (inclusions, blocks) =
+          case chosen of
+            [] -> case pcSelect pc of
+              TheContext nm ->
+                mkErrorReadingINCLUDE
+                  (pcOrigin pc)
+                  [ "The file " <> T.pack filePath <> " contains no context with the name " <> fullName nm <> ".",
+                    "  It contains: " <> T.intercalate ", " (map fullName names) <> "."
+                  ]
+              _ ->
+                mkErrorReadingINCLUDE
+                  (pcOrigin pc)
+                  ["The file " <> T.pack filePath <> " contains inclusion statements and no context."]
+            (h, incls) : tl ->
+              pure (FromADL (foldl' mergeContexts h (map fst tl)) (FileInfo inclusions names), incls <> concatMap snd tl)
+          where
+            names = L.nub (map (ctx_nm . fst) blocks)
+            chosen = case (pcSelect pc, blocks) of
+              (WholeFile, _) -> blocks
+              (TheContext nm, _) -> filter ((== nm) . ctx_nm . fst) blocks
+              (FirstContext, (c, _) : _) -> filter ((== ctx_nm c) . ctx_nm . fst) blocks
+              (FirstContext, []) -> []
         fromContext :: P_Context -> SingleFileResult
-        fromContext = FromADL
+        fromContext c = FromADL c (FileInfo [] [ctx_nm c])
         fromGraph :: RDF TList -> SingleFileResult
         fromGraph = FromGraph
         include2ParseCandidate :: Include -> RIO env (Guarded ParseCandidate)
-        include2ParseCandidate (Include org str defs mAlias) = do
+        include2ParseCandidate (Include org str defs) = do
           let canonical = myNormalise (takeDirectory filePath </> str)
               defineds = processFlags (pcDefineds pc) (map T.unpack defs)
           return
@@ -471,32 +567,9 @@ parseSingleADL pc =
                   pcFileKind = pcFileKind pc,
                   pcCanonical = canonical,
                   pcDefineds = defineds,
-                  pcAlias = mAlias
+                  pcSelect = WholeFile
                 }
               []
-        myNormalise :: FilePath -> FilePath
-        -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why RIO.FilePath doesn't support reduction of x/foo/../bar into x/bar.
-        -- However, for most Ampersand use cases, we will not deal with symlinks.
-        -- As long as that assumption holds, we can make the following reductions
-        myNormalise fp = joinDrive drive . joinPath $ f [] dirs <> [file]
-          where
-            (drive, path) = splitDrive (normalise fp)
-            (dirs, file) = case reverse $ splitPath path of
-              [] -> fatal ("Illegal filePath: " <> tshow fp)
-              last : reverseInit -> (reverse reverseInit, last)
-
-            f :: [FilePath] -> [FilePath] -> [FilePath]
-            f ds [] = ds
-            f ds (x : xs)
-              | is "." x = f ds xs -- reduce /a/b/./c to /a/b/c/
-              | is ".." x = case reverse ds of
-                  [] -> fatal ("Illegal filePath: " <> tshow fp)
-                  _ : reverseInit -> f (reverse reverseInit) xs -- reduce a/b/c/../d/ to a/b/d/
-              | otherwise = f (ds <> [x]) xs
-        is :: FilePath -> FilePath -> Bool
-        is str fp = case L.stripPrefix str fp of
-          Just [chr] -> chr `elem` pathSeparators
-          _ -> False
         stripBom :: Text -> Text
         stripBom = T.dropPrefix (T.pack ['\239', '\187', '\191'])
         extension = map toLower $ takeExtension filePath
@@ -510,6 +583,31 @@ parseSingleADL pc =
           where
             f :: SomeException -> RIO env a
             f exception = fatal ("The file does not seem to have a valid .json structure:\n  " <> tshow exception)
+
+-- | Reduce a file path such as @a/b/../c@ to @a/c@.
+myNormalise :: FilePath -> FilePath
+-- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why RIO.FilePath doesn't support reduction of x/foo/../bar into x/bar.
+-- However, for most Ampersand use cases, we will not deal with symlinks.
+-- As long as that assumption holds, we can make the following reductions
+myNormalise fp = joinDrive drive . joinPath $ f [] dirs <> [file]
+  where
+    (drive, path) = splitDrive (normalise fp)
+    (dirs, file) = case reverse $ splitPath path of
+      [] -> fatal ("Illegal filePath: " <> tshow fp)
+      last : reverseInit -> (reverse reverseInit, last)
+
+    f :: [FilePath] -> [FilePath] -> [FilePath]
+    f ds [] = ds
+    f ds (x : xs)
+      | is "." x = f ds xs -- reduce /a/b/./c to /a/b/c/
+      | is ".." x = case reverse ds of
+          [] -> fatal ("Illegal filePath: " <> tshow fp)
+          _ : reverseInit -> f (reverse reverseInit) xs -- reduce a/b/c/../d/ to a/b/d/
+      | otherwise = f (ds <> [x]) xs
+is :: FilePath -> FilePath -> Bool
+is str fp = case L.stripPrefix str fp of
+  Just [chr] -> chr `elem` pathSeparators
+  _ -> False
 
 -- | Parses an isolated rule
 -- In order to read derivation rules, we use the Ampersand parser.
@@ -527,6 +625,25 @@ parseRule str =
 parseTerm :: FilePath -> Text -> Guarded (Term TermPrim)
 parseTerm = runParser pTerm
 
+-- | Parses an Ampersand file: its inclusion statements and its contexts
+parseScriptFile ::
+  -- | The file name (used for error messages)
+  FilePath ->
+  -- | The string to be parsed
+  Text ->
+  -- | The inclusion statements, and every context with the files it includes
+  Guarded ([Inclusion], [(P_Context, [Include])])
+parseScriptFile inp = do
+  x <- runParser pFile' inp
+  return $ case x of
+    Errors err -> Errors err
+    Checked (result, state) warns -> Checked result $ warns ++ map toWarning (parseMessages state)
+  where
+    pFile' = build <$> pFile <*> getState
+    build :: a -> ParserState -> (a, ParserState)
+    build res state = (res, state)
+    toWarning (orig, msg) = mkParserStateWarning orig msg
+
 -- | Parses an Ampersand context
 parseCtx ::
   -- | The file name (used for error messages)
@@ -535,13 +652,8 @@ parseCtx ::
   Text ->
   -- | The context and a list of included files
   Guarded (P_Context, [Include])
-parseCtx inp = do
-  x <- runParser pContext' inp
-  return $ case x of
-    Errors err -> Errors err
-    Checked (result, state) warns -> Checked result $ warns ++ map toWarning (parseMessages state)
-  where
-    pContext' = build <$> pContext <*> getState
-    build :: a -> ParserState -> (a, ParserState)
-    build res state = (res, state)
-    toWarning (orig, msg) = mkParserStateWarning orig msg
+parseCtx inp txt = do
+  (_, blocks) <- parseScriptFile inp txt
+  case blocks of
+    [] -> mkErrorReadingINCLUDE Nothing ["The file " <> T.pack inp <> " contains no context."]
+    (h, incls) : tl -> pure (foldl' mergeContexts h (map fst tl), incls <> concatMap snd tl)

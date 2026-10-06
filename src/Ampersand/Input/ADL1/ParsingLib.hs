@@ -44,6 +44,8 @@ module Ampersand.Input.ADL1.ParsingLib
     pName,
     pSingleWord,
     pUpperCaseID,
+    pLowerCaseID,
+    pEndOfFile,
     pUnrestrictedID,
 
     -- * special parsers
@@ -541,3 +543,7 @@ runParser parser filename input =
       addWarnings
         (map lexerWarning2Warning lexerWarnings)
         (ampParse parser filename tokens')
+
+-- | Succeeds at the end of the input only.
+pEndOfFile :: AmpParser ()
+pEndOfFile = P.eof

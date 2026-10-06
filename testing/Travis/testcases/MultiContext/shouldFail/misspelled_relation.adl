@@ -1,6 +1,6 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
 CONTEXT Fail IN ENGLISH
 -- Reg.adress does not exist in the included context.
-INCLUDE "../contexts/registry.adl" AS Reg
 RELATION applicant[Permit*Reg.Person]
 RULE located : applicant |- applicant;Reg.adress;Reg.adress~
 ENDCONTEXT

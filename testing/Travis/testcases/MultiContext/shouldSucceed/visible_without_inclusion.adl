@@ -1,0 +1,14 @@
+CONTEXT Permits INCLUDES Registry FROM "../contexts/registry_with_towns.adl"
+CONTEXT Permits IN ENGLISH
+PURPOSE CONTEXT Permits
+{+ Permits includes Registry, which includes Towns. Permits does not include Towns.
+The concept of towns is visible in Permits all the same: it is the target of `Registry.residence`,
+and the type checker infers it as the target of the relation `stay`. +}
+
+RELATION applicant[Permit*Registry.Person] [UNI,TOT]
+POPULATION applicant[Permit*Registry.Person] CONTAINS [ ("permit1", "p1") ]
+
+RULE hasResidence : applicant |- applicant;Registry.residence;Registry.residence~
+ROLE Clerk MAINTAINS hasResidence
+
+ENDCONTEXT

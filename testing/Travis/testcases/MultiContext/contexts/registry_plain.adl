@@ -1,0 +1,12 @@
+CONTEXT Registry IN ENGLISH
+PURPOSE CONTEXT Registry
+{+ A register of persons that refers to the context Towns without stating the inclusion.
+The file that includes this context states it. See shouldSucceed/graph_in_main_file.adl. +}
+
+RELATION name[Person*Name] [UNI,TOT]
+RELATION residence[Person*Towns.Town] [UNI]
+
+POPULATION name[Person*Name] CONTAINS [ ("p1", "Peter") ]
+POPULATION residence[Person*Towns.Town] CONTAINS [ ("p1", "Enschede") ]
+
+ENDCONTEXT

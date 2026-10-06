@@ -1,3 +1,5 @@
+CONTEXT Completed INCLUDES Kurk FROM "../contexts/kurk_existing.adl" AS old,
+                           Kurk FROM "../contexts/kurk_desired.adl" AS new
 CONTEXT Completed IN ENGLISH
 PURPOSE CONTEXT Completed
 {+ The moment of completion of the migration case.
@@ -6,8 +8,6 @@ From this moment on, the desired system can be included with its blocking invari
 without the variable `Migrating`, and the population satisfies it.
 This is the theorem "moment of completion" of the article on multi-context systems, as a test. +}
 
-INCLUDE "../contexts/kurk_existing.adl" AS old
-INCLUDE "../contexts/kurk_desired.adl" AS new
 
 CLASSIFY old.A ISA new.A
 CLASSIFY old.B ISA new.B

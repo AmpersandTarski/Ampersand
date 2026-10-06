@@ -1,3 +1,4 @@
+CONTEXT Permits INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
 CONTEXT Permits IN ENGLISH
 PURPOSE CONTEXT Permits
 {+ The permit system of the example in the article on multi-context information systems.
@@ -6,7 +7,6 @@ Both contexts have a relation `address` and a concept `Address`, which mean diff
 the home address of a person, and the site to which a permit applies.
 The prefix keeps them apart. +}
 
-INCLUDE "../contexts/registry.adl" AS Reg
 
 RELATION applicant[Permit*Reg.Person] [UNI,TOT]
 RELATION address[Permit*Address] [UNI]

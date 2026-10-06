@@ -8,6 +8,9 @@ module Ampersand.Core.ParseTree
     Flippable (..),
     mergeContexts,
     MetaData (..),
+    foreignMetaName,
+    mkForeignMeta,
+    foreignContexts,
     P_RoleRule (..),
     Role (..),
     P_Enforce (..),
@@ -138,6 +141,24 @@ data MetaData = MetaData
     mtVal :: !Text
   }
   deriving (Show)
+
+-- | The metadata by which a joined context says which other contexts it contains.
+--   The compiler adds one for every context that the compiled context reaches by inclusion.
+--   Its value holds the label, which is the prefix of the things of that context, and the name of the context.
+foreignMetaName :: Text1
+foreignMetaName = toText1Unsafe "multicontext.foreign"
+
+mkForeignMeta :: Origin -> NamePart -> Text -> MetaData
+mkForeignMeta orig lbl ctxName = MetaData orig foreignMetaName (namePartToText lbl <> " " <> ctxName)
+
+-- | The contexts that a joined context contains besides the compiled one: label and name.
+foreignContexts :: [MetaData] -> [(Text, Text)]
+foreignContexts ms =
+  [ (lbl, T.drop 1 rest)
+    | m <- ms,
+      mtName m == foreignMetaName,
+      let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
 
 instance Traced MetaData where
   origin (MetaData p _ _) = p

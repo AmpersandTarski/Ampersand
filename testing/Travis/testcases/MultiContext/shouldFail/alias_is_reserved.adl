@@ -1,5 +1,5 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS PrototypeContext
 CONTEXT Fail IN ENGLISH
 -- PrototypeContext is the name space of the context that the compiler adds to every prototype.
-INCLUDE "../contexts/registry.adl" AS PrototypeContext
 RELATION applicant[Permit*PrototypeContext.Person]
 ENDCONTEXT

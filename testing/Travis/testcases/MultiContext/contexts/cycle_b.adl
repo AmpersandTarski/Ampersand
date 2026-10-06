@@ -1,5 +1,5 @@
+CONTEXT CycleB INCLUDES CycleA FROM "../shouldFail/cycle_a.adl" AS a
 CONTEXT CycleB IN ENGLISH
 -- This context includes the context that includes it. See shouldFail/cycle_a.adl.
-INCLUDE "../shouldFail/cycle_a.adl" AS a
 RELATION s[C*D]
 ENDCONTEXT

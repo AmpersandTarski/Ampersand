@@ -1,3 +1,5 @@
+CONTEXT Migration INCLUDES Kurk FROM "../contexts/kurk_existing.adl" AS old,
+                           Kurk FROM "../contexts/kurk_desired.adl" [ "Migrating" ] AS new
 CONTEXT Migration IN ENGLISH
 PURPOSE CONTEXT Migration
 {+ The migration system of the proof of concept in
@@ -8,8 +10,6 @@ Here the two systems are the scripts they are in production, and the aliases sup
 
 The numbers of the steps refer to section 4.1 of that paper. +}
 
-INCLUDE "../contexts/kurk_existing.adl" AS old
-INCLUDE "../contexts/kurk_desired.adl" AS new --# [ "Migrating" ]
 
 -- Step 1. The data sets of both systems are both present, kept apart by the aliases.
 -- The concepts of the two systems are different concepts. The migration states which ones correspond:

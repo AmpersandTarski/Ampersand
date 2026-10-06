@@ -1,8 +1,8 @@
+CONTEXT Registry INCLUDES Towns FROM "towns.adl" AS Geo
 CONTEXT Registry IN ENGLISH
 PURPOSE CONTEXT Registry
 {+ A register of persons that includes a context of towns under the alias Geo. +}
 
-INCLUDE "towns.adl" AS Geo
 
 RELATION name[Person*Name] [UNI,TOT]
 RELATION residence[Person*Geo.Town] [UNI]

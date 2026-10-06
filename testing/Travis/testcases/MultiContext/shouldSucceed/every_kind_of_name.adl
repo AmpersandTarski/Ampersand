@@ -1,10 +1,12 @@
+CONTEXT Campus INCLUDES Library FROM "../contexts/rich.adl" AS Lib
 CONTEXT Campus IN ENGLISH
 PURPOSE CONTEXT Campus
 {+ The included context has a pattern, rules, an enforcement, an identity, views,
-interfaces, a classification, a representation and purposes.
-This context refers to each kind of thing by its qualified name. +}
+a classification, a representation and purposes.
+This context refers to each kind of thing by its name with the prefix.
+The interfaces of the included context are the user interface of its own application,
+so this context cannot refer to them. +}
 
-INCLUDE "../contexts/rich.adl" AS Lib
 
 RELATION student[Lib.Member*Student] [UNI]
 POPULATION student[Lib.Member*Student] CONTAINS [ ("m1", "s1") ]
@@ -17,12 +19,10 @@ PURPOSE RULE Lib.titled {+ The campus relies on titles to order books. +}
 PURPOSE RELATION Lib.borrower[Lib.Book*Lib.Member] {+ The campus bills the borrower. +}
 PURPOSE CONCEPT Lib.Book {+ The campus insures the books. +}
 PURPOSE PATTERN Lib.Lending {+ The campus pays for lending. +}
-PURPOSE INTERFACE Lib.Books {+ The campus librarian uses the interface of the library. +}
 PURPOSE ENFORCE Lib.markLoans {+ The campus counts the loans. +}
 
 INTERFACE Students FOR Librarian : "_SESSION";V[SESSION*Student] BOX
   [ "member" : student~ <Lib.memberView>
-  , "card" : student~ INTERFACE Lib.Members
   , "books" : student~;Lib.borrower~
   , "novels" : student~;Lib.borrower~;I[Lib.Novel]
   , "on loan" : student~;Lib.borrower~;Lib.onLoan
