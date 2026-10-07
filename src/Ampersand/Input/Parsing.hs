@@ -87,6 +87,7 @@ import RIO.FilePath
     joinPath,
     normalise,
     pathSeparators,
+    splitDirectories,
     splitDrive,
     splitPath,
     takeDirectory,
@@ -164,11 +165,15 @@ parseThings ::
   NonEmpty ParseCandidate ->
   RIO env (Guarded P_Context)
 parseThings wanted roots = do
-  gRoot <- loadNode roots
+  confined <- asks (^. confineIncludesL)
+  -- Where reading is confined, that holds for every file of the system:
+  -- the files that INCLUDE names and the files that an inclusion statement names after FROM.
+  let confinement = if confined then Just [takeDirectory (pcCanonical pc) | pc <- NE.toList roots] else Nothing
+  gRoot <- loadNode confinement roots
   case gRoot of
     Errors err -> pure (Errors err)
     Checked root ws -> do
-      gSys <- growSystem [] (Map.singleton (loadedKey root) root)
+      gSys <- growSystem confinement [] (Map.singleton (loadedKey root) root)
       pure . addWarnings ws $ do
         (nodes, edges) <- gSys
         let sys =
@@ -210,20 +215,22 @@ data LoadedNode = LoadedNode
 --   Its names are resolved in the file where it stands.
 growSystem ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
+  -- | The directories to which reading is confined, if it is confined.
+  Maybe [FilePath] ->
   [Warning] ->
   Map.Map ContextKey LoadedNode ->
   RIO env (Guarded (Map.Map ContextKey LoadedNode, Map.Map ContextKey [SystemEdge]))
-growSystem ws nodes =
+growSystem confinement ws nodes =
   case wanted of
     Errors err -> pure (Errors err)
     Checked es _ ->
       case L.nubBy ((==) `on` fst) [(edgeTarget e, pc) | (_, e, pc) <- es, edgeTarget e `Map.notMember` nodes] of
         [] -> pure (Checked (nodes, Map.fromListWith (flip (<>)) [(k, [e]) | (k, e, _) <- es]) ws)
         new -> do
-          loaded <- mapM (\(k, pc) -> fmap (\n -> n {loadedKey = k}) <$> loadNode (pc NE.:| [])) new
+          loaded <- mapM (\(k, pc) -> fmap (\n -> n {loadedKey = k}) <$> loadNode confinement (pc NE.:| [])) new
           case sequenceA loaded of
             Errors err -> pure (Errors err)
-            Checked ns ws' -> growSystem (ws <> ws') (foldl' (\m n -> Map.insert (loadedKey n) n m) nodes ns)
+            Checked ns ws' -> growSystem confinement (ws <> ws') (foldl' (\m n -> Map.insert (loadedKey n) n m) nodes ns)
   where
     stmts :: [(LoadedNode, FilePath, [Name], Inclusion)]
     stmts = L.nubBy ((==) `on` (\(_, f, _, st) -> (f, incOrigin st))) [(n, f, blocks, st) | n <- Map.elems nodes, (f, blocks, st) <- loadedStmts n]
@@ -293,10 +300,12 @@ growSystem ws nodes =
 --   A file that is included with INCLUDE belongs to the same context (a union).
 loadNode ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
+  -- | The directories to which reading is confined, if it is confined.
+  Maybe [FilePath] ->
   NonEmpty ParseCandidate ->
   RIO env (Guarded LoadedNode)
-loadNode pcs = do
-  results <- parseADLs [] (NE.toList pcs)
+loadNode confinement pcs = do
+  results <- parseADLs confinement [] (NE.toList pcs)
   gCtx <- finalize results
   pure $ do
     rs <- results
@@ -364,24 +373,45 @@ loadNode pcs = do
 -- | Parses several ADL files
 parseADLs ::
   (HasTrimXLSXOpts env, HasLogFunc env) =>
+  -- | The directories to which reading is confined, if it is confined. A file
+  --   from the user must then lie in one of these directories or below. A file
+  --   that is built into the compiler is always allowed.
+  Maybe [FilePath] ->
   -- | The list of files that have already been parsed
   [ParseCandidate] ->
   -- | A list of files that still are to be parsed.
   [ParseCandidate] ->
   -- | The resulting contexts and the ParseCandidate that is the source for that P_Context
   RIO env (Guarded [(ParseCandidate, SingleFileResult)])
-parseADLs parsedFilePaths fpIncludes =
+parseADLs confinement parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
-    x : xs ->
-      if x `elem` parsedFilePaths
-        then parseADLs parsedFilePaths xs
-        else whenCheckedM (parseSingleADL x) parseTheRest
+    x : xs
+      | x `elem` parsedFilePaths -> parseADLs confinement parsedFilePaths xs
+      | isOutside x ->
+          -- The message leaves out where the file was looked for, so that it tells
+          -- a caller nothing about the machine that the compiler runs on.
+          return
+            $ mkErrorReadingINCLUDE
+              (pcOrigin x)
+              [ "This INCLUDE names a file outside the directory of the script.",
+                "Here, the compiler reads no files outside that directory."
+              ]
+      | otherwise -> whenCheckedM (parseSingleADL x) parseTheRest
       where
         parseTheRest (ctx, includes) =
           whenCheckedM
-            (parseADLs (parsedFilePaths <> [x]) (includes <> xs))
+            (parseADLs confinement (parsedFilePaths <> [x]) (includes <> xs))
             (\rst -> pure . pure $ (x, ctx) : rst) -- return . pure . (:) (x,ctx)
+  where
+    isOutside :: ParseCandidate -> Bool
+    isOutside pc = case (confinement, pcFileKind pc) of
+      (Just dirs, Nothing) -> not (any (`contains` pcCanonical pc) dirs)
+      _ -> False
+    -- Both paths are free of @.@ and @..@: a root is canonicalized, and the path
+    -- of an INCLUDE is reduced when its candidate is made.
+    contains :: FilePath -> FilePath -> Bool
+    contains dir fp = splitDirectories dir `L.isPrefixOf` splitDirectories fp
 
 -- | ParseCandidate is intended to represent an INCLUDE-statement.
 --   This information is gathered while parsing and returned alongside the parse result.
