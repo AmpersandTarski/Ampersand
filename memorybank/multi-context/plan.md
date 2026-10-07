@@ -71,9 +71,8 @@ Framework:
    Decide whether an application re-evaluates such rules at the start of every request.
 3. **Database rights per context.**
    All applications use one database user with all rights.
-   The rights can be derived: all rights on the own database, `SELECT` on the databases it reads,
-   and write rights on the databases it writes.
-4. **A warning for an included context that no name refers to.**
+   [database-rights.md](database-rights.md) compares five solutions; the choice is open.
+4. **The directive in the desired system of a migration** (issue #1714).
 5. **Positions in error messages** about prefixes, which now point at the first line of the context.
 6. **The generator of migration scripts**, the stated next step of the 2024 paper.
 7. **Kubernetes**: one release per context of the Helm chart in the project template.

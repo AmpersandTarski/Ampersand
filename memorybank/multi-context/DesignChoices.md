@@ -263,7 +263,7 @@ Only the context that declares a concept can state a `REPRESENT` for it.
 *Impact in production:* a signal of a rule of an included context shows up in the including application as well.
 
 **A relaxed version of an included context is selected with a preprocessor variable.**
-*DC-9 · provisional · 2026-10-05*
+*DC-9 · provisional, to be replaced · 2026-10-05 · issue [#1714](https://github.com/AmpersandTarski/Ampersand/issues/1714)*
 
 The migration context includes the desired system as `Kurk FROM "desired.adl" [ "Migrating" ] AS new`,
 and the desired system guards its new blocking invariant with `--#IFNOT Migrating`.
@@ -273,8 +273,8 @@ and the desired system guards its new blocking invariant with `--#IFNOT Migratin
 1. During a migration the desired system is deployed while its new invariants do not hold yet.
    The article calls such a context not guarded.
 2. The preprocessor exists and already passes variables to an included file.
-3. It asks the desired system to mark its new invariants.
-   A generator of migration scripts, the stated next step of the 2024 paper, can do that marking.
+3. It asks the desired system to mark its new invariants, in a comment that the language does not know.
+   Issue #1714 explains why that has to change, and gives four directions.
 
 *Impact on the specification:* none.
 
@@ -351,9 +351,9 @@ unless it is a name space of Ampersand itself.**
    (the core team chose `MODULE` on 24 February 2023).
 2. How an application notices a change that another application made in a database it reads.
    Rules are evaluated on the current data, and the stored signals of a rule over another database are refreshed when the application next evaluates that rule.
-3. Refusing a write that the specification does not allow.
-   An application reaches a table of another context through a view, and nothing stops it from changing that table.
-   The relation `writes` of the specification says what it may write: in the plug, in the rights of the database user, or in both.
+3. Which rights the database user of an application has on the databases of other contexts.
+   [database-rights.md](database-rights.md) reports what was measured and compares five solutions,
+   from one user with all rights to rights per table and column.
    Databases on different servers belong here too.
 4. Whether an including context writes a database directly, as it does now, or through the API of its owner.
 5. Error positions: the checks of DC-3, DC-4 and DC-8 report the first line of the context,
