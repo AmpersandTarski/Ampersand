@@ -19,6 +19,7 @@ import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
 import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
+import Ampersand.Test.Serve.ServeTest (serveTest)
 import Ampersand.Test.Step.StepParserTest (stepParserTest)
 import Ampersand.Types.Config (HasRunner)
 
@@ -33,7 +34,16 @@ test = do
   ifcBinderTest'
   ifcWiringTest'
   ifcRegressionTest'
+  serveTest'
   regressionTest
+
+-- | The HTTP/JSON service @ampersand serve@: every endpoint answered through
+--   the real application, without a network socket.
+serveTest' :: (HasRunner env) => RIO env ()
+serveTest' = do
+  success <- serveTest
+  unless success
+    $ exitWith (SomeTestsFailed ["Test of the HTTP/JSON service (ampersand serve) failed!"])
 
 ifcRegressionTest' :: (HasRunner env) => RIO env ()
 ifcRegressionTest' = do

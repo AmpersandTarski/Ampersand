@@ -24,6 +24,7 @@ fSpecGenOptsParser isForDaemon =
     <*> allowInvariantViolationsP
     <*> failOnOscillationP
     <*> failOnCartesianProductP
+    <*> pure False
   where
     rootsP :: Parser Roots
     rootsP =
@@ -191,5 +192,6 @@ defFSpecGenOpts rootAdl =
       xrecipe = Standard,
       xallowInvariantViolations = False,
       xfailOnOscillation = False,
-      xfailOnCartesianProduct = False
+      xfailOnCartesianProduct = False,
+      xconfineIncludes = False
     }

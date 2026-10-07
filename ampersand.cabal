@@ -232,6 +232,7 @@ library
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks
       Ampersand.Test.Regression
+      Ampersand.Test.Serve.ServeTest
       Ampersand.Test.Step.StepParserTest
       MainApps
       Options.Applicative.Builder.Extra
@@ -249,6 +250,7 @@ library
       Ampersand.Commands.Population
       Ampersand.Commands.Proof
       Ampersand.Commands.Proto
+      Ampersand.Commands.Serve
       Ampersand.Commands.Test
       Ampersand.Commands.Validate
       Ampersand.Daemon.Daemon
@@ -316,6 +318,7 @@ library
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -335,6 +338,8 @@ library
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
@@ -381,6 +386,7 @@ executable ampPreProc
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -400,6 +406,8 @@ executable ampPreProc
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
@@ -449,6 +457,7 @@ executable ampersand
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -468,6 +477,8 @@ executable ampersand
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
@@ -515,6 +526,7 @@ test-suite ampersand-test
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -534,6 +546,8 @@ test-suite ampersand-test
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
