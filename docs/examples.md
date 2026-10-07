@@ -23,12 +23,17 @@ ENDCONTEXT
 and file `bar.adl` contains:
 ```Ampersand
 CONTEXT MultifileDemo
-INCLUDE "bar.adl"
 RELATION s[A*B]
 ENDCONTEXT
 ```
 Without the `INCLUDE` statement, file `foo.adl` does not compile because relation `s` is undefined.
 The `INCLUDE` statement causes all definitions of `bar.adl` to be included in the context of `foo.adl`, so this example compiles without errors.
+The two files together form one context, with one database.
+
+## Example: Several contexts
+A specification can also consist of several contexts, each with a database of its own.
+One context then includes another with the statement `CONTEXT A INCLUDES B`, and refers to its relations and concepts with a prefix, as in `Registry.Person`.
+The guide [Several information systems that use each other](./guides/systems-of-contexts.md) works out an example of a permit system that uses a population register, and an example of a data migration.
 
 ## Example: Client {#interfaces-example-client}
 

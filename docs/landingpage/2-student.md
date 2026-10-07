@@ -26,6 +26,10 @@ Ampersand rests on a small but powerful idea: a business rule is a statement in 
 
 Learning sticks when you build something. Study the [examples](../examples) of real Ampersand specifications to see idioms in context, then take on the [exercises](../exercises) to sharpen your skills. Try to specify a small system of your own — even a to-do list or a library — and run it in RAP4.
 
+### Step 5 — Let two systems work together *(optional)*
+
+Once you are at ease with one script, look at a specification that consists of several systems. The guide [Several information systems that use each other](../guides/systems-of-contexts.md) takes a permit system that looks up its applicants in a population register. You will see why each system keeps its own database and its own rules, why a name of the other system gets a prefix, and why a rule about somebody else's data is a rule for a role. It ends with a data migration from an existing system to a new version.
+
 ## Questions & answers
 
 Welcome! Whether you're starting the tutorial, wrestling with your first rule, or running your model for real, this chapter answers the questions learners ask most. No prior Ampersand knowledge is assumed — just bring your curiosity.
@@ -129,6 +133,10 @@ The meaning tells you how to talk about what the relation holds, and writing it 
 
 **What is the difference between requirements and specifications in Ampersand?**
 Requirements say in prose what users want; Ampersand specifications define unambiguously what to build. Knowing the difference helps you translate fuzzy wishes into precise, buildable rules. [Learn more →](../guides/best-practices.md)
+
+**Can one specification describe two systems that use each other?**
+Yes. Each system is a context with its own database, and one context includes the other with `CONTEXT A INCLUDES B`. A name of the other context gets its name as a prefix, as in `Registry.Person`, so two systems can use the same word for different things. [Learn more →](../guides/systems-of-contexts.md)
+
 
 ### Building interfaces
 

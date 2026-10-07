@@ -18,6 +18,7 @@ Structuring an Ampersand specification effectively is crucial for readability, m
 
 1. `Include` statements enable you to use multiple files. This can help to separate your statements by concerns.
 2. `Pattern`s can help to devide your rules etc. by theme. The generated documentation takes this into account.
+3. A specification can consist of several contexts, each with a database of its own, in which one context includes another. See [Systems of contexts](#systems-of-contexts).
 
 Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
 
@@ -96,8 +97,9 @@ The data contained in a business system represents a view of \(a very small part
 
 #### Semantics
 
-Any Ampersand model has one context.  
-The model is true within its context and there is no knowledge in a model about other contexts.
+A context describes one information system, with one database.
+What a context states is true within that context.
+A context knows of another context only if it includes it; see [Systems of contexts](#systems-of-contexts).
 
 #### Syntax
 
@@ -112,7 +114,7 @@ INCLUDE*
 ENDCONTEXT
 ```
 
-Other models included with the INCLUDE statement become part of the context they are included in, unless the statement gives them an alias. See [the INCLUDE statement](#the-include-statement).
+A file that is included with the [`INCLUDE` statement](#the-include-statement) becomes part of the context in which the statement stands.
 
 ###### Optional parts
 
@@ -197,6 +199,9 @@ Some systems consist of several information systems, each with a database and ru
 A system for permits uses the persons of a population register that another organisation keeps.
 A migration needs the existing system and the desired system at the same time.
 For that purpose a context can include another context.
+
+This section is the reference.
+The guide [Several information systems that use each other](../guides/systems-of-contexts.md) introduces the mechanism step by step, with an example that you can run.
 
 #### Syntax and meaning
 

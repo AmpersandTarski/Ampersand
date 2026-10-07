@@ -21,6 +21,7 @@ This is where most of your work happens. Capture your domain as concepts, relati
 - Write correct code with the [Syntax of Ampersand](../reference-material/syntax-of-ampersand) as your companion — keep it open while you work.
 - Learn the craft of modelling from the [best practices for Ampersand modellers](../guides/best-practices) and the [Modelling](../modeling/README.md) background.
 - Reuse what exists: there are [modules available for re-use](../reusing-available-modules) that can save you a lot of time.
+- Does your system use data that another system keeps, or does it replace an existing system? Describe them as [several information systems that use each other](../guides/systems-of-contexts.md): one context per system, each with its own database.
 
 ### Stage 3 — Install Ampersand
 
@@ -33,6 +34,8 @@ Compile your script into a working application. If you work from the command lin
 ### Stage 5 — Deploy it
 
 When your prototype does what you want, put it online. [Deploying your prototype](../guides/deploying-your-prototype) takes you through running, deploying and redeploying your application, and what to do when you get stuck.
+
+A specification of several contexts needs an application and a database for each of them. The command `ampersand deploy` generates the compose file and the Dockerfiles for that; the guide on [several information systems that use each other](../guides/systems-of-contexts.md#running-the-system) shows how to use it.
 
 ### Stage 6 — Understand, maintain and grow
 
@@ -118,6 +121,13 @@ Use an INCLUDE statement to pull all definitions of another `.adl` file into you
 **Where is the complete reference for the language, and what do the core terms mean?**
 The reference-material section describes the full Ampersand language as a reference (not a course), and the dictionary defines each notion — atom, concept, relation, rule, pattern — with a meaning, example, and purpose. Keep both open while you model. [Learn more →](../reference-material/README.md)
 
+**My system uses data that another system keeps. How do I specify that?**
+Describe both as contexts and let yours include the other: `CONTEXT Permits INCLUDES Registry FROM "registry.adl"`. Your script then refers to `Registry.Person`, your rules can range over both databases, and each fact stays stored once, with its owner. A rule that depends on the other system's data is a rule for a role, because your application cannot refuse a change that is made elsewhere. [Learn more →](../guides/systems-of-contexts.md)
+
+**How do I migrate the data of a running system to a new version with other rules?**
+Write a migration context that includes the existing system and the desired system under two aliases, copies the data with `ENFORCE` rules, and assigns each new invariant to a role, so that users can repair the violations while both systems run. [Learn more →](../guides/systems-of-contexts.md#migrating-data-to-a-new-version)
+
+
 ### Generating & running your prototype — CLI, Docker, installation
 
 **Do I have to install the compiler locally to build a prototype?**
@@ -193,6 +203,10 @@ Deploy phpMyAdmin alongside your application to browse and query its database di
 
 **How do I monitor an application in production?**
 Use Grafana and Prometheus on a Kubernetes cluster, copying the setup from the RAP repository's manifest files. You get production-grade dashboards without building monitoring from scratch. [Learn more →](../guides/frequently-asked-questions.md)
+
+**How do I deploy a specification that consists of several contexts?**
+Run `ampersand deploy main.adl --output-dir deploy`. It generates a compose file with one application per context and one database server, a Dockerfile per context, and a script that installs the applications in the right order. [Learn more →](../the-command-line-tool.md#deploy)
+
 
 ### Getting data in & reusing work — Excel import, modules
 
