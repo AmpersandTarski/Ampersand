@@ -128,6 +128,7 @@ module.exports = {
                 'ampersand/guides/documentation-architecture',
                 'ampersand/guides/onboarding',
                 'ampersand/the-tools-we-use/README',
+                'ampersand/the-tools-we-use/ampersand-as-a-service',
                 'ampersand/the-tools-we-use/ampersand-language-support',
                 'ampersand/the-tools-we-use/authentication-and-access-management-with-oauth',
                 'ampersand/the-tools-we-use/automation-of-releasing-ci-cd/README',

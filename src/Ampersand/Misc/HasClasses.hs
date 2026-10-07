@@ -66,6 +66,8 @@ class HasFSpecGenOpts a where
   failOnOscillationL = fSpecGenOptsL . lens xfailOnOscillation (\x y -> x {xfailOnOscillation = y})
   failOnCartesianProductL :: Lens' a Bool
   failOnCartesianProductL = fSpecGenOptsL . lens xfailOnCartesianProduct (\x y -> x {xfailOnCartesianProduct = y})
+  confineIncludesL :: Lens' a Bool
+  confineIncludesL = fSpecGenOptsL . lens xconfineIncludes (\x y -> x {xconfineIncludes = y})
 
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -309,7 +311,11 @@ data FSpecGenOpts = FSpecGenOpts
     -- | Should a detected ExecEngine oscillation risk make the run fail (non-zero exit)?
     xfailOnOscillation :: !Bool,
     -- | Should a Cartesian product in a violation query make the run fail (non-zero exit)?
-    xfailOnCartesianProduct :: !Bool
+    xfailOnCartesianProduct :: !Bool,
+    -- | May an INCLUDE only name a file in the directory of a root file or below?
+    --   No command-line option sets this. @ampersand serve@ switches it on, because
+    --   it compiles scripts of callers it does not know on a machine that is not theirs.
+    xconfineIncludes :: !Bool
   }
   deriving (Show)
 

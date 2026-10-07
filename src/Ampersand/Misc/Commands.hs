@@ -19,6 +19,7 @@ import Ampersand.Commands.IncrementalBench
 import Ampersand.Commands.Population
 import Ampersand.Commands.Proof
 import Ampersand.Commands.Proto
+import Ampersand.Commands.Serve
 import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
 {-getProgName,-}
@@ -100,6 +101,15 @@ commandLineHandler currentDir _progName args =
         Daemon
         "Use ampersand to continuously check your model while you modify it."
         daemonCmd
+        daemonOptsParser
+      addCommand''
+        Serve
+        ( "Run Ampersand as an HTTP/JSON service for editors and RAP. "
+            <> "Exposes /health, /check, /translate, /fspec, /import and "
+            <> "/population, with JSON in and out. Port via "
+            <> "AMPERSAND_SERVE_PORT (default 8080)."
+        )
+        serveCmd
         daemonOptsParser
       addCommand''
         Dataanalysis
@@ -377,6 +387,10 @@ daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts =
   extendWith daemonOpts runDaemon
 
+serveCmd :: DaemonOpts -> RIO Runner ()
+serveCmd daemonOpts =
+  extendWith daemonOpts runServe
+
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
   (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
@@ -444,6 +458,7 @@ data Command
   | Population
   | Proofs
   | Proto
+  | Serve
   | Test
   | Validate
 
@@ -459,5 +474,6 @@ instance Show Command where
   show Population = "population"
   show Proofs = "proofs"
   show Proto = "proto"
+  show Serve = "serve"
   show Test = "test"
   show Validate = "validate"

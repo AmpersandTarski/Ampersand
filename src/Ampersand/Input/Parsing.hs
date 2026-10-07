@@ -75,6 +75,7 @@ import RIO.FilePath
     joinPath,
     normalise,
     pathSeparators,
+    splitDirectories,
     splitDrive,
     splitPath,
     takeDirectory,
@@ -141,7 +142,9 @@ parseThings ::
   NonEmpty ParseCandidate ->
   RIO env (Guarded P_Context)
 parseThings pcs = do
-  results <- parseADLs [] (NE.toList pcs)
+  confined <- asks (^. confineIncludesL)
+  let rootDirs = [takeDirectory (pcCanonical pc) | pc <- NE.toList pcs]
+  results <- parseADLs (if confined then Just rootDirs else Nothing) [] (NE.toList pcs)
   finalize results
   where
     -- \| After collecting the results of all parsed files, we need to
@@ -198,19 +201,31 @@ parseThings pcs = do
 -- | Parses several ADL files
 parseADLs ::
   (HasTrimXLSXOpts env, HasLogFunc env) =>
+  -- | The directories to which reading is confined, if it is confined. A file
+  --   from the user must then lie in one of these directories or below. A file
+  --   that is built into the compiler is always allowed.
+  Maybe [FilePath] ->
   -- | The list of files that have already been parsed
   [ParseCandidate] ->
   -- | A list of files that still are to be parsed.
   [ParseCandidate] ->
   -- | The resulting contexts and the ParseCandidate that is the source for that P_Context
   RIO env (Guarded [(ParseCandidate, SingleFileResult)])
-parseADLs parsedFilePaths fpIncludes =
+parseADLs confinement parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ pure []
-    x : xs ->
-      if x `elem` parsedFilePaths
-        then parseADLs parsedFilePaths xs
-        else whenCheckedM (parseSingleADL x) parseTheRest
+    x : xs
+      | x `elem` parsedFilePaths -> parseADLs confinement parsedFilePaths xs
+      | isOutside x ->
+          -- The message leaves out where the file was looked for, so that it tells
+          -- a caller nothing about the machine that the compiler runs on.
+          return
+            $ mkErrorReadingINCLUDE
+              (pcOrigin x)
+              [ "This INCLUDE names a file outside the directory of the script.",
+                "Here, the compiler reads no files outside that directory."
+              ]
+      | otherwise -> whenCheckedM (parseSingleADL x) parseTheRest
       where
         parseTheRest ::
           (HasTrimXLSXOpts env, HasLogFunc env) =>
@@ -218,8 +233,17 @@ parseADLs parsedFilePaths fpIncludes =
           RIO env (Guarded [(ParseCandidate, SingleFileResult)])
         parseTheRest (ctx, includes) =
           whenCheckedM
-            (parseADLs (parsedFilePaths <> [x]) (includes <> xs))
+            (parseADLs confinement (parsedFilePaths <> [x]) (includes <> xs))
             (\rst -> pure . pure $ (x, ctx) : rst) -- return . pure . (:) (x,ctx)
+  where
+    isOutside :: ParseCandidate -> Bool
+    isOutside pc = case (confinement, pcFileKind pc) of
+      (Just dirs, Nothing) -> not (any (`contains` pcCanonical pc) dirs)
+      _ -> False
+    -- Both paths are free of @.@ and @..@: a root is canonicalized, and the path
+    -- of an INCLUDE is reduced when its candidate is made.
+    contains :: FilePath -> FilePath -> Bool
+    contains dir fp = splitDirectories dir `L.isPrefixOf` splitDirectories fp
 
 -- | ParseCandidate is intended to represent an INCLUDE-statement.
 --   This information is gathered while parsing and returned alongside the parse result.
