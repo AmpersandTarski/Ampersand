@@ -219,8 +219,53 @@ maybeSpecialCase fSpec expr =
     _ -> Nothing
   where
     traceComment = traceExprComment expr
+    -- A difference is translated in one of two ways, depending on its right-hand side (issue #1708).
+    -- The default is a left join that keeps the rows of <expr1> without a partner in <expr2>.
+    -- That is fast as long as the database can merge the query of <expr2> into the join,
+    -- because it then finds the partner of each row through the indexes of the tables underneath.
+    -- A query that the database must materialise first (see 'materialises') has no index;
+    -- the left join then compares every row of <expr1> with every row of that temporary table.
+    -- In that case we generate a set difference (EXCEPT). See PRF-12 in docs/proofs/README.md.
     go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
-    go isFlipped' expr1 expr2 =
+    go isFlipped' expr1 expr2
+      | materialises expr2 = exceptCase isFlipped' expr1 expr2
+      | otherwise = leftJoinCase isFlipped' expr1 expr2
+    exceptCase :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
+    exceptCase isFlipped' expr1 expr2 =
+      Just
+        . traceComment
+          [ "Optimized case for: <expr1> minus the "
+              <> (if isFlipped' then "flipped " else "")
+              <> "term <expr2>, which the database materialises (set difference).",
+            "where ",
+            "  <expr1> = " <> showA expr1 <> " (sign: " <> tshow (sign expr1) <> ")",
+            "  <expr2> = " <> showA expr2 <> " (sign: " <> tshow (sign expr2) <> ")"
+          ]
+        -- The set difference is wrapped in a select, so that it remains one operand
+        -- when the caller combines this query with another set operator, such as UNION.
+        $ pairsOf tDiff
+        $ BinQueryExprSetOp
+          { bseSetQuantifier = SQDefault,
+            bcqeOper = Except,
+            bcqe0 = pairsOf tLeft (selectExpr fSpec expr1),
+            bcqe1 = pairsOf tRight (selectExpr fSpec (if isFlipped' then flp expr2 else expr2))
+          }
+      where
+        tLeft = uName "t1"
+        tRight = uName "t2"
+        tDiff = uName "t3"
+        -- select the two columns of a query, which becomes a derived table with the given name.
+        pairsOf :: Name -> BinQueryExpr -> BinQueryExpr
+        pairsOf tbl q =
+          BinSelect
+            { bseSetQuantifier = SQDefault,
+              bseSrc = Col {cTable = [tbl], cCol = [sourceAlias], cAlias = [], cSpecial = Nothing},
+              bseTrg = Col {cTable = [tbl], cCol = [targetAlias], cAlias = [], cSpecial = Nothing},
+              bseTbl = [TRQueryExpr (toSQL q) `as` tbl],
+              bseWhr = Nothing
+            }
+    leftJoinCase :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
+    leftJoinCase isFlipped' expr1 expr2 =
       Just
         . traceComment
           [ "Optimized case for: <expr1> intersect with the "
@@ -291,6 +336,37 @@ maybeSpecialCase fSpec expr =
               )
         table1 = uName "t1"
         table2 = uName "t2"
+
+-- | Whether the database must materialise the query of a term before it can join it.
+--   The query of a closure is a recursive common table expression, and the query of a union is a set operator;
+--   MariaDB merges neither into an enclosing join, so the result is a temporary table without an index.
+--   A query built from declared relations by composition, intersection and converse is merged,
+--   and a join onto it uses the indexes of the tables underneath.
+--   The test is deliberately one-sided: EXCEPT computes its whole right-hand side, also when the left-hand side is small,
+--   so a term gets it only when the left join certainly has no index to use (measured in issue #1708).
+materialises :: Expression -> Bool
+materialises e = case e of
+  EKl0 {} -> True
+  EKl1 {} -> True
+  EUni {} -> True
+  EFlp x -> materialises x
+  EBrk x -> materialises x
+  ECpl x -> materialises x
+  ECps (a, b) -> materialises a || materialises b
+  EIsc (a, b) -> materialises a || materialises b
+  EDif (a, b) -> materialises a || materialises b
+  ERad (a, b) -> materialises a || materialises b
+  EPrd (a, b) -> materialises a || materialises b
+  ELrs (a, b) -> materialises a || materialises b
+  ERrs (a, b) -> materialises a || materialises b
+  EDia (a, b) -> materialises a || materialises b
+  EEqu (a, b) -> materialises a || materialises b
+  EInc (a, b) -> materialises a || materialises b
+  EDcD {} -> False
+  EDcI {} -> False
+  EBin {} -> False
+  EDcV {} -> False
+  EMp1 {} -> False
 
 nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
 nonSpecialSelectExpr fSpec expr =
