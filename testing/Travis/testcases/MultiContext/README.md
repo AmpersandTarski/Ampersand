@@ -31,6 +31,8 @@ under the name of the included context or its alias as a prefix.
 | `shouldSucceed/alias_with_variables.adl` | Preprocessor variables after the file name, for the included file `contexts/with_variable.adl`. |
 | `shouldSucceed/kurk_desired_alone.adl` | The desired system of the migration case compiles by itself, with its blocking invariant. |
 | `shouldSucceed/kurk_migration.adl` | The migration system of the RAMiCS 2024 paper as a context that includes two versions of the context Kurk, as `old` and `new`. |
+| `shouldSucceed/relaxed_invariants.adl` | A context relaxes two invariants of an included context: one over the identity and one between two relations. It shows the relations that the compiler adds in an interface. |
+| `invariantViolations/relaxed_invariant_hardens.adl` | A script that states the registration itself, for a pair that violates the rule: the blocking invariant that the compiler adds refuses it. |
 | `shouldSucceed/kurk_completed.adl` | The moment of completion: with all violations repaired, the desired system is included with its blocking invariant. |
 | `invariantViolations/kurk_too_early.adl` | The same inclusion before the violations are repaired is refused. |
 | `invariantViolations/invariant_of_included_context.adl` | A rule of an included context holds in the including context. |
@@ -62,8 +64,9 @@ Three things in the migration script are worth knowing.
   `CLASSIFY old.A ISA new.A` states that every atom of the existing system is an atom of the desired one.
 - The desired system has a new blocking invariant, the rule `totalR`, which the data of the existing system violates.
   The migration context writes `ROLE User MAINTAINS new.totalR`.
-  In the migration context the rule is then a business constraint that signals what users have to repair;
-  in the desired system it stays a blocking invariant. The rule is written once, in `kurk_desired.adl`.
+  In the migration context the rule is then a business constraint that signals what users have to repair,
+  and the compiler adds the relation `fixedTotalR` and the blocking invariant `blockTotalR`,
+  so that a repaired violation cannot return (steps 3 to 5 of the paper).
 - `kurk_completed.adl` and `kurk_too_early.adl` include the desired system without assigning the rule to a role,
   after and before the violations are repaired. So the rule is an invariant there, and the second script is refused.
 

@@ -266,36 +266,47 @@ Only the context that declares a concept can state a `REPRESENT` for it.
 
 *Impact in production:* a signal of a rule of an included context shows up in the including application as well.
 
-**A migration turns a new invariant of the desired system into a business constraint with `ROLE … MAINTAINS`.**
+**A context relaxes an invariant of a context it includes with `ROLE … MAINTAINS`, and the compiler makes the relaxed invariant harden.**
 *DC-9 · decided · 2026-10-07 · issue [#1714](https://github.com/AmpersandTarski/Ampersand/issues/1714)*
 
-The desired system states its new invariant as an ordinary rule, `RULE totalR : I[A] |- r;r~`.
+The desired system of a migration states its new invariant as an ordinary rule, `RULE totalR : I[A] |- r;r~`.
 The migration context includes the desired system as `new` and writes `ROLE User MAINTAINS new.totalR`.
 In the migration context the rule is then a business constraint, which signals what users have to repair.
 In the desired system, where no role maintains it, the same rule is a blocking invariant.
 
+For every invariant that a context relaxes in this way, the compiler adds to that context:
+a relation `fixedTotalR` that registers what satisfies the rule,
+an enforced rule `fixTotalR` that fills it,
+and a blocking invariant `blockTotalR` that keeps what is registered from violating the rule again.
+
 *Considerations:*
 
-1. This is the construction of *Data Migration under a Changing Schema in Ampersand* (RAMiCS 2024).
-   The migration system contains every constraint of the desired system,
-   and it "implements the blocking invariants of the desired system as business constraints":
-   for every new blocking invariant u it has a business constraint with the violations of u.
-   In Ampersand, a rule that a role maintains is such a business constraint.
+1. This is the method of *Data Migration under a Changing Schema in Ampersand* (RAMiCS 2024, section 4.1).
+   Step 5 implements a new blocking invariant of the desired system as a business constraint.
+   Steps 3 and 4 add the relation `fixed` and a blocking invariant with the violations of the rule that are registered in it.
+   A violation that a user has repaired can then not return,
+   and when the last violation is repaired the rule holds for all data it applied to.
 2. The rule is written once, in the script of the desired system, and that script contains nothing that serves the migration.
-   The compiler checks the name: `new.totalR` has to be a rule of the included context.
+   The migration context names the rule, and the compiler makes the additions from the rule as the type checker understands it.
+   Written by hand, as the first build had them, the additions repeated the term of the rule twice,
+   and nothing checked that the copies were the same rule.
 3. The application of the desired system runs on one model, during the migration and after it.
-   At the moment of completion nothing is compiled or installed again:
-   the scenario `migration` of the prototype framework evaluates the invariants of the desired application on its database as it is.
-4. Rejected: a preprocessor variable that removes the rule from the desired system during the migration, with a copy of the rule in the migration context.
+   At the moment of completion nothing is compiled or installed again.
+4. What satisfies the rule is, for a rule `l |- r`, the pairs in both `l` and `r`.
+   The paper registers every pair that is no violation.
+   For a rule over `I` that is the same; in general it would register a Cartesian product.
+   The consequence: a pair that enters `l` for the first time may violate the rule once, and is then shown as work to do.
+5. A script that states a rule with the name of the blocking invariant keeps its own version.
+   That lets a migration engineer replace what the compiler adds, as the paper foresees, and it lets an exported script compile.
+6. Rejected: a preprocessor variable that removes the rule from the desired system during the migration, with a copy of the rule in the migration context.
    The desired system had to know that it would be migrated to, the rule was written twice, and its application needed a second model at the moment of completion.
-   Stef pointed out on 7 October 2026 that the paper has no such variable, so none should be needed.
-5. An invariant that the desired system states as a property of a relation, such as `[TOT]`, has no name that a `ROLE` statement can use.
-   The desired system states such an invariant as a rule if a migration has to relax it.
-   Deriving the new invariants from the two scripts is the task of the generator of migration scripts, the next step that the paper announces.
+7. An invariant that the desired system states as a property of a relation, such as `[TOT]`, has no name that a `ROLE` statement can use.
+   The desired system states it as a rule if a migration is to relax it.
+8. Somebody still chooses by hand which invariants are new. Deriving them from the two scripts is the task of the generator of migration scripts.
 
-*Impact on the specification:* none; whether a rule is an invariant or a business constraint is decided per context, as it was.
+*Impact on the specification:* the specification does not model roles yet, so it does not say that a rule is a business constraint in one context and an invariant in another.
 
-*Impact in production:* none.
+*Impact in production:* the migration application has one relation more per relaxed invariant, in its own database.
 
 ## Deployment
 

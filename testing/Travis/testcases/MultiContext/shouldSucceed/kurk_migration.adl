@@ -23,20 +23,11 @@ RELATION copyR[old.A*old.B]
 ENFORCE copyDone : copyR >: new.r /\ old.r
 ENFORCE copy : new.r >: old.r - copyR
 
--- Step 3. For the new blocking invariant (r is total), fixedTotalR registers the atoms that satisfy it,
--- and a blocking invariant keeps a repaired violation from recurring.
-RELATION fixedTotalR[new.A*new.A]
-RULE blockTotalR : fixedTotalR |- new.r;new.r~
-MEANING "An atom that has been paired with a B remains paired with a B."
-MESSAGE "Relation r must remain total."
-VIOLATION (TXT "Atom ", SRC I, TXT " must remain paired with an atom from B.")
-
--- Step 4. A transactional invariant produces the population of fixedTotalR.
-ENFORCE fix : fixedTotalR >: I[new.A] /\ new.r;new.r~
-
--- Step 5. The new invariant becomes a business constraint, which signals what users have to repair.
--- It is the rule of the desired system itself: the migration context assigns it to a role.
--- In the desired system, where no role maintains it, the same rule is a blocking invariant.
+-- Steps 3 to 5. The desired system has a new blocking invariant: r is total.
+-- The migration context assigns that rule to a role. So here it is a business constraint,
+-- which signals what users have to repair, while it remains a blocking invariant in the desired system.
+-- The compiler adds the rest of the method: a relation fixedTotalR that registers the atoms that satisfy the rule,
+-- and a blocking invariant blockTotalR that keeps a repaired violation from recurring.
 ROLE User MAINTAINS new.totalR
 
 -- Every atom of old.A is an atom of new.A, so new.r and fixedTotalR apply to it as well.

@@ -302,8 +302,24 @@ ENDCONTEXT
 ```
 
 The migration system shows the violations of `new.totalR` to its users as work to do, while the desired system keeps the rule as its invariant.
-When no violation is left, the desired system can be taken into use as it is.
+We say that the migration context relaxes the invariant.
+
+A relaxed invariant hardens as the work proceeds.
+For the rule `totalR : I[A] |- r;r~` the compiler adds three things to the migration context:
+
+- a relation `fixedTotalR`, which registers every atom that satisfies the rule;
+- an enforced rule `fixTotalR`, which fills that relation;
+- a blocking invariant `blockTotalR`, which refuses a transaction in which a registered atom violates the rule again.
+
+So a violation that a user has repaired cannot return.
+The violations that are left stay visible as work to do, and what satisfies the rule is held to it at once.
+When the last violation is repaired, the rule holds for all data it applied to, as an invariant does,
+and the desired system can be taken into use as it is.
 The script of the desired system contains nothing that serves the migration.
+
+This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024, section 4.1).
+You can show the registered atoms in an interface of the migration context by referring to `fixedTotalR`.
+The names are made from the name of the rule, so a relaxed invariant needs a name: state it as a `RULE`, where a property such as `[TOT]` has none.
 
 #### `INCLUDE` and `INCLUDES`
 

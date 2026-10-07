@@ -11,6 +11,8 @@ module Ampersand.Core.ParseTree
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
+    mkRelaxedMeta,
+    relaxedRules,
     mkFileMeta,
     foreignContextFiles,
     mkLabelViewMeta,
@@ -196,6 +198,26 @@ foreignContextFiles ms =
     | m <- ms,
       mtName m == fileMetaName,
       let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
+
+-- | The metadata by which a joined context says that a context relaxes an invariant of a context it includes:
+--   it assigns the rule to a role, while no role maintains the rule in its own context.
+--   Its value holds the name space of the context that relaxes the rule (a dash for the compiled context)
+--   and the name of the rule in the joined context.
+relaxedMetaName :: Text1
+relaxedMetaName = toText1Unsafe "multicontext.relaxed"
+
+mkRelaxedMeta :: Origin -> NameSpace -> Name -> MetaData
+mkRelaxedMeta orig ns rule =
+  MetaData orig relaxedMetaName (T.unwords [if null ns then "-" else T.intercalate "." (map namePartToText ns), fullName rule])
+
+-- | The relaxed invariants of a joined context: the name space of the relaxing context and the name of the rule.
+relaxedRules :: [MetaData] -> [(Text, Text)]
+relaxedRules ms =
+  [ (if ns == "-" then "" else ns, rule)
+    | m <- ms,
+      mtName m == relaxedMetaName,
+      [ns, rule] <- [T.words (mtVal m)]
   ]
 
 instance Traced MetaData where

@@ -214,8 +214,27 @@ flattenSystem sys = do
                    (g, there) <- theirs,
                    Just here <- [L.lookup g labels]
                ]
+            <> concatMap relaxed (sysViewer sys : map fst labels)
       }
   where
+    labelOf' labels k = [l | Just l <- [L.lookup k labels]]
+    -- A context relaxes an invariant of a context it includes by assigning the rule to a role.
+    -- The rule is an invariant there if the script of that context assigns it to no role.
+    relaxed :: ContextKey -> [MetaData]
+    relaxed k = case systemLabels sys of
+      Errors _ -> []
+      Checked labels _ ->
+        [ mkRelaxedMeta (origin rr) (labelOf' labels k) (withNameSpace (labelOf' labels t) ruleName)
+          | Just n <- [Map.lookup k (sysNodes sys)],
+            rr <- roleRulesOf (nodeCtx n),
+            nm <- NE.toList (mRules rr),
+            h : rest <- [nameSpaceOf nm],
+            Just t <- [L.lookup h (properPrefixes sys k)],
+            let ruleName = withNameSpace rest (mkName (nameType nm) (localName nm NE.:| [])),
+            Just owner <- [Map.lookup t (sysNodes sys)],
+            ruleName `notElem` concatMap (NE.toList . mRules) (roleRulesOf (nodeCtx owner))
+        ]
+    roleRulesOf ctx = ctx_rrules ctx <> concatMap pt_RRuls (ctx_pats ctx)
     posOf k = fromMaybe OriginUnknown (listToMaybe (maybe [] (ctx_pos . nodeCtx) (Map.lookup k (sysNodes sys))))
     -- The interfaces of a context are the user interface of its own application.
     -- They stay in the joined context until the types have been checked, because an interface
