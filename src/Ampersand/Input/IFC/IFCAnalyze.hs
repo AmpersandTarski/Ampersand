@@ -82,8 +82,8 @@ defaultSchemaName = "IFC4X3_ADD2"
 -- 'ifc2PContextFromTexts'.
 defaultSchemaPath :: FilePath
 defaultSchemaPath =
-  "/Users/stef/git/"
-    <> "BIM/bronnen/ifc-schemas/IFC4.3/IFC4X3_ADD2.exp"
+  "/Users/stef/Library/CloudStorage/GoogleDrive-stefjoosten1@gmail.com/"
+    <> "Mijn Drive/cloudDrive/Rijksvastgoedbedrijf/BIM/bronnen/ifc-schemas/IFC4.3/IFC4X3_ADD2.exp"
 
 -- | Read an @.ifc@ file and produce a 'P_Context', using 'defaultSchemaPath' for
 -- the EXPRESS schema. Analogous to @archi2PContext@. Kept for the WP3 test; the
