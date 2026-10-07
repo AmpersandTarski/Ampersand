@@ -266,7 +266,7 @@ CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
 - Inclusion has no cycles: a context cannot include itself, directly or by way of another context. That is what lets a context be deployed without the contexts that include it.
 - The roles keep their names in every context, and so do the concept `SESSION` and the name space `PrototypeContext`, which belong to Ampersand itself.
 - The interfaces of a context are the user interface of its own application. Another context cannot refer to them.
-- Preprocessor variables follow the file name: `Kurk FROM "desired.adl" [ "Migrating" ] AS new`.
+- Preprocessor variables follow the file name: `Registry FROM "registry.adl" [ "Developing" ] AS Reg`.
 
 #### Rules, classifications and writing
 
@@ -285,6 +285,25 @@ A context writes in the database of a context it includes in two cases.
   The two concepts keep a table each, and your application stores every atom of `old.Person` in the table of `new.Person` as well.
 
 A `REPRESENT` statement belongs in the context that declares the concept.
+
+Whether a rule is an invariant or a business constraint is decided per context.
+In the context that declares it, a rule that no role maintains is an invariant: the application refuses a transaction that violates it.
+An including context can assign that rule to one of its roles, and in that context it is then a business constraint, which signals its violations.
+A data migration uses this.
+Suppose that the desired system has a rule `totalR` that the existing system does not have, so that data of the existing system violates it.
+
+```text
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+CONTEXT Migration
+  ROLE User MAINTAINS new.totalR
+  ...
+ENDCONTEXT
+```
+
+The migration system shows the violations of `new.totalR` to its users as work to do, while the desired system keeps the rule as its invariant.
+When no violation is left, the desired system can be taken into use as it is.
+The script of the desired system contains nothing that serves the migration.
 
 #### `INCLUDE` and `INCLUDES`
 

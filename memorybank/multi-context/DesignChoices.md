@@ -5,9 +5,9 @@ Numbers are stable and never reused; the current state stands here, the history 
 The specification is `AmpersandData/FormalAmpersand/MultiContext.adl`,
 and the mathematics is in the article *Multi-Context Information Systems in Ampersand* (2026).
 
-A choice marked *decided* was taken by Stef Joosten on 6 October 2026.
-A choice marked *provisional* was taken during the build by the AI agent that built it,
-and waits for confirmation by Stef and the core team.
+Stef Joosten decided these choices: most of them on 6 October 2026,
+and on 7 October 2026 he confirmed the ones that the AI agent had taken provisionally during the build.
+One choice, DC-5, is still marked *provisional*; the reason is given there.
 Open questions sit at the bottom under "Still to decide".
 
 ## The language
@@ -36,7 +36,7 @@ The statement stands outside every `CONTEXT` block:
 *Impact in production:* none for existing scripts.
 
 **The words `INCLUDES`, `FROM` and `AS` are recognised by their position and are no keywords.**
-*DC-2 · provisional · 2026-10-06*
+*DC-2 · decided · 2026-10-07*
 
 *Considerations:*
 
@@ -95,6 +95,10 @@ An alias cannot be a name space of Ampersand itself.
 **A prefix names a context that is included directly.**
 *DC-5 · provisional · 2026-10-06*
 
+On 7 October 2026 Stef answered an older question with "a name through two aliases is allowed, such as `Reg.Geo.Town`".
+That differs from this choice, which followed his decision of 6 October that a prefix is one name.
+The question which of the two holds has been put to him; until he answers, the compiler follows the text below.
+
 If `Registry` includes `Towns`, then `Permits` sees the towns without being able to name them.
 To refer to `Towns.Town`, `Permits` states that it includes `Towns`.
 
@@ -109,7 +113,7 @@ To refer to `Towns.Town`, `Permits` states that it includes `Towns`.
 *Impact in production:* none.
 
 **A concept name with a prefix has to exist in the included context.**
-*DC-4 · provisional · 2026-10-05*
+*DC-4 · decided · 2026-10-07*
 
 *Considerations:*
 
@@ -137,7 +141,7 @@ To refer to `Towns.Town`, `Permits` states that it includes `Towns`.
 *Impact in production:* none.
 
 **Roles, the concept SESSION and the name spaces of Ampersand itself get no prefix.**
-*DC-7 · provisional · 2026-10-05*
+*DC-7 · decided · 2026-10-07*
 
 *Considerations:*
 
@@ -150,7 +154,7 @@ To refer to `Towns.Town`, `Permits` states that it includes `Towns`.
 *Impact in production:* none.
 
 **The interfaces of a context belong to its own application.**
-*DC-14 · provisional · 2026-10-06*
+*DC-14 · decided · 2026-10-07*
 
 The compiler does not join the interfaces of an included context, so another context cannot refer to them.
 
@@ -185,7 +189,7 @@ A context that is reached along two paths is one context with one database.
 *Impact in production:* one database per context.
 
 **The tables of a context are a function of its own declarations.**
-*DC-15 · provisional · 2026-10-06*
+*DC-15 · decided · 2026-10-07*
 
 In a system of contexts the compiler makes the tables per owner.
 A relation is folded into the table of a concept only if both belong to the same context,
@@ -207,7 +211,7 @@ and every concept gets a table.
 *Impact in production:* a context that others include is compiled with `--all-concept-tables`.
 
 **A table of another context is a view, and the name of its database is filled in at deployment.**
-*DC-13 · decided for the names, provisional for the views · 2026-10-06*
+*DC-13 · decided · 2026-10-07*
 
 `database.sql` creates the tables of the compiled context.
 For a table of another context it creates a view on that table,
@@ -248,7 +252,7 @@ Only the context that declares a concept can state a `REPRESENT` for it.
 *Impact in production:* the framework restores such classifications at the start of every run of the ExecEngine.
 
 **The compiled context contains the rules of every context it reaches.**
-*DC-16 · provisional · 2026-10-06*
+*DC-16 · decided · 2026-10-07*
 
 *Considerations:*
 
@@ -262,28 +266,41 @@ Only the context that declares a concept can state a `REPRESENT` for it.
 
 *Impact in production:* a signal of a rule of an included context shows up in the including application as well.
 
-**A relaxed version of an included context is selected with a preprocessor variable.**
-*DC-9 · provisional, to be replaced · 2026-10-05 · issue [#1714](https://github.com/AmpersandTarski/Ampersand/issues/1714)*
+**A migration turns a new invariant of the desired system into a business constraint with `ROLE … MAINTAINS`.**
+*DC-9 · decided · 2026-10-07 · issue [#1714](https://github.com/AmpersandTarski/Ampersand/issues/1714)*
 
-The migration context includes the desired system as `Kurk FROM "desired.adl" [ "Migrating" ] AS new`,
-and the desired system guards its new blocking invariant with `--#IFNOT Migrating`.
+The desired system states its new invariant as an ordinary rule, `RULE totalR : I[A] |- r;r~`.
+The migration context includes the desired system as `new` and writes `ROLE User MAINTAINS new.totalR`.
+In the migration context the rule is then a business constraint, which signals what users have to repair.
+In the desired system, where no role maintains it, the same rule is a blocking invariant.
 
 *Considerations:*
 
-1. During a migration the desired system is deployed while its new invariants do not hold yet.
-   The article calls such a context not guarded.
-2. The preprocessor exists and already passes variables to an included file.
-3. It asks the desired system to mark its new invariants, in a comment that the language does not know.
-   Issue #1714 explains why that has to change, and gives four directions.
+1. This is the construction of *Data Migration under a Changing Schema in Ampersand* (RAMiCS 2024).
+   The migration system contains every constraint of the desired system,
+   and it "implements the blocking invariants of the desired system as business constraints":
+   for every new blocking invariant u it has a business constraint with the violations of u.
+   In Ampersand, a rule that a role maintains is such a business constraint.
+2. The rule is written once, in the script of the desired system, and that script contains nothing that serves the migration.
+   The compiler checks the name: `new.totalR` has to be a rule of the included context.
+3. The application of the desired system runs on one model, during the migration and after it.
+   At the moment of completion nothing is compiled or installed again:
+   the scenario `migration` of the prototype framework evaluates the invariants of the desired application on its database as it is.
+4. Rejected: a preprocessor variable that removes the rule from the desired system during the migration, with a copy of the rule in the migration context.
+   The desired system had to know that it would be migrated to, the rule was written twice, and its application needed a second model at the moment of completion.
+   Stef pointed out on 7 October 2026 that the paper has no such variable, so none should be needed.
+5. An invariant that the desired system states as a property of a relation, such as `[TOT]`, has no name that a `ROLE` statement can use.
+   The desired system states such an invariant as a rule if a migration has to relax it.
+   Deriving the new invariants from the two scripts is the task of the generator of migration scripts, the next step that the paper announces.
 
-*Impact on the specification:* none.
+*Impact on the specification:* none; whether a rule is an invariant or a business constraint is decided per context, as it was.
 
 *Impact in production:* none.
 
 ## Deployment
 
 **`ampersand deploy` generates a compose file and a Dockerfile per context.**
-*DC-17 · provisional · 2026-10-06*
+*DC-17 · decided · 2026-10-07*
 
 The compose file has one MariaDB server and one service per context.
 The name of a database comes from the environment, with a default of the context name and a version,
@@ -310,7 +327,7 @@ counted from 1 for contexts with the same name.
 ## Inside the compiler
 
 **The compiler joins the compiled context and the contexts it reaches into one context.**
-*DC-18 · provisional · 2026-10-06*
+*DC-18 · decided · 2026-10-07*
 
 A thing of another context gets one prefix: the label that the compiled context has for that context,
 which is the alias, or else the name.
@@ -331,7 +348,7 @@ and how those contexts call one another.
 
 **The printer writes the name space of a relation and of a view,
 unless it is a name space of Ampersand itself.**
-*DC-10 · provisional · 2026-10-05*
+*DC-10 · decided · 2026-10-07*
 
 *Considerations:*
 

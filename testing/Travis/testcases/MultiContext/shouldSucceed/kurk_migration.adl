@@ -1,5 +1,5 @@
 CONTEXT Migration INCLUDES Kurk FROM "../contexts/kurk_existing.adl" AS old,
-                           Kurk FROM "../contexts/kurk_desired.adl" [ "Migrating" ] AS new
+                           Kurk FROM "../contexts/kurk_desired.adl" AS new
 CONTEXT Migration IN ENGLISH
 PURPOSE CONTEXT Migration
 {+ The migration system of the proof of concept in
@@ -34,12 +34,10 @@ VIOLATION (TXT "Atom ", SRC I, TXT " must remain paired with an atom from B.")
 -- Step 4. A transactional invariant produces the population of fixedTotalR.
 ENFORCE fix : fixedTotalR >: I[new.A] /\ new.r;new.r~
 
--- Step 5. The new invariant as a business constraint, which signals what users have to repair.
-RULE totalR : I[new.A] |- new.r;new.r~
-MEANING "Every A is to be paired with a B."
-MESSAGE "Please, make relation r total."
-VIOLATION (TXT "Pair ", SRC I, TXT " with an (any) atom from B.")
-ROLE User MAINTAINS totalR
+-- Step 5. The new invariant becomes a business constraint, which signals what users have to repair.
+-- It is the rule of the desired system itself: the migration context assigns it to a role.
+-- In the desired system, where no role maintains it, the same rule is a blocking invariant.
+ROLE User MAINTAINS new.totalR
 
 -- Every atom of old.A is an atom of new.A, so new.r and fixedTotalR apply to it as well.
 INTERFACE Migration FOR User : "_SESSION";V[SESSION*old.A] cRud BOX

@@ -5,7 +5,7 @@ PURPOSE CONTEXT Completed
 {+ The moment of completion of the migration case.
 All violations of the new invariant have been repaired: a2 and a3 are paired with a B.
 From this moment on, the desired system can be included with its blocking invariant,
-without the variable `Migrating`, and the population satisfies it.
+without assigning that invariant to a role, and the population satisfies it.
 This is the theorem "moment of completion" of the article on multi-context systems, as a test. +}
 
 

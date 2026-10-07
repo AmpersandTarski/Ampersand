@@ -1,11 +1,12 @@
-CONTEXT Preview INCLUDES Kurk FROM "../contexts/kurk_desired.adl" [ "Migrating" ] AS new
-CONTEXT Preview IN ENGLISH
-PURPOSE CONTEXT Preview
-{+ An INCLUDE statement with an alias can set preprocessor variables for the included file.
-With the variable `Migrating`, the desired system comes without its new invariant,
-so that this context may hold an atom of A that is paired with no B. +}
+CONTEXT Shop INCLUDES Catalogue FROM "../contexts/with_variable.adl" [ "Strict" ] AS Cat
+CONTEXT Shop IN ENGLISH
+PURPOSE CONTEXT Shop
+{+ An inclusion statement can set preprocessor variables for the included file.
+With the variable `Strict`, the catalogue comes with its rule `priced`, to which this context refers.
+Without the variable that rule would not exist, and the reference would be an error. +}
 
+RELATION stock[Cat.Product*Quantity] [UNI]
 
-POPULATION new.A CONTAINS [ "a1" ]
+ROLE Buyer MAINTAINS Cat.priced
 
 ENDCONTEXT

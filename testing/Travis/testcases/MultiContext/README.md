@@ -28,7 +28,7 @@ under the name of the included context or its alias as a prefix.
 | `shouldSucceed/alias_of_two_files.adl` | The included context consists of two files that `INCLUDE` joins. |
 | `shouldSucceed/every_kind_of_name.adl` | Every kind of name gets the prefix: pattern, rule, enforcement, identity, view, classification, representation, purpose. |
 | `shouldSucceed/as_is_no_keyword.adl` | `INCLUDES`, `FROM` and `AS` remain ordinary identifiers outside the statement. |
-| `shouldSucceed/alias_with_variables.adl` | Preprocessor variables after the file name. |
+| `shouldSucceed/alias_with_variables.adl` | Preprocessor variables after the file name, for the included file `contexts/with_variable.adl`. |
 | `shouldSucceed/kurk_desired_alone.adl` | The desired system of the migration case compiles by itself, with its blocking invariant. |
 | `shouldSucceed/kurk_migration.adl` | The migration system of the RAMiCS 2024 paper as a context that includes two versions of the context Kurk, as `old` and `new`. |
 | `shouldSucceed/kurk_completed.adl` | The moment of completion: with all violations repaired, the desired system is included with its blocking invariant. |
@@ -60,11 +60,12 @@ Three things in the migration script are worth knowing.
 
 - The concepts of the two systems are different concepts.
   `CLASSIFY old.A ISA new.A` states that every atom of the existing system is an atom of the desired one.
-- The desired system has a new blocking invariant, which does not hold during the migration.
-  The migration context includes the desired system with the preprocessor variable `Migrating`,
-  which leaves that invariant out, and states the relaxed version itself.
-- `kurk_completed.adl` and `kurk_too_early.adl` include the desired system without that variable,
-  after and before the violations are repaired.
+- The desired system has a new blocking invariant, the rule `totalR`, which the data of the existing system violates.
+  The migration context writes `ROLE User MAINTAINS new.totalR`.
+  In the migration context the rule is then a business constraint that signals what users have to repair;
+  in the desired system it stays a blocking invariant. The rule is written once, in `kurk_desired.adl`.
+- `kurk_completed.adl` and `kurk_too_early.adl` include the desired system without assigning the rule to a role,
+  after and before the violations are repaired. So the rule is an invariant there, and the second script is refused.
 
 ## Other checks
 
