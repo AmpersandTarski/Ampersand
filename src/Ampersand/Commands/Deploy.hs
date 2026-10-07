@@ -85,6 +85,10 @@ deploy fSpec = do
   write (outDir </> ".env.example") (envExample members)
   write (outDir </> "db-init" </> "01-grant.sql") grants
   write (outDir </> "install.sh") (installScript members)
+  -- The generated README tells the reader to run ./install.sh, so the file has to be executable.
+  liftIO $ do
+    perms <- getPermissions (outDir </> "install.sh")
+    setPermissions (outDir </> "install.sh") (setOwnerExecutable True perms)
   write (outDir </> "README.md") (readme members (T.pack (takeFileName composeFile)))
   liftIO $ createDirectoryIfMissing True outDir
   BL.writeFile (outDir </> "system.json") (JSON.encodePretty (systemJson members) <> "\n")
