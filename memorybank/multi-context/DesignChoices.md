@@ -7,7 +7,6 @@ and the mathematics is in the article *Multi-Context Information Systems in Ampe
 
 Stef Joosten decided these choices: most of them on 6 October 2026,
 and on 7 October 2026 he confirmed the ones that the AI agent had taken provisionally during the build.
-One choice, DC-5, is still marked *provisional*; the reason is given there.
 Open questions sit at the bottom under "Still to decide".
 
 ## The language
@@ -93,11 +92,7 @@ An alias cannot be a name space of Ampersand itself.
 *Impact in production:* none.
 
 **A prefix names a context that is included directly.**
-*DC-5 · provisional · 2026-10-06*
-
-On 7 October 2026 Stef answered an older question with "a name through two aliases is allowed, such as `Reg.Geo.Town`".
-That differs from this choice, which followed his decision of 6 October that a prefix is one name.
-The question which of the two holds has been put to him; until he answers, the compiler follows the text below.
+*DC-5 · decided · 2026-10-06*
 
 If `Registry` includes `Towns`, then `Permits` sees the towns without being able to name them.
 To refer to `Towns.Town`, `Permits` states that it includes `Towns`.
