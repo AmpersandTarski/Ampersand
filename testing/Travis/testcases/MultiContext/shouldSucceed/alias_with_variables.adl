@@ -1,0 +1,12 @@
+CONTEXT Shop INCLUDES Catalogue FROM "../contexts/with_variable.adl" [ "Strict" ] AS Cat
+CONTEXT Shop IN ENGLISH
+PURPOSE CONTEXT Shop
+{+ An inclusion statement can set preprocessor variables for the included file.
+With the variable `Strict`, the catalogue comes with its rule `priced`, to which this context refers.
+Without the variable that rule would not exist, and the reference would be an error. +}
+
+RELATION stock[Cat.Product*Quantity] [UNI]
+
+ROLE Buyer MAINTAINS Cat.priced
+
+ENDCONTEXT

@@ -1,0 +1,6 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
+CONTEXT Fail IN ENGLISH
+-- Reg.Persn does not exist in the included context.
+-- Without a check, this would silently introduce a new concept.
+RELATION applicant[Permit*Reg.Persn]
+ENDCONTEXT

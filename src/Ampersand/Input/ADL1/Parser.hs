@@ -5,8 +5,11 @@ module Ampersand.Input.ADL1.Parser
   ( AmpParser,
     ParserState,
     Include (..),
+    Inclusion (..),
+    InclusionItem (..),
     initialParserState,
     pContext,
+    pFile,
     pContent,
     pPopulations,
     pTerm,
@@ -228,9 +231,11 @@ data ContextElement
   | CIncl Include -- an INCLUDE statement
   | CEnf (P_Enforce TermPrim)
 
+-- | An INCLUDE statement: its position, the file and the preprocessor variables.
+--   The included file contributes its text to the including context (a union).
 data Include = Include Origin FilePath [Text]
 
---- IncludeStatement ::= 'INCLUDE' Text
+---- IncludeStatement ::= 'INCLUDE' Text ('[' Text (',' Text)* ']')?
 pIncludeStatement :: AmpParser Include
 pIncludeStatement =
   Include
@@ -238,6 +243,70 @@ pIncludeStatement =
     <* (pKey . toText1Unsafe) "INCLUDE"
     <*> (T.unpack <$> pDoubleQuotedString)
     <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])
+
+-- | The statement that contexts include other contexts.
+--   It stands outside every CONTEXT block, because it relates contexts.
+--   @CONTEXT A, B INCLUDES C FROM "c.adl" AS X, D@ says that A and B each include C and D.
+data Inclusion = Inclusion
+  { incOrigin :: !Origin,
+    -- | the contexts before the word INCLUDES
+    incIncluders :: !(NonEmpty Name),
+    -- | the contexts after the word INCLUDES
+    incItems :: !(NonEmpty InclusionItem)
+  }
+
+-- | One included context in an inclusion statement.
+data InclusionItem = InclusionItem
+  { -- | the name of the included context
+    itName :: !Name,
+    -- | the file in which the included context is to be found, if it is another file
+    itFrom :: !(Maybe FilePath),
+    -- | the preprocessor variables with which that file is read
+    itDefs :: ![Text],
+    -- | a second name for the included context, for use in the including context
+    itAlias :: !(Maybe NamePart)
+  }
+
+--- File ::= (InclusionStatement | Context)+
+
+-- | Parses a file: inclusion statements and the contexts (or fragments of contexts) it contains.
+pFile :: AmpParser ([Inclusion], [(P_Context, [Include])])
+pFile = partitionEithers <$> many1 (Left <$> pInclusion <|> Right <$> pContext) <* atEnd
+  where
+    -- What follows the last context has to be a context or an inclusion statement as well.
+    -- Without this check, a statement with a mistake in it would be ignored in silence.
+    atEnd = pEndOfFile <|> void pContext
+
+--- InclusionStatement ::= 'CONTEXT' Name (',' Name)* 'INCLUDES' InclusionItem (',' InclusionItem)*
+--- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)?
+pInclusion :: AmpParser Inclusion
+pInclusion = do
+  -- The words INCLUDES, FROM and AS are no keywords, so that scripts that use them as
+  -- identifiers keep compiling. They are recognised by their position.
+  (orig, includers) <- try $ do
+    orig <- currPos
+    _ <- (pKey . toText1Unsafe) "CONTEXT"
+    includers <- pNameWithoutLabel ContextName `sepBy1` pComma
+    pWord "INCLUDES"
+    pure (orig, includers)
+  items <- pItem `sepBy1` pComma
+  pure (Inclusion orig includers items)
+  where
+    pItem :: AmpParser InclusionItem
+    pItem =
+      build
+        <$> pNameWithoutLabel ContextName
+        <*> pMaybe (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
+        <*> pMaybe (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
+    build nm mFrom = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom)
+    pWord :: Text -> AmpParser ()
+    pWord w = try (pUpperCaseID >>= isWord) <?> T.unpack w
+      where
+        isWord t = if text1ToText t == w then pure () else fail (T.unpack w <> " expected")
+    toNamePart :: Text1 -> AmpParser NamePart
+    toNamePart t = case try2Namepart (text1ToText t) of
+      Right np -> pure np
+      _ -> fail ("The alias " <> T.unpack (text1ToText t) <> " is not a valid name.")
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang

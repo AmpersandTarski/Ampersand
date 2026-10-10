@@ -1,0 +1,17 @@
+CONTEXT Keywords INCLUDES Registry FROM "../contexts/registry.adl" AS AS
+CONTEXT Keywords IN ENGLISH
+PURPOSE CONTEXT Keywords
+{+ The words INCLUDES, FROM and AS are recognised in an inclusion statement only.
+Elsewhere they remain ordinary identifiers, so scripts that use them keep compiling. +}
+
+CONCEPT AS "An autonomous system on the internet."
+CONCEPT FROM "The sender of a message."
+CONCEPT INCLUDES "A list of things that a price includes."
+RELATION peers[AS*AS] [SYM]
+RELATION operator[AS*AS.Person] [UNI]
+RELATION sent[FROM*INCLUDES]
+
+POPULATION peers[AS*AS] CONTAINS [ ("AS1103", "AS3333") ; ("AS3333", "AS1103") ]
+POPULATION operator[AS*AS.Person] CONTAINS [ ("AS1103", "p1") ]
+
+ENDCONTEXT

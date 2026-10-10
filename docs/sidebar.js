@@ -122,6 +122,11 @@ module.exports = {
             id: 'ampersand/guides/deploying-your-prototype'
         },
         {
+            label: 'Systems of contexts',
+            type: 'doc',
+            id: 'ampersand/guides/systems-of-contexts'
+        },
+        {
             label: 'Contributor\'s guide',
             type: 'category',
             items: [

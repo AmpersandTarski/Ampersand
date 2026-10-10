@@ -1,0 +1,24 @@
+Observed on 2026-10-06
+$ lake build
+Build completed successfully (3 jobs).
+$ lake env lean Axioms.lean
+'MultiContext.reach_antisymm' does not depend on any axioms
+'MultiContext.local_reference_unambiguous' does not depend on any axioms
+'MultiContext.reference_unambiguous' does not depend on any axioms
+'MultiContext.reference_complete' does not depend on any axioms
+'MultiContext.restricted_view' depends on axioms: [propext, Quot.sound]
+'MultiContext.view_restr_reach' depends on axioms: [propext, Quot.sound]
+'MultiContext.truth_is_imported' depends on axioms: [propext, Quot.sound]
+'MultiContext.closure_has_concepts' does not depend on any axioms
+'MultiContext.wellTyped_view_iff' does not depend on any axioms
+'MultiContext.flattening' depends on axioms: [propext, Quot.sound]
+'MultiContext.reach_extension' does not depend on any axioms
+'MultiContext.view_extension' depends on axioms: [propext, Quot.sound]
+'MultiContext.frame' depends on axioms: [propext, Quot.sound]
+'MultiContext.non_interference' depends on axioms: [propext, Quot.sound]
+'MultiContext.not_affected' depends on axioms: [propext, Quot.sound]
+'MultiContext.preservation' depends on axioms: [propext, Quot.sound]
+'MultiContext.moment_of_completion' depends on axioms: [propext, Classical.choice, Quot.sound]
+'MultiContext.moment_of_completion_typed' does not depend on any axioms
+$ grep -c sorry MultiContext.lean
+0

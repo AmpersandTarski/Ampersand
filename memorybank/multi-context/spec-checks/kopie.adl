@@ -1,0 +1,7 @@
+CONTEXT FormalAmpersand IN ENGLISH
+INCLUDE "ruit.adl"
+POPULATION FormalAmpersand.owner[FormalAmpersand.Declaration*FormalAmpersand.Context] CONTAINS [ ("cTownCopy", "Towns") ]
+POPULATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] CONTAINS [ ("cTownCopy", "Towns") ]
+POPULATION FormalAmpersand.localName[FormalAmpersand.Declaration*FormalAmpersand.Name] CONTAINS [ ("cTownCopy", "Town") ]
+POPULATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] CONTAINS [ ("cTownCopy", "Town") ]
+ENDCONTEXT

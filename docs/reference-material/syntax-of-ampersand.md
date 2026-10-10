@@ -18,6 +18,7 @@ Structuring an Ampersand specification effectively is crucial for readability, m
 
 1. `Include` statements enable you to use multiple files. This can help to separate your statements by concerns.
 2. `Pattern`s can help to devide your rules etc. by theme. The generated documentation takes this into account.
+3. A specification can consist of several contexts, each with a database of its own, in which one context includes another. See [Systems of contexts](#systems-of-contexts).
 
 Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
 
@@ -96,8 +97,9 @@ The data contained in a business system represents a view of \(a very small part
 
 #### Semantics
 
-Any Ampersand model has one context.  
-The model is true within its context and there is no knowledge in a model about other contexts.
+A context describes one information system, with one database.
+What a context states is true within that context.
+A context knows of another context only if it includes it; see [Systems of contexts](#systems-of-contexts).
 
 #### Syntax
 
@@ -112,7 +114,7 @@ INCLUDE*
 ENDCONTEXT
 ```
 
-Other models included with the INCLUDE statement become part of the context they are included in.
+A file that is included with the [`INCLUDE` statement](#the-include-statement) becomes part of the context in which the statement stands.
 
 ###### Optional parts
 
@@ -170,6 +172,9 @@ INCLUDE "bar.xlsx"
 INCLUDE <filename>
 ```
 
+`INCLUDE` brings in the text of a file.
+To let one context use the declarations and the data of another context, see [Systems of contexts](#systems-of-contexts).
+
 This statement specifies files that need to be included before compiling. The filename is given in double quotes, including a path that is relative to the position of the main adl-file. The main adl-file is the file that is called with the command Ampersand.
 
 Possible files to include are:
@@ -184,6 +189,153 @@ Make sure to include the adl-files before including xlsx-files.
 Included files may contain `INCLUDE`statements themselves. The files mentioned there are treated as though they were included in the main file. So their code is also part of the same context. Nested adl-files can have their own xlsx-files included.
 
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
+
+## Systems of contexts
+
+#### Purpose
+
+One script describes one information system: a context with one database.
+Some systems consist of several information systems, each with a database and rules of its own, in which one system uses what another one defines and stores.
+A system for permits uses the persons of a population register that another organisation keeps.
+A migration needs the existing system and the desired system at the same time.
+For that purpose a context can include another context.
+
+This section is the reference.
+The guide [Several information systems that use each other](../guides/systems-of-contexts.md) introduces the mechanism step by step, with an example that you can run.
+
+#### Syntax and meaning
+
+```text
+CONTEXT <context> INCLUDES <context>
+CONTEXT <context>, <context> INCLUDES <context> FROM <filename> AS <alias>, <context>
+```
+
+The statement stands outside every `CONTEXT ... ENDCONTEXT` block, because it relates contexts.
+`CONTEXT A, B INCLUDES C, D` says that `A` and `B` each include `C` and `D`.
+The part with `FROM` tells in which file the included context is to be found; you leave it out if that context is in the same file.
+The part with `AS` gives the included context a second name, an alias, for use in the including context.
+
+If `A` includes `B`, everything that `B` declares is available in `A`, and so is the population of `B`.
+The script of `A` refers to a thing of `B` by putting the name of `B`, or the alias, in front of it.
+
+Consider a register of persons, in a file `registry.adl`:
+
+```text
+CONTEXT Registry
+  RELATION name[Person*Name] [UNI,TOT]
+  RELATION address[Person*Address] [UNI]
+ENDCONTEXT
+```
+
+A system for permits uses the persons of that register, and it has an address of its own: the site to which a permit applies.
+
+```text
+CONTEXT Permits INCLUDES Registry FROM "registry.adl"
+
+CONTEXT Permits
+  RELATION applicant[Permit*Registry.Person] [UNI,TOT]
+  RELATION address[Permit*Address] [UNI]
+
+  RULE located : applicant |- applicant;Registry.address;Registry.address~
+  ROLE Clerk MAINTAINS located
+ENDCONTEXT
+```
+
+The name `Registry.Person` denotes the concept `Person` of the register, and `Registry.address` denotes the relation that pairs a person with a home address.
+The name `address` without a prefix denotes the relation that `Permits` declares itself.
+So, the two relations called `address` and the two concepts called `Address` stay apart, whatever names the two scripts choose.
+
+#### One context, one database
+
+Every context has a database of its own and an application of its own, so that it can be deployed by itself.
+Each fact is stored once: a pair in the database of the context that declares the relation, and an atom in the database of the context that declares the concept.
+A context reads the databases of the contexts it includes, directly or indirectly.
+A term can therefore read several databases: in `applicant;Registry.address` the pairs of `applicant` come from the database of the permits and the pairs of `address` from the database of the register.
+
+A context that is included by two contexts remains one context with one database.
+If the register and a register of shops both include a context `Towns`, the town of a shop and the town in which a person lives are atoms of one concept, `Towns.Town`.
+
+#### Names
+
+- The name of a context identifies the context. Everything between `CONTEXT Foo` and `ENDCONTEXT` belongs to the context `Foo`, and a file can contain several contexts and several fragments of one context.
+- A name of an included context carries a prefix. `Person` in the script of `Permits` would be a new concept of `Permits`.
+- Without an alias, the prefix is the name of the included context. With an alias, both the alias and the name can be used.
+- A prefix names a context that is included directly. If `Registry` includes `Towns`, then `Permits` sees the towns: they are the target of a relation of the register. To refer to `Towns.Town` itself, `Permits` states that it includes `Towns`. That adds no database.
+- If a context includes two contexts with the same name, the compiler demands an alias for each. A migration is the usual case: the existing and the desired system are two versions of one context.
+
+```text
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+```
+
+- Inclusion has no cycles: a context cannot include itself, directly or by way of another context. That is what lets a context be deployed without the contexts that include it.
+- The roles keep their names in every context, and so do the concept `SESSION` and the name space `PrototypeContext`, which belong to Ampersand itself.
+- The interfaces of a context are the user interface of its own application. Another context cannot refer to them.
+- Preprocessor variables follow the file name: `Registry FROM "registry.adl" [ "Developing" ] AS Reg`.
+
+#### Rules, classifications and writing
+
+A rule is guarded by the application of the context that declares it.
+An including context sees the rule and can rely on it.
+
+A rule of your context can depend on data of another context, as `located` does.
+The other application can then change that data without knowing of your rule, and your application cannot refuse the change.
+That is why `located` is assigned to a role: a clerk restores it.
+
+A context writes in the database of a context it includes in two cases.
+
+- An `ENFORCE` rule of your context on a relation of the other context adds pairs to that relation.
+- A `CLASSIFY` statement whose generic concept belongs to the other context.
+  `CLASSIFY old.Person ISA new.Person` says that every person of the existing system is a person of the desired system.
+  The two concepts keep a table each, and your application stores every atom of `old.Person` in the table of `new.Person` as well.
+
+A `REPRESENT` statement belongs in the context that declares the concept.
+
+Whether a rule is an invariant or a business constraint is decided per context.
+In the context that declares it, a rule that no role maintains is an invariant: the application refuses a transaction that violates it.
+An including context can assign that rule to one of its roles, and in that context it is then a business constraint, which signals its violations.
+A data migration uses this.
+Suppose that the desired system has a rule `totalR` that the existing system does not have, so that data of the existing system violates it.
+
+```text
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+CONTEXT Migration
+  ROLE User MAINTAINS new.totalR
+  ...
+ENDCONTEXT
+```
+
+The migration system shows the violations of `new.totalR` to its users as work to do, while the desired system keeps the rule as its invariant.
+We say that the migration context relaxes the invariant.
+
+A relaxed invariant hardens as the work proceeds.
+For the rule `totalR : I[A] |- r;r~` the compiler adds three things to the migration context:
+
+- a relation `fixedTotalR`, which registers every atom that satisfies the rule;
+- an enforced rule `fixTotalR`, which fills that relation;
+- a blocking invariant `blockTotalR`, which refuses a transaction in which a registered atom violates the rule again.
+
+So a violation that a user has repaired cannot return.
+The violations that are left stay visible as work to do, and what satisfies the rule is held to it at once.
+When the last violation is repaired, the rule holds for all data it applied to, as an invariant does,
+and the desired system can be taken into use as it is.
+The script of the desired system contains nothing that serves the migration.
+
+This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024, section 4.1).
+You can show the registered atoms in an interface of the migration context by referring to `fixedTotalR`.
+The names are made from the name of the rule, so a relaxed invariant needs a name: state it as a `RULE`, where a property such as `[TOT]` has none.
+
+#### `INCLUDE` and `INCLUDES`
+
+`INCLUDE "file"` relates files: it brings in the text of a file, which becomes part of the context in which the statement stands.
+`CONTEXT A INCLUDES B` relates contexts: `B` stays a context of its own, with its own database.
+
+#### Compiling and deploying
+
+`ampersand check`, `proto` and the other commands compile the first context in the file you give them, together with the contexts it reaches.
+The option `--context` compiles another context of the system, by its name or alias in that file.
+The command [`ampersand deploy`](../the-command-line-tool.md#deploy) generates a compose file and a Dockerfile for every context.
 
 ## The PATTERN statement
 

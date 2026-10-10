@@ -167,6 +167,7 @@ library:
     - Ampersand.Input.IFC.IFCAnalyze
     - Ampersand.Input.Parsing
     - Ampersand.Input.PreProcessor
+    - Ampersand.Input.Qualify
     - Ampersand.Input.Step.Parser
     - Ampersand.Input.Step.Types
     - Ampersand.Input.Xslx.XLSX
@@ -215,6 +216,7 @@ library:
     - Ampersand.Test.IFC.IFCWiringTest
     - Ampersand.Test.Incremental.CandidateProperties
     - Ampersand.Test.Incremental.CostProfileTests
+    - Ampersand.Test.MultiContext.QualifyProperties
     - Ampersand.Test.Incremental.Properties
     - Ampersand.Test.Parser.ArbitraryTree
     - Ampersand.Test.Parser.ParserTest

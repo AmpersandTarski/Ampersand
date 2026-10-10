@@ -2,10 +2,12 @@ module Ampersand.Output.FSpec2SQL (dumpSQLqueries, databaseStructureSql) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Core.ParseTree (foreignContexts)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaPlugs)
 import Ampersand.FSpec.SQL
+import Ampersand.FSpec.ToFSpec.ADL2Plug (foreignTable)
 import Ampersand.Prototype.TableSpec
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -20,12 +22,18 @@ databaseStructureSql fSpec =
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment =
-  concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
+  concatMap structure [p | InternalPlug p <- plugInfos fSpec]
     -- delta tables for incremental violation maintenance (issue #1684):
     -- one two-column table per relation occurring in a conjunct, holding the
     -- transaction's touched pairs; empty outside transactions.
     <> concatMap (tableSpec2Queries withComment . plug2TableSpec) (deltaPlugs fSpec)
     <> additionalDatabaseSettings
+  where
+    -- A context creates the tables of its own things.
+    -- For a table of another context it creates a view on that table, in the database of its owner.
+    structure plug = case foreignTable (map fst (foreignContexts (metas fSpec))) plug of
+      Nothing -> tableSpec2Queries withComment (plug2TableSpec plug)
+      Just (lbl, remote) -> [createViewSql withComment lbl remote (plug2TableSpec plug)]
 
 dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec =

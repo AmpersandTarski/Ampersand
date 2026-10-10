@@ -17,6 +17,8 @@ module Ampersand.Basics.Name
     namePartToText1,
     NameSpace,
     NameType (..),
+    isReservedName,
+    isReservedNameSpace,
     postpend,
     prependToPlainName,
     suggestName,
@@ -199,6 +201,21 @@ data NameType
   | SqlTableName
   | ViewName
   deriving (Show, Eq, Data, Enum, Bounded)
+
+-- | A name that belongs to the Ampersand system itself keeps its name in every context.
+--   Such names are the concept SESSION and everything in the name spaces that the
+--   compiler adds to a script (PrototypeContext and FormalAmpersand).
+isReservedName :: Name -> Bool
+isReservedName nm =
+  nm
+    == nameOfSESSION
+    || case NE.init (nameParts nm) of
+      h : _ -> isReservedNameSpace h
+      [] -> False
+
+-- | The name spaces of the contexts that the compiler adds to a script.
+isReservedNameSpace :: NamePart -> Bool
+isReservedNameSpace np = namePartToText np `elem` ["PrototypeContext", "FormalAmpersand"]
 
 withNameSpace :: NameSpace -> Name -> Name
 withNameSpace ns nm =

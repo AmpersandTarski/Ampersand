@@ -488,8 +488,15 @@ pCtx2aCtx
       warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
       -- Note: warnCartesianProducts is now emitted by pCtx2Fspec, because it needs FSpec
       -- (for normalization and SQL generation) when --verbose is active.
-      return actx
+      -- In a system of contexts, the interfaces of another context have served their purpose now:
+      -- they told the type checker which concepts hold objects. They belong to the application of their own context.
+      return actx {ctxifcs = filter (isNothing . ownerLabel . name) (ctxifcs actx)}
     where
+      -- The label of the context that owns a thing, if that is another context than the compiled one.
+      ownerLabel :: Name -> Maybe Text
+      ownerLabel nm = case nameSpaceOf nm of
+        h : _ | namePartToText h `elem` map fst (foreignContexts p_metas) -> Just (namePartToText h)
+        _ -> Nothing
       -- Early filtering: get all P_Concepts that exist in the schema (before type checking)
       pCpts :: Set.Set P_Concept
       pCpts =

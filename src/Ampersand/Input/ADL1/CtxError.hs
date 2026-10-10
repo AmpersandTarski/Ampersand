@@ -58,6 +58,7 @@ module Ampersand.Input.ADL1.CtxError
     mkTurtleWarning,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
+    mkUnusedInclusionWarning,
     mkOrphanedRepresentWarning,
     mustBeBound,
     mustBeOrdered,
@@ -748,6 +749,15 @@ mkNoBoxItemsWarning orig =
     $ T.intercalate
       "\n    "
       [ "This list of BOX-items is empty."
+      ]
+
+mkUnusedInclusionWarning :: Origin -> Text -> Text -> Warning
+mkUnusedInclusionWarning orig includer included =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ "The context " <> includer <> " includes the context " <> included <> " and refers to nothing in it.",
+        "You can leave the inclusion out."
       ]
 
 mkTurtleWarning :: Origin -> [Text] -> Warning

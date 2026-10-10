@@ -1,0 +1,9 @@
+CONTEXT Shops INCLUDES Towns FROM "towns.adl"
+CONTEXT Shops IN ENGLISH
+PURPOSE CONTEXT Shops
+{+ A register of shops, which includes the context of towns, as the register of persons does. +}
+
+RELATION located[Shop*Towns.Town] [UNI]
+POPULATION located[Shop*Towns.Town] CONTAINS [ ("s1", "Enschede") ; ("s2", "Heerlen") ]
+
+ENDCONTEXT

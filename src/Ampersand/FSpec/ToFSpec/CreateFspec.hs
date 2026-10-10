@@ -19,7 +19,7 @@ import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import Ampersand.Basics
 import Ampersand.Core.A2P_Converters (aRelation2pRelation)
-import Ampersand.Core.ParseTree (mkPConcept)
+import Ampersand.Core.ParseTree (mkPConcept, relaxedRules)
 import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
@@ -32,6 +32,7 @@ import Ampersand.Input
 import Ampersand.Misc.HasClasses
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config (HasRunner, runnerL)
+import RIO.Char (toUpper)
 import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -81,7 +82,8 @@ createFspec =
     let recipe = view recipeL env
     userScript <- do
       rootFiles <- view rootFileL
-      snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
+      -- the P_Context of the user's sourceFile, with what the compiler adds for relaxed invariants
+      (>>= hardenRelaxedInvariants env) . snd <$> parseFilesTransitive rootFiles
     pContext <-
       case recipe of
         Standard -> pure userScript
@@ -258,6 +260,96 @@ grindInto metamodel specification = do
               ctx_enfs = []
             }
   return pCtx
+
+-- | A context relaxes an invariant of a context it includes by assigning the rule to a role
+--   (@ROLE User MAINTAINS new.totalR@). The rule is then a business constraint in that context:
+--   its violations are signalled to users. This is how a migration treats the invariants that the
+--   desired system has and the existing system lacks.
+--
+--   For every relaxed invariant @u@ the compiler adds what the method of
+--   "Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024, section 4.1, steps 3 and 4) prescribes:
+--   a relation @fixed_u@ that registers what satisfies @u@, a rule that is enforced to fill it,
+--   and a blocking invariant that keeps what is registered from violating @u@ again.
+--   So a violation that a user has repaired cannot return, and once the last violation is repaired
+--   everything that the rule applied to is held to it.
+--
+--   The additions are made as script text, from the rule as the type checker understands it,
+--   because the signature of the relation is the signature of the rule.
+hardenRelaxedInvariants :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded P_Context
+hardenRelaxedInvariants env pCtx = case relaxedRules (ctx_metas pCtx) of
+  [] -> pure pCtx
+  relaxed -> do
+    aCtx <- pCtx2aCtx env skeleton
+    let rules = Set.toList (udefrules aCtx)
+        additions =
+          [ addition ns rule
+            | (ns, ruleName) <- relaxed,
+              rule <- take 1 (filter ((== ruleName) . fullName) rules),
+              -- A script that states the blocking rule itself keeps its own version.
+              -- That is also the case for a script that the compiler exported.
+              blockName ns rule `notElem` map fullName (ctx_rs pCtx <> concatMap pt_rls (ctx_pats pCtx))
+          ]
+    if null additions
+      then pure pCtx
+      else do
+        (generated, _) <- parseCtx "the hardening of relaxed invariants" (T.unlines (["CONTEXT Hardening"] <> concat additions <> ["ENDCONTEXT"]))
+        pure (pCtx `mergeContexts` generated)
+  where
+    -- The script may refer to what is added here, for instance to show the registered pairs in an interface.
+    -- So the signature of a relaxed rule is taken from the declarations and the relaxed rules alone.
+    skeleton :: P_Context
+    skeleton =
+      pCtx
+        { ctx_pats = map bare (ctx_pats pCtx),
+          ctx_rs = filter isRelaxed (ctx_rs pCtx),
+          ctx_ks = [],
+          ctx_rrules = [],
+          ctx_vs = [],
+          ctx_ifcs = [],
+          ctx_ps = [],
+          ctx_pops = [],
+          ctx_enfs = []
+        }
+    bare pat =
+      pat
+        { pt_rls = filter isRelaxed (pt_rls pat),
+          pt_RRuls = [],
+          pt_ids = [],
+          pt_vds = [],
+          pt_xps = [],
+          pt_pop = [],
+          pt_enfs = []
+        }
+    isRelaxed :: P_Rule TermPrim -> Bool
+    isRelaxed r = fullName r `elem` map snd (relaxedRules (ctx_metas pCtx))
+    blockName :: Text -> Rule -> Text
+    blockName ns rule = (if T.null ns then "" else ns <> ".") <> "block" <> capitalise (localNameOf rule)
+    capitalise :: Text -> Text
+    capitalise t = case T.uncons t of
+      Just (c, rest) -> T.cons (toUpper c) rest
+      Nothing -> ""
+    addition :: Text -> Rule -> [Text]
+    addition ns rule =
+      [ "RELATION " <> fixed <> signature,
+        "MEANING " <> quoted ("This pair satisfies the rule " <> fullName rule <> ", and has to keep satisfying it."),
+        "ENFORCE " <> qualified "fix" <> " : " <> fixed <> signature <> " >: " <> satisfied,
+        "RULE " <> qualified "block" <> " : " <> blocked,
+        "MEANING " <> quoted ("What satisfies the rule " <> fullName rule <> " keeps satisfying it."),
+        "MESSAGE " <> quoted ("A violation of " <> fullName rule <> " that has been repaired cannot return.")
+      ]
+      where
+        expr = formalExpression rule
+        signature = "[" <> fullName (source expr) <> "*" <> fullName (target expr) <> "]"
+        capitalised = capitalise (localNameOf rule)
+        qualified prefix = (if T.null ns then "" else ns <> ".") <> prefix <> capitalised
+        fixed = qualified "fixed"
+        par e = "(" <> showA e <> ")"
+        -- What satisfies the rule, and the rule restricted to what is registered.
+        (satisfied, blocked) = case expr of
+          EInc (l, r) -> (par l <> " /\\ " <> par r, fixed <> signature <> " /\\ " <> par l <> " |- " <> par r)
+          EEqu (l, r) -> (par l <> " /\\ " <> par r, fixed <> signature <> " /\\ (" <> par l <> " \\/ " <> par r <> ") |- " <> par l <> " /\\ " <> par r)
+          _ -> (par expr, fixed <> signature <> " |- " <> par expr)
+        quoted t = "\"" <> T.filter (/= '"') t <> "\""
 
 pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do

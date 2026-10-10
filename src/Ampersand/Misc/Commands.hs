@@ -12,6 +12,7 @@ where
 
 import Ampersand.Basics
 import Ampersand.Commands.Daemon
+import Ampersand.Commands.Deploy
 import Ampersand.Commands.Devoutput
 import Ampersand.Commands.Documentation
 import Ampersand.Commands.ExportAsADL
@@ -119,6 +120,14 @@ commandLineHandler currentDir _progName args =
         )
         (mkAction exportAsAdl)
         (outputFileOptsParser "MetaModel.adl")
+      addCommand''
+        Deploy
+        ( "Generate what is needed to run a system of contexts: a compose file, "
+            <> "and a Dockerfile for the application of every context. "
+            <> "Every context gets a database of its own."
+        )
+        (mkAction deploy)
+        (outputFileOptsParser "compose.yaml")
       addCommand''
         Devoutput
         "Generate some diagnostic files, intended for developers of ampersand."
@@ -451,6 +460,7 @@ data Command
   | Check
   | Daemon
   | Dataanalysis
+  | Deploy
   | Devoutput
   | Documentation
   | Export
@@ -470,6 +480,7 @@ instance Show Command where
   show Devoutput = "dev-output"
   show Documentation = "documentation"
   show Export = "export"
+  show Deploy = "deploy"
   show IncrementalBench = "incremental-bench"
   show Population = "population"
   show Proofs = "proofs"

@@ -1,0 +1,4 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/does_not_exist.adl" AS Reg
+CONTEXT Fail IN ENGLISH
+RELATION applicant[Permit*Reg.Person]
+ENDCONTEXT
