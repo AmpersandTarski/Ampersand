@@ -180,8 +180,8 @@ because the register requires that.
 ## Running the system
 
 The command `ampersand deploy` generates what you need to run both applications.
-It is part of the compiler from the release in which the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/main/ReleaseNotes.md) announce systems of contexts,
-and it needs a prototype framework of the same generation.
+It is part of the compiler from v5.10.0 (see the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/main/ReleaseNotes.md)),
+and the applications it describes need prototype framework v2.16.0 or later.
 
 ```bash
 ampersand deploy permits.adl --output-dir deploy
