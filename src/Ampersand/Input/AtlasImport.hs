@@ -317,6 +317,7 @@ instance JSON.FromJSON TType where
       "INTEGER" -> pure Integer
       "FLOAT" -> pure Float
       "OBJECT" -> pure Object -- this is a normal concept, but 'Object' is already in use TODO: Han vragen hoe dit op te lossen is
+      "MULTITABLE" -> pure MultiTable
       "TYPEOFONE" -> pure TypeOfOne
       _ -> JSON.unexpected val
     invalid ->
@@ -871,7 +872,8 @@ instance JSON.FromJSON (Guarded PClassify) where
           $ PClassify
             { pos = OriginAtlas,
               specific = spec,
-              generics = gen NE.:| []
+              generics = gen NE.:| [],
+              pc_isUnion = False
             }
 
 instance JSON.FromJSON MetaData where

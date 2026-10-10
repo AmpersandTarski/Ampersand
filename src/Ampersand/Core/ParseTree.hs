@@ -34,6 +34,7 @@ module Ampersand.Core.ParseTree
     PCDDef (..),
     P_Representation (..),
     TType (..),
+    valueTType,
     P_Population (..),
     PAtomPair (..),
     PAtomValue (..),
@@ -388,8 +389,18 @@ data TType
   | Integer
   | Float
   | Object
+  | -- | An OBJECT whose direct specialisations are stored in separate tables (issue #1716).
+    --   For the value of an atom it is the same as 'Object'; see 'valueTType'.
+    MultiTable
   | TypeOfOne -- special type for the special concept ONE.
   deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
+
+-- | The type of the value of an atom. A 'MultiTable' concept holds objects,
+--   so wherever a consumer asks what kind of value an atom is, the answer is
+--   'Object'; the storage choice is of no concern to it.
+valueTType :: TType -> TType
+valueTType MultiTable = Object
+valueTType tt = tt
 
 instance Unique TType where
   showUnique = toText1Unsafe . tshow
@@ -409,6 +420,7 @@ instance Show TType where
     Integer -> "INTEGER"
     Float -> "FLOAT"
     Object -> "OBJECT"
+    MultiTable -> "MULTITABLE"
     TypeOfOne -> "TYPEOFONE"
 
 instance Hashable TType where
@@ -1386,13 +1398,17 @@ data PClassify = PClassify
     -- | Left hand side concept
     specific :: P_Concept,
     -- | Right hand side concept
-    generics :: NE.NonEmpty P_Concept
+    generics :: NE.NonEmpty P_Concept,
+    -- | True for `CLASSIFY C IS A \/ B` (issue #1716): the left hand side
+    --   concept is the union of the right hand side concepts, so each of them
+    --   is a specialisation of it, and it has no atoms of its own.
+    pc_isUnion :: Bool
   }
   deriving (Show)
 
 -- (Stef April 29th, 2020) Eq PClassify is used to generate P-contexts without duplicate PClassify's in it.
 instance Eq PClassify where
-  p == q = specific p == specific q && generics p == generics q
+  p == q = specific p == specific q && generics p == generics q && pc_isUnion p == pc_isUnion q
 
 instance Traced PClassify where
   origin PClassify {pos = orig} = orig

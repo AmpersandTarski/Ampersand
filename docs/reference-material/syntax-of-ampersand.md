@@ -330,6 +330,17 @@ CLASSIFY Cow ISA Mammal
 CLASSIFY Human ISA Mammal
 ```
 
+#### A concept that is the union of others
+
+```
+CLASSIFY <upper case identifier> IS <upper case identifier> \/ <upper case identifier> ( \/ <upper case identifier> )*
+```
+
+`CLASSIFY LegalActor IS Individual \/ Business` says that every `Individual` and every `Business` is a `LegalActor`, and that every `LegalActor` is one of the two.
+The first half is the same as `CLASSIFY Individual, Business ISA LegalActor`; the second half is a rule that Ampersand generates, `I[LegalActor] |- I[Individual] \/ I[Business]`, so a `LegalActor` that is neither is reported as a violation.
+Combined with `REPRESENT LegalActor TYPE MULTITABLE`, such a concept gets no table of its own: its atoms live in the tables of its members, and a relation declared on it gets a column in each of those tables.
+See [Concept hierarchies and database mapping](./concept-hierarchies-and-database-mapping.md#storing-specialisations-in-tables-of-their-own-multitable).
+
 #### Best practice
 
 A specialization is a static relationship. If you want to say that a student is a person, please consider whether you want this to be static. If a person can enroll to become a student, or graduate or drop out to become non-student again, the dynamics of that cannot be captured in a specialization. Use a relationship instead to model the state of being a student. \

@@ -41,7 +41,14 @@ Atoms are represented in an SQL database. For this purpose, every atom has a typ
 | INTEGER          | to represent positive and negative whole numbers in the range \[-2^63..2^63 -1\]  | BIGINT         | yes    | yes |
 | FLOAT            | to represent floating-point numbers compatible with ISO8601                       | FLOAT          | no     | no  |
 | Object           | to represent a key value for objects; it is not meant to be visible to end-users. | VARCHAR\(255\) | yes    | yes |
+| MULTITABLE       | an OBJECT whose direct specialisations are stored in tables of their own          | VARCHAR\(255\) | yes    | yes |
 |                  | all other atoms                                                                   | VARCHAR\(255\) | yes    | yes |
+
+`MULTITABLE` is `OBJECT` for the value of an atom; it adds a storage choice for the concept hierarchy below the concept.
+Without it, Ampersand stores a whole hierarchy in one wide table, with one column per concept and one per univalent relation declared on any of them.
+That table reaches the row-size limit of the database when a concept has many specialisations with relations of their own.
+With `REPRESENT Artefact TYPE MULTITABLE`, each direct specialisation of `Artefact` gets a table of its own, and the siblings count as disjoint: a term that needs an atom to be in two of them, such as `I[Document] /\ I[Claim]`, is a type error.
+See [Concept hierarchies and database mapping](./concept-hierarchies-and-database-mapping.md#storing-specialisations-in-tables-of-their-own-multitable).
 
 The last column, eq, tells whether Ampersand implements equality on these types. If equality is not defined, the operators `\/`, `/\`, `-`, `\`, `/`, `;`, and `<>` cannot be used.
 

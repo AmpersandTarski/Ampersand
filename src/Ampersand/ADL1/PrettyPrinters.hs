@@ -428,11 +428,12 @@ instance Pretty P_Sign where
 instance Pretty PClassify where
   pretty p =
     case p of
-      PClassify _ spc gen ->
+      PClassify _ spc gen isUnion ->
         text "CLASSIFY"
           <+> pretty spc
-          <+> ( case (NE.length gen, NE.filter (spc /=) gen) of
-                  (2, [x]) -> text "ISA" <~> x
+          <+> ( case (isUnion, NE.length gen, NE.filter (spc /=) gen) of
+                  (True, _, _) -> text "IS" <+> separate "\\/" (NE.toList gen)
+                  (_, 2, [x]) -> text "ISA" <~> x
                   _ -> text "IS" <+> separate "/\\" (NE.toList gen)
               )
 

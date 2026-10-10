@@ -199,6 +199,7 @@ instance Language FSpec where
   viewDefs = maybe mempty viewDefs . originalContext
   enforces = maybe mempty enforces . originalContext
   gens = maybe mempty gens . originalContext
+  conceptUnions = maybe mempty conceptUnions . originalContext
   patterns = maybe mempty patterns . originalContext
   udefRoleRules = maybe mempty udefRoleRules . originalContext
   allRoleRules = maybe mempty allRoleRules . originalContext
@@ -467,6 +468,7 @@ showSQL tt =
     Integer -> "BIGINT"
     Float -> "FLOAT"
     Object -> "VARCHAR(255)"
+    MultiTable -> "VARCHAR(255)"
     TypeOfOne -> fatal "ONE is not represented in SQL"
 
 -- In case of reference to an INTERFACE, not used as a LINKTO, the

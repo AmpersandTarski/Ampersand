@@ -1,0 +1,18 @@
+CONTEXT CompositionISASiblings IN ENGLISH
+
+PURPOSE CONTEXT CompositionISASiblings
+{+ This test must pass because A and B have an implicit meet (issue #1716).
+   A and B are sibling types (both subtypes of C) and C is not marked MULTITABLE,
+   so an atom that is both an A and a B fits in one record of the table of C.
+   The composition r;s is therefore well-typed: its middle concept is the intersection of A and B. +}
+
+CLASSIFY A ISA C
+CLASSIFY B ISA C
+
+RELATION r[W*A]
+RELATION s[B*Z]
+RELATION result[W*Z]
+
+RULE testCompositionISASibling: result = r;s
+
+ENDCONTEXT

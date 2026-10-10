@@ -321,14 +321,16 @@ maybeSpecialCase fSpec expr =
         fun = if isFlipped' then flp else id
         (expr2Src, expr2trg, leftTable) =
           case expr2 of
-            EDcD rel ->
-              let (plug, relstore) = getRelationTableInfo fSpec rel
-                  s = qName . tshow . attSQLColName . rsSrcAtt $ relstore
-                  t = qName . tshow . attSQLColName . rsTrgAtt $ relstore
-                  lt = TRSimple [qName (text1ToText . showUnique $ plug)] `as` table2
-               in if isFlipped'
-                    then (t, s, lt)
-                    else (s, t, lt)
+            -- a relation in one table is joined straight from that table; one
+            -- stored in several tables (issue #1716) goes through its query
+            EDcD rel
+              | [(plug, relstore)] <- relationTableInfos fSpec rel ->
+                  let s = qName . tshow . attSQLColName . rsSrcAtt $ relstore
+                      t = qName . tshow . attSQLColName . rsTrgAtt $ relstore
+                      lt = TRSimple [qName (text1ToText . showUnique $ plug)] `as` table2
+                   in if isFlipped'
+                        then (t, s, lt)
+                        else (s, t, lt)
             _ ->
               ( sourceAlias,
                 targetAlias,
@@ -865,12 +867,11 @@ nonSpecialSelectExpr fSpec expr =
             bseWhr = Just $ BinOp (Iden [sqlAttConcept fSpec c]) [uName "="] (singleton2SQL c val)
           }
     (EDcV _sgn) ->
-      let (psrc, fsrc) = fun (source expr)
-          (ptgt, ftgt) = fun (target expr)
-          fun :: A_Concept -> (Name, Name)
-          fun cpt = ((qName . text1ToText . showUnique) plug, (qName . tshow . attSQLColName) att)
-            where
-              (plug, att) = getConceptTableInfo fSpec cpt
+      let (tsrc, psrc, fsrc) = fun (source expr)
+          (ttgt, ptgt, ftgt) = fun (target expr)
+          -- the table that lists the atoms, the name that qualifies its column, and that column
+          fun :: A_Concept -> (TableRef, Name, Name)
+          fun cpt = (sqlConceptTable fSpec cpt, sqlConceptQualifier fSpec cpt, sqlAttConcept fSpec cpt)
        in traceComment ["case: (EDcV sgn)"]
             $ case (source expr, target expr) of
               (ONE, ONE) -> one
@@ -885,7 +886,7 @@ nonSpecialSelectExpr fSpec expr =
                           cSpecial = Nothing
                         },
                     bseTrg = theONESingleton,
-                    bseTbl = [TRSimple [psrc]],
+                    bseTbl = [tsrc],
                     bseWhr = Just (notNull (Iden [psrc, fsrc]))
                   }
               (ONE, _) ->
@@ -899,7 +900,7 @@ nonSpecialSelectExpr fSpec expr =
                           cAlias = [],
                           cSpecial = Nothing
                         },
-                    bseTbl = [TRSimple [ptgt]],
+                    bseTbl = [ttgt],
                     bseWhr = Just (notNull (Iden [ptgt, ftgt]))
                   }
               _ ->
@@ -920,8 +921,8 @@ nonSpecialSelectExpr fSpec expr =
                           cSpecial = Nothing
                         },
                     bseTbl =
-                      [ TRSimple [psrc] `as` first',
-                        TRSimple [ptgt] `as` secnd
+                      [ tsrc `as` first',
+                        ttgt `as` secnd
                       ],
                     bseWhr =
                       Just
@@ -976,7 +977,8 @@ nonSpecialSelectExpr fSpec expr =
               bseTbl = [],
               bseWhr = Nothing
             }
-        PlainConcept {} ->
+        _ ->
+          -- a plain concept, or an implicit meet (ISECT) read as a derived table (issue #1716)
           let cAtt = Iden [sqlAttConcept fSpec c]
            in BinSelect
                 { bseSetQuantifier = SQDefault,
@@ -997,7 +999,6 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [sqlConceptTable fSpec c],
                   bseWhr = Just (notNull cAtt)
                 }
-        _ -> fatal ("EDcI: unexpected concept type" <> tshow c)
     (EBin oper sgn) -> traceComment ["case: EBin oper sgn "] $ case source sgn of -- TODO enhance to full signature
       ONE {} -> fatal $ "ONE cannot be used in relation with " <> tshow oper <> "."
       PlainConcept {} ->
@@ -1424,8 +1425,20 @@ toTableRef = TRQueryExpr . toSQL
 
 selectRelation :: FSpec -> Relation -> BinQueryExpr
 selectRelation fSpec dcl =
-  leafCode (getRelationTableInfo fSpec dcl)
+  case map leafCode (relationTableInfos fSpec dcl) of
+    [] -> fatal ("Relation not found in any table: " <> fullName dcl)
+    q : qs -> foldl' unionOf q qs
   where
+    -- A relation declared on a MULTITABLE union concept has a column in the
+    -- table of each member (issue #1716); its pairs are the union of those.
+    unionOf :: BinQueryExpr -> BinQueryExpr -> BinQueryExpr
+    unionOf a b =
+      BinQueryExprSetOp
+        { bseSetQuantifier = SQDefault,
+          bcqeOper = Union,
+          bcqe0 = a,
+          bcqe1 = b
+        }
     leafCode :: (PlugSQL, RelStore) -> BinQueryExpr
     leafCode (plug, relstore) =
       BinSelect
@@ -1650,8 +1663,49 @@ setDistinct bqe =
     BinWith {} -> bqe {bcteQueryExpression = setDistinct (bcteQueryExpression bqe)}
     BinQEComment _ x -> setDistinct x
 
+-- | The table that enumerates the atoms of a concept: its own concept table,
+--   or, for a concept without one (issue #1716), a derived table that lists
+--   its atoms in one column named after the concept. The column is
+--   'sqlAttConcept', and 'sqlConceptQualifier' names the table in a qualified
+--   column reference.
 sqlConceptTable :: FSpec -> A_Concept -> TableRef
-sqlConceptTable fSpec a = TRSimple [sqlConcept fSpec a]
+sqlConceptTable fSpec a = case derivedConceptQuery fSpec a of
+  Nothing -> TRSimple [sqlConcept fSpec a]
+  Just (q, nm) -> TRQueryExpr q `as` nm
+
+-- | The name by which a column of 'sqlConceptTable' is qualified.
+sqlConceptQualifier :: FSpec -> A_Concept -> Name
+sqlConceptQualifier fSpec a = case derivedConceptQuery fSpec a of
+  Nothing -> sqlConcept fSpec a
+  Just (_, nm) -> nm
+
+-- | A concept without a table of its own is read from the tables of its
+--   storage members (issue #1716): a MULTITABLE union concept is the union of
+--   its members, and an implicit meet (ISECT) is the intersection of the
+--   concepts it intersects. The query lists the atoms in one column, named
+--   after the concept, which also names the derived table.
+derivedConceptQuery :: FSpec -> A_Concept -> Maybe (QueryExpr, Name)
+derivedConceptQuery fSpec c = case c of
+  ISECT s -> case toList s of
+    [] -> fatal "An intersection concept without members."
+    m : ms -> Just (listing (foldr (./\.) (EDcI m) (map EDcI ms)), qName (fullName c))
+  _ -> case unionMembersIn (conceptUnions fSpec) c of
+    Nothing -> Nothing
+    Just (m NE.:| ms) -> Just (listing (foldr (.\/.) (EDcI m) (map EDcI ms)), qName (fullName c))
+  where
+    listing :: Expression -> QueryExpr
+    listing expr =
+      Select
+        { qeSetQuantifier = SQDefault,
+          qeSelectList = [(Iden [sourceAlias], Just (qName (fullName c)))],
+          qeFrom = [TRQueryExpr (toSQL (selectExpr fSpec expr)) `as` uName "members"],
+          qeWhere = Nothing,
+          qeGroupBy = [],
+          qeHaving = Nothing,
+          qeOrderBy = [],
+          qeOffset = Nothing,
+          qeFetchFirst = Nothing
+        }
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
@@ -1660,6 +1714,7 @@ sqlConcept fSpec = qName . text1ToText . showUnique . getConceptTableFor fSpec
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
   | c == ONE = qName "ONE"
+  | Just (_, nm) <- derivedConceptQuery fSpec c = nm
   | otherwise =
       case [ att | att <- NE.toList $ plugAttributes (getConceptTableFor fSpec c), c' <- toList $ concs att, c == c'
            ] of
@@ -1684,6 +1739,7 @@ as ve a =
   -- TRAlias ve (Alias a Nothing)
   case ve of
     TRSimple [n] -> if n == a then withoutAlias else withAlias
+    TRAlias inner _ -> TRAlias inner (Alias a Nothing) -- a derived table keeps one alias: the latest
     _ -> withAlias
   where
     withoutAlias = ve
@@ -1865,30 +1921,25 @@ broadQuery fSpec obj =
 -- AND can be read from the same row, the implementing
 -- attribute is returnd
 attInBroadQuery :: FSpec -> A_Concept -> Expression -> Maybe SqlAttribute
-attInBroadQuery fSpec cpt = get
+attInBroadQuery fSpec cpt expr0 = case lookupConceptTable fSpec cpt of
+  Nothing -> Nothing -- a concept without a table of its own has no broad query (issue #1716)
+  Just (broadTable, _) -> get broadTable expr0
   where
-    get expr =
+    get broadTable expr =
       case expr of
-        EBrk e -> get e
-        EDcI c ->
-          let (p, a) = getConceptTableInfo fSpec c
-           in if p == broadTable
-                then Just a
-                else Nothing
-        EDcD d ->
-          let (plug, relstore) = getRelationTableInfo fSpec d
-           in if plug == broadTable && not (rsStoredFlipped relstore)
-                then Just (rsTrgAtt relstore)
-                else Nothing
-        EFlp (EDcD d) ->
-          let (plug, relstore) = getRelationTableInfo fSpec d
-           in if plug == broadTable && rsStoredFlipped relstore
-                then Just (rsSrcAtt relstore)
-                else Nothing
+        EBrk e -> get broadTable e
+        EDcI c -> case lookupConceptTable fSpec c of
+          Just (p, a) | p == broadTable -> Just a
+          _ -> Nothing
+        EDcD d -> case relationTableInfos fSpec d of
+          [(plug, relstore)] | plug == broadTable && not (rsStoredFlipped relstore) -> Just (rsTrgAtt relstore)
+          _ -> Nothing
+        EFlp (EDcD d) -> case relationTableInfos fSpec d of
+          [(plug, relstore)] | plug == broadTable && rsStoredFlipped relstore -> Just (rsSrcAtt relstore)
+          _ -> Nothing
         EFlp (EBrk e) ->
-          get (EFlp e)
+          get broadTable (EFlp e)
         _ -> Nothing
-    (broadTable, _) = getConceptTableInfo fSpec cpt
 
 isInBroadQuery :: FSpec -> A_Concept -> ObjectDef -> Bool
 isInBroadQuery fSpec cpt obj = isJust $ attInBroadQuery fSpec cpt (objExpression obj)

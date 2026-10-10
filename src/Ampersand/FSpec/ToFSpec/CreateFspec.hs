@@ -262,6 +262,7 @@ grindInto metamodel specification = do
 pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
+  checkRowSizes fSpec
   warnCartesianProducts env fSpec
   warnOscillationRisk fSpec
   addWarnings (cartesianProductWarnings env fSpec) $ pure ()
@@ -274,6 +275,59 @@ pCtx2Fspec env c = do
         else case violationsOfInvariants fSpec of
           [] -> pure fSpec
           h : tl -> Errors (fmap (mkInvariantViolationsError (applyViolText fSpec)) (h NE.:| tl))
+
+-- | MySQL and MariaDB refuse a table whose row definition exceeds 65535
+--   bytes. A wide table of a large typology reaches that limit (issues #838,
+--   #1694), and until now the failure surfaced only when the prototype was
+--   installed. This check estimates the row size of every generated table the
+--   way the database counts it and reports a table that will not fit, with the
+--   remedy: mark the root of its hierarchy `MULTITABLE` (issue #1716).
+checkRowSizes :: FSpec -> Guarded ()
+checkRowSizes fSpec =
+  case mapMaybe tooWide [plug | InternalPlug plug <- plugInfos fSpec] of
+    [] -> pure ()
+    e : es -> Errors (e NE.:| es)
+  where
+    rowLimit :: Int
+    rowLimit = 65535
+    tooWide :: PlugSQL -> Maybe CtxError
+    tooWide plug
+      | bytes > rowLimit =
+          Just
+            . CTXE (Origin ("the generated table " <> tableName))
+            . T.unlines
+            $ [ "The table `" <> tableName <> "` would have " <> tshow (length atts) <> " columns and a row definition of about " <> tshow bytes <> " bytes,",
+                "  more than the " <> tshow rowLimit <> " bytes that MySQL and MariaDB allow for one table.",
+                "  A wide table stores a whole concept hierarchy: one column per concept and one per univalent relation declared on it.",
+                "  To store the direct specialisations of a concept in tables of their own, mark it with",
+                "    REPRESENT <concept> TYPE MULTITABLE",
+                "  or declare fewer univalent relations on the concepts of this hierarchy."
+              ]
+      | otherwise = Nothing
+      where
+        tableName = text1ToText (showUnique plug)
+        atts = NE.toList (plugAttributes plug)
+        -- VARCHAR(255) in utf8mb4 takes 1020 bytes plus 2 length bytes; a TEXT or
+        -- BLOB column counts 9 to 12 bytes; plus the timestamp column and a null
+        -- bit per nullable column.
+        bytes = sum (map (bytesOf . attType) atts) + 4 + (length atts + 7) `div` 8
+    bytesOf :: TType -> Int
+    bytesOf tt = case tt of
+      Alphanumeric -> 1022
+      Password -> 1022
+      Object -> 1022
+      MultiTable -> 1022
+      BigAlphanumeric -> 12
+      HugeAlphanumeric -> 12
+      Binary -> 12
+      BigBinary -> 12
+      HugeBinary -> 12
+      Date -> 3
+      DateTime -> 8
+      Boolean -> 1
+      Integer -> 8
+      Float -> 4
+      TypeOfOne -> 0
 
 -- | Detect all subexpressions in an Expression that will cause the SQL
 --   generator to compute a Cartesian product (i.e. a cross join without an

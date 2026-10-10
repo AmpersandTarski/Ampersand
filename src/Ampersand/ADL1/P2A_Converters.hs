@@ -244,6 +244,7 @@ checkValidComparisonOperators ctx =
           Integer -> True
           Float -> True
           Object -> False
+          MultiTable -> False
           TypeOfOne -> True
 
 checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
@@ -423,7 +424,8 @@ pCtx2aCtx
       -- Check that concepts in the same ISA typology all have the same REPRESENT type.
       -- E.g. CLASSIFY B ISA A with REPRESENT A TYPE INTEGER and REPRESENT B TYPE FLOAT must be rejected.
       checkTypologyRepresentTypes (multiKernels contextInfoPre) allAConcepts validReprs
-      classifies <- traverse (pClassify2aClassify contextInfo) p_gens --  The specialization statements defined in this context, outside the scope of patterns
+      classifies <- concat <$> traverse (pClassify2aClassify contextInfo) p_gens --  The specialization statements defined in this context, outside the scope of patterns
+      unions' <- traverse (pUnion2aUnion contextInfo) (filter pc_isUnion (p_gens <> concatMap pt_gns p_patterns)) -- The `CLASSIFY C IS A \/ B` statements (issue #1716)
       pats <- traverse (pPat2aPat contextInfo) p_patterns --  The patterns defined in this context
       rules <- traverse (pRul2aRul contextInfo Nothing) p_rules --  All user defined rules in this context, but outside patterns
       purposes <- traverse (pPurp2aPurp contextInfo) p_purposes --  The purposes of objects defined in this context, outside the scope of patterns
@@ -469,6 +471,7 @@ pCtx2aCtx
                     <> concatMap pt_RRuls p_patterns,
                 ctxvs = viewdefs,
                 ctxgs = classifies,
+                ctxunions = unions',
                 ctxReprType = reprType contextInfo,
                 ctxifcs = interfaces,
                 ctxps = purposes,
@@ -550,20 +553,32 @@ pCtx2aCtx
       reprTypeDefaults representationPairs cpt =
         if cpt == ONE || show cpt == "SESSION" || cpt == topCpt || cpt == botCpt
           then Object
-          else Map.findWithDefault Alphanumeric cpt reprTypeMap
+          else case cpt of
+            -- An implicit meet (issue #1716) has the type of its members.
+            ISECT cs -> case Set.toList cs of
+              c : _ -> reprTypeDefaults representationPairs c
+              [] -> fatal "An intersection concept without members."
+            _ -> Map.findWithDefault Alphanumeric cpt reprTypeMap
         where
           reprTypeMap :: Map.Map A_Concept TType
           reprTypeMap =
-            Map.fromList
+            Map.fromListWith
+              preferMultiTable
               [ (c, aReprTo aRepr)
                 | aRepr <- L.nub representationPairs,
                   c <- NE.toList (aReprFrom aRepr)
               ]
+          -- An explicit MULTITABLE wins from the implicit OBJECT of an interface,
+          -- view or identity on the same concept (issue #1716).
+          preferMultiTable :: TType -> TType -> TType
+          preferMultiTable a b = if MultiTable `elem` [a, b] then MultiTable else a
 
       -- \| Check for duplicate TTypes assigned to the same concept
       checkDuplicateReprTypes :: [A_Representation] -> Guarded ()
       checkDuplicateReprTypes reprs =
-        case [NE.toList cl | cl <- (eqCl fst . L.nub) [(c, aReprTo r) | r <- reprs, c <- NE.toList (aReprFrom r)], length cl > 1] of
+        -- A MULTITABLE concept is an OBJECT concept for the value of its atoms, so an
+        -- implicit OBJECT (from an interface, view or identity) does not clash with it (issue #1716).
+        case [NE.toList cl | cl <- (eqCl fst . L.nub) [(c, valueTType (aReprTo r)) | r <- reprs, c <- NE.toList (aReprFrom r)], length cl > 1] of
           [] -> pure ()
           x : xs -> Errors (fmap mkDuplicateReprTypeError (x :| xs))
         where
@@ -593,7 +608,9 @@ pCtx2aCtx
                           r <- pReprs,
                           any (\pCpt -> p_cptnm pCpt `Set.member` aliases c) (NE.toList (reprcpts r))
                       ],
-                length (L.nub (map (\(_, t, _) -> t) typedReprs)) > 1,
+                -- MULTITABLE is OBJECT for the value of an atom, so a MULTITABLE root
+                -- and its OBJECT specialisations share one column type (issue #1716).
+                length (L.nub (map (\(_, t, _) -> valueTType t) typedReprs)) > 1,
                 let perCptTriples =
                       L.nubBy
                         (\(c1, _, _) (c2, _, _) -> c1 == c2)
@@ -631,20 +648,36 @@ pCtx2aCtx
 
       g_contextInfo :: Guarded ContextInfo
       g_contextInfo = do
-        typols <- (makeTypologies . makeAliasGraph . makePGraph (p_gens <> concatMap pt_gns p_patterns)) pCpts
-        let pCpt2aCpt = makePCpt2ACpt typols
         -- Filter REPRESENT statements to only those with existing concepts
         let allRepresentations = p_representations <> concatMap pt_Reprs p_patterns
             (validReprs, _invalidReprs) = partitionValidRepresentations pCpts allRepresentations
+            -- The concepts marked MULTITABLE: their direct specialisations are
+            -- stored apart and have no meet (issue #1716). The typology must
+            -- know them, because `meet` is computed from the typology alone.
+            multiTableNames =
+              Set.fromList
+                [ p_cptnm c
+                  | r <- validReprs,
+                    reprdom r == MultiTable,
+                    c <- NE.toList (reprcpts r)
+                ]
+        typols <- (makeTypologies multiTableNames . makeAliasGraph . makePGraph (p_gens <> concatMap pt_gns p_patterns)) pCpts
+        let pCpt2aCpt = makePCpt2ACpt typols
         reprs <- traverse (pRepr2aRepr pCpt2aCpt) validReprs
         let reprOf :: A_Concept -> TType
             reprOf cpt =
               if cpt == ONE || show cpt == "SESSION"
                 then Object
-                else case [aReprTo r | r <- L.nub reprs, cpt `elem` aReprFrom r] of
-                  [t] -> t
-                  [] -> Alphanumeric
-                  ts -> fatal $ "Multiple representations found for concept " <> showWithAliases cpt <> ": " <> tshow ts <> ". This should not happen as all concepts should have only one representation assigned."
+                else case cpt of
+                  -- An implicit meet (issue #1716) has the type of its members, which
+                  -- share a typology and therefore a type.
+                  ISECT cs -> case Set.toList cs of
+                    c : _ -> reprOf c
+                    [] -> fatal "An intersection concept without members."
+                  _ -> case [aReprTo r | r <- L.nub reprs, cpt `elem` aReprFrom r] of
+                    [t] -> t
+                    [] -> Alphanumeric
+                    ts -> fatal $ "Multiple representations found for concept " <> showWithAliases cpt <> ": " <> tshow ts <> ". This should not happen as all concepts should have only one representation assigned."
         -- Fix for bug: Excel-imported relations (in p_relations / ctx_ds) have dec_prps = {}
         -- while the same relation declared in an ADL pattern (pt_dcs) may have dec_prps = {UNI, ...}.
         -- By applying mergeRels first, the union of dec_prps from both sources is computed,
@@ -680,18 +713,33 @@ pCtx2aCtx
       -- the genLattice is the resulting optimized structure
 
       -- TODO: The definition of PClassify (in ParseTree) does not support IsE, so the original IS statement is likely not reproduced correctly in all cases.
-      pClassify2aClassify :: ContextInfo -> PClassify -> Guarded AClassify
-      pClassify2aClassify ci pg = case NE.tail (generics pg) of
-        [] -> (Isa (origin pg) <$> pCpt2aCpt (NE.head (generics pg))) <*> pCpt2aCpt (specific pg)
-        _ -> do
-          genGenerics <- traverse pCpt2aCpt (generics pg)
-          genSpec <- pCpt2aCpt (specific pg)
-          pure
-            IsE
-              { genpos = origin pg,
-                genrhs = genGenerics,
-                genspc = genSpec
-              }
+      pClassify2aClassify :: ContextInfo -> PClassify -> Guarded [AClassify]
+      pClassify2aClassify ci pg
+        | pc_isUnion pg = do
+            -- `CLASSIFY C IS A \/ B` (issue #1716): each member is a specialisation of C.
+            generic <- pCpt2aCpt (specific pg)
+            members <- traverse pCpt2aCpt (generics pg)
+            pure [Isa (origin pg) m generic | m <- NE.toList members]
+        | otherwise = case NE.tail (generics pg) of
+            [] -> (\g s -> [Isa (origin pg) g s]) <$> pCpt2aCpt (NE.head (generics pg)) <*> pCpt2aCpt (specific pg)
+            _ -> do
+              genGenerics <- traverse pCpt2aCpt (generics pg)
+              genSpec <- pCpt2aCpt (specific pg)
+              pure
+                [ IsE
+                    { genpos = origin pg,
+                      genrhs = genGenerics,
+                      genspc = genSpec
+                    }
+                ]
+        where
+          pCpt2aCpt = conceptMap ci (origin pg)
+
+      pUnion2aUnion :: ContextInfo -> PClassify -> Guarded AUnion
+      pUnion2aUnion ci pg = do
+        generic <- pCpt2aCpt (specific pg)
+        members <- traverse pCpt2aCpt (generics pg)
+        pure AUnion {unpos = origin pg, ungen = generic, unmembers = members}
         where
           pCpt2aCpt = conceptMap ci (origin pg)
 
@@ -895,6 +943,29 @@ pCtx2aCtx
                     }
                 )
 
+      -- The target of the term is a MULTITABLE union concept (issue #1716): it
+      -- has no table of its own, so no atom can be created in it.
+      isVirtualTarget :: Expression -> Bool
+      isVirtualTarget expr = case target expr of
+        PlainConcept {aliases = als} -> any (`Set.member` virtualConceptNames) (Set.toList als)
+        _ -> False
+      virtualConceptNames :: Set.Set Name
+      virtualConceptNames =
+        Set.fromList
+          [ p_cptnm (specific pg)
+            | pg <- p_gens <> concatMap pt_gns p_patterns,
+              pc_isUnion pg,
+              p_cptnm (specific pg) `Set.member` multiTableNamesOfScript
+          ]
+      multiTableNamesOfScript :: Set.Set Name
+      multiTableNamesOfScript =
+        Set.fromList
+          [ p_cptnm c
+            | r <- p_representations <> concatMap pt_Reprs p_patterns,
+              reprdom r == MultiTable,
+              c <- NE.toList (reprcpts r)
+          ]
+
       pCruds2aCruds :: Expression -> Maybe P_Cruds -> Guarded Cruds
       pCruds2aCruds expr mCrud =
         case mCrud of
@@ -916,7 +987,9 @@ pCtx2aCtx
             pure
               Cruds
                 { crudOrig = o,
-                  crudC = isFitForCrudC expr && f 'C' defC,
+                  -- A MULTITABLE union concept has no table of its own, so no atom
+                  -- can be created in it (issue #1716); it exists through its members.
+                  crudC = isFitForCrudC expr && not (isVirtualTarget expr) && f 'C' defC,
                   crudR = isFitForCrudR expr && f 'R' defR,
                   crudU = isFitForCrudU expr && f 'U' defU,
                   crudD = isFitForCrudD expr && f 'D' defD
@@ -1035,7 +1108,7 @@ pCtx2aCtx
           <*> traverse (pConcDef2aConcDef (conceptMap ci) (defaultLang ci) (defaultFormat ci)) (pt_cds ppat)
           <*> pure (Set.unions . map pRoleRule2aRoleRule . pt_RRuls $ ppat)
           <*> pure (pt_Reprs ppat)
-          <*> traverse (pClassify2aClassify ci) (pt_gns ppat)
+          <*> (concat <$> traverse (pClassify2aClassify ci) (pt_gns ppat))
           <*> traverse (pEnforce2aEnforce ci (Just $ label ppat)) (pt_enfs ppat)
         where
           f rules' keys' pops' views' purps' relations conceptdefs roleRules representations gns' enforces' =
@@ -1818,7 +1891,7 @@ term2Expr env ci mConstraintCpt term =
             sgnbTree <- signatures mConstraint b
             let triplesa = opSigns sgnaTree
                 triplesb = opSigns sgnbTree
-                triples = makeTriples triplesa triplesb
+                triples = preferNamedMeets (makeTriples triplesa triplesb)
             case triples of
               [] -> errorsPeri o kind joinOrMeet combinator pCombinator a b sgnaTree sgnbTree triplesa triplesb
               _ ->
@@ -1902,7 +1975,7 @@ term2Expr env ci mConstraintCpt term =
             sgnbTree <- signatures rConstraint b
             let triplesa = opSigns sgnaTree
                 triplesb = opSigns sgnbTree
-                triples = makeTriples triplesa triplesb
+                triples = preferNamedMeets (makeTriples triplesa triplesb)
                 sgnsa = fmap (\(_, s, _) -> s) triplesa
                 sgnsb = fmap (\(_, s, _) -> s) triplesb
             -- trace ("10. makeTriples on "<>tshow o<>" yields "<>tshow (length triples)<>" triples: "<>T.intercalate ", " (map showTriple triples)) $
@@ -1961,7 +2034,7 @@ term2Expr env ci mConstraintCpt term =
             sgnbTree <- signatures rConstraint b
             let triplesa = opSigns sgnaTree
                 triplesb = opSigns sgnbTree
-                triples = makeTriples triplesa triplesb
+                triples = preferNamedMeets (makeTriples triplesa triplesb)
                 sgnsa = fmap (\(_, s, _) -> s) triplesa
                 sgnsb = fmap (\(_, s, _) -> s) triplesb
             -- trace ("10. makeTriples on "<>tshow o<>" yields "<>tshow (length triples)<>" triples: "<>T.intercalate ", " (map showTriple triples)) $
@@ -2020,7 +2093,7 @@ term2Expr env ci mConstraintCpt term =
             sgnbTree <- signatures rConstraint b
             let triplesa = opSigns sgnaTree
                 triplesb = opSigns sgnbTree
-                triples = makeTriples triplesa triplesb
+                triples = preferNamedMeets (makeTriples triplesa triplesb)
                 sgnsa = fmap (\(_, s, _) -> s) triplesa
                 sgnsb = fmap (\(_, s, _) -> s) triplesb
             -- trace ("10. makeTriples on "<>tshow o<>" yields "<>tshow (length triples)<>" triples: "<>T.intercalate ", " (map showTriple triples)) $
@@ -2257,6 +2330,36 @@ pConcDef2aConcDef pCpt2aCpt defLanguage defFormat pCd =
           acdmean = map (pMean2aMean defLanguage defFormat) (cdmean pCd),
           acdfrom = cdfrom pCd
         }
+
+-- | Among the typings of a term, prefer the ones that need no implicit meet
+--   (issue #1716). Two siblings under a shared table have an implicit meet, the
+--   intersection @ISECT@, so a composition through them, an intersection of
+--   them or a residual over them is well-typed where it was a type error
+--   before. A script that chose between overloaded relations by that type
+--   error, such as @assign;I[Device];contain~@ with @contain@ declared on
+--   @Device@ and on its sibling, would become ambiguous; so an alternative that
+--   needs the implicit meet yields to one that does not, and the implicit meet
+--   serves only where nothing else fits.
+preferNamedMeets :: [(Expression, Signature, Term TermPrim)] -> [(Expression, Signature, Term TermPrim)]
+preferNamedMeets ts = case filter (not . implicit) ts of
+  [] -> ts
+  named -> named
+  where
+    implicit (e, sgn, _) = any isIsect (sgnConcepts sgn) || betweenIsIsect e
+    betweenIsIsect e = case e of
+      ECps (l, r) -> isIsectM (meet (target l) (source r))
+      ELrs (l, r) -> isIsectM (meet (target l) (target r))
+      ERrs (l, r) -> isIsectM (meet (source l) (source r))
+      _ -> False
+    isIsectM :: Maybe A_Concept -> Bool
+    isIsectM (Just c) = isIsect c
+    isIsectM Nothing = False
+    isIsect :: A_Concept -> Bool
+    isIsect ISECT {} = True
+    isIsect _ = False
+    sgnConcepts :: Signature -> [A_Concept]
+    sgnConcepts (ISgn c) = [c]
+    sgnConcepts (Sign s t) = [s, t]
 
 pRepr2aRepr :: ConceptMap -> P_Representation -> Guarded A_Representation
 pRepr2aRepr pCpt2aCpt (Repr orig cpts ttype) = do
