@@ -310,9 +310,10 @@ Each part of this script does one thing.
 The last line is the heart of the migration.
 The data that arrives from the existing system violates the new rule,
 so the rule cannot be enforced yet.
-The migration context relaxes it, and the compiler takes care that it hardens again:
-an atom that satisfies the rule is held to it from then on,
-so a violation that a user has repaired cannot come back.
+The migration context relaxes it, and the rule hardens again as the work proceeds:
+the violations that the application found can only disappear,
+so a violation that a user has repaired cannot come back,
+and a new atom has to satisfy the rule from the start.
 When the last violation is repaired,
 the desired system satisfies its own invariant on its own database,
 and it can be taken into use as it is.
@@ -322,7 +323,7 @@ The migration reads its database and never writes in it.
 The script of the desired system contains nothing that serves the migration.
 
 This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024).
-The reference describes [what the compiler adds to the migration context](../reference-material/syntax-of-ampersand.md#rules-classifications-and-writing).
+The reference describes [how a relaxed invariant hardens](../reference-material/syntax-of-ampersand.md#rules-classifications-and-writing).
 
 ## When a context writes in another database
 

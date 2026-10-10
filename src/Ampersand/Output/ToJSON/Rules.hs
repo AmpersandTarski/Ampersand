@@ -5,6 +5,7 @@
 module Ampersand.Output.ToJSON.Rules (Rulez) where
 
 import Ampersand.ADL1
+import Ampersand.Core.ParseTree (relaxedRules)
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.NonEmpty as NE
@@ -25,6 +26,7 @@ data JsonRule = JsonRule
     rulJSONsrcConceptName :: !Text,
     rulJSONtgtConceptName :: !Text,
     rulJSONconjunctIds :: ![Text],
+    rulJSONhardens :: !Bool,
     rulJSONpairView :: !(Maybe JsonPairView)
   }
   deriving (Generic, Show)
@@ -74,6 +76,9 @@ instance JSON Rule JsonRule where
         rulJSONsrcConceptName = text1ToText . idWithoutType' . source . formalExpression $ rule,
         rulJSONtgtConceptName = text1ToText . idWithoutType' . target . formalExpression $ rule,
         rulJSONconjunctIds = maybe [] (map (text1ToText . rc_id) . NE.toList) . lookup rule . allConjsPerRule $ fSpec,
+        -- An invariant of an included context that this context assigns to a role:
+        -- its violations are work for users, and they can only disappear.
+        rulJSONhardens = fullName rule `elem` map snd (relaxedRules (metas fSpec)),
         rulJSONpairView = fmap (fromAmpersand env fSpec) (rrviol rule)
       }
     where

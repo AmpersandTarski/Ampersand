@@ -310,21 +310,21 @@ The migration system shows the violations of `new.totalR` to its users as work t
 We say that the migration context relaxes the invariant.
 
 A relaxed invariant hardens as the work proceeds.
-For the rule `totalR : I[A] |- r;r~` the compiler adds three things to the migration context:
+The application keeps the violations of every rule in its database.
+Of a relaxed invariant, those violations can only disappear:
+the application refuses a transaction that would add one, as it refuses a violation of an invariant.
 
-- a relation `fixedTotalR`, which registers every atom that satisfies the rule;
-- an enforced rule `fixTotalR`, which fills that relation;
-- a blocking invariant `blockTotalR`, which refuses a transaction in which a registered atom violates the rule again.
-
-So a violation that a user has repaired cannot return.
-The violations that are left stay visible as work to do, and what satisfies the rule is held to it at once.
-When the last violation is repaired, the rule holds for all data it applied to, as an invariant does,
+So a violation that a user has repaired cannot return, and a new atom has to satisfy the rule from the start.
+The violations that are left stay visible as work to do.
+When the last violation is repaired, the rule works as an invariant does,
 and the desired system can be taken into use as it is.
-The script of the desired system contains nothing that serves the migration.
+The script of the desired system contains nothing that serves the migration, and the migration script adds no relation to register the work.
+
+The installation of the application takes stock of the violations that exist, and so does a run of the ExecEngine that an administrator asks for.
+That is how the migration application meets what users still change in the existing system before they switch to the migration system.
 
 This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024, section 4.1).
-You can show the registered atoms in an interface of the migration context by referring to `fixedTotalR`.
-The names are made from the name of the rule, so a relaxed invariant needs a name: state it as a `RULE`, where a property such as `[TOT]` has none.
+A relaxed invariant needs a name: state it as a `RULE`, where a property such as `[TOT]` has none.
 
 #### `INCLUDE` and `INCLUDES`
 
