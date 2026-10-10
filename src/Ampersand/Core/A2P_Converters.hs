@@ -46,7 +46,7 @@ aCtx2pCtx ctx =
       ctx_rrules = map aRoleRule2pRoleRule . Set.toList . ctxrrules $ ctx,
       ctx_reprs = reprList (ctxInfo ctx),
       ctx_vs = map aViewDef2pViewDef . ctxvs $ ctx,
-      ctx_gs = map aClassify2pClassify . ctxgs $ ctx,
+      ctx_gs = map aClassify2pClassify (ctxgs ctx) <> map aUnion2pClassify (ctxunions ctx),
       ctx_ifcs = map aInterface2pInterface . ctxifcs $ ctx,
       ctx_ps = map aPurpose2pPurpose . ctxps $ ctx,
       ctx_pops = map aPopulation2pPopulation . ctxpopus $ ctx,
@@ -198,14 +198,27 @@ aClassify2pClassify gen =
       PClassify
         { pos = genpos gen,
           specific = aConcept2pConcept (genspc gen),
-          generics = aConcept2pConcept (gengen gen) NE.:| []
+          generics = aConcept2pConcept (gengen gen) NE.:| [],
+          pc_isUnion = False
         }
     IsE {} ->
       PClassify
         { pos = genpos gen,
           specific = aConcept2pConcept (genspc gen),
-          generics = fmap aConcept2pConcept . genrhs $ gen
+          generics = fmap aConcept2pConcept . genrhs $ gen,
+          pc_isUnion = False
         }
+
+-- | `CLASSIFY C IS A \/ B` (issue #1716). The ISA edges it implies are among
+--   the AClassify statements already; this statement adds that C is the union.
+aUnion2pClassify :: AUnion -> PClassify
+aUnion2pClassify un =
+  PClassify
+    { pos = unpos un,
+      specific = aConcept2pConcept (ungen un),
+      generics = fmap aConcept2pConcept (unmembers un),
+      pc_isUnion = True
+    }
 
 aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =

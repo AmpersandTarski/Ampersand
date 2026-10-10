@@ -169,6 +169,7 @@ The storage plug (`Plugs/MysqlDB/MysqlDB.php`) administers this population in Ma
 
 - a **wide table** per concept hierarchy, with one column per concept in the hierarchy and one column per univalent relation the compiler chose to store there.
   In the example, table `Project` has columns `Project` (the atom identifier, primary key) and `projectName`.
+  A hierarchy whose root is marked `REPRESENT ... TYPE MULTITABLE` is stored in several wide tables, one per direct specialisation, and an atom then has a row in each table of the concepts it belongs to.
 - a **narrow table** per remaining relation, with one column for the source atom and one for the target atom.
   In the example, `member` gets its own two-column table, because a project can have many members.
 

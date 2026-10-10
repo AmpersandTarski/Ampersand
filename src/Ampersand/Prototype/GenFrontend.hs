@@ -224,3 +224,4 @@ typescriptTypeForConcept fSpec cpt = case cptTType fSpec cpt of
   Float -> "number"
   TypeOfOne -> "'ONE'" -- special concept ONE
   Object -> "Object"
+  MultiTable -> "Object"

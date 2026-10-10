@@ -244,7 +244,7 @@ genHTMLView fSpec depth obj =
       return
         $ if exists
           then cptfn
-          else "Atomic-" <> show ttp <.> "html"
+          else "Atomic-" <> show (valueTType ttp) <.> "html"
       where
         ttp = cptTType fSpec cpt
         cptfn = "Concept-" <> show (name cpt) <.> "html"
@@ -311,14 +311,14 @@ genTypescriptInterface fSpec depth obj =
     typescriptTypeForFEAtomic
       | relIsProp obj && (not . exprIsIdent) obj = "boolean" -- property expressions that are not ident map to Typescript boolean type
       | exprIsUni obj = typescriptTypeForConcept tgtCpt -- for univalent expressions use the Typescript type for target concept
-      | cptTType fSpec tgtCpt == Object -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
+      | valueTType (cptTType fSpec tgtCpt) == Object -- for non-uni Object expressions wrap Array<T> with newlines around Typescript type
         =
           "Array<\n"
             <> prefixAllLines "  " (typescriptTypeForConcept tgtCpt)
             <> "\n>"
       | otherwise = "Array<" <> typescriptTypeForConcept tgtCpt <> ">" -- otherwise simply wrap Array<T>
     typescriptTypeForConcept :: A_Concept -> Text
-    typescriptTypeForConcept cpt = case cptTType fSpec cpt of
+    typescriptTypeForConcept cpt = case valueTType (cptTType fSpec cpt) of
       Object ->
         conceptIdWithImportAlias cpt
           <> " & {\n"
