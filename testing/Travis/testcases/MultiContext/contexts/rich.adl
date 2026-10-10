@@ -1,0 +1,57 @@
+CONTEXT Library IN ENGLISH
+PURPOSE CONTEXT Library
+{+ A context that uses every kind of statement that has a name,
+to test that each name gets the prefix of the alias and that each reference follows. +}
+
+PATTERN Lending
+  CONCEPT Book "A copy of a publication that the library owns."
+  RELATION title[Book*Title] [UNI,TOT]
+  MEANING "The title of a book."
+  RELATION borrower[Book*Member] [UNI]
+  RELATION memberName[Member*Name] [UNI,TOT]
+  RELATION onLoan[Book*Book] [PROP]
+
+  RULE titled : I[Book] |- title;title~
+  MEANING "Every book has a title."
+
+  RULE knownBorrower : borrower |- borrower;(I[Member] /\ memberName;memberName~)
+  MEANING "A borrower is a member with a name."
+  VIOLATION (TXT "Book ", SRC title, TXT " is lent to an unknown member ", TGT I)
+  ROLE Librarian MAINTAINS knownBorrower
+
+  ENFORCE markLoans : onLoan := I[Book] /\ borrower;borrower~
+  PURPOSE ENFORCE markLoans {+ A book is on loan precisely when it has a borrower. +}
+
+  IDENT bookId : Book(title)
+  VIEW bookView : Book DEFAULT { title : title } ENDVIEW
+  CLASSIFY Novel ISA Book
+  REPRESENT Title TYPE ALPHANUMERIC
+  PURPOSE RELATION borrower[Book*Member] {+ To know who has a book. +}
+  PURPOSE RULE titled {+ A book without a title cannot be found. +}
+  PURPOSE CONCEPT Book {+ The library lends books. +}
+ENDPATTERN
+
+PURPOSE PATTERN Lending {+ Lending is what a library does. +}
+
+POPULATION title[Book*Title] CONTAINS
+  [ ("b1", "Relation Algebras")
+  ; ("b2", "The B-Book")
+  ]
+POPULATION memberName[Member*Name] CONTAINS [ ("m1", "Ada") ]
+POPULATION borrower[Book*Member] CONTAINS [ ("b1", "m1") ]
+POPULATION onLoan[Book*Book] CONTAINS [ ("b1", "b1") ]
+POPULATION Novel CONTAINS [ "b2" ]
+
+INTERFACE Books FOR Librarian : "_SESSION";V[SESSION*Book] BOX
+  [ "title" : title
+  , "borrower" : borrower <memberView>
+  , "member" : borrower INTERFACE Members
+  ]
+PURPOSE INTERFACE Books {+ To see which book is where. +}
+
+INTERFACE Members FOR Librarian : I[Member] BOX
+  [ "name" : memberName ]
+
+VIEW memberView : Member { name : memberName } ENDVIEW
+
+ENDCONTEXT

@@ -1,0 +1,53 @@
+CONTEXT FormalAmpersand IN ENGLISH
+-- The diamond: City includes Registry and Shops, and both include Towns. City includes Towns itself as well, to refer to its concept.
+-- Towns declares one concept, Town.
+INCLUDE "../../../AmpersandData/FormalAmpersand/MultiContext.adl"
+
+POPULATION FormalAmpersand.database[FormalAmpersand.Context*FormalAmpersand.Database] CONTAINS
+  [ ("City", "dbCity") ; ("Registry", "dbRegistry") ; ("Shops", "dbShops") ; ("Towns", "dbTowns") ]
+
+POPULATION FormalAmpersand.includer[FormalAmpersand.Inclusion*FormalAmpersand.Context] CONTAINS
+  [ ("i0", "City") ; ("i1", "City") ; ("i2", "City") ; ("i3", "Registry") ; ("i4", "Shops") ]
+POPULATION FormalAmpersand.included[FormalAmpersand.Inclusion*FormalAmpersand.Context] CONTAINS
+  [ ("i0", "Towns") ; ("i1", "Registry") ; ("i2", "Shops") ; ("i3", "Towns") ; ("i4", "Towns") ]
+POPULATION FormalAmpersand.includes[FormalAmpersand.Context*FormalAmpersand.Context] CONTAINS
+  [ ("City", "Towns") ; ("City", "Registry") ; ("City", "Shops") ; ("Registry", "Towns") ; ("Shops", "Towns") ]
+
+-- One concept, owned by Towns, visible in all four contexts.
+POPULATION FormalAmpersand.owner[FormalAmpersand.Declaration*FormalAmpersand.Context] CONTAINS [ ("cTown", "Towns") ]
+POPULATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] CONTAINS [ ("cTown", "Towns") ]
+POPULATION FormalAmpersand.localName[FormalAmpersand.Declaration*FormalAmpersand.Name] CONTAINS [ ("cTown", "Town") ]
+POPULATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] CONTAINS [ ("cTown", "Town") ]
+POPULATION FormalAmpersand.visible[FormalAmpersand.Declaration*FormalAmpersand.Context] CONTAINS
+  [ ("cTown", "Towns") ; ("cTown", "Registry") ; ("cTown", "Shops") ; ("cTown", "City") ]
+POPULATION FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context] CONTAINS
+  [ ("cTown", "Towns") ; ("cTown", "Registry") ; ("cTown", "Shops") ; ("cTown", "City") ]
+POPULATION FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName] CONTAINS
+  [ ("City", "City") ; ("Registry", "Registry") ; ("Shops", "Shops") ; ("Towns", "Towns") ]
+POPULATION FormalAmpersand.version[FormalAmpersand.Context*FormalAmpersand.Version] CONTAINS
+  [ ("City", "1") ; ("Registry", "1") ; ("Shops", "1") ; ("Towns", "1") ]
+POPULATION FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name] CONTAINS
+  [ ("i1", "Registry") ; ("i2", "Shops") ; ("i3", "Towns") ; ("i4", "Towns") ; ("i0", "Towns") ]
+
+-- City refers to the concept as Towns.Town, so it includes Towns itself (inclusion i0).
+-- Registry and Shops each refer to it as Towns.Town as well. All three references refer to the one concept.
+POPULATION FormalAmpersand.writtenIn[FormalAmpersand.Reference*FormalAmpersand.Context] CONTAINS
+  [ ("rC", "City") ; ("rR", "Registry") ; ("rS", "Shops") ]
+POPULATION FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name] CONTAINS
+  [ ("rC", "Towns") ; ("rR", "Towns") ; ("rS", "Towns") ]
+POPULATION FormalAmpersand.localName[FormalAmpersand.Reference*FormalAmpersand.Name] CONTAINS
+  [ ("rC", "Town") ; ("rR", "Town") ; ("rS", "Town") ]
+POPULATION FormalAmpersand.denotes[FormalAmpersand.Reference*FormalAmpersand.Context] CONTAINS
+  [ ("rC", "Towns") ; ("rR", "Towns") ; ("rS", "Towns") ]
+POPULATION FormalAmpersand.refersTo[FormalAmpersand.Reference*FormalAmpersand.Declaration] CONTAINS
+  [ ("rC", "cTown") ; ("rR", "cTown") ; ("rS", "cTown") ]
+
+
+POPULATION FormalAmpersand.reads[FormalAmpersand.Context*FormalAmpersand.Database] CONTAINS
+  [ ("City", "dbCity") ; ("City", "dbRegistry") ; ("City", "dbShops") ; ("City", "dbTowns")
+  ; ("Registry", "dbRegistry") ; ("Registry", "dbTowns")
+  ; ("Shops", "dbShops") ; ("Shops", "dbTowns")
+  ; ("Towns", "dbTowns") ]
+POPULATION FormalAmpersand.writes[FormalAmpersand.Context*FormalAmpersand.Context] CONTAINS
+  [ ("City", "City") ; ("Registry", "Registry") ; ("Shops", "Shops") ; ("Towns", "Towns") ]
+ENDCONTEXT

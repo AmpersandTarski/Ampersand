@@ -1,0 +1,29 @@
+CONTEXT Sales INCLUDES Stock
+CONTEXT Sales, Stock INCLUDES Catalogue
+
+CONTEXT Sales IN ENGLISH
+PURPOSE CONTEXT Sales
+{+ One file holds three contexts and the inclusions between them.
+The first context in the file is the one that is compiled.
+The word FROM is not needed, because the included contexts are in the same file. +}
+RELATION sold[Order*Catalogue.Product]
+POPULATION sold[Order*Catalogue.Product] CONTAINS [ ("o1", "chair") ]
+RULE inStock : sold |- sold;Stock.amount;Stock.amount~
+ROLE Clerk MAINTAINS inStock
+ENDCONTEXT
+
+CONTEXT Stock IN ENGLISH
+RELATION amount[Catalogue.Product*Amount] [UNI]
+POPULATION amount[Catalogue.Product*Amount] CONTAINS [ ("chair", "12") ]
+ENDCONTEXT
+
+CONTEXT Catalogue IN ENGLISH
+RELATION price[Product*Price] [UNI]
+POPULATION price[Product*Price] CONTAINS [ ("chair", "45") ; ("table", "120") ]
+ENDCONTEXT
+
+CONTEXT Sales IN ENGLISH
+-- A second fragment of the context Sales, in the same file. Fragments with the same name are united.
+RELATION customer[Order*Customer] [UNI]
+POPULATION customer[Order*Customer] CONTAINS [ ("o1", "Ada") ]
+ENDCONTEXT

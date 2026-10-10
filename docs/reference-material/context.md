@@ -9,6 +9,10 @@ Contexts exist in Ampersand for the purpose of dealing with [truth](truth.md). W
 Any statement can be true in context only. Within one context, there are no contradictions.  
 As facts are true statements, we say that facts must exist inside a context.
 
+In Ampersand, a context is also the unit that is built and run: one context yields one information system, with one database.
+A context can use what another context declares and stores by including it.
+See [Systems of contexts](./syntax-of-ampersand.md#systems-of-contexts) for the statement, and the guide [Several information systems that use each other](../guides/systems-of-contexts.md) for an introduction.
+
 ## Examples
 
 Examples of contexts:
@@ -30,6 +34,10 @@ CONTEXT <name> <language>? <markup>? <context element>* ENDCONTEXT
 ```
 
 A context is specified by the context elements between the keywords `CONTEXT` and `ENDCONTEXT`. A context has a name. You can optionally specify the language and markup \(see below\).
+
+The name identifies the context.
+Two blocks with the same name, in one file or in several, are fragments of one context.
+A statement outside these blocks, `CONTEXT A INCLUDES B`, says that one context includes another.
 
 A context represents a set of [true statements in a given language](truth.md), which is the meaning of that context.
 

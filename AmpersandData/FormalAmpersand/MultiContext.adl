@@ -1,0 +1,358 @@
+CONTEXT FormalAmpersand IN ENGLISH
+-- This file specifies systems of several contexts. It is the formal basis for multi-context Ampersand.
+-- Its mathematical counterpart is the article "Multi-Context Information Systems in Ampersand" (2026).
+-- The two are kept consistent: every RULE below corresponds to a requirement or a theorem in the article.
+--
+-- The compiler implements this specification (Ampersand.Input.Qualify and Ampersand.FSpec.ToFSpec.ADL2Plug).
+-- FormalAmpersand.adl does not include this file yet, so the compiler embeds it without using it.
+-- A comment that starts with OPEN marks a choice that awaits a decision by Stef Joosten.
+--
+-- This file can be checked on its own. For that purpose it repeats the declarations it borrows
+-- from Concepts.adl, Contexts.adl, Relations.adl, Rules.adl and Terms.adl, in the same wording.
+
+PURPOSE CONTEXT FormalAmpersand
+{+A system of several contexts consists of contexts that include one another.
+Every context has declarations of its own, a database of its own, and a backend of its own.
+This file specifies which declarations hold in which context,
+how a script refers to a declaration of another context,
+and which context stores, reads and writes which population.
++}
+
+PURPOSE PATTERN FormalAmpersand.ContextsAndDatabases
+{+A context is the unit of deployment.
+The compiler generates one database and one backend with one API from one context,
+so that a context can be deployed by itself.
+
+The name of a context identifies the context.
+A script states it after the keyword `CONTEXT`, and everything between `CONTEXT` and `ENDCONTEXT` belongs to the context with that name.
+A context can be written in several fragments, in one file or in several files;
+fragments with the same context name are united, and the statement `INCLUDE "file"` inside a fragment brings the text of another file in.
+So a context is not a file.
+
+A context changes over time, and each stage has a version.
+The existing and the desired system in a migration are two versions of one context name, and they are two contexts, each with a database of its own.
+So a context is determined by its name and its version together.
++}
+PATTERN FormalAmpersand.ContextsAndDatabases
+    CONCEPT FormalAmpersand.Context "A context is a set of declarations that is deployed as one information system, with one database and one backend."
+    CONCEPT FormalAmpersand.Database "A database is the store that holds the population of one context."
+    CONCEPT FormalAmpersand.Version "A version is the designation that the production process gives to one stage of a context."
+    CLASSIFY FormalAmpersand.ContextName ISA FormalAmpersand.Name
+    REPRESENT FormalAmpersand.Name TYPE ALPHANUMERIC
+
+    RELATION FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName] [UNI,TOT]
+    MEANING "The name of a context."
+    RELATION FormalAmpersand.version[FormalAmpersand.Context*FormalAmpersand.Version] [UNI,TOT]
+    MEANING "The version of a context."
+    RULE FormalAmpersand.ContextIdentity LABEL "identity of a context" :
+        FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName];FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName]~
+        /\ FormalAmpersand.version;FormalAmpersand.version~ |- I[FormalAmpersand.Context]
+    MEANING "Two contexts with the same name and the same version are one context."
+
+    RELATION FormalAmpersand.database[FormalAmpersand.Context*FormalAmpersand.Database] [UNI,TOT,INJ,SUR]
+    MEANING "Every context has one database of its own, and every database realises one context. No population is stored twice."
+    -- The name of a database is a fact of the deployment. By default it consists of the name of the context and its version.
+ENDPATTERN
+
+PURPOSE PATTERN FormalAmpersand.Inclusion
+{+A context uses the declarations and the population of another context by including it.
+The statement `CONTEXT A INCLUDES B` says so. It stands outside every `CONTEXT` block, because it relates contexts.
+It can tell in which file B is to be found, and it can give B another name for use in A:
+`CONTEXT Migration INCLUDES Kurk FROM "kurk_desired.adl" AS new`.
+An inclusion has no effect on the declarations of B.
+
+In the script of A, a name of B carries a prefix, which is the name of B or the alias of the inclusion.
+Both remain usable.
+If A includes two contexts with the same name, the name does not tell them apart, and each of the two inclusions needs an alias.
+In general, every inclusion needs a prefix that fits no other context that A includes.
+
+To compile A, the compiler needs the declarations of every context that A includes directly or indirectly, and of no other context.
+A context must be deployable without the contexts that include it.
+That is why inclusion is acyclic: in a cycle, no context could be deployed before the others.
+The reflexive and transitive closure of an acyclic relation is a partial order.
++}
+PATTERN FormalAmpersand.Inclusion
+    CONCEPT FormalAmpersand.Inclusion "An inclusion is the statement that one context includes another context."
+    CONCEPT FormalAmpersand.Alias "An alias is a name that an including context gives to an included context."
+    CLASSIFY FormalAmpersand.Alias ISA FormalAmpersand.Name
+
+    RELATION FormalAmpersand.includer[FormalAmpersand.Inclusion*FormalAmpersand.Context] [UNI,TOT]
+    MEANING "The includer of an inclusion is the context that is named before the keyword INCLUDES."
+    RELATION FormalAmpersand.included[FormalAmpersand.Inclusion*FormalAmpersand.Context] [UNI,TOT]
+    MEANING "The included context of an inclusion is the context that is named after the keyword INCLUDES."
+    RELATION FormalAmpersand.alias[FormalAmpersand.Inclusion*FormalAmpersand.Alias] [UNI]
+    MEANING "The alias of an inclusion is the name after the keyword AS, if the statement has one."
+
+    RELATION FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name]
+    MEANING "A prefix of an inclusion is a name by which the script of the includer can call the included context."
+    RULE FormalAmpersand.PrefixDefinition LABEL "definition of prefix" :
+        FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name]
+        = FormalAmpersand.alias \/ FormalAmpersand.included;FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName]
+    MEANING "The prefixes of an inclusion are its alias and the name of the included context."
+
+    RULE FormalAmpersand.EveryInclusionCanBeNamed LABEL "every inclusion can be named" :
+        I[FormalAmpersand.Inclusion]
+        |- (FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name]
+            - (FormalAmpersand.includer;FormalAmpersand.includer~ - FormalAmpersand.included;FormalAmpersand.included~);FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name]
+           );FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name]~
+    MEANING "Every inclusion has a prefix that fits no other context that the same includer includes."
+    -- So if a context includes two contexts with the same name, each of the two inclusions needs an alias.
+
+    RELATION FormalAmpersand.includes[FormalAmpersand.Context*FormalAmpersand.Context]
+    MEANING "Context A includes context B if an inclusion states so."
+    RULE FormalAmpersand.IncludesDefinition LABEL "definition of includes" :
+        FormalAmpersand.includes = FormalAmpersand.includer~;FormalAmpersand.included
+    MEANING "The relation `includes` contains the pairs of includer and included context of all inclusions."
+
+    RULE FormalAmpersand.InclusionIsAcyclic LABEL "inclusion is acyclic" :
+        FormalAmpersand.includes+ |- -I[FormalAmpersand.Context]
+    MEANING "No context includes itself, directly or indirectly."
+    -- Consequence (article, lemma on the order of inclusion): includes+ is a strict partial order and includes* is a partial order.
+    -- The relation `includes` itself is neither reflexive nor transitive.
+ENDPATTERN
+
+PURPOSE PATTERN FormalAmpersand.OwnershipAndVisibility
+{+Every concept, relation and rule is declared in one context, which we call its owner.
+The owner is part of the identity of a declaration:
+the concept `Person` of a register and the concept `Person` of a permit system are two concepts.
+A declaration is visible in its owner and in every context that includes its owner, directly or indirectly.
+
+So the declarations that are visible in context A form the ordinary union of the declarations of the contexts that A reaches.
+That union happens to be disjoint, because declarations with different owners differ.
+It is not a disjoint union per inclusion.
+If A includes B and C, and both include D, then D is one context with one database,
+and the concept `Town` of D that A reaches through B is the same concept as the one it reaches through C.
++}
+PATTERN FormalAmpersand.OwnershipAndVisibility
+    CONCEPT FormalAmpersand.Declaration "A declaration is a concept, a relation or a rule that a context declares."
+    CONCEPT FormalAmpersand.Concept ""
+    CONCEPT FormalAmpersand.Relation "A relation is a set of pairs."
+    CONCEPT FormalAmpersand.Rule "A rule is a statement that must be satisfied in each context in which it is valid."
+    CLASSIFY FormalAmpersand.Concept, FormalAmpersand.Relation, FormalAmpersand.Rule ISA FormalAmpersand.Declaration
+    CLASSIFY FormalAmpersand.ConceptName, FormalAmpersand.RelationName, FormalAmpersand.RuleName ISA FormalAmpersand.Name
+
+    RELATION FormalAmpersand.owner[FormalAmpersand.Declaration*FormalAmpersand.Context] [UNI,TOT]
+    MEANING "The owner of a declaration is the context in which it is declared."
+    RELATION FormalAmpersand.localName[FormalAmpersand.Declaration*FormalAmpersand.Name] [UNI,TOT]
+    MEANING "The local name of a declaration is the name by which the script of its owner calls it. It contains no prefix."
+
+    -- The existing relations of FormalAmpersand that register the declaring context are the three parts of `owner`.
+    RELATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] [UNI]
+    RELATION FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context] [UNI]
+    RELATION FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context] [UNI]
+    RULE FormalAmpersand.OwnerOfConcept LABEL "owner of a concept" :
+        FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] = I[FormalAmpersand.Concept];FormalAmpersand.owner
+    MEANING "The context of a concept is its owner."
+    RULE FormalAmpersand.OwnerOfRelation LABEL "owner of a relation" :
+        FormalAmpersand.relsDefdIn[FormalAmpersand.Relation*FormalAmpersand.Context] = I[FormalAmpersand.Relation];FormalAmpersand.owner
+    MEANING "The context in which a relation is defined is its owner."
+    RULE FormalAmpersand.OwnerOfRule LABEL "owner of a rule" :
+        FormalAmpersand.context[FormalAmpersand.Rule*FormalAmpersand.Context] = I[FormalAmpersand.Rule];FormalAmpersand.owner
+    MEANING "The context of a rule is its owner."
+
+    -- Likewise for the three existing relations called `name`.
+    RELATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] [UNI,TOT]
+    RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
+    RELATION FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] [UNI]
+    RULE FormalAmpersand.LocalNameOfConcept LABEL "local name of a concept" :
+        FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] = I[FormalAmpersand.Concept];FormalAmpersand.localName;I[FormalAmpersand.ConceptName]
+    MEANING "The name of a concept is its local name."
+    RULE FormalAmpersand.LocalNameOfRelation LABEL "local name of a relation" :
+        FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] = I[FormalAmpersand.Relation];FormalAmpersand.localName;I[FormalAmpersand.RelationName]
+    MEANING "The name of a relation is its local name."
+    RULE FormalAmpersand.LocalNameOfRule LABEL "local name of a rule" :
+        FormalAmpersand.name[FormalAmpersand.Rule*FormalAmpersand.RuleName] = I[FormalAmpersand.Rule];FormalAmpersand.localName;I[FormalAmpersand.RuleName]
+    MEANING "The name of a rule is its local name."
+
+    RELATION FormalAmpersand.source[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
+    RELATION FormalAmpersand.target[FormalAmpersand.Relation*FormalAmpersand.Concept] [UNI,TOT]
+
+    -- Identity. A declaration is determined by its owner, its local name and its kind.
+    -- Relations.adl contains the rule `eqRelation`, which identifies a relation by name and signature alone.
+    -- That rule holds within one context only; with several contexts, RelationIdentity replaces it.
+    RULE FormalAmpersand.ConceptIdentity LABEL "identity of a concept" :
+        I[FormalAmpersand.Concept];(FormalAmpersand.owner;FormalAmpersand.owner~ /\ FormalAmpersand.localName;FormalAmpersand.localName~);I[FormalAmpersand.Concept] |- I[FormalAmpersand.Concept]
+    MEANING "Two concepts with the same owner and the same local name are one concept."
+    RULE FormalAmpersand.RuleIdentity LABEL "identity of a rule" :
+        I[FormalAmpersand.Rule];(FormalAmpersand.owner;FormalAmpersand.owner~ /\ FormalAmpersand.localName;FormalAmpersand.localName~);I[FormalAmpersand.Rule] |- I[FormalAmpersand.Rule]
+    MEANING "Two rules with the same owner and the same local name are one rule."
+    RULE FormalAmpersand.RelationIdentity LABEL "identity of a relation" :
+        I[FormalAmpersand.Relation];(FormalAmpersand.owner;FormalAmpersand.owner~ /\ FormalAmpersand.localName;FormalAmpersand.localName~);I[FormalAmpersand.Relation]
+        /\ FormalAmpersand.source;FormalAmpersand.source~ /\ FormalAmpersand.target;FormalAmpersand.target~ |- I[FormalAmpersand.Relation]
+    MEANING "Two relations with the same owner, the same local name, the same source and the same target are one relation."
+
+    -- Visibility.
+    RELATION FormalAmpersand.visible[FormalAmpersand.Declaration*FormalAmpersand.Context]
+    MEANING "A declaration is visible in a context if that context is its owner or includes its owner, directly or indirectly."
+    RULE FormalAmpersand.VisibleDefinition LABEL "definition of visible" :
+        FormalAmpersand.visible = FormalAmpersand.owner;FormalAmpersand.includes*~
+    MEANING "The declarations that are visible in a context are the declarations of the contexts it reaches by inclusion."
+
+    -- The existing relations called `valid` are the three parts of `visible`.
+    -- Contexts.adl computes them from the patterns of one context (rules AllValidConcepts and AllValidRules);
+    -- those two rules have to admit the declarations of included contexts when this file is taken into use.
+    RELATION FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context]
+    RELATION FormalAmpersand.valid[FormalAmpersand.Relation*FormalAmpersand.Context]
+    RELATION FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context]
+    RULE FormalAmpersand.ValidConceptIsVisible LABEL "valid concepts" :
+        FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context] = I[FormalAmpersand.Concept];FormalAmpersand.visible
+    MEANING "A concept is valid in the contexts in which it is visible."
+    RULE FormalAmpersand.ValidRelationIsVisible LABEL "valid relations" :
+        FormalAmpersand.valid[FormalAmpersand.Relation*FormalAmpersand.Context] = I[FormalAmpersand.Relation];FormalAmpersand.visible
+    MEANING "A relation is valid in the contexts in which it is visible."
+    RULE FormalAmpersand.ValidRuleIsVisible LABEL "valid rules" :
+        FormalAmpersand.valid[FormalAmpersand.Rule*FormalAmpersand.Context] = I[FormalAmpersand.Rule];FormalAmpersand.visible
+    MEANING "A rule is valid in the contexts in which it is visible."
+
+    -- A declaration mentions only what its owner can see.
+    RULE FormalAmpersand.SignatureIsNear LABEL "signature is near" :
+        (FormalAmpersand.source \/ FormalAmpersand.target)~;I[FormalAmpersand.Relation];FormalAmpersand.owner
+        |- I[FormalAmpersand.Concept];FormalAmpersand.owner;(I[FormalAmpersand.Context] \/ FormalAmpersand.includes~)
+    MEANING "The source and the target of a relation belong to the owner of that relation or to a context that this owner includes directly."
+
+    RELATION FormalAmpersand.formalTerm[FormalAmpersand.Rule*FormalAmpersand.Term] [UNI]
+    RELATION FormalAmpersand.usedIn[FormalAmpersand.Relation*FormalAmpersand.Term]
+    RELATION FormalAmpersand.dependsOn[FormalAmpersand.Rule*FormalAmpersand.Declaration]
+    MEANING "A rule depends on a concept or a relation if a change in the population of that concept or relation can change the violations of the rule."
+    RULE FormalAmpersand.RuleDependsOnItsRelations LABEL "rule depends on its relations" :
+        FormalAmpersand.formalTerm;FormalAmpersand.usedIn~ |- FormalAmpersand.dependsOn
+    MEANING "A rule depends on every relation that occurs in its term."
+    RULE FormalAmpersand.RuleIsLocalToItsReach LABEL "rule is local to its reach" :
+        FormalAmpersand.dependsOn |- I[FormalAmpersand.Rule];FormalAmpersand.owner;FormalAmpersand.visible~
+    MEANING "A rule depends only on concepts and relations that are visible in its owner."
+ENDPATTERN
+
+PURPOSE PATTERN FormalAmpersand.Names
+{+A declaration has one local name, which its owner gave it.
+Inside its own context, a script refers to it by that name, as it always did.
+From another context, a script puts a prefix in front: `Kurk.r`, or `new.r` if the inclusion has the alias `new`.
+So a reference consists of an optional prefix and a local name, and what it refers to depends on the context in which it is written.
+
+Two requirements make this mechanism sound.
+Unambiguous: a reference denotes one context, and in that context at most one declaration of each kind.
+Complete: every declaration of a context that A includes can be referred to in A.
+Unambiguous does not mean that a declaration has one reference:
+with an alias, `Kurk.r` and `new.r` can be two references to one relation.
++}
+PATTERN FormalAmpersand.Names
+    CONCEPT FormalAmpersand.Reference "A reference is a local name with or without a prefix, as written in the script of a context."
+
+    RELATION FormalAmpersand.writtenIn[FormalAmpersand.Reference*FormalAmpersand.Context] [UNI,TOT]
+    MEANING "The context in whose script a reference is written."
+    RELATION FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name] [UNI]
+    MEANING "The prefix of a reference, if it has one."
+    RELATION FormalAmpersand.localName[FormalAmpersand.Reference*FormalAmpersand.Name] [UNI,TOT]
+    MEANING "The local name in a reference, which is its last part."
+
+    RELATION FormalAmpersand.denotes[FormalAmpersand.Reference*FormalAmpersand.Context] [UNI,TOT]
+    MEANING "The context in which a reference looks for its declaration."
+    RULE FormalAmpersand.DenotesDefinition LABEL "definition of denotes" :
+        FormalAmpersand.denotes
+        = (I[FormalAmpersand.Reference] - FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name];FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name]~);FormalAmpersand.writtenIn
+          \/ (FormalAmpersand.writtenIn;FormalAmpersand.includer~ /\ FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name];FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name]~);FormalAmpersand.included
+    MEANING "A reference without a prefix denotes the context in which it is written. A reference with a prefix denotes the context that this context includes under that prefix."
+    -- Since `denotes` is univalent, a prefix that fits two included contexts is an error: the script has to use an alias.
+    -- Since `denotes` is total, a prefix that fits no inclusion is an error.
+
+    RELATION FormalAmpersand.refersTo[FormalAmpersand.Reference*FormalAmpersand.Declaration]
+    MEANING "A reference refers to a declaration if the script can mean that declaration by it."
+    RULE FormalAmpersand.RefersToDefinition LABEL "definition of refersTo" :
+        FormalAmpersand.refersTo = FormalAmpersand.denotes;FormalAmpersand.owner~
+                                   /\ FormalAmpersand.localName[FormalAmpersand.Reference*FormalAmpersand.Name];FormalAmpersand.localName[FormalAmpersand.Declaration*FormalAmpersand.Name]~
+    MEANING "A reference refers to the declarations with its local name that are owned by the context it denotes."
+    -- Consequences (article, theorems on references):
+    --   unambiguous: a reference refers to at most one concept, at most one rule,
+    --                and at most one relation with a given source and target;
+    --   sound:       refersTo |- writtenIn;visible~;
+    --   complete:    every declaration of a context that A includes directly has a reference that is written in A.
+    -- OPEN (naming): a prefix names a context that is included directly.
+    --   A declaration of a context that A reaches in two steps is visible in A; to refer to it, A states the inclusion itself.
+ENDPATTERN
+
+PURPOSE PATTERN FormalAmpersand.ClassificationAcrossContexts
+{+A classification `CLASSIFY S ISA G` says that every atom of the specific concept S is an atom of the generic concept G.
+Within one context, S and G share one table.
+Across contexts they cannot, because the population of a concept is stored in the database of its owner.
+So the atoms of S are stored in the table of S, in the database of the owner of S,
+and they are stored in the table of G as well, in the database of the owner of G.
+The context that states the classification brings them there: it writes the owner of G.
+That write is a change in the database of the owner of G like any other, so the owner of G guards its own rules against it.
+
+A migration uses this to tell the type checker that a concept of the existing system and a concept of the desired system correspond:
+`CLASSIFY old.A ISA new.A`, stated in the migration context.
++}
+PATTERN FormalAmpersand.ClassificationAcrossContexts
+    CONCEPT FormalAmpersand.Isa ""
+    RELATION FormalAmpersand.gengen[FormalAmpersand.Isa*FormalAmpersand.Concept] [UNI,TOT]
+    RELATION FormalAmpersand.genspc[FormalAmpersand.Isa*FormalAmpersand.Concept] [UNI,TOT]
+    RELATION FormalAmpersand.context[FormalAmpersand.Isa*FormalAmpersand.Context] [UNI,TOT]
+
+    RULE FormalAmpersand.ClassifiedConceptsAreNear LABEL "classified concepts are near" :
+        (FormalAmpersand.gengen \/ FormalAmpersand.genspc)~;FormalAmpersand.context[FormalAmpersand.Isa*FormalAmpersand.Context]
+        |- FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context];(I[FormalAmpersand.Context] \/ FormalAmpersand.includes~)
+    MEANING "The generic and the specific concept of a classification belong to the context that states the classification or to a context that it includes directly."
+    -- OPEN (classification): the owner of G can delete an atom from G that is still an atom of S.
+    --   The classification is then violated, and the context that states it cannot refuse that change.
+ENDPATTERN
+
+PURPOSE PATTERN FormalAmpersand.ReadingAndWriting
+{+An atom has no owner, and the same atom can occur in several databases.
+What is stored has an owner.
+That an atom is an instance of a concept is stored in the database of the owner of that concept, and nowhere else.
+That a pair is in a relation is stored in the database of the owner of that relation, and nowhere else.
+So every fact has one place where it is updated.
+
+The backend of a context evaluates a term by reading every relation and every concept in that term from the database of its owner.
+One term can therefore read several databases:
+in `Shp.located;Reg.residence~` the pairs of `located` come from the database of the shops and the pairs of `residence` from the database of the register.
+A context reads the databases of all contexts it reaches by inclusion.
+
+A context writes its own database.
+It writes the database of a context it includes directly in two cases:
+one of its rules is enforced on a relation or a concept of that context,
+or it states a classification whose generic concept belongs to that context.
+
+A rule is guarded by the backend of its owner.
+If a rule depends on a population that another context can write, that other context can violate the rule,
+and the owner of the rule cannot refuse the change.
+Such a rule is called exposed.
++}
+PATTERN FormalAmpersand.ReadingAndWriting
+    RELATION FormalAmpersand.reads[FormalAmpersand.Context*FormalAmpersand.Database]
+    MEANING "A context reads a database if its backend evaluates terms on the population in that database."
+    RULE FormalAmpersand.ReadsDefinition LABEL "definition of reads" :
+        FormalAmpersand.reads = FormalAmpersand.includes*;FormalAmpersand.database
+    MEANING "A context reads its own database and the databases of the contexts it reaches by inclusion."
+
+    RELATION FormalAmpersand.enforces[FormalAmpersand.Rule*FormalAmpersand.Declaration]
+    MEANING "A rule is enforced on a relation or a concept if the system restores the rule by changing the population of that relation or concept."
+    RULE FormalAmpersand.EnforcedDeclarationIsNear LABEL "enforced declaration is near" :
+        FormalAmpersand.enforces |- I[FormalAmpersand.Rule];FormalAmpersand.owner;(I[FormalAmpersand.Context] \/ FormalAmpersand.includes);FormalAmpersand.owner~
+    MEANING "A rule is enforced on a declaration of its own context or of a context that its owner includes directly."
+
+    RELATION FormalAmpersand.writes[FormalAmpersand.Context*FormalAmpersand.Context]
+    MEANING "Context A writes context B if the backend of A changes the population in the database of B."
+    RULE FormalAmpersand.WritesDefinition LABEL "definition of writes" :
+        FormalAmpersand.writes = I[FormalAmpersand.Context]
+                                 \/ FormalAmpersand.owner~;I[FormalAmpersand.Rule];FormalAmpersand.enforces;FormalAmpersand.owner
+                                 \/ FormalAmpersand.context[FormalAmpersand.Isa*FormalAmpersand.Context]~;FormalAmpersand.gengen;FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context]
+    MEANING "A context writes itself, the owner of every declaration on which one of its rules is enforced, and the owner of the generic concept of every classification it states."
+    -- Consequence: writes |- I \/ includes, so a context writes only itself and contexts it includes directly.
+
+    RELATION FormalAmpersand.exposedTo[FormalAmpersand.Rule*FormalAmpersand.Context]
+    MEANING "A rule is exposed to a context if that context is not the owner of the rule and writes a population on which the rule depends."
+    RULE FormalAmpersand.ExposedDefinition LABEL "definition of exposed" :
+        FormalAmpersand.exposedTo = FormalAmpersand.dependsOn;FormalAmpersand.owner;FormalAmpersand.writes~ - I[FormalAmpersand.Rule];FormalAmpersand.owner
+    MEANING "A rule is exposed to every context other than its owner that writes the owner of something the rule depends on."
+
+    RELATION FormalAmpersand.isInvariant[FormalAmpersand.Rule] [PROP]
+    MEANING "A rule is an invariant if the backend of its owner refuses every change that would violate it."
+    -- OPEN (invariants): this is a signal for the designer and no hard requirement,
+    --   because a migration lets an invariant of the migration context depend on the desired system, which is deployed and not yet in use.
+    ROLE FormalAmpersand.Designer MAINTAINS FormalAmpersand.InvariantIsNotExposed
+    RULE FormalAmpersand.InvariantIsNotExposed LABEL "invariant is not exposed" :
+        FormalAmpersand.isInvariant;FormalAmpersand.exposedTo |- -V[FormalAmpersand.Rule*FormalAmpersand.Context]
+    MEANING "An invariant is exposed to no context: its owner can refuse every change that would violate it."
+ENDPATTERN
+
+ENDCONTEXT

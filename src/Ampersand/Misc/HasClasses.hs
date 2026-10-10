@@ -52,6 +52,10 @@ class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
   sqlBinTablesL :: Lens' a Bool
   sqlBinTablesL = fSpecGenOptsL . lens xsqlBinTables (\x y -> x {xsqlBinTables = y})
+  allConceptTablesL :: Lens' a Bool
+  allConceptTablesL = fSpecGenOptsL . lens xallConceptTables (\x y -> x {xallConceptTables = y})
+  compiledContextL :: Lens' a Text
+  compiledContextL = fSpecGenOptsL . lens xcompiledContext (\x y -> x {xcompiledContext = y})
   genInterfacesL :: Lens' a Bool --
   genInterfacesL = fSpecGenOptsL . lens xgenInterfaces (\x y -> x {xgenInterfaces = y})
   namespaceL :: Lens' a Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
@@ -300,6 +304,11 @@ data Recipe
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !Roots, -- relative paths. Must be set the first time it is read.
     xsqlBinTables :: !Bool,
+    -- | Should every concept get a table, also if no query of this context reads it?
+    --   A context that other contexts include needs that, because they read its tables.
+    xallConceptTables :: !Bool,
+    -- | Which context of a system of contexts to compile. Empty: the first context in the root file.
+    xcompiledContext :: !Text,
     xgenInterfaces :: !Bool, --
     xnamespace :: !Text, -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
     xdefaultCrud :: !(Bool, Bool, Bool, Bool),
@@ -323,6 +332,8 @@ instance HasOptions FSpecGenOpts where
   optsList opts =
     [ ("AMPERSAND_SCRIPT", tshow $ xrootFile opts),
       ("--sql-bin-tables", tshow $ xsqlBinTables opts),
+      ("--all-concept-tables", tshow $ xallConceptTables opts),
+      ("--context", tshow $ xcompiledContext opts),
       ("--interfaces", tshow $ xgenInterfaces opts),
       ("--namespace", tshow $ xnamespace opts),
       ( "--crud-defaults",

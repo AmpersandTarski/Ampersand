@@ -1,0 +1,6 @@
+CONTEXT Migration INCLUDES Kurk FROM "../contexts/kurk_existing.adl",
+                           Kurk FROM "../contexts/kurk_desired.adl"
+CONTEXT Migration IN ENGLISH
+-- Two included contexts have the same name, so the name does not tell them apart.
+RELATION done[Kurk.A*Kurk.A]
+ENDCONTEXT

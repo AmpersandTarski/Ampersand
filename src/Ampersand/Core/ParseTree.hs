@@ -8,6 +8,15 @@ module Ampersand.Core.ParseTree
     Flippable (..),
     mergeContexts,
     MetaData (..),
+    foreignMetaName,
+    mkForeignMeta,
+    foreignContexts,
+    mkRelaxedMeta,
+    relaxedRules,
+    mkFileMeta,
+    foreignContextFiles,
+    mkLabelViewMeta,
+    foreignLabelViews,
     P_RoleRule (..),
     Role (..),
     P_Enforce (..),
@@ -139,6 +148,78 @@ data MetaData = MetaData
     mtVal :: !Text
   }
   deriving (Show)
+
+-- | The metadata by which a joined context says which other contexts it contains.
+--   The compiler adds one for every context that the compiled context reaches by inclusion.
+--   Its value holds the label, which is the prefix of the things of that context, and the name of the context.
+foreignMetaName :: Text1
+foreignMetaName = toText1Unsafe "multicontext.foreign"
+
+mkForeignMeta :: Origin -> NamePart -> Text -> MetaData
+mkForeignMeta orig lbl ctxName = MetaData orig foreignMetaName (namePartToText lbl <> " " <> ctxName)
+
+-- | The contexts that a joined context contains besides the compiled one: label and name.
+foreignContexts :: [MetaData] -> [(Text, Text)]
+foreignContexts ms =
+  [ (lbl, T.drop 1 rest)
+    | m <- ms,
+      mtName m == foreignMetaName,
+      let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
+
+-- | The metadata by which a joined context says how one of the contexts it contains calls another one.
+--   Its value holds three labels: that of the first context and that of the second context in the compiled context,
+--   and the label that the first context has for the second one.
+labelViewMetaName :: Text1
+labelViewMetaName = toText1Unsafe "multicontext.label"
+
+mkLabelViewMeta :: Origin -> NamePart -> NamePart -> NamePart -> MetaData
+mkLabelViewMeta orig owner here there =
+  MetaData orig labelViewMetaName (T.unwords (map namePartToText [owner, here, there]))
+
+foreignLabelViews :: [MetaData] -> [(Text, Text, Text)]
+foreignLabelViews ms =
+  [ (owner, here, there)
+    | m <- ms,
+      mtName m == labelViewMetaName,
+      [owner, here, there] <- [T.words (mtVal m)]
+  ]
+
+-- | The metadata by which a joined context says in which file a context that it contains is found.
+fileMetaName :: Text1
+fileMetaName = toText1Unsafe "multicontext.file"
+
+mkFileMeta :: Origin -> NamePart -> FilePath -> MetaData
+mkFileMeta orig lbl file = MetaData orig fileMetaName (namePartToText lbl <> " " <> T.pack file)
+
+-- | The file of every context that a joined context contains besides the compiled one: label and file.
+foreignContextFiles :: [MetaData] -> [(Text, Text)]
+foreignContextFiles ms =
+  [ (lbl, T.drop 1 rest)
+    | m <- ms,
+      mtName m == fileMetaName,
+      let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
+
+-- | The metadata by which a joined context says that a context relaxes an invariant of a context it includes:
+--   it assigns the rule to a role, while no role maintains the rule in its own context.
+--   Its value holds the name space of the context that relaxes the rule (a dash for the compiled context)
+--   and the name of the rule in the joined context.
+relaxedMetaName :: Text1
+relaxedMetaName = toText1Unsafe "multicontext.relaxed"
+
+mkRelaxedMeta :: Origin -> NameSpace -> Name -> MetaData
+mkRelaxedMeta orig ns rule =
+  MetaData orig relaxedMetaName (T.unwords [if null ns then "-" else T.intercalate "." (map namePartToText ns), fullName rule])
+
+-- | The relaxed invariants of a joined context: the name space of the relaxing context and the name of the rule.
+relaxedRules :: [MetaData] -> [(Text, Text)]
+relaxedRules ms =
+  [ (if ns == "-" then "" else ns, rule)
+    | m <- ms,
+      mtName m == relaxedMetaName,
+      [ns, rule] <- [T.words (mtVal m)]
+  ]
 
 instance Traced MetaData where
   origin (MetaData p _ _) = p

@@ -1,0 +1,13 @@
+CONTEXT City INCLUDES Registry FROM "../contexts/registry_plain.adl", Shops FROM "../contexts/shops.adl"
+CONTEXT Registry INCLUDES Towns FROM "../contexts/towns.adl"
+
+CONTEXT City IN ENGLISH
+PURPOSE CONTEXT City
+{+ The main file states the inclusions of the whole system.
+The second statement says that Registry includes Towns, although the file of Registry does not say so itself. +}
+
+RELATION customer[Shops.Shop*Registry.Person]
+RULE local : customer |- Shops.located;Registry.residence~
+ROLE Clerk MAINTAINS local
+
+ENDCONTEXT

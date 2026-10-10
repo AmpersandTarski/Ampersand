@@ -7,6 +7,7 @@ module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 import Ampersand.ADL1
 import qualified Ampersand.Basics.Name as Name
 import Ampersand.Core.AbstractSyntaxTree (largerConcepts, smallerConcepts)
+import Ampersand.Core.ParseTree (foreignContexts)
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
@@ -132,8 +133,10 @@ allAtomsQueryOf fSpec cpt =
 --   table first, each with the columns of that row that name the atom: the
 --   column of the concept itself and of every generalisation that shares the
 --   table. A generalisation without a table of its own contributes no column
---   (issue #1672); a generalisation stored apart (issue #1716) contributes a
---   table of its own.
+--   (issue #1672); a generalisation stored apart in this context (issue #1716)
+--   contributes a table of its own; a generalisation that another context owns
+--   contributes nothing, because its table lives in the database of that
+--   context.
 conceptTablesOf :: FSpec -> A_Concept -> [TableCols]
 conceptTablesOf fSpec cpt =
   [ TableCols
@@ -143,10 +146,15 @@ conceptTablesOf fSpec cpt =
     | t <- ownFirst (L.nub (map fst cols))
   ]
   where
-    cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
+    cols = concatMap (lookupCpt fSpec) $ cpt : filter (not . ownedElsewhere) (largerConcepts cpt)
     ownFirst ts = case lookupCpt fSpec cpt of
       (own, _) : _ -> own : filter (/= own) ts
       [] -> ts
+    foreignLabels = map fst (foreignContexts (metas fSpec))
+    ownedElsewhere :: A_Concept -> Bool
+    ownedElsewhere c = case nameSpaceOf (name c) of
+      h : _ -> namePartToText h `elem` foreignLabels
+      [] -> False
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =

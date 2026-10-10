@@ -1,0 +1,5 @@
+CONTEXT Fail INCLUDES Register FROM "../contexts/registry.adl"
+CONTEXT Fail IN ENGLISH
+-- The file contains the context Registry, and no context Register.
+RELATION applicant[Permit*Register.Person]
+ENDCONTEXT

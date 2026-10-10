@@ -17,6 +17,7 @@ import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
 import Ampersand.Test.Incremental.CandidateProperties (doAllCandidatePropertyTests)
 import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
 import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
+import Ampersand.Test.MultiContext.QualifyProperties (doAllQualifyPropertyTests)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
 import Ampersand.Test.Serve.ServeTest (serveTest)
@@ -29,6 +30,7 @@ test = do
   incrementalPropertyTest
   candidatePropertyTest
   costProfileTest
+  qualifyPropertyTest
   stepReaderTest
   expressTest
   ifcBinderTest'
@@ -112,6 +114,18 @@ costProfileTest = do
     else do
       logError "\x2757\x2757\x2757 Failed. Cost-profile classification tests."
       exitWith (SomeTestsFailed ["Cost-profile classification test failed!"])
+
+-- | Joining the contexts of a system: an included context contributes its names with a prefix,
+--   and a context that is reached along two paths contributes them once.
+qualifyPropertyTest :: (HasRunner env) => RIO env ()
+qualifyPropertyTest = do
+  logInfo "Starting property tests of systems of contexts (CONTEXT ... INCLUDES ...)."
+  success <- doAllQualifyPropertyTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Property tests of systems of contexts."
+      exitWith (SomeTestsFailed ["Property test of systems of contexts failed!"])
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do
