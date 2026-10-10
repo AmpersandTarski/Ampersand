@@ -117,6 +117,11 @@ module.exports = {
             id: 'ampersand/guides/installing-ampersand'
         },
         {
+            label: 'Your working environment',
+            type: 'doc',
+            id: 'ampersand/guides/working-environment'
+        },
+        {
             label: 'Deploying your prototype',
             type: 'doc',
             id: 'ampersand/guides/deploying-your-prototype'

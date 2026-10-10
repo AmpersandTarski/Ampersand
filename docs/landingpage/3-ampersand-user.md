@@ -139,6 +139,9 @@ Run it through Docker on any platform, grab a prebuilt executable on Windows or 
 **Is there editor support for writing scripts?**
 Yes — install the "Ampersand language support" VS Code extension (`ampersandtarski.language-ampersand`) and choose the Ampersand colouring theme. It adds modelling support with settings like the main script name and project folder, and needs `ampersand` on your PATH. [Learn more →](../the-tools-we-use/ampersand-language-support.md)
 
+**How do I set up a project folder, an editor window and an AI assistant for an Ampersand project?**
+Give each project its own repository, its own folder and its own editor window, so that scripts, populations and Docker files are all in view and an assistant's session finds them where you expect. [Learn more →](../guides/working-environment.md)
+
 **Which generate commands does the VS Code extension provide?**
 It can show the version, run the daemon, and generate functional specs, an Atlas JSON, and a prototype — all without leaving your editor. This keeps your edit-generate loop tight. [Learn more →](../the-tools-we-use/ampersand-language-support.md)
 

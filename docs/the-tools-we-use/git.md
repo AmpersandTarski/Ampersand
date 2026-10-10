@@ -94,6 +94,8 @@ Checking out means to create your own local copy of the repository. By default, 
     - Start / All Programs / TortoiseGit / Network:
     - At "SSH Client" fill in: C:\Program Files (x86)\Git\bin\ssh.exe
 
+If you work on several branches at the same time, [Your working environment](../guides/working-environment.md) explains how to give each branch its own folder, called a worktree, and how to open those folders together in your editor.
+
 ## Done?
 
 You are done with this page once you have your local copy of the Ampersand source code on your own computer, under Git. Do this only if you want to change the Ampersand software; not if you only want to use Ampersand.

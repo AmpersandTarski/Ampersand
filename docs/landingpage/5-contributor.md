@@ -45,6 +45,7 @@ The Ampersand ecosystem consists of four repositories:
 
 - Understand what Ampersand produces: **[Architecture of an Ampersand application](../reference-material/architecture-of-an-ampersand-application.md)**.
 - When you work on documentation, edit the `docs/` folder of the **right repository** and work in the **`documentation` branch** — this keeps documentation changes from triggering the heavy build pipelines. Update the relevant `sidebar.js` when you add a page.
+- Working on several branches at once? Give each branch its own worktree and open them together in one editor workspace: **[Your working environment](../guides/working-environment.md)**.
 
 ## 📦 Submitting your contribution
 
@@ -125,6 +126,9 @@ Handy when you are debugging the image stack: Ampersand uses haskell and debian 
 When a build script fails, the exit code tells you why: e.g. 0 success, 10 invalid script, 20 inconsistent population, 50 sanity-check violations, and 70 wrong arguments. [Learn more →](../the-command-line-tool.md)
 
 ### The contribution workflow — Git, releasing, CI/CD, documentation
+
+**How do I work on several branches at the same time without my tools fighting each other?**
+Give each branch its own Git worktree, open the worktrees together in one VS Code workspace with the main working copy as first folder, and keep an AI assistant's sessions in that window. The guide explains why: Git, the editor and the assistant each have their own idea of where you work. [Learn more →](../guides/working-environment.md)
 
 **What does submitting a contribution involve?**
 Here is the whole loop in one breath: create a branch, open a PR (docs target the `documentation` branch), add a ReleaseNotes entry for code changes, let CI pass, and a maintainer reviews and merges. [Learn more →](./5-contributor.md)

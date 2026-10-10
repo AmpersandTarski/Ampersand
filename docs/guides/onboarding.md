@@ -7,6 +7,7 @@ Below you will find a list of activities to get a new contributor up to speed wi
 - To get started, [open an issue on GitHub](https://github.com/AmpersandTarski/Ampersand/issues) using your own GitHub account, or contact [Stef Joosten](https://github.com/stefjoosten) on GitHub. Describe how you would like to contribute and what access you need.
   - Request access to the GitHub repositories as [described below](#github-memberships).
 - Clone the repositories you need, [described below](#github-workflow-and-info).
+- Set up your folders, your editor window and the sessions of an AI assistant as described in [Your working environment](./working-environment.md).
 
 ## GitHub memberships
 

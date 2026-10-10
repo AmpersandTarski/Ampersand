@@ -169,6 +169,9 @@ You have three easy routes: run it through Docker on any platform, grab a prebui
 **Is there editor support for writing Ampersand scripts?**
 Yes — install the "Ampersand language support" VS Code extension and pick the Ampersand coloring theme. Syntax highlighting makes your scripts far easier to read and write. [Learn more →](../guides/installing-ampersand.md)
 
+**How do I organise my files, my editor and an AI assistant on my own computer?**
+One folder for your scripts, one editor window on that folder, and an assistant's session in that same window keep the three in step. The guide explains the layers one by one: Git, editor windows and assistant sessions. [Learn more →](../guides/working-environment.md)
+
 **How can I run the Ampersand compiler without installing it on my machine?**
 Pull the `ampersandtarski/ampersand` Docker image and run it with `docker run`, mounting your project directory. You get the compiler with zero local installation. [Learn more →](../docker/1-compiler.md)
 
