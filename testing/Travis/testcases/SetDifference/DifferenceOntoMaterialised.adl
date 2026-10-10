@@ -1,0 +1,84 @@
+CONTEXT DifferenceOntoMaterialised IN ENGLISH
+
+PURPOSE CONTEXT DifferenceOntoMaterialised MARKDOWN
+{+ A difference `l - r` is translated to SQL in one of two ways (issue #1708, claim PRF-12).
+   When `r` contains a closure or a union, the generator writes a set difference (EXCEPT);
+   otherwise it writes a left join that keeps the rows of `l` without a partner in `r`.
+   This script puts both translations next to each other on one population, and pins the
+   exact outcome of every difference with an expected relation. Every outcome is non-empty,
+   because two translations that both return nothing show nothing.
+
+   The chain is a->b->c->d, so r+ = { ab, ac, ad, bc, bd, cd }.
+   The stored relation s holds r+ and three pairs outside it: (d,a), (f,f) and (a,e).
++}
+
+RELATION r[Node*Node]
+POPULATION r CONTAINS
+  [ ("a","b"), ("b","c"), ("c","d") ]
+
+RELATION t[Node*Node]
+POPULATION t CONTAINS
+  [ ("b","e"), ("e","f") ]
+
+RELATION s[Node*Node]
+MEANING "The closure of r, and three pairs that are not in it."
+POPULATION s CONTAINS
+  [ ("a","b"), ("a","c"), ("a","d"), ("b","c"), ("b","d"), ("c","d")
+  , ("d","a"), ("f","f"), ("a","e") ]
+
+RELATION closed[Node*Node]
+MEANING "Exactly the closure of r, stored."
+POPULATION closed CONTAINS
+  [ ("a","b"), ("a","c"), ("a","d"), ("b","c"), ("b","d"), ("c","d") ]
+
+-- Right-hand side is a closure: set difference.
+RELATION notInClosure[Node*Node]
+POPULATION notInClosure CONTAINS
+  [ ("d","a"), ("f","f"), ("a","e") ]
+RULE minusClosure : s - r+ = notInClosure
+
+-- Right-hand side is a union: set difference.
+RELATION notInUnion[Node*Node]
+POPULATION notInUnion CONTAINS
+  [ ("a","c"), ("a","d"), ("b","d"), ("d","a"), ("f","f"), ("a","e") ]
+RULE minusUnion : s - (r \/ t) = notInUnion
+
+-- Right-hand side contains a closure inside a composition: set difference.
+-- r;r+ = { ac, ad, bd }.
+RELATION notInComposedClosure[Node*Node]
+POPULATION notInComposedClosure CONTAINS
+  [ ("a","b"), ("b","c"), ("c","d"), ("d","a"), ("f","f"), ("a","e") ]
+RULE minusComposedClosure : s - (r;r+) = notInComposedClosure
+
+-- The flipped variant: s without the converse of the closure. Only (d,a) is a converse pair.
+RELATION notInConverseClosure[Node*Node]
+POPULATION notInConverseClosure CONTAINS
+  [ ("a","b"), ("a","c"), ("a","d"), ("b","c"), ("b","d"), ("c","d"), ("f","f"), ("a","e") ]
+RULE minusConverseClosure : s /\ (-(r+))~ = notInConverseClosure
+
+-- Control: right-hand side is a composition of declared relations: left join.
+-- r;t = { ae }.
+RELATION notInComposition[Node*Node]
+POPULATION notInComposition CONTAINS
+  [ ("a","b"), ("a","c"), ("a","d"), ("b","c"), ("b","d"), ("c","d"), ("d","a"), ("f","f") ]
+RULE minusComposition : s - (r;t) = notInComposition
+
+-- Control: right-hand side is a declared relation: left join.
+RULE minusStored : s - closed = notInClosure
+
+-- Both directions of what ENFORCE closed := r+ generates: one of each translation.
+RULE storedIsClosure : closed = r+
+
+INTERFACE Differences : "_SESSION"[SESSION] ; V[SESSION*Node]
+   CRud BOX<TABLE sortable>
+   [ "node"                 : I[Node]              cRud
+   , "minusClosure"         : s - r+               cRud
+   , "minusUnion"           : s - (r \/ t)         cRud
+   , "minusComposedClosure" : s - (r;r+)           cRud
+   , "minusConverseClosure" : s /\ (-(r+))~        cRud
+   , "minusComposition"     : s - (r;t)            cRud
+   , "minusStored"          : s - closed           cRud
+   , "closureMinusStored"   : r+ - closed          cRud
+   ]
+
+ENDCONTEXT
