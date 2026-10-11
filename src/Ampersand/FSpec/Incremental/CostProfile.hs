@@ -35,7 +35,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux (getRelationTableInfo, lookupConceptTable)
+import Ampersand.FSpec.FSpecAux (lookupConceptTable, relationTableInfos)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -116,9 +116,13 @@ structurallyEnforced fSpec rule = case rrkind rule of
   Propty Inj rel -> keySideIsPrimary rel rsStoredFlipped rsTrgAtt
   _ -> False
   where
+    -- A relation stored in several tables (a MULTITABLE union, issue #1716)
+    -- has a key column per table and none across them, so its multiplicity
+    -- is not structural and the conjunct runs as a query.
     keySideIsPrimary rel storedRightWay keyAtt =
-      let (_, store) = getRelationTableInfo fSpec rel
-       in storedRightWay store && isPrimaryKey (keyAtt store)
+      case relationTableInfos fSpec rel of
+        [(_, store)] -> storedRightWay store && isPrimaryKey (keyAtt store)
+        _ -> False
 
 -- | The tables a term's compiled query reads in full, by name as the
 --   framework knows them (@mysqlTable.name@ in @relations.json@).
@@ -138,7 +142,7 @@ scanTablesOf fSpec =
   where
     tablesOf :: Expression -> [Text]
     tablesOf expr = case expr of
-      EDcD rel -> [tableName . fst $ getRelationTableInfo fSpec rel]
+      EDcD rel -> map (tableName . fst) (relationTableInfos fSpec rel)
       EDcI c -> conceptTable c
       EDcV sgn -> signatureTables sgn
       EBin _ sgn -> signatureTables sgn
@@ -152,8 +156,12 @@ scanTablesOf fSpec =
       Sign src tgt -> conceptTable src <> conceptTable tgt
       ISgn c -> conceptTable c
     conceptTable :: A_Concept -> [Text]
-    conceptTable c = case lookupConceptTable fSpec c of
-      Nothing -> []
-      Just (plug, _) -> [tableName plug]
+    conceptTable c =
+      -- a concept without a table of its own is read from the tables of its
+      -- storage members (issue #1716); a concept nobody enumerates from none
+      [ tableName plug
+        | m <- storageMembersIn (conceptUnions fSpec) c,
+          Just (plug, _) <- [lookupConceptTable fSpec m]
+      ]
     tableName :: PlugSQL -> Text
     tableName = text1ToText . showUnique

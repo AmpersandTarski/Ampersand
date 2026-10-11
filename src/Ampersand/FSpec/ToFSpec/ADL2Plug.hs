@@ -13,7 +13,7 @@ import qualified Algebra.Graph.AdjacencyMap as Graph
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree (Guarded (..), makeTypologies)
+import Ampersand.Core.AbstractSyntaxTree (Guarded (..), makeTypologies, sortGeneric2Specific, storageComponents)
 import Ampersand.Core.ParseTree (foreignContexts, foreignLabelViews)
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
@@ -24,6 +24,14 @@ import qualified RIO.Text as T
 
 maxLengthOfDatabaseTableName :: Int
 maxLengthOfDatabaseTableName = 64
+
+-- | A part of a typology that the database stores in one wide table
+--   (issue #1716): its root is the key of the table, and its concepts
+--   (generic to specific, root first) each get an identity column.
+data StorageComponent = StorageComponent
+  { scRoot :: A_Concept,
+    scCpts :: [A_Concept]
+  }
 
 shaLength :: Int
 shaLength = 7
@@ -148,7 +156,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
     -- of two contexts does not make them share a table.
     split :: Maybe Text -> Typology -> [Typology]
     split owner typol =
-      case makeTypologies (Graph.induce ((== owner) . ownerOfSet) (tyGrph typol)) of
+      case makeTypologies (Set.unions (Set.toList (tyMultiTable typol))) (Graph.induce ((== owner) . ownerOfSet) (tyGrph typol)) of
         Checked ts _ -> ts
         Errors _ -> fatal ("The concepts of one context in the typology of " <> tshow (tyroot typol) <> " have no single most generic concept.")
       where
@@ -180,7 +188,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
     tablesOf :: Scope -> [PlugSQL]
     tablesOf sc = map (scLocalise sc . makeTable) components
       where
-        components :: [(Maybe Typology, [Relation])]
+        components :: [(Maybe StorageComponent, [Relation])]
         components =
           -- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps)
           comps
@@ -188,48 +196,60 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             -- Orphan relations are relations that cause link tables in the database,
             -- i.e relation that are neither univalent nor injective.
             comps =
-              (filter tableIsWorthGenerating . map componentsForTypology . scTypologies $ sc)
+              (filter tableIsWorthGenerating . map componentsForStorage . filter (not . isVirtualRoot) $ allStorageComponents)
                 <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+            -- A MULTITABLE union concept has no table of its own (issue #1716). It
+            -- is cut loose from its members by the mark, so it is a component by
+            -- itself, and that component gets no table.
+            isVirtualRoot :: StorageComponent -> Bool
+            isVirtualRoot comp = isJust (unionMembersIn (ctxunions context) (scRoot comp))
             -- A concept table earns its keep by storing relations, or by answering
             -- "what are the atoms of this concept?" for a query that asks. A table
             -- that does neither administrates atoms that nothing reads. (issue #1672)
-            tableIsWorthGenerating :: (Maybe Typology, [Relation]) -> Bool
-            tableIsWorthGenerating (mTypol, rels) =
-              not (scPrune sc) || not (null rels) || case mTypol of
+            tableIsWorthGenerating :: (Maybe StorageComponent, [Relation]) -> Bool
+            tableIsWorthGenerating (mComp, rels) =
+              not (scPrune sc) || not (null rels) || case mComp of
                 Nothing -> True
-                Just typol -> any isNeeded (conceptsOfTypology typol)
+                Just comp -> any isNeeded (scCpts comp)
             -- Eq on A_Concept is alias intersection, so compare with `elem` rather
             -- than through a Set (whose Ord instance compares whole alias sets).
             isNeeded :: A_Concept -> Bool
             isNeeded cpt = cpt `elem` neededConcepts
-            componentsForTypology typol =
-              (Just typol, filter (relationBelongsToConceptTable typol) allRelationsInContext)
+            componentsForStorage comp =
+              (Just comp, filter (relationBelongsToConceptTable comp) allRelationsInContext)
             componentsForOrphanRelation rel = (Nothing, [rel])
             isOrphan = isNothing . conceptTableOf
-            relationBelongsToConceptTable :: Typology -> Relation -> Bool
-            relationBelongsToConceptTable typol rel =
+            relationBelongsToConceptTable :: StorageComponent -> Relation -> Bool
+            relationBelongsToConceptTable comp rel =
               case conceptTableOf rel of
-                Just x@(PlainConcept {}) -> aliases x `elem` tyCpts typol
+                -- A relation declared on a MULTITABLE union concept gets a column in
+                -- the table of each storage member (issue #1716).
+                Just x@(PlainConcept {}) -> any (`elem` scCpts comp) (storageMembersIn (ctxunions context) x)
                 Just ONE -> True -- ONE is in every typology, but does not belong to any concept table. However, it has no attributes, so this clause is only here for theorecal completeness.
                 Just _ -> False
                 Nothing -> False
 
         allRelationsInContext = filter (scMine sc . name) (toList (relsDefdIn context))
 
-        makeTable :: (Maybe Typology, [Relation]) -> PlugSQL
-        makeTable (mTypol, rels) = case (mTypol, rels) of
+        -- The storage components of the typologies of this scope (issue #1716):
+        -- an unmarked typology is one component and gets one wide table, as
+        -- before; a typology with a MULTITABLE concept falls apart into several,
+        -- one table each.
+        allStorageComponents :: [StorageComponent]
+        allStorageComponents = concatMap storageComponentsOf (scTypologies sc)
+
+        makeTable :: (Maybe StorageComponent, [Relation]) -> PlugSQL
+        makeTable (mComp, rels) = case (mComp, rels) of
           (Nothing, []) -> fatal "At least a typology or a relation must be present to build a table."
           (Nothing, [rel]) -> makeLinkTable rel
           (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
-          (Just typol, _) -> makeConceptTable typol rels
+          (Just comp, _) -> makeConceptTable comp rels
         allKeyConcepts :: [A_Concept]
-        allKeyConcepts = [cpt | typol <- scTypologies sc, Checked cpt _warning <- [pCpt2aCpt (tyroot typol)]]
-        pCpt2aCpt :: P_Concept -> Guarded A_Concept
-        pCpt2aCpt = conceptMap (ctxInfo context) OriginUnknown
+        allKeyConcepts = map scRoot allStorageComponents
         allLinkTableRelations :: [Relation]
         allLinkTableRelations = concatMap snd . filter (isNothing . fst) $ components
-        makeConceptTable :: Typology -> [Relation] -> PlugSQL
-        makeConceptTable typol allRelationsInTable =
+        makeConceptTable :: StorageComponent -> [Relation] -> PlugSQL
+        makeConceptTable comp allRelationsInTable =
           TblSQL
             { sqlname = determineWideTableName tableKey,
               attributes =
@@ -241,7 +261,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             }
           where
             allConceptsInTable :: [A_Concept]
-            allConceptsInTable = conceptsOfTypology typol
+            allConceptsInTable = scCpts comp
             determineWideTableName :: A_Concept -> SqlName
             determineWideTableName keyConcept =
               determineSqlName
@@ -249,9 +269,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 (map toConceptOrRelation allKeyConcepts)
                 (toConceptOrRelation keyConcept)
             tableScope = map toConceptOrRelation allConceptsInTable <> map toConceptOrRelation allRelationsInTable
-            tableKey = case pCpt2aCpt (tyroot typol) of
-              Checked cpt _warning -> cpt
-              _ -> fatal ("The root of a typology " <> tshow (tyroot typol) <> " should always be a PlainConcept, so this should not happen.")
+            tableKey = scRoot comp
             conceptLookuptable :: [(A_Concept, SqlAttribute)]
             conceptLookuptable = [(cpt, cptAttrib cpt) | cpt <- allConceptsInTable]
             dclLookuptable :: [RelStore]
@@ -267,6 +285,13 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
 
             lookupC :: A_Concept -> SqlAttribute
             lookupC cpt = case [f | (c', f) <- conceptLookuptable, cpt == c'] of
+              -- A MULTITABLE union concept is not in this table; its atoms here are
+              -- the atoms of the storage member that is (issue #1716).
+              []
+                | isJust (unionMembersIn (ctxunions context) cpt) ->
+                    case [f | (c', f) <- conceptLookuptable, c' `elem` storageMembersIn (ctxunions context) cpt] of
+                      f : _ -> f
+                      [] -> fatal ("None of the storage members of `" <> fullName cpt <> "` is in the table of " <> fullName tableKey)
               [] ->
                 fatal
                   $ "Concept `"
@@ -288,7 +313,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                   attUse =
                     if cpt
                       == tableKey
-                      && ctxReprType context cpt
+                      && valueTType (ctxReprType context cpt)
                       == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
                       then PrimaryKey cpt
                       else PlainAttr,
@@ -316,7 +341,8 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 }
               where
                 dclAttExpression = (if isStoredFlipped dcl then EFlp else id) (EDcD dcl)
-                keyToTargetExpr = (attExpr . cptAttrib . source $ dclAttExpression) .:. dclAttExpression
+                -- lookupC, not cptAttrib: the source may be a MULTITABLE union concept whose atoms this table holds through a member (issue #1716)
+                keyToTargetExpr = attExpr (lookupC (source dclAttExpression)) .:. dclAttExpression
 
         -----------------------------------------
         -- makeLinkTable
@@ -423,8 +449,18 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
         --           attUniq = True,
         --           attFlipped = False
         --         }
-        conceptsOfTypology :: Typology -> [A_Concept]
-        conceptsOfTypology typol = map aliasSetToConcept (tyCpts typol)
+        -- The storage components of one typology (issue #1716), each with its
+        -- root (the key of its table) and its concepts from generic to specific.
+        storageComponentsOf :: Typology -> [StorageComponent]
+        storageComponentsOf typol =
+          [ StorageComponent
+              { scRoot = case [v | v <- Graph.vertexList sub, Set.null (Graph.postSet v sub)] of
+                  [r] -> aliasSetToConcept r
+                  rs -> fatal ("A storage component should have exactly one root, but has " <> tshow (length rs) <> ": " <> tshow rs),
+                scCpts = map aliasSetToConcept (sortGeneric2Specific sub (Graph.vertexList sub))
+              }
+            | sub <- storageComponents typol
+          ]
           where
             aliasSetToConcept :: Set.Set Name -> A_Concept
             aliasSetToConcept aliasSet =
@@ -501,6 +537,7 @@ suitableAsKey st =
     Integer -> True
     Float -> False
     Object -> True
+    MultiTable -> True
     TypeOfOne -> True
 
 -- | ConceptOrRelation is meant to be things that can end up in a database. It is designed

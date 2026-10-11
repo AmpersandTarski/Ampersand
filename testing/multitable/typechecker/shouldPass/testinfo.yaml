@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand check
+    exitcode: 0

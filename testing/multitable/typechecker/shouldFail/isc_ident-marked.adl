@@ -1,0 +1,6 @@
+CONTEXT T2
+CLASSIFY Document ISA Artefact
+REPRESENT Artefact TYPE MULTITABLE
+CLASSIFY Claim ISA Artefact
+RULE Doorsnede : I[Document] /\ I[Claim] |- I[Artefact]
+ENDCONTEXT
