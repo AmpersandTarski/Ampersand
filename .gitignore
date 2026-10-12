@@ -118,4 +118,3 @@ docs/guides/roadmap-matrix.svg
 
 # Build output of the Lean proof sessions
 proofs/*/.lake/
-proofs/*/lake-manifest.json
