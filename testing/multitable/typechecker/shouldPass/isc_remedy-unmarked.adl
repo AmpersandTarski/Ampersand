@@ -1,0 +1,9 @@
+CONTEXT T6
+CLASSIFY Document ISA Artefact
+CLASSIFY Claim ISA Artefact
+CLASSIFY DocClaim IS Document /\ Claim
+RELATION r[Document*Tekst] [UNI]
+RELATION s[Claim*Tekst] [UNI]
+RULE Beide : r /\ s |- r
+RULE Doorsnede : I[Document] /\ I[Claim] |- I[Artefact]
+ENDCONTEXT
