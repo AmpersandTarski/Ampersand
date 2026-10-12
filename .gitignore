@@ -115,3 +115,7 @@ validate_tests_analysis.csv
 # Nog scratch: testcase, voorlopig niet committen
 testing/Travis/testcases/prototype/shouldSucceed/CartesianTest.adl
 docs/guides/roadmap-matrix.svg
+
+# Build output of the Lean proof sessions
+proofs/*/.lake/
+proofs/*/lake-manifest.json

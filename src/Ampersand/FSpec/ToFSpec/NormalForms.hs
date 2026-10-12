@@ -1102,8 +1102,11 @@ tceDerivRules pCpt2aCpt =
       "r[A*B]/\\-r[A*B] = -V[A*B]", --  Contradiction
       "r[A*B]\\/-r[A*B] =  V[A*B]", --  Tautology
       "-r[A*B]\\/r[A*B] = V[A*B]", --  Tautology
+      -- The five absorption laws are machine-checked in proofs/rewriteLaws/RewriteLaws.lean
+      -- (absorb1 to absorb5, claim PRF-13). The second one used to read (r\/-s)/\s = s-r,
+      -- which is false: for a pair in both r and s the left side holds and the right side does not.
       "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]", --  Absorption
-      "(r[A*B]\\/-s[A*B])/\\ s[A*B] = s[A*B]-r[A*B]", --  Absorption
+      "(r[A*B]\\/-s[A*B])/\\ s[A*B] = r[A*B]/\\s[A*B]", --  Absorption
       "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]", --  Absorption
       "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]", --  Absorption
       "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]", --  Absorption
@@ -1117,34 +1120,6 @@ tceDerivRules pCpt2aCpt =
       "I[A]\\/r[A*A]+ = r[A*A]*" --  rStar_eq_Id_un_rPlus
     ]
 
-{-
--- Type conserving inclusions: The following inclusions have an identical signature on either side.
-tciDerivRules :: [DerivRule]
-tciDerivRules = concatMap (dRule.parseRule)
- [ "(r[A*B]\\I[A]);s[A*C] |- r[A*B]\\s[A*C]"                   --  T{r\\I[A]}=[B*A] ; T{(r\\I[A]);s}=[B*C] ; T{r\\s}=[B*C] ; Jipsen&Tsinakis
- , "r[A*C];(I[C]/s[B*C]) |- r[A*C]/s[B*C]"                     --  Jipsen&Tsinakis
- , "(r[A*B]\\s[A*C]);q[C*D] |- r[A*B]\\(s[A*C];q[C*D])"        --  Jipsen&Tsinakis
- , "r[A*B];(s[B*C]/q[D*C]) |- (r[A*B];s[B*C])/q[D*C]"          --  Jipsen&Tsinakis
- , "(r[A*B]\\s[A*C]);(s[A*C]\\q[A*D]) |- r[A*B]\\q[A*D]"       --  Jipsen&Tsinakis
- , "(r[A*B]/s[A*C]);(s[A*C]/q[D*B]) |- r[A*B]/q[D*B]"          --  Jipsen&Tsinakis
- , "r[A*B];(s[B*C]!q[C*D]) |- (r[A*B];s[B*C])!q[C*D]"          --  Peirce
- , "(r[A*B]!s[B*C]);q[C*D] |- r[A*B]!(s[B*C];q[C*D])"          --  Peirce
- , "(r[A*B]/\\s[A*B]);q[B*C] |- r[A*B];q[B*C]/\\s[A*B];q[B*C]" --  Distribution
- , "r[A*B];(s[B*C]/\\q[B*C]) |- r[A*B];s[B*C]/\\r[A*B];q[B*C]" --  Distribution
- , "(r[A*B];s[B*C])/s[B*C] |- r[A*B]"                          --  Absorption
- , "r[A*B]\\(r[A*B];s[B*C]) |- s[B*C]"                         --  Absorption
- , "I[A] |- r[A*A]*"
- , "r[A*B] |- V[A*B]"
- ]
--}
-{-
--- Type altering equivalences: The following equivalences have an different signature on either side.
-taeDerivRules :: [DerivRule]
-taeDerivRules = concatMap (dRule.parseRule)
- [ "-r[A*B]\\/(q[A*C]/s[B*C]) = -(r[A*B];s[B*C])\\/q[A*C]"     -- T{ -r\\/(q/s)} = [A*B] ;   T{ -(r;s)\\/q} = [A*C] ; remove left residual (/)
- , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{ (r\\q)\\/-s)} = [B*C] ; T{ -(r;s)\\/q} = [A*C] ; remove right residual (\\)
- ]
--}
 {-
 -- | This delta is meant to be used as a placeholder for inserting or removing links from terms.
 delta :: Signature -> Expression
