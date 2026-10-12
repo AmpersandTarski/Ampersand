@@ -1,0 +1,7 @@
+CONTEXT T3
+CLASSIFY Document ISA Artefact
+CLASSIFY Claim ISA Artefact
+RELATION r[Tekst*Document]
+RELATION s[Claim*Naam]
+RULE Keten : r;s |- V[Tekst*Naam]
+ENDCONTEXT

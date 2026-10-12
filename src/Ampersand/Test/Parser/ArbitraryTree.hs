@@ -565,6 +565,7 @@ instance Arbitrary PClassify where
       `suchThat` notIsONE
       <*> arbitrary
       `suchThat` all notIsONE
+      <*> pure False
 
 instance Arbitrary Lang where
   arbitrary = elements [minBound ..]

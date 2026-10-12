@@ -134,6 +134,51 @@ The database table contains:
 
 ### Query Examples
 
+## Storing specialisations in tables of their own (MULTITABLE)
+
+A wide table reaches the row-size limit of MySQL and MariaDB, 65535 bytes, when a hierarchy has many specialisations with univalent relations of their own: every identity column and every relation column costs up to 1022 bytes.
+The compiler now estimates the row size of every table it generates and reports a table that would not fit, with the remedy below.
+
+The remedy is to mark the concept whose direct specialisations should be stored apart:
+
+```ampersand
+CLASSIFY Document, Claim ISA Artefact
+REPRESENT Artefact TYPE MULTITABLE
+RELATION naam[Artefact*Text] [UNI]
+```
+
+This gives three tables.
+The table `Artefact` holds the key column and the relations declared on `Artefact`, such as `naam`, and it holds a row for every artefact, also for the atoms that are neither a `Document` nor a `Claim`.
+The table `Document` holds the key column and the relations declared on `Document`, and likewise for `Claim`.
+A document is one row in `Artefact` and one row in `Document`; the two rows carry the same atom, and a query joins them on that value.
+A specialisation that is not marked itself stays in one table together with its own specialisations, so a hierarchy below `Document` is still one wide table.
+
+The storage graph is the concept graph without the edges that lead into a marked concept.
+Every weakly connected component of that graph with one root becomes one wide table.
+A component with several roots arises when a declared meet, `CLASSIFY DocClaim IS Document /\ Claim`, sits below two separately stored siblings; it is cut loose at that meet, so the meet gets a table of its own.
+
+The mark also decides what the type checker accepts.
+Two concepts with a join that is not marked have a meet, even without a declared common specialisation: an atom that is both fits in one record of the shared table, so a term such as `I[Document] /\ I[Claim]` or `r;s` through `Document` and `Claim` is accepted.
+That meet gets no vertex in the concept graph; the compiler keeps it to itself, as the intersection of the two concepts, and reads it from the shared table where both columns are filled.
+Two concepts whose join is marked have no meet: the mark says they are disjoint, and the same terms are type errors.
+
+When the root should not have atoms of its own, declare it as the union of its members:
+
+```ampersand
+CLASSIFY Artefact IS Document \/ Claim
+REPRESENT Artefact TYPE MULTITABLE
+RELATION naam[Artefact*Text] [UNI]
+```
+
+This gives two tables, `Document` and `Claim`, each with its own column `naam`.
+A read of `naam`, or of `I[Artefact]`, is the union over the two tables, and a pair of `naam` is written in the table that holds its atom.
+`Artefact` has no table and no atoms of its own, so no interface can create one; the generated rule `I[Artefact] |- I[Document] \/ I[Claim]` reports an artefact that is neither.
+Because `naam` is stored in two tables, its univalence is not enforced by a key column: an atom that enters both tables could hold two names, and the runtime evaluates the univalence rule as a query for such a relation.
+
+The runtime learns the layout from `concepts.json` and `relations.json`: `conceptTables` lists every table that holds a row for an atom of a concept, `allAtomsQuery` lists the atoms of a union concept, and `mysqlTables` lists every table that stores a part of a relation.
+
+*Proof track: [PRF-13 — an atom of a concept has a row in the table of every component that contains that concept or a generalisation of it](../proofs/README.md#prf-13).*
+
 ## Algorithm Summary
 
 Ampersand's concept-to-table mapping follows these steps:

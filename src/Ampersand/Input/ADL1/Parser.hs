@@ -438,7 +438,7 @@ pEnforce =
           )
             orig
 
---- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
+--- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'IS' ConceptRef ('\/' ConceptRef)+ | 'ISA' ConceptRef)
 pClassify :: AmpParser [PClassify] -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify =
   fun
@@ -446,34 +446,44 @@ pClassify =
     <* (pKey . toText1Unsafe) "CLASSIFY"
     <*> pConceptRef
     `sepBy1` pComma
-    <*> ( is
-            <$ (pKey . toText1Unsafe) "IS"
-            <*> pCterm
+    <*> ( (pKey . toText1Unsafe) "IS"
+            *> (try (union <$> pUnionTerm) <|> is <$> pCterm)
             <|> isa
             <$ (pKey . toText1Unsafe) "ISA"
             <*> pConceptRef
         )
   where
-    fun :: Origin -> NE.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
-    fun p lhs (isISA, rhs) = NE.toList $ fmap f lhs
+    fun :: Origin -> NE.NonEmpty P_Concept -> (ClassifyShape, [P_Concept]) -> [PClassify]
+    fun p lhs (shape, rhs) = NE.toList $ fmap f lhs
       where
         f s =
           PClassify
             { pos = p,
               specific = s,
-              generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
+              generics = case shape of
+                ClassifyIsa -> s NE.:| rhs
+                _ -> PARTIAL.fromList rhs,
+              pc_isUnion = shape == ClassifyUnion
             }
     --- Cterm ::= Cterm1 ('/\' Cterm1)*
     --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
     pCterm = concat <$> pCterm1 `sepBy1` (pOperator . toText1Unsafe) "/\\"
+    --- UnionTerm ::= ConceptRef ('\/' ConceptRef)+     (issue #1716: CLASSIFY C IS A \/ B)
+    pUnionTerm :: AmpParser [P_Concept]
+    pUnionTerm = (:) <$> pConceptRef <*> many1 ((pOperator . toText1Unsafe) "\\/" *> pConceptRef)
     pCterm1 =
       pure
         <$> pConceptRef
         <|> pParens pCterm -- brackets are allowed for educational reasons.
-    is :: [P_Concept] -> (Bool, [P_Concept])
-    is gens = (False, gens)
-    isa :: P_Concept -> (Bool, [P_Concept])
-    isa gen = (True, [gen])
+    is :: [P_Concept] -> (ClassifyShape, [P_Concept])
+    is gens = (ClassifyIs, gens)
+    isa :: P_Concept -> (ClassifyShape, [P_Concept])
+    isa gen = (ClassifyIsa, [gen])
+    union :: [P_Concept] -> (ClassifyShape, [P_Concept])
+    union members = (ClassifyUnion, members)
+
+-- | The three shapes of a CLASSIFY statement.
+data ClassifyShape = ClassifyIsa | ClassifyIs | ClassifyUnion deriving (Eq)
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
@@ -753,6 +763,7 @@ pAdlTType =
     <|> k Integer "INTEGER"
     <|> k Float "FLOAT"
     <|> k Object "OBJECT"
+    <|> k MultiTable "MULTITABLE"
   where
     k tt str = f <$> (pKey . toText1Unsafe) str where f _ = tt
 

@@ -251,14 +251,14 @@ openApiDoc env fSpec =
         | otherwise -> let ps = scalarPairs tgtC in (object ps, ps)
 
     isObjectT :: A_Concept -> Bool
-    isObjectT cc = case cptTType fSpec cc of
+    isObjectT cc = case valueTType (cptTType fSpec cc) of
       Object -> True
       TypeOfOne -> True
       _ -> False
 
     scalarPairs :: A_Concept -> [Pair]
     scalarPairs cc =
-      base (cptTType fSpec cc) <> ["x-ampersand-concept" .= text1ToText (idWithoutType' cc)]
+      base (valueTType (cptTType fSpec cc)) <> ["x-ampersand-concept" .= text1ToText (idWithoutType' cc)]
       where
         base t = case t of
           Password -> ["type" .= ("string" :: Text), "format" .= ("password" :: Text)]

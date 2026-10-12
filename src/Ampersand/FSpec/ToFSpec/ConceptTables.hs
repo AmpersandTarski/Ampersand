@@ -153,9 +153,18 @@ conceptsReadBy = L.nub . filter (/= ONE) . go
 conceptsNeedingATable :: env -> A_Context -> [Conjunct] -> [A_Concept]
 conceptsNeedingATable env context conjs =
   L.nub
+    . concatMap storedIn
     $ concatMap conceptsReadBy termsReachingSQL
     <> broadQueryConcepts
   where
+    -- A concept without a table of its own is read from the tables of its
+    -- storage members: a MULTITABLE union concept from those of its members,
+    -- and an implicit meet (ISECT) from those of the concepts it intersects
+    -- (issue #1716).
+    storedIn :: A_Concept -> [A_Concept]
+    storedIn c = case c of
+      ISECT s -> concatMap storedIn (toList s)
+      _ -> storageMembersIn (ctxunions context) c
     normalized = conjNF env
 
     termsReachingSQL :: [Expression]

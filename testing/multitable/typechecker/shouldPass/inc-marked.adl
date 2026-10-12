@@ -1,0 +1,8 @@
+CONTEXT T5
+CLASSIFY Document ISA Artefact
+REPRESENT Artefact TYPE MULTITABLE
+CLASSIFY Claim ISA Artefact
+RELATION r[Document*Tekst] [UNI]
+RELATION s[Claim*Tekst] [UNI]
+RULE Insluiting : r |- s
+ENDCONTEXT
