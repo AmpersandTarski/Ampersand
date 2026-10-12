@@ -1,0 +1,26 @@
+{
+  "title": "Kurk",
+  "home": "/kurk",
+  "existing": "old",
+  "migration": "migration",
+  "desired": "new",
+  "story": {
+    "en": [
+      "This is the proof of concept of \"Data Migration under a Changing Schema in Ampersand\" (RAMiCS 2024).",
+      "The existing system has one relation, r[A*B], and no rule. Atoms a2 and a3 have no B.",
+      "The desired system has one new invariant: r is total, so every A has a B.",
+      "During the migration that rule is a signal: a2 and a3 are work for users. Once an atom has its B it cannot lose it, and a new atom needs a B from the start."
+    ],
+    "nl": [
+      "Dit is het proof of concept uit \"Data Migration under a Changing Schema in Ampersand\" (RAMiCS 2024).",
+      "Het bestaande systeem heeft één relatie, r[A*B], en geen regel. De atomen a2 en a3 hebben geen B.",
+      "Het gewenste systeem heeft één nieuwe invariant: r is totaal, dus elke A heeft een B.",
+      "Tijdens de migratie is die regel een signaal: a2 en a3 zijn werk voor gebruikers. Heeft een atoom eenmaal zijn B, dan kan het die niet meer kwijtraken, en een nieuw atoom heeft vanaf het begin een B nodig."
+    ]
+  },
+  "test": {
+    "interface": "Kurk",
+    "field": "B",
+    "value": "b2"
+  }
+}
