@@ -1,0 +1,7 @@
+CONTEXT Minimal
+-- A script without concepts named C or D. The law set of the normaliser uses A, B, C and D
+-- as placeholders; `ampersand proofs` must not look them up in this script (issue #1725).
+RELATION r[A*B]
+RELATION s[A*B]
+RULE incl : r |- s
+ENDCONTEXT
