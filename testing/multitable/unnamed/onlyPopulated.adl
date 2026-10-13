@@ -1,0 +1,11 @@
+CONTEXT OnlyPopulated
+-- B has a population of its own, and no relation or term names it.
+-- Without a table for B, nothing records that "b1" is a B.
+CLASSIFY B ISA A
+CLASSIFY C ISA A
+REPRESENT A TYPE MULTITABLE
+RELATION naam[A*Text] [UNI]
+RELATION rc[C*Text] [UNI]
+POPULATION B CONTAINS [ "b1" ]
+POPULATION naam CONTAINS [ ("a1","A een"), ("b1","B een") ]
+ENDCONTEXT
