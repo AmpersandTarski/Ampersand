@@ -179,6 +179,31 @@ The runtime learns the layout from `concepts.json` and `relations.json`: `concep
 
 *Proof track: [PRF-13 — an atom of a concept has a row in the table of every component that contains that concept or a generalisation of it](../proofs/README.md#prf-13).*
 
+## Which hierarchies get tables
+
+The compiler leaves out a table that would only list atoms that nothing reads.
+To decide that, it looks at a hierarchy as a whole: all concepts that are connected by `CLASSIFY` statements, with a concept that has no such statement as a hierarchy of one.
+A hierarchy is stored when at least one of the following holds.
+
+- It stores a relation: a univalent or injective relation is a column in the table of one of its concepts.
+- A term asks for the atoms of one of its concepts.
+  That is the case for `I[A]`, for `V` with `A` as its source or target, for a complement over `A`, and for an atom of `A` that a term names.
+- It holds objects: one of its concepts has the type `OBJECT`, because of a `REPRESENT` statement, an interface, a view or an identity,
+  or one of its concepts is marked `REPRESENT ... TYPE MULTITABLE`.
+  That an object exists is a fact by itself, so it is stored even when no term asks for it.
+
+A hierarchy that meets none of these gets no table at all.
+In practice that is a concept of values, such as `Text` in `RELATION naam[Artefact*Text]`:
+the texts in use are found in the column of `naam`, and no table lists them a second time.
+For such a concept `concepts.json` says `"conceptTable": null`.
+
+A hierarchy is stored completely or not at all.
+When it is stored in several tables, every concept of it has a column in one of them, whether or not a term names that concept.
+The table of a specialisation that is stored apart is the only place that records which atoms belong to it.
+
+The option `--all-concept-tables` stores every hierarchy.
+A context that is part of a system of contexts is compiled that way, because another context may read its concepts.
+
 ## Algorithm Summary
 
 Ampersand's concept-to-table mapping follows these steps:

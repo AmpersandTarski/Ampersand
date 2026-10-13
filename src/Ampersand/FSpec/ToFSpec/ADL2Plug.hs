@@ -60,9 +60,10 @@ attributesOfConcept fSpec c = case lookupCpt fSpec c of
 --
 --   `neededConcepts` are the concepts that some generated query enumerates, as
 --   computed by `Ampersand.FSpec.ToFSpec.ConceptTables.conceptsNeedingATable`.
---   A typology whose table would hold no relation columns and none of whose
---   concepts is enumerated gets no table: such a table would only administrate
---   atoms that nothing ever reads. See issue #1672.
+--   A typology of values that stores no relation and none of whose concepts is
+--   enumerated gets no table: such a table would only administrate atoms that
+--   nothing ever reads. A typology is stored as a whole or not at all, and a
+--   typology that holds objects is always stored. See issues #1672 and #1727.
 makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) => env -> A_Context -> [A_Concept] -> [PlugSQL]
 makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- ++tableForONE toevoegen is onjuist omdat ONE al in inspectedCandidateTables zit.
   where
@@ -196,25 +197,44 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             -- Orphan relations are relations that cause link tables in the database,
             -- i.e relation that are neither univalent nor injective.
             comps =
-              (filter tableIsWorthGenerating . map componentsForStorage . filter (not . isVirtualRoot) $ allStorageComponents)
+              concatMap storedComponents (scTypologies sc)
                 <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+            -- The tables of one typology. A typology is stored as a whole or not at
+            -- all: once a typology falls apart into several tables (issue #1716),
+            -- the table of a specialisation is the only place that records which
+            -- atoms belong to it, so it cannot be left out while the table of its
+            -- generalisation stays (issue #1727).
+            storedComponents :: Typology -> [(Maybe StorageComponent, [Relation])]
+            storedComponents typol
+              | typologyIsWorthStoring = candidates
+              | otherwise = []
+              where
+                components' = storageComponentsOf typol
+                candidates = map componentsForStorage . filter (not . isVirtualRoot) $ components'
+                cpts = concatMap scCpts components'
+                -- A typology earns its tables by storing relations, by answering
+                -- "what are the atoms of this concept?" for a query that asks, or by
+                -- holding objects: the existence of an object is a fact by itself,
+                -- where a value such as a text exists whether or not it is stored.
+                -- A typology of values that does none of these administrates atoms
+                -- that nothing reads. (issues #1672 and #1727)
+                typologyIsWorthStoring =
+                  not (scPrune sc)
+                    || any (not . null . snd) candidates
+                    || any isNeeded cpts
+                    || any holdsObjects cpts
             -- A MULTITABLE union concept has no table of its own (issue #1716). It
             -- is cut loose from its members by the mark, so it is a component by
             -- itself, and that component gets no table.
             isVirtualRoot :: StorageComponent -> Bool
             isVirtualRoot comp = isJust (unionMembersIn (ctxunions context) (scRoot comp))
-            -- A concept table earns its keep by storing relations, or by answering
-            -- "what are the atoms of this concept?" for a query that asks. A table
-            -- that does neither administrates atoms that nothing reads. (issue #1672)
-            tableIsWorthGenerating :: (Maybe StorageComponent, [Relation]) -> Bool
-            tableIsWorthGenerating (mComp, rels) =
-              not (scPrune sc) || not (null rels) || case mComp of
-                Nothing -> True
-                Just comp -> any isNeeded (scCpts comp)
             -- Eq on A_Concept is alias intersection, so compare with `elem` rather
             -- than through a Set (whose Ord instance compares whole alias sets).
             isNeeded :: A_Concept -> Bool
             isNeeded cpt = cpt `elem` neededConcepts
+            -- ONE is an object by type, and it never has a table.
+            holdsObjects :: A_Concept -> Bool
+            holdsObjects cpt = cpt /= ONE && ctxReprType context cpt `elem` [Object, MultiTable]
             componentsForStorage comp =
               (Just comp, filter (relationBelongsToConceptTable comp) allRelationsInContext)
             componentsForOrphanRelation rel = (Nothing, [rel])

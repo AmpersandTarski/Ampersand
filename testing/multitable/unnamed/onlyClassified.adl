@@ -1,9 +1,0 @@
-CONTEXT OnlyClassified
--- B is a specialisation of the marked concept A and occurs in CLASSIFY only.
--- B needs a table of its own, just as it gets a column in the wide table without the mark.
-CLASSIFY B ISA A
-CLASSIFY C ISA A
-REPRESENT A TYPE MULTITABLE
-RELATION naam[A*Text] [UNI]
-RELATION rc[C*Text] [UNI]
-ENDCONTEXT
