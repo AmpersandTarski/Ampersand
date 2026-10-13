@@ -67,6 +67,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Flippable (..),
     TType (..),
     valueTType,
+    canBeEnumerated,
     unsafePAtomVal2AtomValue,
     safePSingleton2AAtomVal,
     Signature (..),
@@ -154,6 +155,7 @@ import Ampersand.Core.ParseTree
     ViewHtmlTemplate (..),
     maybeOrdering,
     valueTType,
+    canBeEnumerated,
   )
 import Ampersand.Input.ADL1.FilePos (FilePos (..))
 import Ampersand.Input.ADL1.LexerMessage (LexerError (..))

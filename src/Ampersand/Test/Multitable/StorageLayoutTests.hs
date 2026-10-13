@@ -7,7 +7,8 @@
 --   apart into several tables (@REPRESENT ... TYPE MULTITABLE@), every concept
 --   of it has a place in one of them, whether or not a term names the concept:
 --   the table of a specialisation is the only place that records which atoms
---   belong to it.
+--   belong to it. A concept whose atoms cannot be listed, such as a concept of
+--   integers, never has a table: every integer exists beforehand.
 --
 --   The regression runner compares exit codes, and these models compile with
 --   exit code 0 either way. So the tests look at the layout itself, through
@@ -97,7 +98,18 @@ cases =
     Case
       "a value that is only the target of a relation has no table (issue #1672)"
       (marked [])
-      [("Text", Nothing)]
+      [("Text", Nothing)],
+    Case
+      "a concept of integers has no table, also when a relation could have been a column of it"
+      [ "CONTEXT Ages",
+        "REPRESENT Age TYPE INTEGER",
+        "RELATION age[Person*Age] [UNI]",
+        "RELATION stage[Age*Stage] [UNI]",
+        "RELATION since[Age*Person] [INJ]",
+        "INTERFACE People : I[Person] cRud BOX [ age : age ]",
+        "ENDCONTEXT"
+      ]
+      [("Age", Nothing), ("Person", Just "Person")]
   ]
   where
     -- The smallest model of issue #1727: B and C are stored apart from A, and

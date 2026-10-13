@@ -44,6 +44,7 @@ module Ampersand.Core.ParseTree
     P_Representation (..),
     TType (..),
     valueTType,
+    canBeEnumerated,
     P_Population (..),
     PAtomPair (..),
     PAtomValue (..),
@@ -482,6 +483,15 @@ data TType
 valueTType :: TType -> TType
 valueTType MultiTable = Object
 valueTType tt = tt
+
+-- | Whether the atoms of a concept of this type can be listed (issue #1727).
+--   Every integer, every number and every moment in time exists beforehand, so
+--   a concept of such a type has no table that lists its atoms, and a term that
+--   asks for all of them cannot be computed. A text type is not among them: it
+--   is the type of every concept without a REPRESENT statement, so it is also
+--   the type of concepts that hold things somebody entered.
+canBeEnumerated :: TType -> Bool
+canBeEnumerated tt = tt `notElem` [Integer, Float, Date, DateTime]
 
 instance Unique TType where
   showUnique = toText1Unsafe . tshow

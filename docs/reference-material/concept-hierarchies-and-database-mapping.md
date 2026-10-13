@@ -204,6 +204,26 @@ The table of a specialisation that is stored apart is the only place that record
 The option `--all-concept-tables` stores every hierarchy.
 A context that is part of a system of contexts is compiled that way, because another context may read its concepts.
 
+### Concepts whose atoms cannot be listed
+
+Every integer exists, whether or not a model uses it, and the same holds for every number and every moment in time.
+So a concept of type `INTEGER`, `FLOAT`, `DATE` or `DATETIME` never has a table, with or without `--all-concept-tables`.
+A relation with such a concept as its source or target is stored in the table of the concept at its other side, or in a table of its own.
+
+For the same reason a term cannot ask for all atoms of such a concept, and the compiler reports an error when one does.
+With `REPRESENT Age TYPE INTEGER` and `RELATION age[Person*Age] [UNI]`:
+
+| Term | Accepted | Why |
+| --- | --- | --- |
+| `parentOf |- age;>;age~` | yes | a comparison between two relations compares the ages in use |
+| `age;41[Age]` | yes | the age 41 exists without being stored |
+| `I[Age] |- age~;age` | no | `I[Age]` is the set of all integers |
+| `age;-olderThan;age~` | no | the complement of `olderThan[Age*Age]` holds all pairs of integers that are not in it |
+| `I[Person] |- age;V` | no | `V` with `Age` as its source holds every integer; write `age;age~` |
+
+A text type, such as `ALPHANUMERIC`, is not treated this way.
+It is the type of every concept without a `REPRESENT` statement, so a concept of that type may hold things that somebody entered, and its atoms in use can be listed.
+
 ## Algorithm Summary
 
 Ampersand's concept-to-table mapping follows these steps:

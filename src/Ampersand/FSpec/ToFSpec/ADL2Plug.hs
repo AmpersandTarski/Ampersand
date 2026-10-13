@@ -218,11 +218,15 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 -- where a value such as a text exists whether or not it is stored.
                 -- A typology of values that does none of these administrates atoms
                 -- that nothing reads. (issues #1672 and #1727)
+                -- A typology of a type whose atoms cannot be listed, such as
+                -- INTEGER, never gets a table: every integer exists beforehand.
                 typologyIsWorthStoring =
-                  not (scPrune sc)
-                    || any (not . null . snd) candidates
-                    || any isNeeded cpts
-                    || any holdsObjects cpts
+                  all listable cpts
+                    && ( not (scPrune sc)
+                           || any (not . null . snd) candidates
+                           || any isNeeded cpts
+                           || any holdsObjects cpts
+                       )
             -- A MULTITABLE union concept has no table of its own (issue #1716). It
             -- is cut loose from its members by the mark, so it is a component by
             -- itself, and that component gets no table.
@@ -235,6 +239,8 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             -- ONE is an object by type, and it never has a table.
             holdsObjects :: A_Concept -> Bool
             holdsObjects cpt = cpt /= ONE && ctxReprType context cpt `elem` [Object, MultiTable]
+            listable :: A_Concept -> Bool
+            listable = canBeEnumerated . ctxReprType context
             componentsForStorage comp =
               (Just comp, filter (relationBelongsToConceptTable comp) allRelationsInContext)
             componentsForOrphanRelation rel = (Nothing, [rel])
@@ -496,18 +502,22 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             t : _ -> t
             [] -> typol
         conceptTableOf :: Relation -> Maybe A_Concept
-        conceptTableOf = fst . wayToStore env (scMine sc . name)
+        conceptTableOf = fst . wayToStore env mayHoldRelations
         isStoredFlipped :: Relation -> Bool
-        isStoredFlipped = snd . wayToStore env (scMine sc . name)
+        isStoredFlipped = snd . wayToStore env mayHoldRelations
+        -- A relation is a column in the table of a concept of this context, if that concept has a table at all:
+        -- a concept whose atoms cannot be listed, such as an INTEGER, has none, so its relations get a table of their own.
+        mayHoldRelations :: A_Concept -> Bool
+        mayHoldRelations c = scMine sc (name c) && canBeEnumerated (ctxReprType context c)
 
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It returns a boolean
 --   that tells wether or not the relation is stored flipped.
 wayToStore :: (HasFSpecGenOpts env) => env -> (A_Concept -> Bool) -> Relation -> (Maybe A_Concept, Bool)
-wayToStore env sameOwner dcl
+wayToStore env mayHold dcl
   | view sqlBinTablesL env = (Nothing, False) -- binary tables only
-  | isUni (EDcD dcl) && sameOwner (source d) = (Just $ source d, False) -- to concept table, plain
-  | isInj (EDcD dcl) && sameOwner (target d) = (Just $ target d, True) -- to concept table, flipped
+  | isUni (EDcD dcl) && mayHold (source d) = (Just $ source d, False) -- to concept table, plain
+  | isInj (EDcD dcl) && mayHold (target d) = (Just $ target d, True) -- to concept table, flipped
   | otherwise = (Nothing, not (isTot d) && isSur d) -- to link-table
   -- The order of columns in a linked table could
   -- potentially speed up queries, in cases where

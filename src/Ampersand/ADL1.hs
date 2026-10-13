@@ -104,6 +104,7 @@ import Ampersand.Core.AbstractSyntaxTree
     unionMembersIn,
     unsafePAtomVal2AtomValue,
     valueTType,
+    canBeEnumerated,
     (.!.),
     (.*.),
     (.-.),
