@@ -4,7 +4,7 @@ RELATION geitCounter[Geit*GeitCounter]   [UNI]   REPRESENT GeitCounter   TYPE IN
 RELATION schaapCounter[Schaap*SchaapCounter] [UNI]   REPRESENT SchaapCounter TYPE INTEGER
 
 ROLE ExecEngine MAINTAINS InitializeGeitCounters
-RULE InitializeGeitCounters : I[Geit] |- geitCounter;V
+RULE InitializeGeitCounters : I[Geit] |- geitCounter;geitCounter~
 VIOLATION (TXT "{EX} InsPair;geitCounter;Geit;", SRC I, TXT ";GeitCounter;3")
 
 ROLE ExecEngine MAINTAINS InitializeSchaapCounters
