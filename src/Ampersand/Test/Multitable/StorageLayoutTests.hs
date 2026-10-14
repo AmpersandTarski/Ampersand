@@ -165,7 +165,7 @@ wrong fSpec (nm, expected) =
     [] -> Just ("the model has no concept " <> nm)
     cpt : _
       | fmap bare found == fmap bare expected -> Nothing
-      | otherwise -> Just (nm <> " is in " <> maybe "no table" id found <> ", expected " <> maybe "no table" id expected)
+      | otherwise -> Just (nm <> " is in " <> fromMaybe "no table" found <> ", expected " <> fromMaybe "no table" expected)
       where
         found = ownTable fSpec cpt
   where

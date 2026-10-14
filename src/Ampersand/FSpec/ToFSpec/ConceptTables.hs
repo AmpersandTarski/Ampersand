@@ -212,7 +212,11 @@ termsReachingSQL env context conjs =
     <> [ ((origin r, "the violation message of rule " <> fullName r), e)
          | r <- toList (allRules context),
            Just (PairView pvsegs) <- [rrviol r],
-           PairViewExp _ _ e <- NE.toList pvsegs
+           PairViewExp _ _ e <- NE.toList pvsegs,
+           -- SRC I and TGT I name the violating atom itself: the prototype puts
+           -- that atom in the message without a query (ViolationSegment.php), and
+           -- the compiler generates none (Ampersand.Output.ToJSON.Rules).
+           not (isIdent e)
        ]
   where
     normalized = conjNF env
@@ -228,7 +232,8 @@ termsReachingSQL env context conjs =
 --   The compiler refuses such a term (issue #1727).
 termsThatEnumerate :: env -> A_Context -> [Conjunct] -> [((Origin, Text), A_Concept)]
 termsThatEnumerate env context conjs =
-  L.nubBy (\a b -> fst (fst a) == fst (fst b) && snd a == snd b)
+  L.nubBy
+    (\a b -> fst (fst a) == fst (fst b) && snd a == snd b)
     [ (place, c)
       | (place, term) <- termsReachingSQL env context conjs,
         c <- conceptsEnumeratedBy term,

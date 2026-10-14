@@ -153,9 +153,9 @@ import Ampersand.Core.ParseTree
     TType (..),
     Traced (..),
     ViewHtmlTemplate (..),
+    canBeEnumerated,
     maybeOrdering,
     valueTType,
-    canBeEnumerated,
   )
 import Ampersand.Input.ADL1.FilePos (FilePos (..))
 import Ampersand.Input.ADL1.LexerMessage (LexerError (..))

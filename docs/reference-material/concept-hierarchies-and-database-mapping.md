@@ -221,6 +221,9 @@ With `REPRESENT Age TYPE INTEGER` and `RELATION age[Person*Age] [UNI]`:
 | `age;-olderThan;age~` | no | the complement of `olderThan[Age*Age]` holds all pairs of integers that are not in it |
 | `I[Person] |- age;V` | no | `V` with `Age` as its source holds every integer; write `age;age~` |
 
+`SRC I` and `TGT I` in a violation message are not such terms.
+They name the violating atom itself, and the prototype puts it in the message without a query.
+
 A text type, such as `ALPHANUMERIC`, is not treated this way.
 It is the type of every concept without a `REPRESENT` statement, so a concept of that type may hold things that somebody entered, and its atoms in use can be listed.
 

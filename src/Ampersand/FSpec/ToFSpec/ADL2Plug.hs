@@ -223,7 +223,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 typologyIsWorthStoring =
                   all listable cpts
                     && ( not (scPrune sc)
-                           || any (not . null . snd) candidates
+                           || not (all (null . snd) candidates)
                            || any isNeeded cpts
                            || any holdsObjects cpts
                        )
