@@ -22,7 +22,10 @@ data JSONConjunct = JSONConjunct
     -- | Optional (issue #1684): per relation occurring in this conjunct, the
     --   candidate query for delta-scoped re-evaluation. Nothing when the term
     --   falls outside the supported class; runtimes that do not know this
-    --   field keep full re-evaluation.
+    --   field keep full re-evaluation. A relation whose candidate query is
+    --   longer than the compiler hands to a database is left out of the list
+    --   (issue #1728); the runtime evaluates the conjunct in full when a
+    --   transaction touches a relation without a candidate query.
     cnjJSONdeltaQueries :: Maybe [JSONDeltaQuery],
     -- | The compile-time cost profile of the violation query (issue #1692,
     --   contract DC-17): the shape class plus the tables the query reads in
@@ -47,7 +50,7 @@ data JSONCostProfile = JSONCostProfile
   deriving (Generic, Show)
 
 instance ToJSON JSONDeltaQuery where
-  toJSON = amp2Jason
+  toJSON = genericToJSON ampersandDefault
 
 instance ToJSON JSONCostProfile where
   toJSON = genericToJSON ampersandDefault
@@ -68,7 +71,7 @@ instance JSON Conjunct JSONConjunct where
         cnjJSONsignalRuleNames = map fullName . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONinvariantRuleNames = map fullName . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONviolationsSQL = sqlQuery fSpec violTerm,
-        cnjJSONdeltaQueries = map (fromAmpersand env fSpec) <$> deltaQueriesFor violTerm,
+        cnjJSONdeltaQueries = mapMaybe deltaQuery <$> deltaQueriesFor violTerm,
         cnjJSONcostProfile =
           let profile = costProfileFor fSpec conj violTerm
            in JSONCostProfile
@@ -78,11 +81,15 @@ instance JSON Conjunct JSONConjunct where
       }
     where
       violTerm = conjNF env . notCpl . rcConjunct $ conj
-
-instance JSON (Relation, Expression) JSONDeltaQuery where
-  fromAmpersand _env fSpec (rel, candTerm) =
-    JSONDeltaQuery
-      { dltJSONrelation = fullName rel <> tshow (sign rel),
-        dltJSONdeltaTable = deltaTableName rel,
-        dltJSONcandidateSQL = sqlQuery (withDeltaPlugs fSpec) candTerm
-      }
+      -- A candidate term holds the whole violation term once for every
+      -- occurrence of the relation, so its query grows with the square of the
+      -- number of occurrences and can pass the length that 'sqlQuery' accepts.
+      deltaQuery :: (Relation, Expression) -> Maybe JSONDeltaQuery
+      deltaQuery (rel, candTerm) = do
+        candSQL <- sqlQueryWithinLimit (withDeltaPlugs fSpec) candTerm
+        pure
+          JSONDeltaQuery
+            { dltJSONrelation = fullName rel <> tshow (sign rel),
+              dltJSONdeltaTable = deltaTableName rel,
+              dltJSONcandidateSQL = candSQL
+            }
