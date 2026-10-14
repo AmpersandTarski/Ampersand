@@ -1,0 +1,33 @@
+{
+  "title": "Community garden",
+  "lang": "en",
+  "home": "/plots",
+  "existing": "old",
+  "migration": "migration",
+  "desired": "new",
+  "story": {
+    "en": [
+      "A community garden keeps a register of its plots and the volunteers who keep them.",
+      "Last summer two plots without a keeper were overgrown. The board decided: every plot has a keeper.",
+      "The new release of the register has that rule as an invariant. The register in use holds two plots that violate it, so the new release cannot simply take the data over.",
+      "During the migration the gardeners keep working. The volunteers find a keeper for the Bean rows and the Berry corner. A plot that has its keeper cannot lose it again, and a new plot needs a keeper from the start."
+    ],
+    "nl": [
+      "Een gemeenschapstuin houdt een register bij van zijn bedden en de vrijwilligers die ze beheren.",
+      "Vorige zomer raakten twee bedden zonder beheerder overwoekerd. Het bestuur besloot: elk bed heeft een beheerder.",
+      "De nieuwe versie van het register heeft die regel als invariant. Het register dat in gebruik is, bevat twee bedden die de regel overtreden, dus de nieuwe versie kan de gegevens niet zomaar overnemen.",
+      "Tijdens de migratie werken de tuinders door. De vrijwilligers zoeken een beheerder voor de Bean rows en de Berry corner. Een bed dat zijn beheerder heeft, kan die niet meer kwijtraken, en een nieuw bed heeft vanaf het begin een beheerder nodig."
+    ]
+  },
+  "test": {
+    "interface": "Plots",
+    "field": "keeper",
+    "value": "Dora",
+    "single": {
+      "concept": "Plot",
+      "interface": "Plot",
+      "name": "plot",
+      "migrationConcept": "new.Plot"
+    }
+  }
+}

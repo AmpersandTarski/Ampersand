@@ -3,9 +3,7 @@ CONTEXT Cleanup IN ENGLISH
 PURPOSE CONTEXT Cleanup
 {+ A context relaxes two invariants of the context it includes, by assigning them to a role.
 Its population violates both, which the context Orders itself would refuse.
-The compiler adds, for each of the two rules, a relation that registers what satisfies it
-and a blocking invariant that keeps what is registered from violating it again.
-This context shows the registered orders in an interface. +}
+In this context both rules are business constraints, which signal what a clerk has to repair. +}
 
 ROLE Clerk MAINTAINS Orders.hasCustomer, Orders.deliveredAtCustomer
 
@@ -18,8 +16,8 @@ POPULATION Orders.delivered[Orders.Order*Orders.Address] CONTAINS
 
 INTERFACE Work FOR Clerk : "_SESSION";V[SESSION*Orders.Order] cRud BOX
   [ "order" : I cRud
-  , "has a customer" : fixedHasCustomer cRud
-  , "delivered at its customer" : fixedDeliveredAtCustomer cRud
+  , "customer" : Orders.customer cRUd
+  , "delivered" : Orders.delivered cRUd
   ]
 
 ENDCONTEXT

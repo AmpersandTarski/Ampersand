@@ -1,0 +1,40 @@
+CONTEXT Migratie INCLUDES Tuin FROM "existing.adl" AS old,
+                          Tuin FROM "desired.adl" AS new
+CONTEXT Migratie IN DUTCH
+PURPOSE CONTEXT Migratie
+{+ De migratie van het beddenregister van de gemeenschapstuin naar zijn nieuwe versie.
+Het register in gebruik is opgenomen als `old`, de nieuwe versie als `new`.
+De tuinders werken door terwijl de gegevens verhuizen, en zij zoeken een beheerder voor de bedden die er geen hebben. +}
+
+-- Elk bed, elke naam en elke tuinder van het register in gebruik hoort ook bij de nieuwe versie.
+CLASSIFY old.Bed ISA new.Bed
+CLASSIFY old.Bednaam ISA new.Bednaam
+CLASSIFY old.Tuinder ISA new.Tuinder
+
+-- Kopieer de namen en de beheerders. De relaties kopieNaam en kopieBeheerder onthouden wat gekopieerd is,
+-- zodat het kopiëren een wijziging van een gebruiker in de nieuwe versie niet ongedaan maakt.
+RELATION kopieNaam[old.Bed*old.Bednaam]
+ENFORCE naamGekopieerd : kopieNaam >: new.naam /\ old.naam
+ENFORCE kopieerNaam : new.naam >: old.naam - kopieNaam
+RELATION kopieBeheerder[old.Bed*old.Tuinder]
+ENFORCE beheerderGekopieerd : kopieBeheerder >: new.beheerder /\ old.beheerder
+ENFORCE kopieerBeheerder : new.beheerder >: old.beheerder - kopieBeheerder
+
+-- De nieuwe regel van het bestuur. Bedden zonder beheerder komen mee uit het register in gebruik,
+-- dus tijdens de migratie signaleert de regel ze als werk voor de vrijwilligers.
+-- Een bed dat zijn beheerder heeft gekregen, kan die niet meer kwijtraken, en een nieuw bed heeft er vanaf het begin een nodig.
+ROLE Vrijwilliger MAINTAINS new.elkBedHeeftBeheerder
+
+-- De schermen van de nieuwe versie, zodat een gebruiker van het migratiesysteem werkt als in de nieuwe versie:
+-- een lijst die niet te bewerken is, en een scherm voor één bed dat een wijziging als één transactie opslaat.
+INTERFACE Bedden FOR Vrijwilliger : "_SESSION";V[SESSION*new.Bed] cRud BOX<TABLE showNavMenu>
+  [ "bed" : new.naam cRud
+  , "beheerder" : new.beheerder cRud
+  ]
+
+TRANSACTIONAL INTERFACE Bed FOR Vrijwilliger : I[new.Bed] CRuD BOX<FORM>
+  [ "bed" : new.naam CRUD
+  , "beheerder" : new.beheerder CRUD
+  ]
+
+ENDCONTEXT

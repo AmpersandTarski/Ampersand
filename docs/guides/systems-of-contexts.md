@@ -182,6 +182,8 @@ because the register requires that.
 The command `ampersand deploy` generates what you need to run both applications.
 It is part of the compiler from v5.10.0 (see the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/main/ReleaseNotes.md)),
 and the applications it describes need prototype framework v2.16.0 or later.
+A context that relaxes an invariant of an included context, as the migration below does,
+needs compiler v5.11.0 and prototype framework v2.17.0 or later.
 
 ```bash
 ampersand deploy permits.adl --output-dir deploy
@@ -310,9 +312,10 @@ Each part of this script does one thing.
 The last line is the heart of the migration.
 The data that arrives from the existing system violates the new rule,
 so the rule cannot be enforced yet.
-The migration context relaxes it, and the compiler takes care that it hardens again:
-an atom that satisfies the rule is held to it from then on,
-so a violation that a user has repaired cannot come back.
+The migration context relaxes it, and the rule hardens again as the work proceeds:
+the violations that the application found can only disappear,
+so a violation that a user has repaired cannot come back,
+and a new atom has to satisfy the rule from the start.
 When the last violation is repaired,
 the desired system satisfies its own invariant on its own database,
 and it can be taken into use as it is.
@@ -322,7 +325,33 @@ The migration reads its database and never writes in it.
 The script of the desired system contains nothing that serves the migration.
 
 This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024).
-The reference describes [what the compiler adds to the migration context](../reference-material/syntax-of-ampersand.md#rules-classifications-and-writing).
+The reference describes [how a relaxed invariant hardens](../reference-material/syntax-of-ampersand.md#rules-classifications-and-writing).
+
+*Proof track: [PRF-14 — the violations of a relaxed invariant only disappear](../proofs/README.md#prf-14).*
+
+## Seeing the migration at work
+
+A demonstration shows this migration running, so that you can see what the users notice of it.
+It migrates the plot register of a community garden to a release with a new rule, every plot has a keeper,
+while the gardeners keep working.
+
+To watch it, see the [video on YouTube](https://youtu.be/DUtOYUZfkI8), which takes 7 minutes and 41 seconds.
+It walks through the migration and shows the three scripts.
+
+To run it yourself, you need Docker and a copy of the Ampersand repository.
+
+```bash
+git clone https://github.com/AmpersandTarski/Ampersand.git
+cd Ampersand/demos/migration
+./demo.sh up garden
+```
+
+Then open `http://localhost:8200` in a browser.
+The page has a button for each step of the migration: start it, switch the users over, and clean up.
+The first start builds the images of the three systems, which takes a few minutes.
+`./demo.sh down garden` removes the demonstration again.
+The [README of the demonstration](https://github.com/AmpersandTarski/Ampersand/blob/main/demos/migration/README.md)
+tells what you see at each step, how the demonstration works, and how to change its scripts.
 
 ## When a context writes in another database
 
