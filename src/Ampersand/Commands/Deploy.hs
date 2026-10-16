@@ -376,7 +376,8 @@ systemJson members =
                       "databaseVariable" JSON..= mVar m,
                       "defaultDatabase" JSON..= mDefaultDb m,
                       "port" JSON..= mPort m,
-                      "reaches" JSON..= [JSON.object ["database" JSON..= db, "service" JSON..= i] | (db, i) <- mReaches m]
+                      -- `label` is the key under which AMPERSAND_CONTEXT_DBNAMES names the database; since v5.12.0 that is the name of the database in the script
+                      "reaches" JSON..= [JSON.object ["label" JSON..= db, "database" JSON..= db, "service" JSON..= i] | (db, i) <- mReaches m]
                     ]
                   | m <- members
                 ],
