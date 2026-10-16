@@ -1,0 +1,10 @@
+CONTEXT School NAMED Library INCLUDES Library FROM "../contexts/library.adl"
+
+CONTEXT School IN ENGLISH
+
+PURPOSE CONTEXT School
+{+ NAMED after the including context: the school lands on the database Library, where the library already is. +}
+
+RELATION pupil[Pupil*Library.Member] [UNI,TOT]
+POPULATION pupil[Pupil*Library.Member] CONTAINS [ ("pupil1", "m1") ]
+ENDCONTEXT

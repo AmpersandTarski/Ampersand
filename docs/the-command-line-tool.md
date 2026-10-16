@@ -152,22 +152,22 @@ which keeps generation and publication consistent. See the prototype documentati
 ampersand deploy main.adl --output-dir deploy
 ```
 
-Generates what is needed to run a [system of contexts](./reference-material/syntax-of-ampersand.md#systems-of-contexts), in which every context has an application of its own and a database of its own:
+Generates what is needed to run a [system of contexts](./reference-material/syntax-of-ampersand.md#systems-of-contexts), in which every database has an application of its own:
 
-- `compose.yaml` with one MariaDB server and one service per context;
-- `<service>/Dockerfile`, which builds the application of one context on the prototype framework;
-- `install.sh`, which installs the applications, a context after every context it includes;
+- `compose.yaml` with one MariaDB server and one service per database;
+- `<service>/Dockerfile`, which builds the application of one database on the prototype framework;
+- `install.sh`, which installs the applications, a database after every database it reads;
 - `.env.example` with the names of the databases and the ports;
 - `db-init/01-grant.sql` with the rights of the database user;
 - `system.json` with the same facts for a program to read.
 
-The compiler does not know the name of a database.
-The compose file takes it from the environment, with a default that consists of the name of the context and a version (`registry_1`).
-So you decide at deployment which version runs on which database.
+The script names the databases: a context lands on a database with its own name, unless an inclusion statement gives it another name with `NAMED`, and contexts with the same database name share one database.
+The compose file takes every name from the environment, with the name in the script as the default (`REGISTRY_DBNAME=Registry`).
+So you can still decide at deployment which version runs on which database.
 A new name means a new, empty database: a new version runs next to the old one until its data has been migrated.
 
 Two options of the other commands serve a system of contexts.
-`--context <name>` compiles one context of the system, by its name or alias in the root file; the generated Dockerfiles use it.
+`--context <name>` compiles one context of the system, by its name or alias in the root file; the generated Dockerfiles use it for the context that installs each database.
 `--all-concept-tables` gives every concept a table, which a context needs if other contexts include it; the generated Dockerfiles set it.
 
 ### serve

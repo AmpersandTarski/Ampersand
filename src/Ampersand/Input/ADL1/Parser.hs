@@ -247,10 +247,11 @@ pIncludeStatement =
 -- | The statement that contexts include other contexts.
 --   It stands outside every CONTEXT block, because it relates contexts.
 --   @CONTEXT A, B INCLUDES C FROM "c.adl" AS X, D@ says that A and B each include C and D.
+--   @CONTEXT A NAMED Kaart INCLUDES B NAMED Kaart@ says, in addition, that A and B land on one database, called Kaart.
 data Inclusion = Inclusion
   { incOrigin :: !Origin,
-    -- | the contexts before the word INCLUDES
-    incIncluders :: !(NonEmpty Name),
+    -- | the contexts before the word INCLUDES, each with the name of its database if the statement gives one
+    incIncluders :: !(NonEmpty (Name, Maybe Text)),
     -- | the contexts after the word INCLUDES
     incItems :: !(NonEmpty InclusionItem)
   }
@@ -264,7 +265,9 @@ data InclusionItem = InclusionItem
     -- | the preprocessor variables with which that file is read
     itDefs :: ![Text],
     -- | a second name for the included context, for use in the including context
-    itAlias :: !(Maybe NamePart)
+    itAlias :: !(Maybe NamePart),
+    -- | the name of the database on which the included context lands, if the statement gives one
+    itDatabase :: !(Maybe Text)
   }
 
 --- File ::= (InclusionStatement | Context)+
@@ -277,16 +280,17 @@ pFile = partitionEithers <$> many1 (Left <$> pInclusion <|> Right <$> pContext) 
     -- Without this check, a statement with a mistake in it would be ignored in silence.
     atEnd = pEndOfFile <|> void pContext
 
---- InclusionStatement ::= 'CONTEXT' Name (',' Name)* 'INCLUDES' InclusionItem (',' InclusionItem)*
---- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)?
+--- InclusionStatement ::= 'CONTEXT' Includer (',' Includer)* 'INCLUDES' InclusionItem (',' InclusionItem)*
+--- Includer ::= Name ('NAMED' DatabaseName)?
+--- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)? ('NAMED' DatabaseName)?
 pInclusion :: AmpParser Inclusion
 pInclusion = do
-  -- The words INCLUDES, FROM and AS are no keywords, so that scripts that use them as
+  -- The words INCLUDES, FROM, AS and NAMED are no keywords, so that scripts that use them as
   -- identifiers keep compiling. They are recognised by their position.
   (orig, includers) <- try $ do
     orig <- currPos
     _ <- (pKey . toText1Unsafe) "CONTEXT"
-    includers <- pNameWithoutLabel ContextName `sepBy1` pComma
+    includers <- ((,) <$> pNameWithoutLabel ContextName <*> pDatabase) `sepBy1` pComma
     pWord "INCLUDES"
     pure (orig, includers)
   items <- pItem `sepBy1` pComma
@@ -298,7 +302,11 @@ pInclusion = do
         <$> pNameWithoutLabel ContextName
         <*> pMaybe (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
         <*> pMaybe (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
+        <*> pDatabase
     build nm mFrom = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom)
+    -- The name of a database is an identifier of MariaDB: letters, digits and underscores.
+    pDatabase :: AmpParser (Maybe Text)
+    pDatabase = pMaybe (pWord "NAMED" *> ((text1ToText <$> (pUpperCaseID <|> pLowerCaseID)) <?> "the name of a database"))
     pWord :: Text -> AmpParser ()
     pWord w = try (pUpperCaseID >>= isWord) <?> T.unpack w
       where
