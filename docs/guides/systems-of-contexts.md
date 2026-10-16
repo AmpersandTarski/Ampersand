@@ -285,6 +285,8 @@ If the library needs screens of its own, give it a database of its own.
 The compiler refuses a database name that cannot be installed: a context that is given two names,
 two contexts on one database without a context that includes both,
 and two databases that read each other.
+A context that reads the shared database also includes the context that installs it, the school here,
+because that context gives the tables their names.
 The messages are in the table at the end of this guide.
 
 ## Two contexts with the same name
@@ -399,6 +401,7 @@ and the interfaces of a context are the user interface of its own application.
 | A context on database `X` that includes a context on `Y`, which includes a context on `X` | "The databases X and Y read each other." |
 | A context that shares the database of the context that includes it, compiled with `--context` | "The context Registry lands on the database Permits together with Permits, which includes it." Compile `Permits`. |
 | A context that shares a database and has interfaces | A warning: it has no application of its own, so its interfaces are not generated. |
+| A context that includes a context on a shared database, and not the context that installs that database | "The context Town reads the database School of Library, which School installs, and it does not include School." |
 
 ## Summary
 

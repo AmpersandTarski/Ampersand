@@ -293,6 +293,8 @@ The compiler refuses three things, because it has to generate SQL that names eac
   No application would install that database.
 - Two databases that read each other.
   A database is installed after the databases it reads, because it has views on their tables.
+- A context that reads a shared database without including the context that installs it.
+  That context gives the tables their names, so a context that reads them includes it as well; that adds no database.
 
 Two versions of one context, as in a migration, carry the same context name.
 Without `NAMED` the compiler numbers their databases in the order in which the inclusion statements mention them: `Kurk_1` and `Kurk_2`.

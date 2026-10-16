@@ -12,6 +12,7 @@ under the name of the included context or its alias as a prefix.
 | `shouldSucceed/` | Scripts that are correct. | `ampersand check` (exit 0) and `ampersand validate` (exit 0), which compares the generated SQL with the compiler's own evaluation in a real database. |
 | `shouldFail/` | Scripts with a mistake in an inclusion or in the use of a prefix. | `ampersand check` has to refuse each of them (exit 10). |
 | `invariantViolations/` | Scripts whose population violates an invariant of an included context. | `ampersand check` has to refuse each of them (exit 10). |
+| `shouldFailAsContext/` | A system in which one context other than the first cannot be compiled. | `ampersand check --context Town` has to refuse it (exit 10). |
 
 ## What each case guards
 
@@ -45,6 +46,7 @@ under the name of the included context or its alias as a prefix.
 | `shouldFail/named_two_databases.adl` | One context is given two database names. |
 | `shouldFail/named_database_without_includer.adl` | Two contexts share a database and neither includes the other, so no application installs it. |
 | `shouldFail/named_databases_read_each_other.adl` | A context on one database includes a context on another database that includes a context on the first one; the databases would read each other. |
+| `shouldFailAsContext/named_database_read_without_installer.adl` | The town includes the library, which shares the database of the school, and not the school itself; compiled as `Town` it is refused, because the school gives the tables their names. |
 | `shouldFail/ambiguous_prefix.adl` | With aliases, the shared name is still ambiguous where a script uses it. |
 | `shouldFail/alias_for_two_files.adl` | One alias for two contexts. |
 | `shouldFail/alias_is_reserved.adl` | An alias that is a name space of Ampersand itself. |

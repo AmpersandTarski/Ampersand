@@ -292,6 +292,7 @@ flattenSystem sys = do
       rootOf = databaseRoot sys dbs
       dbOf k = fromMaybe (snd k) (Map.lookup k dbs)
   isRoot dbs rootOf
+  traverse_ (knowsInstaller labels dbOf rootOf) labels
   viewer <- renamed (sysViewer sys)
   others <- traverse (fmap withoutInterfaces . renamed . fst) labels
   let joined = foldl' mergeContexts viewer others
@@ -329,6 +330,17 @@ flattenSystem sys = do
               [ "The context " <> snd k <> " lands on the database " <> fromMaybe "" (Map.lookup k dbs) <> " together with " <> snd r <> ", which includes it.",
                 "  One application installs a database, so the application of " <> fromMaybe "" (Map.lookup k dbs) <> " is the application of " <> snd r <> ".",
                 "  Compile " <> snd r <> ", or give " <> snd k <> " a database of its own with NAMED."
+              ]
+    -- A context that reads a database has to know the context that installs it, because that context
+    -- gives the tables their names. So it includes that context, directly or indirectly.
+    knowsInstaller labels dbOf rootOf (k, _) =
+      let r = rootOf k
+       in when (r /= k && r /= sysViewer sys && isNothing (L.lookup r labels))
+            $ mkSystemError
+              [edgeOrigin e | e <- Map.findWithDefault [] (sysViewer sys) (sysEdges sys), edgeTarget e == k]
+              [ "The context " <> snd (sysViewer sys) <> " reads the database " <> dbOf k <> " of " <> snd k <> ", which " <> snd r <> " installs, and it does not include " <> snd r <> ".",
+                "  The tables of that database carry the names that " <> snd r <> " gives them.",
+                "  Include " <> snd r <> " as well, which adds no database, or give " <> snd k <> " a database of its own with NAMED."
               ]
     -- A context that shares its database with the context that installs it has no application of its own.
     noApplication dbOf rootOf (k, _)
