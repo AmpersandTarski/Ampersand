@@ -19,7 +19,7 @@ We use a [docker-platform](https://en.wikipedia.org/wiki/Docker\_\(software\)) t
 Please watch [this video](https://youtu.be/XqHTJfTVnoQ) (8 minutes) to see what Docker does to bring up your Ampersand program as a web application on your own machine.
 
 This guide is about one prototype: one script, one application, one database.
-If your specification consists of several contexts that include each other, every context gets an application and a database of its own.
+If your specification consists of several contexts that include each other, every database gets an application of its own; by default that is one per context.
 You do not write the Docker files for that by hand: the command [`ampersand deploy`](../the-command-line-tool.md#deploy) generates them, and the guide [Several information systems that use each other](./systems-of-contexts.md#running-the-system) shows the steps.
 
 ## What do you need up front?
