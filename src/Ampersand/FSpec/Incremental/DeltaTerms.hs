@@ -25,6 +25,7 @@ module Ampersand.FSpec.Incremental.DeltaTerms
     widen,
     narrow,
     candidateTerms,
+    candidateTerm,
     deltaQueriesFor,
   )
 where
@@ -165,7 +166,10 @@ narrow e = case e of
 --   the delta tables, to a superset of the pairs whose membership in the
 --   violation term may differ between the old and the new state, via one
 --   occurrence of r. The union over the terms (and over the transaction's
---   touched relations) is the candidate set the runtime rechecks.
+--   touched relations) is the candidate set the runtime rechecks. The
+--   compiler writes 'candidateTerm' instead, which denotes the same union
+--   (claim PRF-16); this list form is the reference that the QuickCheck
+--   bridge compares it with.
 candidateTerms :: Expression -> Relation -> [Expression]
 candidateTerms term r = go term
   where
@@ -185,22 +189,45 @@ candidateTerms term r = go term
       EBrk a -> go a
       _ -> []
 
--- | Per relation occurring in the (normalized) violation term: the union of
---   its candidate terms, as one Expression ready for the SQL generator.
---   Nothing when the term falls outside the supported class.
+-- | The candidate term for a change in relation r as one term with one union
+--   per node, the equations of @candg@ in proofs/incremental/Candidates.thy.
+--   Nothing when r does not occur in the term. It denotes the union of
+--   'candidateTerms' (claim PRF-16). 'candidateTerms' distributes every
+--   union to the top, which repeats the envelopes of the term once for every
+--   occurrence of r (issue #1728); this form repeats an envelope only where
+--   a node and its parent both need it, and the SQL generator shares those
+--   repetitions (claims PRF-17 and PRF-18).
+candidateTerm :: Expression -> Relation -> Maybe Expression
+candidateTerm term r = go term
+  where
+    go e = case e of
+      EDcD s
+        | s == r -> Just (EDcD (deltaRelationOf r))
+        | otherwise -> Nothing
+      EUni (a, b) -> go a `orUnion` go b
+      EIsc (a, b) -> ((./\. widen b) <$> go a) `orUnion` ((widen a ./\.) <$> go b)
+      EDif (a, b) -> ((.-. narrow b) <$> go a) `orUnion` ((widen a ./\.) <$> go b)
+      ECps (a, b) -> ((.:. widen b) <$> go a) `orUnion` ((widen a .:.) <$> go b)
+      EFlp a -> EFlp <$> go a
+      ECpl a -> go a
+      EBrk a -> go a
+      _ -> Nothing
+    -- Nothing stands for the empty candidate set, the unit of union.
+    orUnion :: Maybe Expression -> Maybe Expression -> Maybe Expression
+    orUnion x y = case (x, y) of
+      (Just a, Just b) -> Just (a .\/. b)
+      (Just a, Nothing) -> Just a
+      (Nothing, _) -> y
+
+-- | Per relation occurring in the (normalized) violation term: its candidate
+--   term, ready for the SQL generator. Nothing when the term falls outside
+--   the supported class.
 deltaQueriesFor :: Expression -> Maybe [(Relation, Expression)]
 deltaQueriesFor term
   | not (deltaSupported term) = Nothing
   | otherwise =
       Just
-        [ (r, foldr1Uni cands)
+        [ (r, cand)
           | r <- Set.toList (bindedRelationsIn term),
-            let cands = candidateTerms term r,
-            not (null cands)
+            Just cand <- [candidateTerm term r]
         ]
-  where
-    foldr1Uni :: [Expression] -> Expression
-    foldr1Uni xs = case xs of
-      [] -> fatal "foldr1Uni: empty candidate list"
-      [x] -> x
-      (x : rest) -> x .\/. foldr1Uni rest

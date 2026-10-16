@@ -219,32 +219,71 @@ candidate query is longer has no entry in the `deltaQueries` of that conjunct.
 *Considerations:*
 
 1. The goal is that a script compiles whenever its violation queries fit the
-   limit. A candidate term holds the whole violation term once for every
-   occurrence of the relation, so its query grows with the square of the
-   number of occurrences. In the script of issue #1728 one relation occurs
-   eleven times: the violation query is 35,936 characters long and the
-   candidate query for that relation is more than 1,000,000.
+   limit. A candidate query is optional: the runtime can do without it,
+   where it cannot do without a violation query. Since DC-21 a candidate
+   query is about as long as the violation query of its conjunct, so the
+   limit is a safety net that the measured models do not reach.
 2. The runtime already has the route: a conjunct without a candidate query
    for a touched relation is evaluated in full (the dispatch rule of DC-9,
    `hasDeltaQueryFor` in the framework). So the choice needs no change in the
    framework and no new field in `conjuncts.json`.
-3. Raising the limit was rejected: the next longer term passes it again, and
-   a query of that length is not one a runtime should run per transaction.
-4. Smaller candidate terms were rejected for this issue: they change the
-   candidate calculus, whose completeness is machine-checked (claim PRF-7),
-   and that asks for a new proof.
-5. Writing `deltaQueries` only on request is left open in issue #1728. On the
-   Landeneisenregister (608 conjuncts) the candidate queries take 119 of the
-   141 seconds of processor time of a compilation and 11.8 of the 14.0 MB of
-   `conjuncts.json`, and the compiler still generates a query before it can
-   see that it is too long.
+3. Stopping the compiler, as `sqlQuery` does for a violation query, was
+   rejected: it refuses a script for the sake of a query the runtime can do
+   without.
+4. Raising the limit was rejected: a query of that length is not one a
+   runtime should run per transaction.
 
 *Impact on the specification:* none.
 
-*Impact in production:* a model with such a term compiles again. With
-`transactions.deltaConjunctMaintenance` on `off`, the default, nothing
-changes; with `shadow` or `on` the conjunct is evaluated in full when a
-transaction touches the relation that lost its candidate query.
+*Impact in production:* with `transactions.deltaConjunctMaintenance` on
+`off`, the default, nothing changes; with `shadow` or `on` the conjunct is
+evaluated in full when a transaction touches a relation without a candidate
+query.
+
+**The compiler writes a candidate term with one union per node, and computes every repeated subterm of a candidate query once, as a view in a WITH clause.**
+*DC-21 · valid · 2026-10-16 · origin: issue #1728, claims PRF-16 to PRF-18*
+
+`candidateTerm` in `DeltaTerms.hs` follows the equations of the candidate
+calculus (`candg` in `Candidates.thy`) and leaves out a branch in which the
+relation does not occur. `sqlQuerySharedWithinLimit` in `SQL.hs` binds every
+subterm with more than one reference to a fabricated relation, generates
+each definition and the body with the unchanged SQL generator, and wraps
+them in a WITH clause.
+
+*Considerations:*
+
+1. The goal is a candidate query whose length grows with the violation
+   term. The list form, one term per occurrence of the relation, repeated
+   the envelopes of the whole term once per occurrence, so it grew with the
+   square of the number of occurrences: on a chain of five differences in
+   which one relation occurs eleven times, 929,121 characters against a
+   violation query of 35,936. This is the phenomenon that automatic
+   differentiation calls expression swell; it comes from the representation
+   as a list of trees, not from the calculus.
+2. Factorization alone was rejected: one union per node still repeats every
+   envelope along the path to the root, so a chain of k differences keeps at
+   least k (k − 1) / 2 nodes (`chain_quadratic` in PRF-18).
+3. Sharing alone, on the list form, was rejected: it leaves one term per
+   occurrence, each with references along its whole path.
+4. The bound W(t) − N(t) as candidate set was rejected: its size is linear,
+   but it evaluates the whole term twice and does not start from the delta
+   tables, so it costs what full re-evaluation costs.
+5. A leaf, the converse of a leaf and a complement are not shared: the first
+   two cost nothing to repeat, and a complement must stay beside its anchor
+   for the anti-join of issue #562.
+6. The violation queries are not shared yet. They have repeated subterms as
+   well, but MariaDB may inline or materialize a view referenced more than
+   once, so the effect on their running time is to be measured first.
+
+*Impact on the specification:* none.
+
+*Impact in production:* the candidate query of the script of issue #1728 for
+its most frequent relation is 62,015 characters instead of 929,121, and every
+candidate query of the Landeneisenregister (963) is written, where 30 were
+left out before. Compiling that model takes 14.5 instead of 41.3 seconds of
+processor time, and its `conjuncts.json` is 11.0 instead of 14.0 MB.
+MariaDB 10.4 accepts the WITH clause inside the subqueries in which the
+runtime embeds a candidate query.
 
 **The engine's transaction domain is the full set of declared relations and concepts; all wiring is fixed at construction.**
 *DC-10 · valid · 2026-08-13 · origin: issue #1683, engine oracle property*
