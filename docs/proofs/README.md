@@ -37,6 +37,9 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | [PRF-11](#prf-11) | In a system of contexts in which every context has one database, inclusion is a partial order, a reference denotes one thing, a rule of an included context has the same violations in the including context, and the whole is one information system precisely when every included context is consistent | machine-checked | [`proofs/multicontext/MultiContext.lean`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/multicontext/MultiContext.lean), Lean 4 | — |
 | [PRF-12](#prf-12) | For a difference `l − r`, the left-join translation and the `EXCEPT` translation select the same set of pairs | machine-checked | [`proofs/setDifference/SetDifference.lean`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/setDifference/SetDifference.lean), Lean 4, theorem `same_pairs`; carried in code by `exceptCase`, `leftJoinCase` and `materialises` in `Ampersand.FSpec.SQL` | TRAIL-1 |
 | [PRF-13](#prf-13) | An atom of a concept has a row in the table of every storage component that contains that concept or a generalisation of it, and a concept without a table of its own is the union of the tables of its members | stated | obligation stated with the MULTITABLE storage of issue #1716; the regression tests `testing/multitable/validate` compare the generated SQL with the compiler's evaluator for both shapes | — |
+| [PRF-16](#prf-16) | The candidate set of a relation, written as one nested union per term node, equals the union of the list of candidate terms, so the nested form is complete by PRF-7 | stated | planned: Lean 4 session `proofs/candidateSharing` | TRAIL-4 |
+| [PRF-17](#prf-17) | Binding a repeated subterm once as a named view and referring to it by name leaves the relation that a term denotes unchanged | stated | planned: Lean 4 session `proofs/candidateSharing` | TRAIL-4 |
+| [PRF-18](#prf-18) | With shared subterms, the candidate term of a relation has a size linear in the size of the violation term; without sharing it is quadratic on a chain of differences | stated | planned: Lean 4 session `proofs/candidateSharing` | TRAIL-4 |
 
 ### PRF-1 {#prf-1}
 
@@ -109,6 +112,24 @@ Two habits keep these statuses honest. A status is recorded only after the build
 
 *Artifact:* [`proofs/setDifference/SetDifference.lean`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/setDifference/SetDifference.lean) (Lean 4.34.1, core library only, no `sorry`; `lake build` in `proofs/setDifference`). The file models a two-column table as a list of rows, so duplicates count as in SQL, and a left-join row without a partner as a row with `NULL` in its right-hand columns. The theorem `same_pairs` states that a pair is selected by the left-join translation exactly when it is selected by the `EXCEPT` translation; both select the pairs that occur in `l` and not in `r` (`mem_leftJoinQuery`, a `calc` chain of four steps, and `mem_exceptQuery`). `exceptQuery_nodup` states that the `EXCEPT` result carries no duplicates, and `same_pairs_flipped` covers the variant in which `r` is replaced by its converse. *Boundary:* the claim is about the set of pairs and about tables without `NULL`. The left-join query can return a pair more than once, and the generated query removes those with `select distinct`. That the generated subqueries never yield `NULL` in either column is an invariant of the generator that this claim assumes and does not prove. *Not proved:* that the Haskell functions produce the SQL the file models, and the choice between the two translations (`materialises`), which bears on speed and not on meaning. Both are guarded by `ampersand validate` in the regression suite; the test case `testing/Travis/testcases/SetDifference` reaches both translations with non-empty results.
 
+### PRF-16 {#prf-16}
+
+**The candidate set of a relation, written as one nested union per term node, equals the union of the list of candidate terms, so the nested form is complete by PRF-7.** The candidate calculus of PRF-7 defines the candidate set of a term by one equation per operator, for instance `D(a − b) = (D(a) − N(b)) ∪ (W(a) ∩ D(b))`, with one union at every node. The compiler generated the same set as a list with one term per occurrence of the relation, distributing every union to the top. The claim is that both forms denote the same relation for every term and every database state, and that a branch whose candidate is empty, because the relation does not occur below it, may be left out. The proof uses the distribution of composition, intersection and difference over union, and the laws for the empty relation.
+
+*Status:* stated — registered with the change of the candidate derivation (issue #1728), before the code, as the working method requires. *Boundary:* the claim is about the relations the terms denote; the size of the terms is PRF-18.
+
+### PRF-17 {#prf-17}
+
+**Binding a repeated subterm once as a named view and referring to it by name leaves the relation that a term denotes unchanged.** The SQL generator can name a subterm once in a `WITH` clause and refer to that name wherever the subterm occurs. The claim is that the term with its views, evaluated with each view bound to the relation its definition denotes, denotes the same relation as the term in which every reference is replaced by the definition. Views may refer to views defined before them.
+
+*Status:* stated — registered with the sharing of subterms in generated SQL (issue #1728). *Boundary:* the claim covers the term level; that MariaDB evaluates a `WITH` clause by the same semantics is the SQL standard's promise and is tested by `ampersand validate`.
+
+### PRF-18 {#prf-18}
+
+**With shared subterms, the candidate term of a relation has a size linear in the size of the violation term; without sharing it is quadratic on a chain of differences.** The size of a term with views is the number of operator nodes in its definitions and body, where a reference to a view counts as one node. The claim has two parts: for every term `t`, the nested candidate term with shared envelopes has at most a constant multiple of the nodes of `t`; and for a chain of `k` differences the list form has at least a quadratic number of nodes in `k`.
+
+*Status:* stated — registered with the sharing of subterms in generated SQL (issue #1728). *Boundary:* the claim counts term nodes; the characters of the generated SQL are measured, and reported in the measurements of issue #1728.
+
 ## Trails
 
 | ID | Trail | The question it answers | Narrative | Claims visited |
@@ -116,7 +137,7 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | TRAIL-1 | From rules to running code | When I write a rule, where does its code end up, and is the enforcement machinery correct? | [From rules to running code](../reference-material/from-rules-to-running-code.md) | PRF-1, PRF-2, PRF-10, PRF-12 |
 | TRAIL-2 | Incremental evaluation | Can a system that maintains rule violations incrementally ever disagree with full re-evaluation? | [Incremental evaluation](./incremental-evaluation.md) | PRF-2, PRF-4 |
 | TRAIL-3 | The Kleene operators | What does Ampersand guarantee about transitive closure — its laws, its reduction, its maintenance? | [The Kleene operators](./kleene-operators.md) | PRF-3, PRF-4, PRF-5 |
-| TRAIL-4 | Correctness of the incremental SQL queries | When the runtime maintains its violation records by increments, what guarantees they never drift from the full queries that define them? | [Correctness of the incremental SQL queries](./incremental-sql.md) | PRF-1, PRF-2, PRF-6, PRF-7, PRF-8 |
+| TRAIL-4 | Correctness of the incremental SQL queries | When the runtime maintains its violation records by increments, what guarantees they never drift from the full queries that define them? | [Correctness of the incremental SQL queries](./incremental-sql.md) | PRF-1, PRF-2, PRF-6, PRF-7, PRF-8, PRF-16, PRF-17, PRF-18 |
 
 A trail's narrative need not live on this site. TRAIL-1 is anchored in the reference chapter that contributors already read; a future trail may be anchored in a published article, with the register linking the article to the claims it rests on. What the register guarantees is the connection: from any claim to every story that uses it, and from any story to every claim it stands on.
 
