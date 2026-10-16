@@ -208,12 +208,16 @@ The guide [Several information systems that use each other](../guides/systems-of
 ```text
 CONTEXT <context> INCLUDES <context>
 CONTEXT <context>, <context> INCLUDES <context> FROM <filename> AS <alias>, <context>
+CONTEXT <context> NAMED <database> INCLUDES <context> NAMED <database>
 ```
 
 The statement stands outside every `CONTEXT ... ENDCONTEXT` block, because it relates contexts.
 `CONTEXT A, B INCLUDES C, D` says that `A` and `B` each include `C` and `D`.
 The part with `FROM` tells in which file the included context is to be found; you leave it out if that context is in the same file.
 The part with `AS` gives the included context a second name, an alias, for use in the including context.
+The part with `NAMED` names the database on which a context lands; it can follow a context on either side of `INCLUDES`.
+Without it, the database carries the name of the context.
+Contexts with the same database name land on one database, as [Databases](#databases) describes.
 
 If `A` includes `B`, everything that `B` declares is available in `A`, and so is the population of `B`.
 The script of `A` refers to a thing of `B` by putting the name of `B`, or the alias, in front of it.
@@ -245,15 +249,57 @@ The name `Registry.Person` denotes the concept `Person` of the register, and `Re
 The name `address` without a prefix denotes the relation that `Permits` declares itself.
 So, the two relations called `address` and the two concepts called `Address` stay apart, whatever names the two scripts choose.
 
-#### One context, one database
+#### Databases
 
-Every context has a database of its own and an application of its own, so that it can be deployed by itself.
+Every context lands on one database.
+By default that database carries the name of the context, so `Permits` and `Registry` land on the databases `Permits` and `Registry`.
 Each fact is stored once: a pair in the database of the context that declares the relation, and an atom in the database of the context that declares the concept.
 A context reads the databases of the contexts it includes, directly or indirectly.
 A term can therefore read several databases: in `applicant;Registry.address` the pairs of `applicant` come from the database of the permits and the pairs of `address` from the database of the register.
 
 A context that is included by two contexts remains one context with one database.
 If the register and a register of shops both include a context `Towns`, the town of a shop and the town in which a person lives are atoms of one concept, `Towns.Town`.
+
+A database of its own suits a context that another organisation keeps, such as the register.
+Two contexts that belong together, such as a system and a module of it, are better off on one database:
+every term then reads one database, and a relation between the two becomes a column in the table of the concept it belongs to.
+The word `NAMED` names the database of a context, and contexts with the same database name land on one database.
+
+```text
+CONTEXT Permits INCLUDES Registry FROM "registry.adl" NAMED Permits
+CONTEXT Permits NAMED Registry INCLUDES Registry FROM "registry.adl"
+CONTEXT Permits NAMED Kaart INCLUDES Registry FROM "registry.adl" NAMED Kaart
+```
+
+The first line puts the register on the database `Permits`, where the permits already are.
+The second line puts the permits on the database `Registry`, where the register already is.
+The third line puts both on a database called `Kaart`.
+In all three cases the two contexts land on one database.
+
+A database has one application: that of the context on it which includes the other contexts on it.
+That context installs the database, with the tables of every context on it, and guards the rules of those contexts.
+The other contexts on the database have no application of their own, so their interfaces are not generated; the compiler says so in a warning.
+Give a context a database of its own if it needs an application of its own.
+
+Within one database the tables are laid out as in a single context: a univalent relation to a concept on the same database is a column in the table of that concept, and concepts that a classification relates share a table.
+A relation to a concept on another database gets a table of its own, and a classification across two databases does not make the concepts share a table.
+The layout of a database follows from the declarations of the contexts on it, so every context in the system that reads the database computes the same layout.
+
+The compiler refuses three things, because it has to generate SQL that names each table in the right database.
+
+- A context that is given two database names.
+  Every inclusion statement in the system that names the database of a context has to name the same one.
+- Two contexts on one database without a context on it that includes all the others.
+  No application would install that database.
+- Two databases that read each other.
+  A database is installed after the databases it reads, because it has views on their tables.
+
+Two versions of one context, as in a migration, carry the same context name.
+Without `NAMED` the compiler numbers their databases in the order in which the inclusion statements mention them: `Kurk_1` and `Kurk_2`.
+With `NAMED` you choose the names yourself.
+
+The name of a database is an identifier of MariaDB: letters and digits.
+The deployment can give a database another name than the script does; see [Compiling and deploying](#compiling-and-deploying).
 
 #### Names
 
@@ -335,7 +381,9 @@ The names are made from the name of the rule, so a relaxed invariant needs a nam
 
 `ampersand check`, `proto` and the other commands compile the first context in the file you give them, together with the contexts it reaches.
 The option `--context` compiles another context of the system, by its name or alias in that file.
-The command [`ampersand deploy`](../the-command-line-tool.md#deploy) generates a compose file and a Dockerfile for every context.
+A context that shares its database with a context that includes it cannot be compiled by itself, because it has no application of its own: compile the context that includes it.
+The command [`ampersand deploy`](../the-command-line-tool.md#deploy) generates a compose file and a Dockerfile for every database.
+The compose file takes the name of every database from the environment, with the name in the script as the default.
 
 ## The PATTERN statement
 

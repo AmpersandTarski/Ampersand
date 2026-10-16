@@ -3,22 +3,23 @@
 
 -- | Generate what is needed to run a system of contexts.
 --
---   Every context of a system has a database of its own and a backend of its own.
---   The command @ampersand deploy@ writes, for the context in the root file and every context it reaches:
---   a Dockerfile that builds the application of that context on the prototype framework,
+--   Every database of a system has one application: that of the context that includes the other contexts on it.
+--   The command @ampersand deploy@ writes, for the database of the context in the root file and every database
+--   that it reaches: a Dockerfile that builds the application of that database on the prototype framework,
 --   and one compose file that runs the applications next to one database server.
 --
---   The compiler does not know the names of the databases. They are facts of the deployment:
---   the compose file takes them from the environment, with a default that consists of
---   the name of the context and a version. The application of a context gets the name of its own database,
---   and the names of the databases of the contexts it reaches, each under the label by which it knows that context.
+--   The script names the databases: a context lands on a database with its own name, unless an inclusion
+--   statement gives it another name with @NAMED@. The compose file takes every name from the environment,
+--   with the name in the script as the default, so that a deployment can run a version on a database with
+--   another name. The application of a database gets the name of its own database, and the names of the
+--   databases it reads, each under the name that the script gives it.
 module Ampersand.Commands.Deploy
   ( deploy,
   )
 where
 
 import Ampersand.Basics
-import Ampersand.Core.ParseTree (foreignContextFiles, foreignContexts, foreignLabelViews)
+import Ampersand.Core.ParseTree (contextDatabases, foreignContextFiles, foreignContexts, foreignLabelViews, ownDatabase)
 import Ampersand.FSpec
 import Ampersand.Misc.HasClasses
 import qualified Data.Aeson as JSON
@@ -31,19 +32,21 @@ import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 
--- | One context of the system, as the deployment sees it.
+-- | One database of the system, as the deployment sees it, with its application.
 data Member = Member
   { -- | the name of the service, and of the directory with its Dockerfile
     mId :: !Text,
-    -- | the name of the context
+    -- | the name of the context that installs the database and runs its application
     mName :: !Text,
+    -- | the names of the contexts on the database, the one that installs it first
+    mContexts :: ![Text],
     -- | the value for the option --context of the compiler; empty for the context in the root file
     mOption :: !Text,
-    -- | the variable of the environment that holds the name of its database
+    -- | the variable of the environment that holds the name of the database
     mVar :: !Text,
-    -- | the name of its database, unless the environment says otherwise
+    -- | the name of the database, unless the environment says otherwise
     mDefaultDb :: !Text,
-    -- | the contexts it reaches: the label by which it knows each of them, and that context
+    -- | the databases it reads: the name by which the generated SQL refers to each of them, and its service
     mReaches :: ![(Text, Text)],
     -- | the port on which its application answers
     mPort :: !Int
@@ -69,7 +72,7 @@ deploy fSpec = do
         liftIO $ createDirectoryIfMissing True (takeDirectory file)
         writeFileUtf8 file content
         logInfo $ "  " <> display (T.pack (makeRelative outDir file))
-  logInfo $ "Generating the deployment of " <> display (T.intercalate ", " (map mName members)) <> " in " <> display (T.pack outDir)
+  logInfo $ "Generating the deployment of " <> display (T.intercalate ", " (concatMap mContexts members)) <> " in " <> display (T.pack outDir)
   when (buildDir /= scripts)
     . logWarn
     $ "Docker builds from "
@@ -96,51 +99,71 @@ deploy fSpec = do
   where
     toPosix = T.map (\c -> if c == '\\' then '/' else c) . T.pack
 
--- | The contexts of the system: the compiled context first, then the contexts it reaches.
---   A context comes after every context it reaches, so that the list is an order of installation when reversed.
+-- | The databases of the system: the database of the compiled context first, then the databases it reaches.
+--   Every database has one application, that of the context which includes the other contexts on it;
+--   the compiler has seen to it that such a context exists, and that no two databases read each other.
 membersOf :: FSpec -> [Member]
-membersOf fSpec = zipWith withPort [0 ..] (viewer : map other others)
+membersOf fSpec = zipWith withPort [0 ..] (viewer : map other otherDatabases)
   where
-    others = foreignContexts (metas fSpec)
-    views = foreignLabelViews (metas fSpec)
-    names = fullName fSpec : map snd others
+    ms = metas fSpec
+    others = foreignContexts ms
+    views = foreignLabelViews ms
+    databases = contextDatabases ms
+    ownDb = fromMaybe (fullName fSpec) (ownDatabase ms)
+    databaseOf :: Text -> Text
+    databaseOf lbl = case [db | (l, db, _) <- databases, l == lbl] of
+      db : _ -> db
+      [] -> fatal ("The context " <> lbl <> " lands on no database.")
+    nameOf :: Text -> Text
+    nameOf lbl = case [nm | (l, nm) <- others, l == lbl] of
+      nm : _ -> nm
+      [] -> fatal ("The context " <> lbl <> " is not part of the system.")
+    -- The other databases, each with the label of the context that installs it: the context whose tables carry no prefix there.
+    otherDatabases :: [(Text, Text)]
+    otherDatabases = L.nub [(db, l) | (l, db, "") <- databases, l /= "", db /= ownDb]
+    -- The contexts on a database besides the one that installs it.
+    alsoOn :: Text -> Text -> [Text]
+    alsoOn db root = [nameOf l | (l, db', _) <- databases, l /= "", l /= root, db' == db]
     viewer =
       Member
-        { mId = serviceName (fullName fSpec),
+        { mId = serviceName ownDb,
           mName = fullName fSpec,
+          mContexts = fullName fSpec : alsoOn ownDb "",
           mOption = "",
-          mVar = variable (fullName fSpec),
-          mDefaultDb = defaultDb 0 (fullName fSpec),
-          mReaches = [(lbl, serviceName lbl) | (lbl, _) <- others],
+          mVar = variable ownDb,
+          mDefaultDb = ownDb,
+          mReaches = L.nub [(db, serviceName db) | (l, db, _) <- databases, l /= "", db /= ownDb],
           mPort = 0
         }
-    other (lbl, nm) =
+    other (db, root) =
       Member
-        { mId = serviceName lbl,
-          mName = nm,
-          mOption = lbl,
-          mVar = variable lbl,
-          mDefaultDb = defaultDb (1 + length (takeWhile ((/= lbl) . fst) others)) nm,
-          mReaches = [(there, serviceName here) | (owner, here, there) <- views, owner == lbl],
+        { mId = serviceName db,
+          mName = nameOf root,
+          mContexts = nameOf root : alsoOn db root,
+          mOption = root,
+          mVar = variable db,
+          mDefaultDb = db,
+          mReaches = L.nub [(databaseOf here, serviceName (databaseOf here)) | (owner, here, _) <- views, owner == root, databaseOf here /= db],
           mPort = 0
         }
     withPort :: Int -> Member -> Member
     withPort i m = m {mPort = 8080 + i}
-    -- The name of a database contains the name of the context and a version.
-    -- Two versions of one context have the same name. Without anything else to go by, they are numbered from 1.
-    defaultDb :: Int -> Text -> Text
-    defaultDb i nm = T.map toLower (T.filter isAlphaNum nm) <> "_" <> tshow (1 + length (filter (== nm) (take i names)))
     serviceName = T.map toLower . T.filter isAlphaNum
     variable = (<> "_DBNAME") . T.map toUpper . T.filter isAlphaNum
 
--- | The order in which the applications are installed: a context after every context it reaches.
+-- | The order in which the applications are installed: a database after every database it reads.
 installOrder :: [Member] -> [Member]
-installOrder = L.sortOn (length . mReaches)
+installOrder = go []
+  where
+    go done [] = reverse done
+    go done todo = case L.partition (all ((`elem` map mId done) . snd) . mReaches) todo of
+      ([], rest) -> reverse done <> rest
+      (ready, rest) -> go (reverse ready <> done) rest
 
 dockerfile :: Member -> Text -> Text -> Text
 dockerfile m scripts rootFile =
   T.unlines
-    $ [ "# The application of the context " <> mName m <> ".",
+    $ [ "# The application of the database " <> mDefaultDb m <> ", with the context" <> pluralS (mContexts m) <> " " <> T.intercalate ", " (mContexts m) <> ".",
         "# Generated by `ampersand deploy`. Build it with the compose file in the directory above,",
         "# which sets the directory that Docker builds from.",
         "ARG FRAMEWORK_IMAGE=ampersandtarski/prototype-framework:latest",
@@ -149,11 +172,11 @@ dockerfile m scripts rootFile =
         "# The scripts of the whole system: a context is compiled together with the contexts it reaches.",
         "COPY " <> (if scripts == "." then "." else scripts <> "/") <> " /usr/local/project/",
         "",
-        "# The backend of this context. Every concept gets a table, because other contexts may read it."
+        "# The backend of this database. Every concept gets a table, because other databases may read it."
       ]
     <> proto ["--no-frontend"] "/var/www/backend"
     <> [ "",
-         "# The frontend of this context."
+         "# The frontend of this database."
        ]
     <> proto ["--frontend-version Angular", "--no-backend"] "/var/www/frontend/src/app/generated"
     <> [ "",
@@ -162,6 +185,7 @@ dockerfile m scripts rootFile =
          "RUN cp -r /var/www/frontend/dist/prototype-frontend/* /var/www/html"
        ]
   where
+    pluralS xs = if length xs == 1 then "" else "s"
     proto flags dir =
       [ "RUN ampersand proto " <> T.unwords flags <> " /usr/local/project/" <> rootFile <> " \\"
       ]
@@ -175,11 +199,11 @@ dockerfile m scripts rootFile =
 compose :: [Member] -> Text -> Text -> Text
 compose members buildDir outDir =
   T.unlines
-    $ [ "# A system of contexts: " <> T.intercalate ", " (map mName members) <> ".",
+    $ [ "# A system of contexts: " <> T.intercalate ", " (concatMap mContexts members) <> ".",
         "# Generated by `ampersand deploy`.",
         "#",
-        "# Every context has an application of its own and a database of its own, on one database server.",
-        "# The name of a database comes from the environment; see .env.example.",
+        "# Every database has an application of its own, on one database server.",
+        "# The name of a database comes from the environment, with the name in the script as the default; see .env.example.",
         "#",
         "#   docker compose up -d --build",
         "#   ./install.sh",
@@ -243,9 +267,8 @@ compose members buildDir outDir =
 envExample :: [Member] -> Text
 envExample members =
   T.unlines
-    $ [ "# The names of the databases, one per context.",
-        "# A name contains the name of the context and its version, so that someone who looks",
-        "# in the database knows which version it holds. Take the version from your own release process.",
+    $ [ "# The names of the databases. The default is the name in the script:",
+        "# the name of the context, or the name that the inclusion statement gives with NAMED.",
         "# A new name means a new, empty database: deploy the new version next to the old one and migrate."
       ]
     <> [mVar m <> "=" <> mDefaultDb m | m <- members]
@@ -273,8 +296,8 @@ installScript :: [Member] -> Text
 installScript members =
   T.unlines
     $ [ "#!/usr/bin/env bash",
-        "# Install the applications of the system, each on its own database.",
-        "# A context is installed after every context it reaches, because it reads their tables.",
+        "# Install the applications of the system, one per database.",
+        "# A database is installed after every database it reads, because it has views on their tables.",
         "# Installing an application replaces its database, and no other.",
         "set -euo pipefail",
         "cd \"$(dirname \"$0\")\"",
@@ -298,13 +321,13 @@ readme members composeFile =
     $ [ "# Deployment of a system of contexts",
         "",
         "This directory was generated by `ampersand deploy`.",
-        "It runs " <> tshow (length members) <> " contexts, each with an application of its own and a database of its own,",
+        "It runs " <> tshow (length members) <> " database" <> (if length members == 1 then "" else "s") <> ", each with an application of its own,",
         "next to one MariaDB server.",
         "",
-        "| Context | Service | Database (default) | Port | Reads the databases of |",
+        "| Database (default) | Contexts | Service | Port | Reads the databases of |",
         "| --- | --- | --- | --- | --- |"
       ]
-    <> [ "| " <> T.intercalate " | " [mName m, mId m, mDefaultDb m, tshow (mPort m), T.intercalate ", " (map snd (mReaches m))] <> " |"
+    <> [ "| " <> T.intercalate " | " [mDefaultDb m, T.intercalate ", " (mContexts m), mId m, tshow (mPort m), T.intercalate ", " (map snd (mReaches m))] <> " |"
          | m <- members
        ]
     <> [ "",
@@ -316,7 +339,7 @@ readme members composeFile =
          "```",
          "",
          "`install.sh` installs the applications in this order: " <> T.intercalate ", " (map mId (installOrder members)) <> ".",
-         "A context is installed after every context it reaches, because its database contains views on their tables.",
+         "A database is installed after every database it reads, because it contains views on their tables.",
          "",
          "The images build on the prototype framework that `FRAMEWORK_IMAGE` names.",
          "That framework has to know the setting `AMPERSAND_CONTEXT_DBNAMES`,",
@@ -325,10 +348,11 @@ readme members composeFile =
          "",
          "## The names of the databases",
          "",
-         "The compiler does not know the name of a database. The compose file takes it from the environment,",
+         "The script names the databases: a context lands on a database with its own name,",
+         "unless an inclusion statement gives it another name with `NAMED`, and contexts with the same name share one database.",
+         "The compose file takes every name from the environment, with the name in the script as the default,",
          "and gives every application the name of its own database and the names of the databases it reads.",
          "Copy `.env.example` to `.env` to set them.",
-         "A name contains the name of the context and a version.",
          "A new name means a new database, so a new version runs next to the old one until its data has been migrated.",
          "",
          "## Files",
@@ -347,11 +371,12 @@ systemJson members =
         JSON..= [ JSON.object
                     [ "service" JSON..= mId m,
                       "context" JSON..= mName m,
+                      "contexts" JSON..= mContexts m,
                       "label" JSON..= mOption m,
                       "databaseVariable" JSON..= mVar m,
                       "defaultDatabase" JSON..= mDefaultDb m,
                       "port" JSON..= mPort m,
-                      "reaches" JSON..= [JSON.object ["label" JSON..= lbl, "service" JSON..= i] | (lbl, i) <- mReaches m]
+                      "reaches" JSON..= [JSON.object ["database" JSON..= db, "service" JSON..= i] | (db, i) <- mReaches m]
                     ]
                   | m <- members
                 ],

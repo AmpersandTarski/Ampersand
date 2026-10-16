@@ -1,0 +1,23 @@
+CONTEXT School INCLUDES Library FROM "../contexts/library.adl" NAMED School
+
+CONTEXT School IN ENGLISH
+
+PURPOSE CONTEXT School
+{+ The school and its library land on one database, School: NAMED after the included context gives it the name
+of the database of the including context. The relation `readingList` is univalent from a concept of the library,
+so it becomes a column in the table of that concept, which lies in the same database. +}
+
+RELATION pupil[Pupil*Library.Member] [UNI,TOT]
+RELATION readingList[Library.Book*Pupil] [UNI]
+
+POPULATION pupil[Pupil*Library.Member] CONTAINS [ ("pupil1", "m1") ]
+POPULATION readingList[Library.Book*Pupil] CONTAINS [ ("b2", "pupil1") ]
+
+RULE borrowedByPupil : Library.borrower |- Library.borrower;pupil~;pupil
+MEANING "Every borrower of a book is a pupil."
+
+INTERFACE Pupils : "_SESSION";V[SESSION*Pupil] cRud BOX
+  [ "member" : pupil;Library.memberName cRud
+  , "books" : readingList~;Library.title cRud
+  ]
+ENDCONTEXT

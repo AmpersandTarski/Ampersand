@@ -9,7 +9,7 @@ Contexts exist in Ampersand for the purpose of dealing with [truth](truth.md). W
 Any statement can be true in context only. Within one context, there are no contradictions.  
 As facts are true statements, we say that facts must exist inside a context.
 
-In Ampersand, a context is also the unit that is built and run: one context yields one information system, with one database.
+In Ampersand, a context is also the unit that is built and run: one context yields one information system, with one database, unless the script puts several contexts on one database.
 A context can use what another context declares and stores by including it.
 See [Systems of contexts](./syntax-of-ampersand.md#systems-of-contexts) for the statement, and the guide [Several information systems that use each other](../guides/systems-of-contexts.md) for an introduction.
 
