@@ -23,7 +23,7 @@ import Ampersand.Classes
 import Ampersand.Core.ParseTree (Role, ViewHtmlTemplate (ViewHtmlTemplateFile))
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.SQL (broadQueryWithPlaceholder, placeHolderSQL, sqlQuery, sqlQueryWithPlaceholder, sqlQueryWithinLimit)
+import Ampersand.FSpec.SQL (broadQueryWithPlaceholder, placeHolderSQL, sqlQuery, sqlQuerySharedWithinLimit, sqlQueryWithPlaceholder)
 import Ampersand.FSpec.ToFSpec.Populated
 import Ampersand.Misc.HasClasses
 import Data.Aeson hiding (Options)
