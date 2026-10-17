@@ -271,7 +271,11 @@ them in a WITH clause.
 5. A leaf, the converse of a leaf and a complement are not shared: the first
    two cost nothing to repeat, and a complement must stay beside its anchor
    for the anti-join of issue #562.
-6. The violation queries are not shared yet. They have repeated subterms as
+6. A view is named `_shared1`, `_shared2`, and so on. A name in a script
+   starts with a letter, so no relation or table of the model can have that
+   name, and a view never hides a table that the query reads; the proof of
+   PRF-17 assumes exactly this separation of views from relations.
+7. The violation queries are not shared yet. They have repeated subterms as
    well, but MariaDB may inline or materialize a view referenced more than
    once, so the effect on their running time is to be measured first.
 

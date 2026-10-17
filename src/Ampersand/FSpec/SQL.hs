@@ -164,11 +164,14 @@ shareSubterms expr = (views, rewrite body0)
       _ -> not (isLeaf e)
     isLeaf e = null (children e)
 
--- | The relation that names a shared subterm in a WITH clause.
+-- | The relation that names a shared subterm in a WITH clause. Its name
+--   starts with an underscore, which no name in a script can (see
+--   'isSafeIdChar'), so it never equals a relation of the script, and the
+--   view never hides a table that the query reads.
 viewRelation :: Int -> Expression -> Relation
 viewRelation i e =
   Relation
-    { decnm = mkName RelationName (NamePart (toText1Unsafe ("shared" <> tshow i)) NE.:| []),
+    { decnm = mkName RelationName (NamePart (toText1Unsafe ("_shared" <> tshow i)) NE.:| []),
       decsgn = sign e,
       declabel = Nothing,
       decprps = mempty,
