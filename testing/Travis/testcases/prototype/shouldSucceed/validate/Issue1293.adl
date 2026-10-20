@@ -1,9 +1,7 @@
 CONTEXT Issue1293
 
-   REPRESENT A TYPE INTEGER
-
-   RELATION r[A * B] = [ (1,"aap"), (2,"noot"), (3,"mies") ]
-   RELATION s[A * B] = [ (2,"noot"), (3,"mies") ]
+   RELATION r[A * B] = [ ("1","aap"), ("2","noot"), ("3","mies") ]
+   RELATION s[A * B] = [ ("2","noot"), ("3","mies") ]
 
 --    ROLE ExecEngine MAINTAINS Issue
    RULE  Issue1293: r - (I#"aap") |- s

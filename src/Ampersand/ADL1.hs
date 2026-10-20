@@ -93,6 +93,7 @@ import Ampersand.Core.AbstractSyntaxTree
     ViewSegment (..),
     ViewSegmentPayLoad (..),
     aavtxt,
+    canBeEnumerated,
     getExpressionRelation,
     getInterfaceByName,
     mkAtomPair,

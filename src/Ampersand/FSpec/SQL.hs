@@ -858,6 +858,34 @@ nonSpecialSelectExpr fSpec expr =
                   bseTbl = [toTableRef se `as` fTable], -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
                   bseWhr = Nothing
                 }
+    (EMp1 val c)
+      -- An atom of a concept whose atoms cannot be listed, such as the integer 3,
+      -- exists without being stored: it is selected as a constant (issue #1727).
+      | not (canBeEnumerated (cptTType fSpec c)) ->
+          let constant = Col {cTable = [], cCol = [], cAlias = [], cSpecial = Just (singleton2SQL c val)}
+           in traceComment
+                ["case: EMp1 val c, of a concept without a table"]
+                BinSelect
+                  { bseSetQuantifier = SQDefault,
+                    bseSrc = constant,
+                    bseTrg = constant,
+                    bseTbl =
+                      [ TRQueryExpr
+                          Select
+                            { qeSetQuantifier = SQDefault,
+                              qeSelectList = [(NumLit "1", Nothing)],
+                              qeFrom = [],
+                              qeWhere = Nothing,
+                              qeGroupBy = [],
+                              qeHaving = Nothing,
+                              qeOrderBy = [],
+                              qeOffset = Nothing,
+                              qeFetchFirst = Nothing
+                            }
+                          `as` uName "atom"
+                      ],
+                    bseWhr = Nothing
+                  }
     (EMp1 val c) ->
       traceComment
         ["case: EMp1 val c"]
@@ -1723,7 +1751,18 @@ derivedConceptQuery fSpec c = case c of
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name
-sqlConcept fSpec = qName . text1ToText . showUnique . getConceptTableFor fSpec
+sqlConcept fSpec c
+  -- The compiler refuses a term that asks for all atoms of such a concept
+  -- ('termsThatEnumerate'); this is the safeguard behind that check.
+  | not (canBeEnumerated (cptTType fSpec c)) =
+      fatal
+        ( "A query asks for all atoms of the concept "
+            <> fullName c
+            <> ", which has the type "
+            <> tshow (cptTType fSpec c)
+            <> ". The atoms of such a concept cannot be listed, and it has no table."
+        )
+  | otherwise = qName . text1ToText . showUnique . getConceptTableFor fSpec $ c
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c
