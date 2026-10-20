@@ -211,6 +211,59 @@ instance Arbitrary P_Context where
 instance Arbitrary MetaData where
   arbitrary = MetaData <$> arbitrary <*> safeStr1 <*> safeText
 
+-- | The words that an inclusion statement recognises by their position. They are no keywords,
+--   so a generated name avoids them: a context called FROM would make the statement ambiguous to read.
+inclusionWords :: [Text]
+inclusionWords = ["INCLUDES", "FROM", "AS", "NAMED"]
+
+-- | A name of one word, as an inclusion statement writes it: no name space, and none of the words of the statement.
+plainNamePart :: Gen NamePart
+plainNamePart =
+  ( \x -> case try2Namepart (text1ToText x) of
+      Right np -> np
+      Left (Right np) -> np
+      Left (Left msg) -> fatal $ "Not a valid NamePart: " <> msg
+  )
+    <$> identifier
+    `suchThat` (\x -> text1ToText x `notElem` inclusionWords)
+
+-- | The name of a context in an inclusion statement: one word that starts with an upper-case letter.
+contextName :: Gen Name
+contextName = mkName ContextName . (NE.:| []) <$> plainNamePart `suchThat` (isUpper . firstChar)
+  where
+    firstChar np = case namePartToText1 np of Text1 c _ -> c
+
+-- | The name of a database: an identifier of MariaDB, which starts with a letter of either case.
+--   A few names recur, so that two contexts of a statement land on one database now and then.
+databaseName :: Gen Text
+databaseName = frequency [(3, elements ["Kaart", "kaart", "Archive2"]), (1, text1ToText <$> identifier `suchThat` ((`notElem` inclusionWords) . text1ToText))]
+
+-- | A list of one to three elements.
+smallListOf1 :: Gen a -> Gen (NE.NonEmpty a)
+smallListOf1 gen = do
+  k <- choose (0, 2)
+  (NE.:|) <$> gen <*> vectorOf k gen
+
+instance Arbitrary InclusionItem where
+  arbitrary = do
+    nm <- contextName
+    mFrom <- frequency [(1, pure Nothing), (2, Just <$> safeFilePath)]
+    -- Preprocessor variables belong to a FROM clause.
+    defs <- case mFrom of
+      Nothing -> pure []
+      Just _ -> frequency [(2, pure []), (1, NE.toList <$> smallListOf1 safeText)]
+    alias <- frequency [(2, pure Nothing), (1, Just <$> plainNamePart)]
+    db <- frequency [(1, pure Nothing), (1, Just <$> databaseName)]
+    pure (InclusionItem nm mFrom defs alias db)
+
+-- | An inclusion statement: one to three contexts before INCLUDES, one to three after it,
+--   each with or without the name of its database.
+instance Arbitrary Inclusion where
+  arbitrary =
+    Inclusion OriginUnknown
+      <$> smallListOf1 ((,) <$> contextName <*> frequency [(1, pure Nothing), (1, Just <$> databaseName)])
+      <*> smallListOf1 arbitrary
+
 instance Arbitrary P_RoleRule where
   arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
 

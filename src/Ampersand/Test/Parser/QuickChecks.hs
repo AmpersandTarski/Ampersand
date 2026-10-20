@@ -10,10 +10,13 @@ where
 
 import Ampersand.ADL1.PrettyPrinters (prettyPrint)
 import Ampersand.Basics
-import Ampersand.Core.ParseTree (P_Context)
+import Ampersand.Core.ParseTree (Inclusion (..), InclusionItem (..), P_Context)
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
-import Ampersand.Input.Parsing (parseCtx)
+import Ampersand.Input.Parsing (parseCtx, parseScriptFile)
 import Ampersand.Test.Parser.ArbitraryTree ()
+import RIO.Char (isLower, isUpper)
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
 import qualified RIO.Text as T
 import Test.QuickCheck
 
@@ -30,6 +33,7 @@ doAllQuickCheckPropertyTests :: (HasLogFunc env) => RIO env Bool
 doAllQuickCheckPropertyTests =
   whileSuccess
     [ doRoundtripTest,
+      doInclusionRoundtripTest,
       doObjectIdShorteningTest
       -- More tests can be inserted here
     ]
@@ -69,6 +73,66 @@ doRoundtripTest = do
           maxShrinks = 50,
           chatty = True
         }
+
+-- | The inclusion statements of a file (@CONTEXT A INCLUDES B@) stand outside every CONTEXT block,
+--   so the roundtrip of a P_Context never meets them. This property prints generated statements,
+--   parses them with the file parser, and compares what comes back with what went in.
+--   QuickCheck enforces that each variant of the syntax occurs in a run (issue #1736).
+doInclusionRoundtripTest :: RIO env TestResult
+doInclusionRoundtripTest = do
+  qcResult <- liftIO . quickCheckWithResult stdArgs {maxSize = 10, chatty = True} $ prop_inclusionRoundtrip
+  pure
+    TestResult
+      { qcPropName = "Prettyprint/Parser roundtrip of inclusion statements, NAMED included.",
+        qcIsSuccess = isSuccess qcResult,
+        qcMessage = ["The printed inclusion statements must parse back to the same statements."],
+        qcQuickCheckResult = qcResult
+      }
+
+-- | What an inclusion statement says, without its source position: the contexts before INCLUDES with
+--   their database names, and for every included context its name, file, parameters, alias and database name.
+type InclusionData = ([(Text, Maybe Text)], [(Text, Maybe FilePath, [Text], Maybe Text, Maybe Text)])
+
+inclusionData :: Inclusion -> InclusionData
+inclusionData (Inclusion _ includers items) =
+  ( [(fullName nm, db) | (nm, db) <- NE.toList includers],
+    [(fullName (itName i), itFrom i, itDefs i, namePartToText <$> itAlias i, itDatabase i) | i <- NE.toList items]
+  )
+
+prop_inclusionRoundtrip :: NonEmptyList Inclusion -> Property
+prop_inclusionRoundtrip (NonEmpty stmts) =
+  checkCoverage
+    . coverage
+    . counterexample ("The printed statements:\n" <> T.unpack printed)
+    $ case parseScriptFile "inclusion roundtrip" printed of
+      Errors err -> counterexample (show err) False
+      Checked (parsed, blocks) _ ->
+        counterexample "The parsed statements differ from the generated ones." (map inclusionData parsed === map inclusionData stmts)
+          .&&. counterexample "The file parser found a context in statements only." (null blocks)
+  where
+    printed = T.unlines (map prettyPrint stmts)
+    -- Every variant of the syntax has to occur in a run, or a green run would prove nothing about it.
+    coverage =
+      cover 10 (any (\s -> null (namesBefore s) && null (namesAfter s)) stmts) "a statement without NAMED"
+        . cover 5 (any (\s -> not (null (namesBefore s)) && null (namesAfter s)) stmts) "NAMED before INCLUDES only"
+        . cover 5 (any (\s -> null (namesBefore s) && not (null (namesAfter s))) stmts) "NAMED after INCLUDES only"
+        . cover 10 (any (\s -> not (null (namesBefore s)) && not (null (namesAfter s))) stmts) "NAMED on both sides"
+        . cover 5 (any (\s -> any (`elem` namesAfter s) (namesBefore s)) stmts) "the same database name on both sides"
+        . cover 5 (any (\s -> length (L.nub (namesBefore s <> namesAfter s)) > 1) stmts) "different database names in one statement"
+        . cover 10 (any (T.any isUpper . T.take 1) allNames) "a database name that starts with an upper-case letter"
+        . cover 10 (any (T.any isLower . T.take 1) allNames) "a database name that starts with a lower-case letter"
+        . cover 10 (any ((> 1) . length . incIncluders) stmts) "several contexts before INCLUDES"
+        . cover 10 (any ((> 1) . length . incItems) stmts) "several included contexts"
+        . cover 10 (any (isJust . itFrom) allItems) "FROM"
+        . cover 10 (any (isNothing . itFrom) allItems) "no FROM"
+        . cover 5 (not (all (null . itDefs) allItems)) "preprocessor parameters"
+        . cover 10 (any (isJust . itAlias) allItems) "AS"
+        . cover 10 (any (isNothing . itAlias) allItems) "no AS"
+        . cover 5 (any (\i -> isJust (itFrom i) && isJust (itAlias i) && isJust (itDatabase i)) allItems) "FROM, AS and NAMED on one included context"
+    allItems = concatMap (NE.toList . incItems) stmts
+    allNames = concatMap (\s -> namesBefore s <> namesAfter s) stmts
+    namesBefore s = [db | (_, Just db) <- NE.toList (incIncluders s)]
+    namesAfter s = mapMaybe itDatabase (NE.toList (incItems s))
 
 -- | Known-answer test for OBJECT atom-identity shortening. This pins 'shortenObjectId' to the
 --   exact same algorithm as the runtime framework (PrototypeFramework, Atom::setId, OBJECT case),

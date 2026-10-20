@@ -244,32 +244,6 @@ pIncludeStatement =
     <*> (T.unpack <$> pDoubleQuotedString)
     <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])
 
--- | The statement that contexts include other contexts.
---   It stands outside every CONTEXT block, because it relates contexts.
---   @CONTEXT A, B INCLUDES C FROM "c.adl" AS X, D@ says that A and B each include C and D.
---   @CONTEXT A NAMED Kaart INCLUDES B NAMED Kaart@ says, in addition, that A and B land on one database, called Kaart.
-data Inclusion = Inclusion
-  { incOrigin :: !Origin,
-    -- | the contexts before the word INCLUDES, each with the name of its database if the statement gives one
-    incIncluders :: !(NonEmpty (Name, Maybe Text)),
-    -- | the contexts after the word INCLUDES
-    incItems :: !(NonEmpty InclusionItem)
-  }
-
--- | One included context in an inclusion statement.
-data InclusionItem = InclusionItem
-  { -- | the name of the included context
-    itName :: !Name,
-    -- | the file in which the included context is to be found, if it is another file
-    itFrom :: !(Maybe FilePath),
-    -- | the preprocessor variables with which that file is read
-    itDefs :: ![Text],
-    -- | a second name for the included context, for use in the including context
-    itAlias :: !(Maybe NamePart),
-    -- | the name of the database on which the included context lands, if the statement gives one
-    itDatabase :: !(Maybe Text)
-  }
-
 --- File ::= (InclusionStatement | Context)+
 
 -- | Parses a file: inclusion statements and the contexts (or fragments of contexts) it contains.
