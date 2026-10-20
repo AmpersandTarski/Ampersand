@@ -11,6 +11,11 @@ module Ampersand.Core.ParseTree
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
+    mkDatabaseMeta,
+    contextDatabases,
+    ownDatabase,
+    databaseOfLabel,
+    labelsOnOwnDatabase,
     mkRelaxedMeta,
     relaxedRules,
     mkFileMeta,
@@ -201,6 +206,44 @@ foreignContextFiles ms =
       mtName m == fileMetaName,
       let (lbl, rest) = T.break (== ' ') (mtVal m)
   ]
+
+-- | The metadata by which a joined context says on which database a context lands.
+--   There is one for the compiled context and one for every context it reaches.
+--   Its value holds the label of the context (a dash for the compiled context), the name of the database,
+--   and the prefix that the tables of the context carry in that database (a dash if they carry none).
+--   A table carries a prefix if the context shares its database with the context that installs it:
+--   the prefix is the label that the installing context has for it.
+databaseMetaName :: Text1
+databaseMetaName = toText1Unsafe "multicontext.database"
+
+mkDatabaseMeta :: Origin -> Maybe NamePart -> Text -> Maybe NamePart -> MetaData
+mkDatabaseMeta orig lbl db prefix =
+  MetaData orig databaseMetaName (T.unwords [maybe "-" namePartToText lbl, db, maybe "-" namePartToText prefix])
+
+-- | The database of every context of a joined context: label (empty for the compiled context),
+--   name of the database, and the prefix of its tables in that database (empty if they carry none).
+contextDatabases :: [MetaData] -> [(Text, Text, Text)]
+contextDatabases ms =
+  [ (dash lbl, db, dash prefix)
+    | m <- ms,
+      mtName m == databaseMetaName,
+      [lbl, db, prefix] <- [T.words (mtVal m)]
+  ]
+  where
+    dash t = if t == "-" then "" else t
+
+-- | The database of the compiled context, if it is part of a system of contexts.
+ownDatabase :: [MetaData] -> Maybe Text
+ownDatabase ms = listToMaybe [db | ("", db, _) <- contextDatabases ms]
+
+-- | The database on which the context with the given label lands, and the prefix of its tables there.
+databaseOfLabel :: [MetaData] -> Text -> Maybe (Text, Text)
+databaseOfLabel ms lbl = listToMaybe [(db, prefix) | (l, db, prefix) <- contextDatabases ms, l == lbl]
+
+-- | The labels of the contexts that land on the database of the compiled context.
+--   The compiled context installs their tables and their initial population.
+labelsOnOwnDatabase :: [MetaData] -> [Text]
+labelsOnOwnDatabase ms = [l | (l, db, _) <- contextDatabases ms, l /= "", Just db == ownDatabase ms]
 
 -- | The metadata by which a joined context says that a context relaxes an invariant of a context it includes:
 --   it assigns the rule to a role, while no role maintains the rule in its own context.

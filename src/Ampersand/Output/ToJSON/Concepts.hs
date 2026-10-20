@@ -7,7 +7,7 @@ module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 import Ampersand.ADL1
 import qualified Ampersand.Basics.Name as Name
 import Ampersand.Core.AbstractSyntaxTree (largerConcepts, smallerConcepts)
-import Ampersand.Core.ParseTree (foreignContexts)
+import Ampersand.Core.ParseTree (foreignContexts, labelsOnOwnDatabase)
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
@@ -154,7 +154,9 @@ conceptTablesOf fSpec cpt =
     ownFirst ts = case lookupCpt fSpec cpt of
       (own, _) : _ -> own : filter (/= own) ts
       [] -> ts
-    foreignLabels = map fst (foreignContexts (metas fSpec))
+    -- A concept of another context is stored elsewhere if that context lands on another database.
+    -- On the same database its table is in this database, and it may be the table of this concept.
+    foreignLabels = filter (`notElem` labelsOnOwnDatabase (metas fSpec)) (map fst (foreignContexts (metas fSpec)))
     ownedElsewhere :: A_Concept -> Bool
     ownedElsewhere c = case nameSpaceOf (name c) of
       h : _ -> namePartToText h `elem` foreignLabels
