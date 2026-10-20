@@ -1,0 +1,49 @@
+CONTEXT Migration INCLUDES Garden FROM "existing.adl" AS old,
+                           Garden FROM "desired.adl" AS new
+CONTEXT Migration IN ENGLISH
+PURPOSE CONTEXT Migration
+{+ The migration of the plot register of the community garden to its new release.
+The register in use is included as `old`, the new release as `new`.
+The gardeners keep working while the data moves, and they find keepers for the plots that have none. +}
+
+-- Every plot, name and gardener of the register in use is one of the new release.
+CLASSIFY old.Plot ISA new.Plot
+CLASSIFY old.PlotName ISA new.PlotName
+CLASSIFY old.Gardener ISA new.Gardener
+
+-- Copy the names and the keepers. The relations copyName and copyKeeper register what has been copied,
+-- so that a change that a user makes in the new release is not undone by the copy.
+RELATION copyName[old.Plot*old.PlotName]
+ENFORCE copyNameDone : copyName >: new.name /\ old.name
+ENFORCE copyTheName : new.name >: old.name - copyName
+RELATION copyKeeper[old.Plot*old.Gardener]
+ENFORCE copyKeeperDone : copyKeeper >: new.keeper /\ old.keeper
+ENFORCE copyTheKeeper : new.keeper >: old.keeper - copyKeeper
+
+-- The new rule of the board: every plot has a keeper. Plots without a keeper come along from the register in use,
+-- so the migration system relaxes the rule, with steps 3 to 5 of the migration method.
+-- Step 3: the relation fixedEveryPlotHasKeeper holds the plots that have a keeper,
+-- and the blocking invariant blockEveryPlotHasKeeper keeps such a plot from losing it again.
+RELATION fixedEveryPlotHasKeeper[new.Plot*new.Plot]
+RULE blockEveryPlotHasKeeper : fixedEveryPlotHasKeeper |- new.keeper;new.keeper~
+MESSAGE "A plot that has a keeper keeps one."
+VIOLATION (TXT "Give ", SRC new.name, TXT " a keeper again.")
+-- Step 4: a transactional invariant registers every plot that has a keeper.
+ENFORCE fixEveryPlotHasKeeper : fixedEveryPlotHasKeeper >: I[new.Plot] /\ new.keeper;new.keeper~
+-- Step 5: the rule itself signals the plots without a keeper, as work for the volunteers.
+-- In the new release, where no role maintains it, the same rule is a blocking invariant.
+ROLE Volunteer MAINTAINS new.everyPlotHasKeeper
+
+-- The screens of the new release, so that a user of the migration system works as in the new release:
+-- a list that cannot be edited, and a screen for one plot that saves a change as one transaction.
+INTERFACE Plots FOR Volunteer : "_SESSION";V[SESSION*new.Plot] cRud BOX<TABLE showNavMenu>
+  [ "plot" : new.name cRud
+  , "keeper" : new.keeper cRud
+  ]
+
+TRANSACTIONAL INTERFACE Plot FOR Volunteer : I[new.Plot] CRuD BOX<FORM>
+  [ "plot" : new.name CRUD
+  , "keeper" : new.keeper CRUD
+  ]
+
+ENDCONTEXT
