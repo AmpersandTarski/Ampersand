@@ -209,6 +209,43 @@ candidate calculus treats `I`, `V` and `EBin` as constants.
 or no `deltaQueries` → full re-evaluation (today's path); otherwise the delta
 protocol.
 
+**A candidate query that is longer than the compiler accepts for one query is left out of `conjuncts.json`; the conjunct keeps full re-evaluation for that relation.**
+*DC-20 · valid · 2026-10-13 · origin: issue #1728*
+
+The compiler writes a candidate query only when it fits the 1,000,000
+characters of `maxQueryLength` in `Ampersand.FSpec.SQL`. A relation whose
+candidate query is longer has no entry in the `deltaQueries` of that conjunct.
+
+*Considerations:*
+
+1. The goal is that a script compiles whenever its violation queries fit the
+   limit. A candidate term holds the whole violation term once for every
+   occurrence of the relation, so its query grows with the square of the
+   number of occurrences. In the script of issue #1728 one relation occurs
+   eleven times: the violation query is 35,936 characters long and the
+   candidate query for that relation is more than 1,000,000.
+2. The runtime already has the route: a conjunct without a candidate query
+   for a touched relation is evaluated in full (the dispatch rule of DC-9,
+   `hasDeltaQueryFor` in the framework). So the choice needs no change in the
+   framework and no new field in `conjuncts.json`.
+3. Raising the limit was rejected: the next longer term passes it again, and
+   a query of that length is not one a runtime should run per transaction.
+4. Smaller candidate terms were rejected for this issue: they change the
+   candidate calculus, whose completeness is machine-checked (claim PRF-7),
+   and that asks for a new proof.
+5. Writing `deltaQueries` only on request is left open in issue #1728. On the
+   Landeneisenregister (608 conjuncts) the candidate queries take 119 of the
+   141 seconds of processor time of a compilation and 11.8 of the 14.0 MB of
+   `conjuncts.json`, and the compiler still generates a query before it can
+   see that it is too long.
+
+*Impact on the specification:* none.
+
+*Impact in production:* a model with such a term compiles again. With
+`transactions.deltaConjunctMaintenance` on `off`, the default, nothing
+changes; with `shadow` or `on` the conjunct is evaluated in full when a
+transaction touches the relation that lost its candidate query.
+
 **The engine's transaction domain is the full set of declared relations and concepts; all wiring is fixed at construction.**
 *DC-10 · valid · 2026-08-13 · origin: issue #1683, engine oracle property*
 

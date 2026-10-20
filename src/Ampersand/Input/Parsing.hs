@@ -175,12 +175,13 @@ parseThings wanted roots = do
     Checked root ws -> do
       gSys <- growSystem confinement [] (Map.singleton (loadedKey root) root)
       pure . addWarnings ws $ do
-        (nodes, edges) <- gSys
+        (nodes, edges, named) <- gSys
         let sys =
               System
                 { sysViewer = loadedKey root,
                   sysNodes = Map.map (\n -> SystemNode (loadedKey n) (loadedCtx n)) nodes,
-                  sysEdges = edges
+                  sysEdges = edges,
+                  sysNamed = named
                 }
         viewer <- choose sys
         flattenSystem sys {sysViewer = viewer}
@@ -213,19 +214,20 @@ data LoadedNode = LoadedNode
 -- | Read the contexts that the inclusion statements ask for, until nothing new is found.
 --   An inclusion statement can stand in any file of the system.
 --   Its names are resolved in the file where it stands.
+--   The result holds the contexts, the inclusions, and the databases that the statements name with NAMED.
 growSystem ::
   (HasDirOutput env, HasFSpecGenOpts env, HasTrimXLSXOpts env, HasRunner env) =>
   -- | The directories to which reading is confined, if it is confined.
   Maybe [FilePath] ->
   [Warning] ->
   Map.Map ContextKey LoadedNode ->
-  RIO env (Guarded (Map.Map ContextKey LoadedNode, Map.Map ContextKey [SystemEdge]))
+  RIO env (Guarded (Map.Map ContextKey LoadedNode, Map.Map ContextKey [SystemEdge], [(ContextKey, Text, Origin)]))
 growSystem confinement ws nodes =
   case wanted of
     Errors err -> pure (Errors err)
     Checked es _ ->
       case L.nubBy ((==) `on` fst) [(edgeTarget e, pc) | (_, e, pc) <- es, edgeTarget e `Map.notMember` nodes] of
-        [] -> pure (Checked (nodes, Map.fromListWith (flip (<>)) [(k, [e]) | (k, e, _) <- es]) ws)
+        [] -> pure (Checked (nodes, Map.fromListWith (flip (<>)) [(k, [e]) | (k, e, _) <- es], named es) ws)
         new -> do
           loaded <- mapM (\(k, pc) -> fmap (\n -> n {loadedKey = k}) <$> loadNode confinement (pc NE.:| [])) new
           case sequenceA loaded of
@@ -236,44 +238,67 @@ growSystem confinement ws nodes =
     stmts = L.nubBy ((==) `on` (\(_, f, _, st) -> (f, incOrigin st))) [(n, f, blocks, st) | n <- Map.elems nodes, (f, blocks, st) <- loadedStmts n]
     wanted :: Guarded [(ContextKey, SystemEdge, ParseCandidate)]
     wanted = concat <$> traverse edgesOf stmts
+    -- The databases that the statements name: NAMED after a context before the word INCLUDES
+    -- names the database of that context, and NAMED after an included context names the database of that one.
+    named :: [(ContextKey, SystemEdge, ParseCandidate)] -> [(ContextKey, Text, Origin)]
+    named es =
+      L.nub
+        $ [ (k, db, incOrigin st)
+            | (_, file, _, st) <- stmts,
+              (nm, Just db) <- NE.toList (incIncluders st),
+              k <- includerKeysIn file nm
+          ]
+        <> [ (edgeTarget e, db, incOrigin st)
+             | (_, _, _, st) <- stmts,
+               item <- NE.toList (incItems st),
+               Just db <- [itDatabase item],
+               (_, e, _) <- es,
+               edgeOrigin e == incOrigin st,
+               edgeName e == localName (itName item),
+               edgeAlias e == itAlias item
+           ]
+    -- The context before the word INCLUDES is a context in this file,
+    -- or a context that an inclusion statement in this file names with FROM.
+    includerKeysIn :: FilePath -> Name -> [ContextKey]
+    includerKeysIn file nm =
+      case [loadedKey m | m <- Map.elems nodes, file `elem` loadedFiles m, snd (loadedKey m) == fullName nm] of
+        [] -> filter (`Map.member` nodes) (map fst (viaItemsIn file (localName nm)))
+        ks -> ks
+    viaItemsIn :: FilePath -> NamePart -> [(ContextKey, ParseCandidate)]
+    viaItemsIn file np =
+      L.nubBy
+        ((==) `on` fst)
+        [ targetIn n f' st' item g
+          | (n, f', _, st') <- stmts,
+            f' == file,
+            item <- NE.toList (incItems st'),
+            Just g <- [itFrom item],
+            localName (itName item) == np || itAlias item == Just np
+        ]
+    targetIn :: LoadedNode -> FilePath -> Inclusion -> InclusionItem -> FilePath -> (ContextKey, ParseCandidate)
+    targetIn n f st item g =
+      ( (canonical, fullName (itName item)),
+        (loadedRoot n)
+          { pcBasePath = Just f,
+            pcOrigin = Just (incOrigin st),
+            pcCanonical = canonical,
+            pcDefineds = processFlags Set.empty (map T.unpack (itDefs item)),
+            pcSelect = TheContext (itName item)
+          }
+      )
+      where
+        canonical = myNormalise (takeDirectory f </> g)
     edgesOf (n, file, blocks, st) =
       concat
         <$> sequenceA
           [ traverse (edge includer) (NE.toList (incItems st))
-            | includer <- L.nub (concatMap includerKeys (NE.toList (incIncluders st)))
+            | includer <- L.nub (concatMap (includerKeysIn file . fst) (NE.toList (incIncluders st)))
           ]
       where
-        -- The context before the word INCLUDES is a context in this file,
-        -- or a context that an inclusion statement in this file names with FROM.
-        includerKeys :: Name -> [ContextKey]
-        includerKeys nm =
-          case [loadedKey m | m <- Map.elems nodes, file `elem` loadedFiles m, snd (loadedKey m) == fullName nm] of
-            [] -> filter (`Map.member` nodes) (map fst (viaItems (localName nm)))
-            ks -> ks
         viaItems :: NamePart -> [(ContextKey, ParseCandidate)]
-        viaItems np =
-          L.nubBy
-            ((==) `on` fst)
-            [ target f' item g
-              | (_, f', _, st') <- stmts,
-                f' == file,
-                item <- NE.toList (incItems st'),
-                Just g <- [itFrom item],
-                localName (itName item) == np || itAlias item == Just np
-            ]
+        viaItems = viaItemsIn file
         target :: FilePath -> InclusionItem -> FilePath -> (ContextKey, ParseCandidate)
-        target f item g =
-          ( (canonical, fullName (itName item)),
-            (loadedRoot n)
-              { pcBasePath = Just f,
-                pcOrigin = Just (incOrigin st),
-                pcCanonical = canonical,
-                pcDefineds = processFlags Set.empty (map T.unpack (itDefs item)),
-                pcSelect = TheContext (itName item)
-              }
-          )
-          where
-            canonical = myNormalise (takeDirectory f </> g)
+        target f = targetIn n f st
         edge :: ContextKey -> InclusionItem -> Guarded (ContextKey, SystemEdge, ParseCandidate)
         edge includer item = do
           (k, pc) <- case itFrom item of

@@ -2,7 +2,7 @@ module Ampersand.Output.FSpec2SQL (dumpSQLqueries, databaseStructureSql) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
-import Ampersand.Core.ParseTree (foreignContexts)
+import Ampersand.Core.ParseTree (contextDatabases, databaseOfLabel, ownDatabase)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaPlugs)
@@ -29,11 +29,23 @@ generateDBstructQueries fSpec withComment =
     <> concatMap (tableSpec2Queries withComment . plug2TableSpec) (deltaPlugs fSpec)
     <> additionalDatabaseSettings
   where
-    -- A context creates the tables of its own things.
-    -- For a table of another context it creates a view on that table, in the database of its owner.
-    structure plug = case foreignTable (map fst (foreignContexts (metas fSpec))) plug of
+    -- A context creates the tables of its own database: its own things and those of the contexts that land on it.
+    -- For a table in another database it creates a view on that table.
+    -- The view names the database by the placeholder for its name, and the table by the name it has there.
+    structure plug = case foreignTable roots plug of
       Nothing -> tableSpec2Queries withComment (plug2TableSpec plug)
-      Just (lbl, remote) -> [createViewSql withComment lbl remote (plug2TableSpec plug)]
+      Just (lbl, remote) -> case databaseOfLabel (metas fSpec) lbl of
+        Just (db, _) -> [createViewSql withComment db remote (plug2TableSpec plug)]
+        Nothing -> fatal ("The context " <> lbl <> " lands on no database.")
+    -- The contexts on other databases, each with the label of the context that installs its database.
+    roots :: [(Text, Text)]
+    roots =
+      [ (lbl, root)
+        | (lbl, db, _) <- contextDatabases (metas fSpec),
+          lbl /= "",
+          Just db /= ownDatabase (metas fSpec),
+          root <- take 1 [l | (l, db', "") <- contextDatabases (metas fSpec), db' == db]
+      ]
 
 dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec =

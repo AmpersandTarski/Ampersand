@@ -1,0 +1,3 @@
+testCmds:
+  - command: ampersand proto --no-frontend
+    exitcode: 0
