@@ -49,9 +49,14 @@ PATTERN FormalAmpersand.ContextsAndDatabases
         /\ FormalAmpersand.version;FormalAmpersand.version~ |- I[FormalAmpersand.Context]
     MEANING "Two contexts with the same name and the same version are one context."
 
-    RELATION FormalAmpersand.database[FormalAmpersand.Context*FormalAmpersand.Database] [UNI,TOT,INJ,SUR]
-    MEANING "Every context has one database of its own, and every database realises one context. No population is stored twice."
-    -- The name of a database is a fact of the deployment. By default it consists of the name of the context and its version.
+    RELATION FormalAmpersand.database[FormalAmpersand.Context*FormalAmpersand.Database] [UNI,TOT,SUR]
+    MEANING "Every context lands on one database, and every database holds the population of at least one context. No population is stored twice."
+    -- The script names the database of a context with NAMED in an inclusion statement; without it, the database carries the name of the context.
+    -- Contexts with the same database name land on one database.
+    RELATION FormalAmpersand.installs[FormalAmpersand.Context*FormalAmpersand.Database] [UNI,INJ,SUR]
+    MEANING "The context that installs a database is the context on it that includes every other context on it. It runs the only application of that database."
+    RULE FormalAmpersand.InstallerIsOnItsDatabase LABEL "the installing context lands on the database it installs" :
+        FormalAmpersand.installs |- FormalAmpersand.database
 ENDPATTERN
 
 PURPOSE PATTERN FormalAmpersand.Inclusion

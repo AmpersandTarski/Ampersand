@@ -128,19 +128,21 @@ createTableSql withComment tSpec
         <> (T.pack . show . fstype) att
         <> " */"
 
--- | The place in a query where the name of the database of another context belongs.
---   The compiler does not know that name: the prototype framework fills it in when it installs the
---   database, from the deployment. The argument is the label of the other context.
+-- | The place in a query where the name of another database belongs.
+--   The script names the database, and the deployment may give it another name:
+--   the prototype framework fills in the name it is given when it installs the database.
+--   The argument is the name of the database as the script has it.
 databasePlaceholder :: Text -> Text
-databasePlaceholder lbl = doubleQuote ("{{db:" <> lbl <> "}}")
+databasePlaceholder db = doubleQuote ("{{db:" <> db <> "}}")
 
--- | A table that another context owns is known in this database as a view on that table.
---   So every query of this context reads and writes the one table, in the database of its owner.
+-- | A table in another database is known in this database as a view on that table.
+--   So every query of this context reads and writes the one table, in the database that holds it.
+--   The arguments are the name of that database and the name of the table there.
 createViewSql :: Bool -> Text -> Text -> TableSpec -> SqlQuery
-createViewSql withComment lbl remote tSpec
+createViewSql withComment db remote tSpec
   | withComment =
       SqlQueryPretty
-        $ commentBlockSQL (tsCmnt tSpec <> ["", "This table belongs to the context " <> lbl <> "."])
+        $ commentBlockSQL (tsCmnt tSpec <> ["", "This table is in the database " <> db <> "."])
         <> [statement]
   | otherwise = SqlQueryPlain statement
   where
@@ -148,7 +150,7 @@ createViewSql withComment lbl remote tSpec
       "CREATE VIEW "
         <> doubleQuote (tsName tSpec)
         <> " AS SELECT * FROM "
-        <> databasePlaceholder lbl
+        <> databasePlaceholder db
         <> "."
         <> doubleQuote remote
 
