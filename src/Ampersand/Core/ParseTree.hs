@@ -158,7 +158,7 @@ data Inclusion = Inclusion
     incIncluders :: !(NonEmpty (Name, Maybe Text)),
     -- | the contexts after the word INCLUDES
     incItems :: !(NonEmpty InclusionItem)
-    }
+  }
   deriving (Show)
 
 -- | One included context in an inclusion statement.
@@ -173,7 +173,7 @@ data InclusionItem = InclusionItem
     itAlias :: !(Maybe NamePart),
     -- | the name of the database on which the included context lands, if the statement gives one
     itDatabase :: !(Maybe Text)
-    }
+  }
   deriving (Show)
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
