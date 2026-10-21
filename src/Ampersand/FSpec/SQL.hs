@@ -4,6 +4,8 @@ module Ampersand.FSpec.SQL
     prettySQLQuery,
     sqlQuery,
     sqlQuerySharedWithinLimit,
+    sqlQuerySharedMergeable,
+    sqlQueryUnsharedWithinLimit,
     prettySQLQueryWithPlaceholder,
     sqlQueryWithPlaceholder,
     prettyBroadQueryWithPlaceholder,
@@ -82,14 +84,37 @@ sqlQuerySharedWithinLimit fSpec expr
         . stripComment
         $ sharedBinQueryExpr fSpec expr
 
+-- | Trial for issue #1739, not for merging: shared views without DISTINCT,
+--   so that the database may merge a view into every reference.
+sqlQuerySharedMergeable :: FSpec -> Expression -> Text
+sqlQuerySharedMergeable fSpec =
+  T.unwords
+    . T.words
+    . prettyQueryExpr theDialect
+    . toSQL
+    . stripComment
+    . sharedBinQueryExpr' False fSpec
+
+-- | Trial for issue #1739, not for merging: the unshared query, or Nothing
+--   when it is longer than 'maxQueryLength'.
+sqlQueryUnsharedWithinLimit :: FSpec -> Expression -> Maybe Text
+sqlQueryUnsharedWithinLimit fSpec expr
+  | T.length str <= maxQueryLength = Just str
+  | otherwise = Nothing
+  where
+    str = doNonPretty getBinQueryExpr fSpec expr
+
 sharedBinQueryExpr :: FSpec -> Expression -> BinQueryExpr
-sharedBinQueryExpr fSpec expr
+sharedBinQueryExpr = sharedBinQueryExpr' True
+
+sharedBinQueryExpr' :: Bool -> FSpec -> Expression -> BinQueryExpr
+sharedBinQueryExpr' distinctViews fSpec expr
   | null views = getBinQueryExpr fSpec expr
   | otherwise =
       BinWith
         { bcteWithRecursive = False,
           bcteViews =
-            [ (Alias (uName (fullName v)) Nothing, setDistinct (selectExpr fSpec' definition))
+            [ (Alias (uName (fullName v)) Nothing, (if distinctViews then setDistinct else id) (selectExpr fSpec' definition))
               | (v, definition) <- views
             ],
           bcteQueryExpression = setDistinct (selectExpr fSpec' body)

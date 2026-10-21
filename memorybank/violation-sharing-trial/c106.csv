@@ -1,0 +1,964 @@
+kind,id,relation,len_A,len_B,len_C,rows,median_A_s,median_B_s,median_C_s,B_over_A,C_over_A,same_pairs,note
+candidates,conj_0,kenmerk[Eis*Kenmerk],6321,6321,6321,0,0.00122,0.00122,0.00115,0.997,0.94,True,
+candidates,conj_0,wConcept[Wijziging*Wijziging],6056,6056,6056,,,,,,,,relation empty
+candidates,conj_0,wKenmerk[Wijziging*Kenmerk],6058,6058,6058,,,,,,,,relation empty
+candidates,conj_0,wKenmerkGeseed[Wijziging*Kenmerk],9565,9565,9565,,,,,,,,relation empty
+candidates,conj_0,wijzigtEis[Wijziging*Eis],6280,6280,6280,,,,,,,,relation empty
+candidates,conj_1,wConcept[Wijziging*Wijziging],11231,6159,8033,,,,,,,,relation empty
+candidates,conj_1,wGoedgekeurd[Wijziging*Wijziging],11171,6099,7973,,,,,,,,relation empty
+candidates,conj_1,wNieuweEis[Wijziging*Eis],17125,11722,12997,,,,,,,,relation empty
+candidates,conj_1,wijzigtEis[Wijziging*Eis],13235,8556,9831,,,,,,,,relation empty
+candidates,conj_2,bijschrijving[Eis*Bijschrijving],973180,85814,105093,0,0.00911,0.00771,0.38727,0.846,42.493,True,
+candidates,conj_2,dekkingVanEis[Dekking*Eis],835111,77560,93959,0,0.00731,0.00627,0.51341,0.858,70.189,True,
+candidates,conj_2,eisBegindatum[Eis*Datum],838631,109370,124867,0,0.00744,0.00646,18.82171,0.868,2529.488,True,
+candidates,conj_2,eisDekkinggroep[Eis*DekkingGroep],860647,78936,96087,0,0.00779,0.00663,0.40491,0.851,51.955,True,
+candidates,conj_2,eisEinddatum[Eis*Datum],894211,98548,114973,0,0.00809,0.00668,20.38443,0.825,2519.954,True,
+candidates,conj_2,eisGelijkBuitenOpsommingen[Eis*Eis],485296,86386,98789,,,,,,,,relation empty
+candidates,conj_2,eisGelijkeKenmerken[Eis*Eis],0,257364,292443,,,,,,,,relation empty
+candidates,conj_2,organismeZonder[Eis*Organisme],738566,96307,111909,,,,,,,,relation empty
+candidates,conj_2,sector[Eis*Sector],640835,101824,116335,0,0.00488,0.00528,,1.082,,True,C:timeout
+candidates,conj_3,eisGelijkBuitenOpsommingen[Eis*Eis],0,124036,146045,,,,,,,,relation empty
+candidates,conj_3,eisMistOrganisme[Eis*Eis],682219,57631,73386,,,,,,,,relation empty
+candidates,conj_3,eisMistProduct[Eis*Eis],636316,55281,70717,,,,,,,,relation empty
+candidates,conj_3,eisMistVorm[Eis*Eis],683677,56698,72372,,,,,,,,relation empty
+candidates,conj_3,eisSamenvoegbaar[Eis*Eis],364276,60826,71970,,,,,,,,relation empty
+candidates,conj_3,organisme[Eis*Organisme],794480,66763,82645,0,0.0072,0.00779,0.01024,1.083,1.423,True,
+candidates,conj_3,product[Eis*Product],675012,82513,95968,0,0.00523,0.00613,0.00756,1.173,1.445,True,
+candidates,conj_3,productVorm[Eis*Vorm],737958,72589,87445,0,0.00623,0.00677,0.00888,1.087,1.426,True,
+candidates,conj_4,eisFacetGelijk[Eis*Eis],153377,29540,34678,,,,,,,,relation empty
+candidates,conj_4,eisGelijkeKenmerken[Eis*Eis],45956,13640,16224,,,,,,,,relation empty
+candidates,conj_4,eisSig[Eis*KenmerkSig],74850,20055,24082,0,0.00118,0.00128,0.00141,1.08,1.197,True,
+candidates,conj_4,kenmerk[Eis*Kenmerk],112796,27211,31815,0,0.0025,0.00224,0.00267,0.898,1.067,True,
+candidates,conj_4,kenmerkSig[Kenmerk*KenmerkSig],75766,19329,23894,0,0.00118,0.00136,0.00141,1.152,1.197,True,
+candidates,conj_6,eisFacetGelijk[Eis*Eis],22849,11556,13328,,,,,,,,relation empty
+candidates,conj_6,eisInBewerking[Eis*Eis],36753,11373,13989,,,,,,,,relation empty
+candidates,conj_6,eisType[Eis*Eistype],21322,11993,13765,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_6,land[Eis*Gebied],21135,11848,13620,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_6,sector[Eis*Sector],21187,11882,13654,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_7,kenmerk[Eis*Kenmerk],25147,10759,12333,0,0.00062,0.00059,0.0008,0.94,1.286,True,
+candidates,conj_7,wCommitDoel[Wijziging*Eis],27964,18908,19950,,,,,,,,relation empty
+candidates,conj_7,wKenmerk[Wijziging*Kenmerk],8758,3969,5011,,,,,,,,relation empty
+candidates,conj_8,land[Eis*Gebied],24467,10495,12017,0,0.00052,0.00055,0.00061,1.047,1.163,True,
+candidates,conj_8,wCommitDoel[Wijziging*Eis],27172,18481,19497,,,,,,,,relation empty
+candidates,conj_8,wLand[Wijziging*Gebied],8512,3861,4877,,,,,,,,relation empty
+candidates,conj_9,organisme[Eis*Organisme],25719,11005,12635,0,0.00049,0.00049,0.00055,1.003,1.122,True,
+candidates,conj_9,wCommitDoel[Wijziging*Eis],28570,19324,20394,,,,,,,,relation empty
+candidates,conj_9,wOrganisme[Wijziging*Organisme],8862,4015,5085,,,,,,,,relation empty
+candidates,conj_10,organismeZonder[Eis*Organisme],26493,11224,12923,,,,,,,,relation empty
+candidates,conj_10,wCommitDoel[Wijziging*Eis],29436,19799,20902,,,,,,,,relation empty
+candidates,conj_10,wOrganismeZonder[Wijziging*Organisme],9047,4076,5179,,,,,,,,relation empty
+candidates,conj_11,product[Eis*Product],25083,10727,12301,0,0.00053,0.00052,0.00056,0.983,1.072,True,
+candidates,conj_11,wCommitDoel[Wijziging*Eis],27868,18876,19918,,,,,,,,relation empty
+candidates,conj_11,wProduct[Wijziging*Product],8694,3937,4979,,,,,,,,relation empty
+candidates,conj_12,productVorm[Eis*Vorm],24533,10456,11988,0,0.00052,0.00057,0.00064,1.091,1.235,True,
+candidates,conj_12,wCommitDoel[Wijziging*Eis],27351,18238,19280,,,,,,,,relation empty
+candidates,conj_12,wVorm[Wijziging*Vorm],8636,3854,4896,,,,,,,,relation empty
+candidates,conj_13,sector[Eis*Sector],24727,10569,12112,0,0.0005,0.00055,0.00063,1.088,1.245,True,
+candidates,conj_13,wCommitDoel[Wijziging*Eis],27477,18649,19674,,,,,,,,relation empty
+candidates,conj_13,wSector[Wijziging*Sector],8595,3895,4920,,,,,,,,relation empty
+candidates,conj_17,basiseis[Eis*Eis],5734,1741,2525,3,0.00034,0.04587,0.00038,133.029,1.116,True,
+candidates,conj_17,land[Eis*Gebied],6251,4560,4838,3,0.08478,0.08217,0.08192,0.969,0.966,True,
+candidates,conj_18,kenmerkEinddatum[Kenmerk*Datum],23792,12386,14297,,,,,,,,relation empty
+candidates,conj_18,wKenmerkBron[Kenmerk*Kenmerk],24615,12120,14031,,,,,,,,relation empty
+candidates,conj_18,wKenmerkEinddatumGeseed[Kenmerk*Kenmerk],24011,8034,10456,,,,,,,,relation empty
+candidates,conj_19,kenmerkGetal[Kenmerk*Getal],23010,12203,14033,,,,,,,,relation empty
+candidates,conj_19,wKenmerkBron[Kenmerk*Kenmerk],23683,12075,13905,,,,,,,,relation empty
+candidates,conj_19,wKenmerkGetalGeseed[Kenmerk*Kenmerk],23237,7965,10306,,,,,,,,relation empty
+candidates,conj_20,kenmerkHerkomst[Kenmerk*Herkomst],24168,12707,14624,0,0.00045,0.00043,0.00046,0.958,1.014,True,
+candidates,conj_20,wKenmerkBron[Kenmerk*Kenmerk],25063,12405,14322,,,,,,,,relation empty
+candidates,conj_20,wKenmerkHerkomstGeseed[Kenmerk*Kenmerk],24323,8097,10543,,,,,,,,relation empty
+candidates,conj_21,kenmerkKlasse[Kenmerk*Klasse],23200,12273,14126,,,,,,,,relation empty
+candidates,conj_21,wKenmerkBron[Kenmerk*Kenmerk],23959,12179,14032,,,,,,,,relation empty
+candidates,conj_21,wKenmerkKlasseGeseed[Kenmerk*Kenmerk],23467,8003,10373,,,,,,,,relation empty
+candidates,conj_22,kenmerkOperator[Kenmerk*Operator],24168,12707,14624,,,,,,,,relation empty
+candidates,conj_22,wKenmerkBron[Kenmerk*Kenmerk],25063,12405,14322,,,,,,,,relation empty
+candidates,conj_22,wKenmerkOperatorGeseed[Kenmerk*Kenmerk],24323,8097,10543,,,,,,,,relation empty
+candidates,conj_23,kenmerkProcent[Kenmerk*Procent],23782,12539,14427,,,,,,,,relation empty
+candidates,conj_23,wKenmerkBron[Kenmerk*Kenmerk],24603,12295,14183,,,,,,,,relation empty
+candidates,conj_23,wKenmerkProcentGeseed[Kenmerk*Kenmerk],23961,8053,10464,,,,,,,,relation empty
+candidates,conj_24,kenmerkNaam[Kenmerk*KenmerkNaam],23854,12810,14682,0,0.00134,0.00131,0.00155,0.976,1.155,True,
+candidates,conj_24,wKenmerkBron[Kenmerk*Kenmerk],24719,12656,14528,,,,,,,,relation empty
+candidates,conj_24,wKenmerkSoortGeseed[Kenmerk*Kenmerk],24013,8114,10533,,,,,,,,relation empty
+candidates,conj_25,kenmerkStatus[Kenmerk*Status],23396,12371,14230,,,,,,,,relation empty
+candidates,conj_25,wKenmerkBron[Kenmerk*Kenmerk],24143,12185,14044,,,,,,,,relation empty
+candidates,conj_25,wKenmerkStatusGeseed[Kenmerk*Kenmerk],23599,8009,10385,,,,,,,,relation empty
+candidates,conj_26,toepasbaarOp[Kenmerk*ConceptNaam],24346,12888,14841,,,,,,,,relation empty
+candidates,conj_26,wKenmerkBron[Kenmerk*Kenmerk],25247,12688,14641,,,,,,,,relation empty
+candidates,conj_26,wKenmerkToepasbaarGeseed[Kenmerk*Kenmerk],24519,8176,10676,,,,,,,,relation empty
+candidates,conj_27,kenmerkTekst[Kenmerk*Tekst],23046,12207,14044,0,0.00183,0.00183,0.0019,0.999,1.037,True,
+candidates,conj_27,wKenmerkBron[Kenmerk*Kenmerk],23719,12079,13916,,,,,,,,relation empty
+candidates,conj_27,wKenmerkWaardeGeseed[Kenmerk*Kenmerk],23273,7969,10317,,,,,,,,relation empty
+candidates,conj_28,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],14163,8769,9533,3,0.0004,0.00039,0.00042,0.984,1.058,True,
+candidates,conj_29,sessionAccount[SESSION*Account],8022,5374,5752,,,,,,,,relation empty
+candidates,conj_29,sessionAgentAccount[SESSION*AgentAccount],9107,5859,6307,,,,,,,,relation empty
+candidates,conj_29,sessionIsAnon[SESSION*SESSION],15631,6502,8760,1,0.00033,0.00036,0.00037,1.065,1.098,True,
+candidates,conj_30,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],45056,15807,20058,1,0.00128,0.00104,0.00111,0.809,0.867,True,
+candidates,conj_30,roleEquiv[Role*PrototypeContext.Role],19925,4869,7471,0,0.0009,0.00043,0.00045,0.479,0.506,True,
+candidates,conj_30,sessionAccount[SESSION*Account],21985,9363,11304,,,,,,,,relation empty
+candidates,conj_32,wCommitDoel[Wijziging*Eis],6262,6262,6262,,,,,,,,relation empty
+candidates,conj_32,wConcept[Wijziging*Wijziging],4501,4501,4501,,,,,,,,relation empty
+candidates,conj_32,wGoedgekeurd[Wijziging*Wijziging],4441,4441,4441,,,,,,,,relation empty
+candidates,conj_32,wNieuweEis[Wijziging*Eis],4713,4713,4713,,,,,,,,relation empty
+candidates,conj_33,wCommitDoel[Wijziging*Eis],6262,6262,6262,,,,,,,,relation empty
+candidates,conj_33,wConcept[Wijziging*Wijziging],4501,4501,4501,,,,,,,,relation empty
+candidates,conj_33,wGoedgekeurd[Wijziging*Wijziging],4441,4441,4441,,,,,,,,relation empty
+candidates,conj_33,wijzigtEis[Wijziging*Eis],4713,4713,4713,,,,,,,,relation empty
+candidates,conj_34,accUID[Account*UID],7955,2647,3590,,,,,,,,relation empty
+candidates,conj_34,accUserid[Account*Userid],19463,10013,11830,0,0.00072,0.00069,0.00066,0.955,0.909,True,
+candidates,conj_34,uidUserid[UID*Userid],7936,2628,3571,,,,,,,,relation empty
+candidates,conj_35,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],8055,8055,8055,0,0.0004,0.00039,0.00039,0.992,0.981,True,
+candidates,conj_35,accDefaultRole[Account*Role],6171,6171,6171,0,0.0004,0.00041,0.00041,1.013,1.019,True,
+candidates,conj_35,defaultRolGeseed[SESSION*SESSION],5020,5020,5020,,,,,,,,relation empty
+candidates,conj_35,roleEquiv[Role*PrototypeContext.Role],6073,6073,6073,0,0.00039,0.00037,0.00039,0.967,1.014,True,
+candidates,conj_35,sessionAccount[SESSION*Account],6135,6135,6135,,,,,,,,relation empty
+candidates,conj_36,eisBegindatum[Eis*Datum],5144,5144,5144,0,0.00035,0.00032,0.00033,0.917,0.943,True,
+candidates,conj_36,wBegindatum[Wijziging*Datum],6653,6653,6653,,,,,,,,relation empty
+candidates,conj_36,wBegindatumGeseed[Wijziging*Wijziging],3768,3768,3768,,,,,,,,relation empty
+candidates,conj_36,wijzigtEis[Wijziging*Eis],5109,5109,5109,,,,,,,,relation empty
+candidates,conj_37,bron[Eis*Bron],4880,4880,4880,0,0.00034,0.00036,0.00039,1.051,1.13,True,
+candidates,conj_37,wBron[Wijziging*Bron],6208,6208,6208,,,,,,,,relation empty
+candidates,conj_37,wBronGeseed[Wijziging*Wijziging],3562,3562,3562,,,,,,,,relation empty
+candidates,conj_37,wijzigtEis[Wijziging*Eis],4747,4747,4747,,,,,,,,relation empty
+candidates,conj_38,eisEisTekst[Eis*EisTekst],5081,5081,5081,,,,,,,,relation empty
+candidates,conj_38,wEisTekst[Wijziging*EisTekst],6613,6613,6613,,,,,,,,relation empty
+candidates,conj_38,wEisTekstGeseed[Wijziging*Wijziging],3773,3773,3773,,,,,,,,relation empty
+candidates,conj_38,wijzigtEis[Wijziging*Eis],5062,5062,5062,,,,,,,,relation empty
+candidates,conj_39,eisType[Eis*Eistype],5008,5008,5008,0,0.00032,0.00034,0.00031,1.061,0.987,True,
+candidates,conj_39,wEisType[Wijziging*Eistype],6450,6450,6450,,,,,,,,relation empty
+candidates,conj_39,wEisTypeGeseed[Wijziging*Wijziging],3683,3683,3683,,,,,,,,relation empty
+candidates,conj_39,wijzigtEis[Wijziging*Eis],4938,4938,4938,,,,,,,,relation empty
+candidates,conj_40,land[Eis*Gebied],4892,4892,4892,0,0.00029,0.00029,0.00029,1.008,0.995,True,
+candidates,conj_40,wLand[Wijziging*Gebied],6258,6258,6258,,,,,,,,relation empty
+candidates,conj_40,wLandGeseed[Wijziging*Wijziging],3596,3596,3596,,,,,,,,relation empty
+candidates,conj_40,wijzigtEis[Wijziging*Eis],4781,4781,4781,,,,,,,,relation empty
+candidates,conj_41,eisNaam[Eis*Tekst],4895,4895,4895,0,0.00031,0.00031,0.00032,1.005,1.024,True,
+candidates,conj_41,wNaam[Wijziging*Tekst],6290,6290,6290,,,,,,,,relation empty
+candidates,conj_41,wNaamGeseed[Wijziging*Wijziging],3618,3618,3618,,,,,,,,relation empty
+candidates,conj_41,wijzigtEis[Wijziging*Eis],4803,4803,4803,,,,,,,,relation empty
+candidates,conj_42,organisme[Eis*Organisme],5119,5119,5119,0,0.00027,0.00031,0.00025,1.132,0.934,True,
+candidates,conj_42,wOrganisme[Wijziging*Organisme],6657,6657,6657,,,,,,,,relation empty
+candidates,conj_42,wOrganismeGeseed[Wijziging*Wijziging],3790,3790,3790,,,,,,,,relation empty
+candidates,conj_42,wijzigtEis[Wijziging*Eis],5105,5105,5105,,,,,,,,relation empty
+candidates,conj_43,organismeZonder[Eis*Organisme],5362,5362,5362,,,,,,,,relation empty
+candidates,conj_43,wOrganismeZonder[Wijziging*Organisme],7006,7006,7006,,,,,,,,relation empty
+candidates,conj_43,wOrganismeZonderGeseed[Wijziging*Wijziging],3920,3920,3920,,,,,,,,relation empty
+candidates,conj_43,wijzigtEis[Wijziging*Eis],5391,5391,5391,,,,,,,,relation empty
+candidates,conj_44,product[Eis*Product],5021,5021,5021,0,0.00028,0.00028,0.00028,0.98,0.977,True,
+candidates,conj_44,wProduct[Wijziging*Product],6481,6481,6481,,,,,,,,relation empty
+candidates,conj_44,wProductGeseed[Wijziging*Wijziging],3700,3700,3700,,,,,,,,relation empty
+candidates,conj_44,wijzigtEis[Wijziging*Eis],4963,4963,4963,,,,,,,,relation empty
+candidates,conj_45,sector[Eis*Sector],4969,4969,4969,0,0.00028,0.00028,0.00031,0.984,1.105,True,
+candidates,conj_45,wSector[Wijziging*Sector],6384,6384,6384,,,,,,,,relation empty
+candidates,conj_45,wSectorGeseed[Wijziging*Wijziging],3649,3649,3649,,,,,,,,relation empty
+candidates,conj_45,wijzigtEis[Wijziging*Eis],4886,4886,4886,,,,,,,,relation empty
+candidates,conj_46,eisStatus[Eis*Status],4985,4985,4985,0,0.00026,0.00028,0.00028,1.06,1.057,True,
+candidates,conj_46,wStatus[Wijziging*Status],6439,6439,6439,,,,,,,,relation empty
+candidates,conj_46,wStatusGeseed[Wijziging*Wijziging],3687,3687,3687,,,,,,,,relation empty
+candidates,conj_46,wijzigtEis[Wijziging*Eis],4924,4924,4924,,,,,,,,relation empty
+candidates,conj_47,toelichting[Eis*Tekst],5164,5164,5164,0,0.00034,0.00033,0.00032,0.974,0.964,True,
+candidates,conj_47,wToelichting[Wijziging*Tekst],6648,6648,6648,,,,,,,,relation empty
+candidates,conj_47,wToelichtingGeseed[Wijziging*Wijziging],3753,3753,3753,,,,,,,,relation empty
+candidates,conj_47,wijzigtEis[Wijziging*Eis],5112,5112,5112,,,,,,,,relation empty
+candidates,conj_48,productVorm[Eis*Vorm],4895,4895,4895,0,0.00026,0.00026,0.00027,1.029,1.042,True,
+candidates,conj_48,wVorm[Wijziging*Vorm],6335,6335,6335,,,,,,,,relation empty
+candidates,conj_48,wVormGeseed[Wijziging*Wijziging],3641,3641,3641,,,,,,,,relation empty
+candidates,conj_48,wijzigtEis[Wijziging*Eis],4826,4826,4826,,,,,,,,relation empty
+candidates,conj_49,PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface],11908,7494,8190,0,0.00028,0.00029,0.00029,1.03,1.031,True,
+candidates,conj_50,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],12178,7581,8295,0,0.00027,0.00031,0.00027,1.131,0.987,True,
+candidates,conj_51,PrototypeContext.ifc[PrototypeContext.NavMenuItem*PrototypeContext.Interface],7182,7182,7182,0,0.0004,0.00038,0.00037,0.947,0.937,True,
+candidates,conj_51,PrototypeContext.ifcRoles[PrototypeContext.Interface*PrototypeContext.Role],7224,7224,7224,0,0.00034,0.00034,0.00033,0.998,0.972,True,
+candidates,conj_51,PrototypeContext.isSubItemOfStar[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],5272,5272,5272,0,0.00031,0.0003,0.0003,0.969,0.968,True,
+candidates,conj_51,PrototypeContext.navItemRoles[PrototypeContext.NavMenuItem*PrototypeContext.Role],10103,10103,10103,3,0.00045,0.00044,0.00044,0.984,0.978,True,
+candidates,conj_52,PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],12697,7875,8624,0,0.00029,0.00029,0.0003,1.007,1.031,True,
+candidates,conj_53,accDeactivateReq[Account*Account],7144,4582,4972,,,,,,,,relation empty
+candidates,conj_54,accIsActive[Account*Account],6694,4437,4797,0,0.00024,0.00026,0.00024,1.1,1.009,True,
+candidates,conj_55,accIsInitialized[Account*Account],7144,4582,4972,0,0.00024,0.00024,0.00025,1.001,1.034,True,
+candidates,conj_56,accUID[Account*UID],5736,3984,4282,,,,,,,,relation empty
+candidates,conj_57,anonymeRol[Role*Role],5823,3948,4251,0,0.00023,0.00025,0.00025,1.089,1.06,True,
+candidates,conj_58,basiseis[Eis*Eis],5456,3770,4048,0,0.00024,0.00026,0.00027,1.057,1.086,True,
+candidates,conj_59,bijschrijvingVerplicht[Bijschrijving*Bijschrijving],9136,5626,6148,,,,,,,,relation empty
+candidates,conj_60,defaultRolGeseed[SESSION*SESSION],7144,4582,4972,,,,,,,,relation empty
+candidates,conj_61,dekkingVanEis[Dekking*Eis],2220,2220,2220,0,0.03155,0.03136,0.03114,0.994,0.987,True,
+candidates,conj_61,dkgOrganisme[Dekking*Organisme],2921,2921,2921,0,0.078,0.07821,0.0775,1.003,0.994,True,
+candidates,conj_61,organisme[Eis*Organisme],4241,4241,4241,3,0.11157,0.11047,0.11128,0.99,0.997,True,
+candidates,conj_62,dekkingVanEis[Dekking*Eis],2140,2140,2140,0,0.00026,0.00025,0.00025,0.992,0.997,True,
+candidates,conj_62,dkgProduct[Dekking*Product],2888,2888,2888,,,,,,,,relation empty
+candidates,conj_62,product[Eis*Product],4136,4136,4136,0,0.00028,0.00027,0.00026,0.971,0.932,True,
+candidates,conj_63,dgIsDIFF[DekkingGroep*DekkingGroep],7634,5075,5497,,,,,,,,relation empty
+candidates,conj_64,eisDekkinggroep[Eis*DekkingGroep],7175,4639,5031,0,0.00694,0.0071,0.0072,1.023,1.037,True,
+candidates,conj_65,eisInBewerking[Eis*Eis],5996,3944,4258,,,,,,,,relation empty
+candidates,conj_66,eisInConcept[Eis*Eis],5816,3886,4188,,,,,,,,relation empty
+candidates,conj_67,eisInvoerverbod[Eis*Eis],6086,3973,4293,0,0.00025,0.00026,0.00027,1.041,1.048,True,
+candidates,conj_68,eisTypeInvoerverbod[Eistype*Eistype],7414,4669,5077,0,0.00025,0.00025,0.00029,0.999,1.125,True,
+candidates,conj_69,eppoCode[Organisme*EPPOcode],5485,3537,3903,0,0.00576,0.00584,0.00598,1.012,1.037,True,
+candidates,conj_70,gebiedCode[Gebied*Gebiedcode],6846,4559,4929,,,,,,,,relation empty
+candidates,conj_71,kenmerk[Eis*Kenmerk],5962,4105,4409,0,1.94255,2.07503,2.06309,1.068,1.062,True,
+candidates,conj_72,kenmerkHeeftDrager[Kenmerk*Kenmerk],7380,4680,5082,0,0.00085,0.00083,0.00082,0.98,0.967,True,
+candidates,conj_73,landeneis[Eis*Eis],5546,3799,4083,0,0.00034,0.00032,0.00032,0.936,0.931,True,
+candidates,conj_74,maakNieuweEis[SESSION*SESSION],6819,4470,4839,,,,,,,,relation empty
+candidates,conj_75,maakWijziging[Eis*Eis],5906,3915,4223,,,,,,,,relation empty
+candidates,conj_76,opSignatuur[Operator*Signatuur],12737,7592,8354,0,0.0004,0.00043,0.00044,1.062,1.103,True,
+candidates,conj_76,sigArgtype[Signatuur*Datatype],13391,8258,9020,0,0.00037,0.00039,0.0004,1.045,1.069,True,
+candidates,conj_77,orgParent[Organisme*Organisme],5664,3621,4001,,,,,,,,relation empty
+candidates,conj_78,organismeNaam[Organisme*WetenschappelijkeNaam],7132,4393,4893,0,0.0516,0.05128,0.05175,0.994,1.003,True,
+candidates,conj_79,parent[WetenschappelijkeNaam*WetenschappelijkeNaam],7734,4803,5357,0,0.00667,0.00705,0.00695,1.057,1.042,True,
+candidates,conj_80,productNaam[Product*WetenschappelijkeNaam],6814,4257,4729,0,0.06509,0.06693,0.06692,1.028,1.028,True,
+candidates,conj_81,roleEquiv[Role*PrototypeContext.Role],7845,5202,5638,0,0.00035,0.00036,0.00034,1.011,0.963,True,
+candidates,conj_82,sessionIfcsSet[SESSION*SESSION],6964,4524,4902,,,,,,,,relation empty
+candidates,conj_83,sessionIsAgent[SESSION*SESSION],6964,4524,4902,,,,,,,,relation empty
+candidates,conj_84,sessionIsAnon[SESSION*SESSION],6819,4470,4839,0,0.00026,0.00027,0.00028,1.023,1.088,True,
+candidates,conj_85,sessionIsUser[SESSION*SESSION],6874,4495,4867,,,,,,,,relation empty
+candidates,conj_86,sessionLoginAssist[SESSION*SESSION],7324,4640,5042,,,,,,,,relation empty
+candidates,conj_87,sessionLogoutReq[SESSION*SESSION],7144,4582,4972,,,,,,,,relation empty
+candidates,conj_88,sessionAccount[SESSION*Account],3260,3260,3260,,,,,,,,relation empty
+candidates,conj_88,sessionWijziging[SESSION*Wijziging],2306,2306,2306,,,,,,,,relation empty
+candidates,conj_88,wAuteur[Wijziging*Account],4641,4641,4641,,,,,,,,relation empty
+candidates,conj_89,gebiedInHerkomst[Gebied*Herkomst],12905,9577,10846,2,0.00498,0.00477,0.00511,0.958,1.026,True,
+candidates,conj_89,sub[Herkomst*Herkomst],6181,6181,6181,0,0.0013,0.00136,0.00131,1.047,1.011,True,
+candidates,conj_90,systemRole[Role*Role],5878,3973,4279,0,0.00031,0.00034,0.00032,1.097,1.041,True,
+candidates,conj_91,voorkeursnaam[Synoniem*WetenschappelijkeNaam],7043,4347,4839,0,0.00259,0.00264,0.00268,1.019,1.032,True,
+candidates,conj_92,wAangebodenReview[Wijziging*Wijziging],7718,4901,5329,,,,,,,,relation empty
+candidates,conj_93,wBegindatumGeseed[Wijziging*Wijziging],7718,4901,5329,,,,,,,,relation empty
+candidates,conj_94,wBronGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_95,eisBegindatum[Eis*Datum],4202,4202,4202,0,0.00023,0.00023,0.00023,1.004,1.012,True,
+candidates,conj_95,wBegindatum[Wijziging*Datum],2929,2929,2929,,,,,,,,relation empty
+candidates,conj_95,wCommitDoel[Wijziging*Eis],2185,2185,2185,,,,,,,,relation empty
+candidates,conj_96,bron[Eis*Bron],4039,4039,4039,0,0.00024,0.00023,0.00022,0.942,0.92,True,
+candidates,conj_96,wBron[Wijziging*Bron],2861,2861,2861,,,,,,,,relation empty
+candidates,conj_96,wCommitDoel[Wijziging*Eis],2046,2046,2046,,,,,,,,relation empty
+candidates,conj_97,eisEisTekst[Eis*EisTekst],4236,4236,4236,,,,,,,,relation empty
+candidates,conj_97,wCommitDoel[Wijziging*Eis],2201,2201,2201,,,,,,,,relation empty
+candidates,conj_97,wEisTekst[Wijziging*EisTekst],2932,2932,2932,,,,,,,,relation empty
+candidates,conj_98,eisType[Eis*Eistype],4180,4180,4180,0,0.00023,0.00023,0.00022,1.014,0.979,True,
+candidates,conj_98,wCommitDoel[Wijziging*Eis],2151,2151,2151,,,,,,,,relation empty
+candidates,conj_98,wEisType[Wijziging*Eistype],2903,2903,2903,,,,,,,,relation empty
+candidates,conj_99,kenmerk[Eis*Kenmerk],4177,4177,4177,0,0.00067,0.00054,0.00054,0.811,0.804,True,
+candidates,conj_99,wCommitDoel[Wijziging*Eis],2192,2192,2192,,,,,,,,relation empty
+candidates,conj_99,wKenmerk[Wijziging*Kenmerk],2947,2947,2947,,,,,,,,relation empty
+candidates,conj_100,land[Eis*Gebied],4089,4089,4089,0,0.00052,0.00049,0.00052,0.939,1.001,True,
+candidates,conj_100,wCommitDoel[Wijziging*Eis],2080,2080,2080,,,,,,,,relation empty
+candidates,conj_100,wLand[Wijziging*Gebied],2873,2873,2873,,,,,,,,relation empty
+candidates,conj_101,eisNaam[Eis*Tekst],4073,4073,4073,0,0.00088,0.00092,0.00091,1.048,1.033,True,
+candidates,conj_101,wCommitDoel[Wijziging*Eis],2078,2078,2078,,,,,,,,relation empty
+candidates,conj_101,wNaam[Wijziging*Tekst],2882,2882,2882,,,,,,,,relation empty
+candidates,conj_102,organisme[Eis*Organisme],4273,4273,4273,0,0.00021,0.00021,0.00022,0.996,1.03,True,
+candidates,conj_102,wCommitDoel[Wijziging*Eis],2234,2234,2234,,,,,,,,relation empty
+candidates,conj_102,wOrganisme[Wijziging*Organisme],2945,2945,2945,,,,,,,,relation empty
+candidates,conj_103,organismeZonder[Eis*Organisme],4396,4396,4396,,,,,,,,relation empty
+candidates,conj_103,wCommitDoel[Wijziging*Eis],2321,2321,2321,,,,,,,,relation empty
+candidates,conj_103,wOrganismeZonder[Wijziging*Organisme],2978,2978,2978,,,,,,,,relation empty
+candidates,conj_104,product[Eis*Product],4177,4177,4177,0,0.00026,0.00022,0.00025,0.834,0.95,True,
+candidates,conj_104,wCommitDoel[Wijziging*Eis],2160,2160,2160,,,,,,,,relation empty
+candidates,conj_104,wProduct[Wijziging*Product],2915,2915,2915,,,,,,,,relation empty
+candidates,conj_105,sector[Eis*Sector],4126,4126,4126,0,0.00023,0.00022,0.00024,0.944,1.056,True,
+candidates,conj_105,wCommitDoel[Wijziging*Eis],2122,2122,2122,,,,,,,,relation empty
+candidates,conj_105,wSector[Wijziging*Sector],2899,2899,2899,,,,,,,,relation empty
+candidates,conj_106,eisStatus[Eis*Status],4142,4142,4142,0,0.00026,0.00024,0.00024,0.908,0.89,True,
+candidates,conj_106,wCommitDoel[Wijziging*Eis],2131,2131,2131,,,,,,,,relation empty
+candidates,conj_106,wStatus[Wijziging*Status],2904,2904,2904,,,,,,,,relation empty
+candidates,conj_107,toelichting[Eis*Tekst],4218,4218,4218,0,0.00043,0.00038,0.00039,0.88,0.909,True,
+candidates,conj_107,wCommitDoel[Wijziging*Eis],2189,2189,2189,,,,,,,,relation empty
+candidates,conj_107,wToelichting[Wijziging*Tekst],2923,2923,2923,,,,,,,,relation empty
+candidates,conj_108,productVorm[Eis*Vorm],4054,4054,4054,0,0.00024,0.00023,0.00021,0.958,0.874,True,
+candidates,conj_108,wCommitDoel[Wijziging*Eis],2069,2069,2069,,,,,,,,relation empty
+candidates,conj_108,wVorm[Wijziging*Vorm],2890,2890,2890,,,,,,,,relation empty
+candidates,conj_109,wConcept[Wijziging*Wijziging],6908,4640,5014,,,,,,,,relation empty
+candidates,conj_110,wEisTekstGeseed[Wijziging*Wijziging],7538,4843,5259,,,,,,,,relation empty
+candidates,conj_111,wEisTypeGeseed[Wijziging*Wijziging],7393,4789,5196,,,,,,,,relation empty
+candidates,conj_112,wGoedgekeurd[Wijziging*Wijziging],7268,4756,5154,,,,,,,,relation empty
+candidates,conj_113,wKenmerkEinddatumGeseed[Kenmerk*Kenmerk],7830,4825,5257,,,,,,,,relation empty
+candidates,conj_114,wKenmerkGetalGeseed[Kenmerk*Kenmerk],7470,4709,5117,,,,,,,,relation empty
+candidates,conj_115,wKenmerkHerkomstGeseed[Kenmerk*Kenmerk],7740,4796,5222,,,,,,,,relation empty
+candidates,conj_116,wKenmerkKlasseGeseed[Kenmerk*Kenmerk],7560,4738,5152,,,,,,,,relation empty
+candidates,conj_117,wKenmerkOperatorGeseed[Kenmerk*Kenmerk],7740,4796,5222,,,,,,,,relation empty
+candidates,conj_118,wKenmerkProcentGeseed[Kenmerk*Kenmerk],7650,4767,5187,,,,,,,,relation empty
+candidates,conj_119,wKenmerkSoortGeseed[Kenmerk*Kenmerk],7470,4709,5117,,,,,,,,relation empty
+candidates,conj_120,wKenmerkStatusGeseed[Kenmerk*Kenmerk],7560,4738,5152,,,,,,,,relation empty
+candidates,conj_121,wKenmerkToepasbaarGeseed[Kenmerk*Kenmerk],7920,4854,5292,,,,,,,,relation empty
+candidates,conj_122,wKenmerkWaardeGeseed[Kenmerk*Kenmerk],7505,4713,5124,,,,,,,,relation empty
+candidates,conj_123,wLandGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_124,wNaamGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_125,wOrganismeGeseed[Wijziging*Wijziging],7628,4872,5294,,,,,,,,relation empty
+candidates,conj_126,wOrganismeZonderGeseed[Wijziging*Wijziging],8168,5046,5504,,,,,,,,relation empty
+candidates,conj_127,wProductGeseed[Wijziging*Wijziging],7448,4814,5224,,,,,,,,relation empty
+candidates,conj_128,wSectorGeseed[Wijziging*Wijziging],7358,4785,5189,,,,,,,,relation empty
+candidates,conj_129,wSluit[Wijziging*Wijziging],6728,4582,4944,,,,,,,,relation empty
+candidates,conj_130,wStatusGeseed[Wijziging*Wijziging],7358,4785,5189,,,,,,,,relation empty
+candidates,conj_131,wToelichtingGeseed[Wijziging*Wijziging],7753,4905,5336,,,,,,,,relation empty
+candidates,conj_132,wVormGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_133,PrototypeContext.ifc[PrototypeContext.NavMenuItem*PrototypeContext.Interface],11982,7590,8290,0,0.00033,0.00033,0.00034,0.986,1.013,True,
+candidates,conj_134,PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface],11908,7494,8190,0,0.00029,0.0003,0.00028,1.048,0.985,True,
+candidates,conj_135,PrototypeContext.isPartOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenu],12202,7599,8313,0,0.00032,0.00034,0.00032,1.042,0.988,True,
+candidates,conj_136,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],12178,7581,8295,0,0.00026,0.00027,0.00027,1.022,1.023,True,
+candidates,conj_137,PrototypeContext.ifcRoles[PrototypeContext.Interface*PrototypeContext.Role],3818,3818,3818,0,0.00023,0.00022,0.00021,0.973,0.914,True,
+candidates,conj_137,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],1665,1665,1665,0,0.0002,0.00019,0.00021,0.985,1.05,True,
+candidates,conj_138,PrototypeContext.ifcRoles[PrototypeContext.Interface*PrototypeContext.Role],5312,5312,5312,0,0.00023,0.00026,0.00025,1.105,1.087,True,
+candidates,conj_138,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],11722,11081,12242,1,0.00038,0.0005,0.00046,1.315,1.194,True,
+candidates,conj_139,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],12932,7958,8722,0,0.00029,0.00029,0.00028,0.992,0.971,True,
+candidates,conj_140,PrototypeContext.isPartOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenu],8558,6449,7213,3,0.00036,0.00036,0.00037,0.995,1.009,True,
+candidates,conj_140,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],2983,2983,2983,0,0.00023,0.00022,0.00023,0.983,1.024,True,
+candidates,conj_141,PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],12697,7875,8624,0,0.00029,0.00029,0.00029,1.008,1.013,True,
+candidates,conj_142,PrototypeContext.label[PrototypeContext.Interface*PrototypeContext.Label],11448,7222,7886,0,0.0003,0.0003,0.00029,1.015,0.971,True,
+candidates,conj_143,PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label],11702,7376,8056,0,0.00028,0.0003,0.00029,1.06,1.034,True,
+candidates,conj_144,PrototypeContext.label[PrototypeContext.Role*PrototypeContext.Label],10813,6837,7461,0,0.00024,0.00025,0.00025,1.049,1.045,True,
+candidates,conj_145,PrototypeContext.lastAccess[SESSION*PrototypeContext.DateTime],9830,6108,6674,0,0.00024,0.00026,0.00025,1.066,1.027,True,
+candidates,conj_146,PrototypeContext.seqNr[PrototypeContext.NavMenuItem*PrototypeContext.SeqNr],11702,7376,8056,0,0.00029,0.00028,0.00027,0.963,0.955,True,
+candidates,conj_147,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],10090,6068,6650,0,0.00024,0.00024,0.00025,0.98,1.038,True,
+candidates,conj_148,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],3516,3516,3516,0,0.00021,0.00021,0.0002,1.0,0.956,True,
+candidates,conj_148,roleEquiv[Role*PrototypeContext.Role],2782,2782,2782,0,0.0002,0.0002,0.00021,0.984,1.034,True,
+candidates,conj_148,sessionActiveRoles[SESSION*Role],5389,5389,5389,1,0.00021,0.00021,0.00021,1.01,1.025,True,
+candidates,conj_149,PrototypeContext.url[PrototypeContext.NavMenuItem*PrototypeContext.URL],11237,7157,7806,,,,,,,,relation empty
+candidates,conj_150,accDeactivateReq[Account*Account],7144,4582,4972,,,,,,,,relation empty
+candidates,conj_151,accDefaultRole[Account*Role],6564,4295,4646,0,0.00024,0.00024,0.00025,1.014,1.034,True,
+candidates,conj_152,accEmail[Account*Emailadres],6769,4554,4920,,,,,,,,relation empty
+candidates,conj_153,accIsActive[Account*Account],6694,4437,4797,0,0.00023,0.00027,0.00024,1.152,1.016,True,
+candidates,conj_154,accIsInitialized[Account*Account],7144,4582,4972,0,0.00024,0.00024,0.00026,0.992,1.081,True,
+candidates,conj_155,accPassword[Account*Password],6809,4505,4873,,,,,,,,relation empty
+candidates,conj_156,accUserIfc[Account*NavToIfc],6664,4451,4810,0,0.00026,0.00025,0.00026,0.989,1.002,True,
+candidates,conj_157,accUserid[Account*Userid],6399,4311,4651,0,0.00023,0.00024,0.00023,1.05,1.026,True,
+candidates,conj_158,anonymeRol[Role*Role],5823,3948,4251,0,0.00023,0.00024,0.00024,1.016,1.03,True,
+candidates,conj_159,basiseis[Eis*Eis],5456,3770,4048,0,0.00024,0.00025,0.00026,1.043,1.086,True,
+candidates,conj_160,bijschrijvingConcept[Bijschrijving*Verklaringsconcept],9476,5883,6430,0,0.00031,0.00034,0.00032,1.082,1.04,True,
+candidates,conj_161,bijschrijvingTaal[Bijschrijving*Taal],7651,4869,5289,0,0.06388,0.06011,0.06078,0.941,0.951,True,
+candidates,conj_162,bijschrijvingTekst[Bijschrijving*Tekst],7856,4966,5400,0,0.06862,0.06947,0.06839,1.012,0.997,True,
+candidates,conj_163,bijschrijvingVerplicht[Bijschrijving*Bijschrijving],9136,5626,6148,,,,,,,,relation empty
+candidates,conj_164,botZoeknaam[WetenschappelijkeNaam*Naam],8127,5311,5759,0,0.07391,0.07367,0.07508,0.997,1.016,True,
+candidates,conj_165,bron[Eis*Bron],5211,3722,3984,0,0.08971,0.08268,0.08235,0.922,0.918,True,
+candidates,conj_166,bronTaal[Bron*Taal],5698,3915,4209,,,,,,,,relation empty
+candidates,conj_167,bronURL[Bron*URL],5493,3818,4098,,,,,,,,relation empty
+candidates,conj_168,bronsysteem[Eis*Bronsysteem],6646,4401,4761,0,0.1044,0.08291,0.08349,0.794,0.8,True,
+candidates,conj_169,bronsysteemNaam[Bronsysteem*Naam],7217,4657,5049,0,0.00051,0.0005,0.0005,0.983,0.988,True,
+candidates,conj_170,datatype[KenmerkNaam*Datatype],7047,4726,5108,0,0.00036,0.00037,0.00036,1.033,1.003,True,
+candidates,conj_171,datatypeNaam[Datatype*Naam],6566,4339,4689,0,0.00045,0.00045,0.00046,1.012,1.023,True,
+candidates,conj_172,defaultRolGeseed[SESSION*SESSION],7144,4582,4972,,,,,,,,relation empty
+candidates,conj_173,definitie[EisTekst*Tekst],6411,4320,4660,0,0.00051,0.00052,0.00053,1.018,1.035,True,
+candidates,conj_174,dekkingVanEis[Dekking*Eis],6414,4223,4563,0,0.1456,0.13573,0.13775,0.932,0.946,True,
+candidates,conj_175,dgBasisDekking[DekkingGroep*Dekking],7544,4884,5299,,,,,,,,relation empty
+candidates,conj_176,dgBasisDekking[DekkingGroep*Dekking],12232,6988,7867,,,,,,,,relation empty
+candidates,conj_176,dgBasisSubgroep[DekkingGroep*DekkingGroep],12479,7187,8066,,,,,,,,relation empty
+candidates,conj_177,dgBasisSubgroep[DekkingGroep*DekkingGroep],8264,5278,5742,,,,,,,,relation empty
+candidates,conj_178,dgIsDIFF[DekkingGroep*DekkingGroep],7634,5075,5497,,,,,,,,relation empty
+candidates,conj_179,dgOperator[DekkingGroep*DekkingOperator],8159,5337,5795,0,0.08477,0.08111,0.07993,0.957,0.943,True,
+candidates,conj_180,dkgCodeInspectie[Dekking*Tekst],6914,4446,4820,0,0.02669,0.02658,0.02686,0.996,1.007,True,
+candidates,conj_181,dkgEinddatum[Dekking*Datum],6554,4330,4680,,,,,,,,relation empty
+candidates,conj_182,dkgModule[Dekking*Tekst],6284,4243,4575,0,0.00378,0.00375,0.00376,0.992,0.994,True,
+candidates,conj_183,dkgNaam[Dekking*Tekst],6104,4185,4505,0,0.11296,0.11346,0.11415,1.004,1.011,True,
+candidates,conj_184,dkgNormEenheid[Dekking*Eenheid],6964,4524,4902,0,0.00035,0.00037,0.00036,1.059,1.036,True,
+candidates,conj_185,dkgNormOperator[Dekking*Tekst],6769,4392,4757,0,0.00379,0.00378,0.00375,0.998,0.991,True,
+candidates,conj_186,dkgNormWaarde[Dekking*Tekst],6644,4359,4715,0,0.00371,0.00382,0.00366,1.03,0.987,True,
+candidates,conj_187,dkgStatus[Dekking*Status],6399,4311,4651,,,,,,,,relation empty
+candidates,conj_188,dkgType[Dekking*Typedekking],6794,4593,4961,0,0.15966,0.13041,0.12974,0.817,0.813,True,
+candidates,conj_189,eenheidNaam[Eenheid*Naam],6349,4233,4569,0,0.00055,0.00054,0.00054,0.985,0.982,True,
+candidates,conj_190,eis[EisTekst*Tekst],5871,4146,4450,0,0.00054,0.00055,0.00056,1.023,1.029,True,
+candidates,conj_191,eisBegindatum[Eis*Datum],6081,4026,4347,0,0.00032,0.0003,0.00033,0.926,1.022,True,
+candidates,conj_193,eisDekkinggroep[Eis*DekkingGroep],7121,4585,4977,0,0.007,0.00701,0.007,1.0,0.999,True,
+candidates,conj_194,eisEinddatum[Eis*Datum],6046,4022,4340,0,0.00035,0.00035,0.00035,0.981,1.0,True,
+candidates,conj_195,eisEisTekst[Eis*EisTekst],6301,4197,4533,,,,,,,,relation empty
+candidates,conj_196,eisInBewerking[Eis*Eis],5996,3944,4258,,,,,,,,relation empty
+candidates,conj_197,eisInConcept[Eis*Eis],5816,3886,4188,,,,,,,,relation empty
+candidates,conj_198,eisInvoerverbod[Eis*Eis],6086,3973,4293,0,0.00029,0.0003,0.00028,1.055,0.989,True,
+candidates,conj_199,eisNaam[Eis*Tekst],5596,3877,4165,0,0.07112,0.07179,0.07134,1.009,1.003,True,
+candidates,conj_200,eisStatus[Eis*Status],5891,4003,4311,0,0.00038,0.00037,0.00035,0.981,0.916,True,
+candidates,conj_201,eisType[Eis*Eistype],5826,4013,4317,0,0.09486,0.07972,0.07905,0.84,0.833,True,
+candidates,conj_202,eisTypeInvoerverbod[Eistype*Eistype],7414,4669,5077,0,0.0003,0.0003,0.00029,1.024,0.973,True,
+candidates,conj_203,eisTypeNaam[Eistype*Naam],6349,4233,4569,0,0.00052,0.00053,0.00054,1.017,1.026,True,
+candidates,conj_204,gebiedCode[Gebied*Gebiedcode],6822,4535,4905,,,,,,,,relation empty
+candidates,conj_205,herkomstNaam[Herkomst*Naam],6566,4339,4689,0,0.00647,0.00653,0.00649,1.008,1.002,True,
+candidates,conj_206,ispm12code[EisTekst*ISPM12code],7076,4689,5075,0,0.00033,0.00034,0.00036,1.022,1.095,True,
+candidates,conj_207,eisSig[Eis*KenmerkSig],3039,3039,3039,3,1.0687,1.05411,1.05083,0.986,0.983,True,
+candidates,conj_207,kenmerk[Eis*Kenmerk],1842,1842,1842,0,0.01643,0.01647,0.01644,1.002,1.001,True,
+candidates,conj_207,kenmerkSig[Kenmerk*KenmerkSig],1751,1751,1751,0,1.03316,1.03661,1.03199,1.003,0.999,True,
+candidates,conj_208,kenmerkEinddatum[Kenmerk*Datum],6915,4461,4832,,,,,,,,relation empty
+candidates,conj_209,kenmerkGebied[Kenmerk*Gebied],6595,4367,4719,,,,,,,,relation empty
+candidates,conj_210,kenmerkGetal[Kenmerk*Getal],6610,4370,4720,,,,,,,,relation empty
+candidates,conj_211,kenmerkHeeftDrager[Kenmerk*Kenmerk],7380,4680,5082,0,0.00089,0.00094,0.00091,1.06,1.025,True,
+candidates,conj_212,kenmerkHerkomst[Kenmerk*Herkomst],7225,4661,5053,0,0.00694,0.00707,0.00724,1.018,1.042,True,
+candidates,conj_213,kenmerkKlasse[Kenmerk*Klasse],6705,4417,4775,,,,,,,,relation empty
+candidates,conj_214,kenmerkNaam[Kenmerk*KenmerkNaam],7210,4749,5141,0,1.92911,1.41785,1.42449,0.735,0.738,True,
+candidates,conj_215,kenmerkOperator[Kenmerk*Operator],7225,4661,5053,,,,,,,,relation empty
+candidates,conj_216,datatype[KenmerkNaam*Datatype],11770,11770,11770,0,0.00036,0.00037,0.00037,1.047,1.031,True,
+candidates,conj_216,kenmerkNaam[Kenmerk*KenmerkNaam],11727,11727,11727,0,0.00094,0.00095,0.001,1.006,1.062,True,
+candidates,conj_216,kenmerkOperator[Kenmerk*Operator],11977,11977,11977,,,,,,,,relation empty
+candidates,conj_216,kenmerkSignatuur[Kenmerk*Signatuur],8565,8565,8565,,,,,,,,relation empty
+candidates,conj_216,opSignatuur[Operator*Signatuur],12015,12015,12015,0,0.00035,0.00033,0.00032,0.957,0.93,True,
+candidates,conj_216,sigArgtype[Signatuur*Datatype],10931,10931,10931,0,0.00035,0.00032,0.00033,0.924,0.961,True,
+candidates,conj_217,kenmerkProcent[Kenmerk*Procent],7020,4564,4942,,,,,,,,relation empty
+candidates,conj_218,kenmerkSig[Kenmerk*KenmerkSig],7005,4652,5030,0,0.03277,0.03265,0.03289,0.996,1.004,True,
+candidates,conj_219,kenmerkSignatuur[Kenmerk*Signatuur],7430,4758,5164,,,,,,,,relation empty
+candidates,conj_220,kenmerkStatus[Kenmerk*Status],6815,4467,4831,,,,,,,,relation empty
+candidates,conj_221,kenmerkTekst[Kenmerk*Tekst],6610,4370,4720,0,0.88837,0.87544,0.87717,0.985,0.987,True,
+candidates,conj_222,kenmerkVerwachtType[Kenmerk*Datatype],7585,4777,5193,,,,,,,,relation empty
+candidates,conj_223,label[Role*PFLabel],5773,4032,4332,0,0.00029,0.00028,0.00031,0.959,1.055,True,
+candidates,conj_224,land[Eis*Gebied],5441,3858,4136,0,0.08654,0.08353,0.08303,0.965,0.959,True,
+candidates,conj_225,gebiedInHerkomst[Gebied*Herkomst],33632,14866,16871,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_225,kenmerk[Eis*Kenmerk],36600,15387,17893,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_225,kenmerkHerkomst[Kenmerk*Herkomst],36545,16347,18803,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_225,land[Eis*Gebied],23585,12187,13855,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_225,product[Eis*Product],23724,12284,13952,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_226,landeneis[Eis*Eis],5546,3799,4083,0,0.00036,0.00035,0.00035,0.978,0.983,True,
+candidates,conj_227,loginNaam[SESSION*Userid],6399,4311,4651,,,,,,,,relation empty
+candidates,conj_228,maakNieuweEis[SESSION*SESSION],6819,4470,4839,,,,,,,,relation empty
+candidates,conj_229,maakWijziging[Eis*Eis],5906,3915,4223,,,,,,,,relation empty
+candidates,conj_230,naam[EisTekst*EisTekstNaam],6766,4651,5017,0,0.0003,0.0003,0.0003,0.986,0.982,True,
+candidates,conj_231,naam[Gebied*Naam],5592,3953,4239,0,0.00162,0.00165,0.00166,1.018,1.023,True,
+candidates,conj_232,nlNa[EisTekst*Tekst],5961,4175,4485,0,0.00069,0.00064,0.00062,0.921,0.895,True,
+candidates,conj_233,nlVoor[EisTekst*Tekst],6141,4233,4555,0,0.00058,0.00058,0.00062,1.013,1.068,True,
+candidates,conj_234,operatorNaam[Operator*Naam],6566,4339,4689,0,0.00052,0.00057,0.00052,1.084,0.995,True,
+candidates,conj_235,opmerkingen[EisTekst*Tekst],6591,4378,4730,0,0.00052,0.00062,0.00056,1.197,1.071,True,
+candidates,conj_236,organismeKenmerk[Organisme*Kenmerk],5952,3671,4077,,,,,,,,relation empty
+candidates,conj_237,organismeNaam[Organisme*WetenschappelijkeNaam],3744,3744,3744,0,0.00142,0.00143,0.00141,1.01,0.994,True,
+candidates,conj_237,organismeSynoniem[Organisme*Synoniem],2221,2221,2221,0,0.00141,0.00144,0.00142,1.019,1.006,True,
+candidates,conj_237,voorkeursnaam[Synoniem*WetenschappelijkeNaam],2101,2101,2101,0,0.00148,0.0015,0.00148,1.015,1.003,True,
+candidates,conj_238,productKenmerk[Product*Kenmerk],5610,3511,3889,,,,,,,,relation empty
+candidates,conj_239,productNaam[Product*WetenschappelijkeNaam],3648,3648,3648,0,0.00022,0.00022,0.00022,0.999,0.998,True,
+candidates,conj_239,productSynoniem[Product*Synoniem],2191,2191,2191,0,0.00139,0.00133,0.00136,0.956,0.976,True,
+candidates,conj_239,voorkeursnaam[Synoniem*WetenschappelijkeNaam],2027,2027,2027,0,0.00022,0.00021,0.00021,0.937,0.923,True,
+candidates,conj_240,roleEquiv[Role*PrototypeContext.Role],7743,5100,5536,0,0.00025,0.00028,0.00027,1.125,1.077,True,
+candidates,conj_241,sectorNaam[Sector*Naam],6132,4127,4449,0,0.00053,0.00052,0.00049,0.984,0.93,True,
+candidates,conj_242,accAllowedRoles[Account*Role],1902,1902,1902,0,0.00022,0.00021,0.00021,0.969,0.947,True,
+candidates,conj_242,accDefaultRole[Account*Role],1899,1899,1899,0,0.00021,0.0002,0.0002,0.948,0.971,True,
+candidates,conj_242,sessionAccount[SESSION*Account],3349,3349,3349,,,,,,,,relation empty
+candidates,conj_242,sessionAllowedRoles[SESSION*Role],4910,4910,4910,0,0.00021,0.00022,0.00021,1.05,1.004,True,
+candidates,conj_243,sessionAccount[SESSION*Account],6964,4524,4902,,,,,,,,relation empty
+candidates,conj_244,accUserid[Account*Userid],1887,1887,1887,0,0.0002,0.00019,0.00019,0.99,0.991,True,
+candidates,conj_244,sessionAccount[SESSION*Account],1826,1826,1826,,,,,,,,relation empty
+candidates,conj_244,sessionUserid[SESSION*Userid],3126,3126,3126,,,,,,,,relation empty
+candidates,conj_245,sessionAgentAccount[SESSION*AgentAccount],7989,5009,5457,,,,,,,,relation empty
+candidates,conj_246,PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role],3518,3518,3518,1,0.00022,0.00022,0.00023,1.003,1.044,True,
+candidates,conj_246,roleEquiv[Role*PrototypeContext.Role],2070,2070,2070,0,0.00021,0.00021,0.0002,0.962,0.948,True,
+candidates,conj_246,sessionAllowedRoles[SESSION*Role],2133,2133,2133,0,0.00021,0.00021,0.0002,1.02,0.997,True,
+candidates,conj_247,sessionAnonIfc[SESSION*NavToIfc],7079,4592,4978,,,,,,,,relation empty
+candidates,conj_248,sessionBladerSector[SESSION*Sector],7299,4601,5001,,,,,,,,relation empty
+candidates,conj_249,sessionFilterEisType[SESSION*Eistype],7449,4673,5084,,,,,,,,relation empty
+candidates,conj_250,sessionFilterOrganisme[SESSION*Organisme],7914,4892,5334,,,,,,,,relation empty
+candidates,conj_251,sessionFilterProduct[SESSION*Product],7504,4698,5112,,,,,,,,relation empty
+candidates,conj_252,sessionFilterStatus[SESSION*Status],7299,4601,5001,,,,,,,,relation empty
+candidates,conj_253,sessionIfcsSet[SESSION*SESSION],6964,4524,4902,,,,,,,,relation empty
+candidates,conj_254,sessionIsAgent[SESSION*SESSION],6964,4524,4902,,,,,,,,relation empty
+candidates,conj_255,sessionIsAnon[SESSION*SESSION],6819,4470,4839,0,0.00024,0.00025,0.00025,1.051,1.036,True,
+candidates,conj_256,accIsActive[Account*Account],4775,4775,4775,0,0.00025,0.00027,0.00026,1.074,1.034,True,
+candidates,conj_256,accUserid[Account*Userid],4049,4049,4049,0,0.00026,0.00027,0.00025,1.038,0.973,True,
+candidates,conj_256,loginNaam[SESSION*Userid],4806,4806,4806,,,,,,,,relation empty
+candidates,conj_256,sessionAccount[SESSION*Account],6505,6505,6505,,,,,,,,relation empty
+candidates,conj_256,sessionIsAnon[SESSION*SESSION],4758,4758,4758,0,0.00024,0.00024,0.00024,0.992,1.022,True,
+candidates,conj_257,sessionIsUser[SESSION*SESSION],6874,4495,4867,,,,,,,,relation empty
+candidates,conj_258,accIsActive[Account*Account],4781,4781,4781,0,0.00024,0.00024,0.00023,0.998,0.964,True,
+candidates,conj_258,accUserid[Account*Userid],4055,4055,4055,0,0.00024,0.00024,0.00024,0.986,0.995,True,
+candidates,conj_258,loginNaam[SESSION*Userid],4812,4812,4812,,,,,,,,relation empty
+candidates,conj_258,sessionAccount[SESSION*Account],6514,6514,6514,,,,,,,,relation empty
+candidates,conj_258,sessionIsUser[SESSION*SESSION],4761,4761,4761,,,,,,,,relation empty
+candidates,conj_259,sessionLand[SESSION*Gebied],6579,4369,4721,,,,,,,,relation empty
+candidates,conj_260,sessionLoginAssist[SESSION*SESSION],7324,4640,5042,,,,,,,,relation empty
+candidates,conj_261,sessionLogoutReq[SESSION*SESSION],7144,4582,4972,,,,,,,,relation empty
+candidates,conj_262,sessionSector[SESSION*Sector],6759,4427,4791,,,,,,,,relation empty
+candidates,conj_263,sessionUserIfc[SESSION*NavToIfc],7079,4592,4978,,,,,,,,relation empty
+candidates,conj_264,sessionUserid[SESSION*Userid],6759,4427,4791,,,,,,,,relation empty
+candidates,conj_265,accUserid[Account*Userid],2223,2223,2223,0,0.0002,0.0002,0.0002,0.996,1.02,True,
+candidates,conj_265,sessionAccount[SESSION*Account],4216,4216,4216,,,,,,,,relation empty
+candidates,conj_265,sessionUserid[SESSION*Userid],2940,2940,2940,,,,,,,,relation empty
+candidates,conj_266,sessionWijziging[SESSION*Wijziging],7374,4718,5124,,,,,,,,relation empty
+candidates,conj_267,sigArgtype[Signatuur*Datatype],6973,4630,5008,0,0.00023,0.00024,0.00022,1.079,0.989,True,
+candidates,conj_268,sigNormtype[Signatuur*Datatype],7063,4659,5043,0,0.00022,0.00023,0.00023,1.047,1.045,True,
+candidates,conj_269,soortNaam[KenmerkNaam*Naam],6677,4483,4839,0,0.0009,0.00089,0.00091,0.989,1.013,True,
+candidates,conj_270,statusNaam[Status*Naam],6132,4127,4449,0,0.00045,0.00053,0.00045,1.164,0.985,True,
+candidates,conj_271,systemRole[Role*Role],5878,3973,4279,0,0.00024,0.00025,0.00025,1.048,1.039,True,
+candidates,conj_272,taalNaam[Taal*Naam],5698,3915,4209,,,,,,,,relation empty
+candidates,conj_273,toelichting[Eis*Tekst],5956,3993,4305,0,0.00297,0.00307,0.00294,1.031,0.988,True,
+candidates,conj_274,toepasbaarOp[Kenmerk*ConceptNaam],7300,4778,5176,,,,,,,,relation empty
+candidates,conj_275,typedekkingNaam[Typedekking*Naam],7217,4657,5049,0,0.00049,0.0005,0.0005,1.02,1.016,True,
+candidates,conj_276,uidIssuer[UID*IdP],5546,3799,4083,,,,,,,,relation empty
+candidates,conj_277,uidUserid[UID*Userid],5891,4003,4311,,,,,,,,relation empty
+candidates,conj_278,uidIssuer[UID*IdP],10702,6787,7379,,,,,,,,relation empty
+candidates,conj_278,uidUserid[UID*Userid],10293,6360,6952,,,,,,,,relation empty
+candidates,conj_279,verklaringNaam[Verklaringsconcept*Naam],8016,5167,5609,0,0.00106,0.00087,0.00122,0.82,1.155,True,
+candidates,conj_280,vormNaam[Vorm*Naam],5698,3915,4209,0,0.00224,0.00224,0.00228,0.998,1.019,True,
+candidates,conj_281,wAangebodenReview[Wijziging*Wijziging],7718,4901,5329,,,,,,,,relation empty
+candidates,conj_282,wAuteur[Wijziging*Account],6588,4475,4827,,,,,,,,relation empty
+candidates,conj_283,wBegindatum[Wijziging*Datum],6718,4455,4815,,,,,,,,relation empty
+candidates,conj_284,wBegindatumGeseed[Wijziging*Wijziging],7718,4901,5329,,,,,,,,relation empty
+candidates,conj_285,wBron[Wijziging*Bron],6063,4213,4529,,,,,,,,relation empty
+candidates,conj_286,wBronGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_287,wCommitDoel[Wijziging*Eis],6488,4319,4663,,,,,,,,relation empty
+candidates,conj_288,wConcept[Wijziging*Wijziging],6908,4640,5014,,,,,,,,relation empty
+candidates,conj_289,wDatum[Wijziging*Datum],6268,4310,4640,,,,,,,,relation empty
+candidates,conj_290,wEisTekst[Wijziging*EisTekst],6883,4601,4973,,,,,,,,relation empty
+candidates,conj_291,wEisTekstGeseed[Wijziging*Wijziging],7538,4843,5259,,,,,,,,relation empty
+candidates,conj_292,wEisType[Wijziging*Eistype],6678,4504,4862,,,,,,,,relation empty
+candidates,conj_293,wEisTypeGeseed[Wijziging*Wijziging],7393,4789,5196,,,,,,,,relation empty
+candidates,conj_294,wGoedgekeurd[Wijziging*Wijziging],7268,4756,5154,,,,,,,,relation empty
+candidates,conj_295,wGoedkeurder[Wijziging*Account],7038,4620,5002,,,,,,,,relation empty
+candidates,conj_296,wKenmerkBron[Kenmerk*Kenmerk],6840,4506,4872,,,,,,,,relation empty
+candidates,conj_297,wKenmerkEinddatumGeseed[Kenmerk*Kenmerk],7830,4825,5257,,,,,,,,relation empty
+candidates,conj_298,wKenmerkGetalGeseed[Kenmerk*Kenmerk],7470,4709,5117,,,,,,,,relation empty
+candidates,conj_299,wKenmerkHerkomstGeseed[Kenmerk*Kenmerk],7740,4796,5222,,,,,,,,relation empty
+candidates,conj_300,wKenmerkKlasseGeseed[Kenmerk*Kenmerk],7560,4738,5152,,,,,,,,relation empty
+candidates,conj_301,wKenmerkOperatorGeseed[Kenmerk*Kenmerk],7740,4796,5222,,,,,,,,relation empty
+candidates,conj_302,wKenmerkProcentGeseed[Kenmerk*Kenmerk],7650,4767,5187,,,,,,,,relation empty
+candidates,conj_303,wKenmerkSoortGeseed[Kenmerk*Kenmerk],7470,4709,5117,,,,,,,,relation empty
+candidates,conj_304,wKenmerkStatusGeseed[Kenmerk*Kenmerk],7560,4738,5152,,,,,,,,relation empty
+candidates,conj_305,wKenmerkToepasbaarGeseed[Kenmerk*Kenmerk],7920,4854,5292,,,,,,,,relation empty
+candidates,conj_306,wKenmerkWaardeGeseed[Kenmerk*Kenmerk],7505,4713,5124,,,,,,,,relation empty
+candidates,conj_307,wLand[Wijziging*Gebied],6293,4349,4681,,,,,,,,relation empty
+candidates,conj_308,wLandGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_309,wMotivatie[Wijziging*Tekst],6628,4426,4780,,,,,,,,relation empty
+candidates,conj_310,wNaam[Wijziging*Tekst],6178,4281,4605,,,,,,,,relation empty
+candidates,conj_311,wNaamGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_312,wNieuweEis[Wijziging*Eis],6398,4290,4628,,,,,,,,relation empty
+candidates,conj_313,wOrganismeGeseed[Wijziging*Wijziging],7628,4872,5294,,,,,,,,relation empty
+candidates,conj_314,wOrganismeZonderGeseed[Wijziging*Wijziging],8168,5046,5504,,,,,,,,relation empty
+candidates,conj_315,wProductGeseed[Wijziging*Wijziging],7448,4814,5224,,,,,,,,relation empty
+candidates,conj_316,wResultaatEis[Wijziging*Eis],6668,4377,4733,,,,,,,,relation empty
+candidates,conj_317,wSectorGeseed[Wijziging*Wijziging],7358,4785,5189,,,,,,,,relation empty
+candidates,conj_318,wSluit[Wijziging*Wijziging],6728,4582,4944,,,,,,,,relation empty
+candidates,conj_319,wStatus[Wijziging*Status],6473,4407,4751,,,,,,,,relation empty
+candidates,conj_320,wStatusGeseed[Wijziging*Wijziging],7358,4785,5189,,,,,,,,relation empty
+candidates,conj_321,wToelichting[Wijziging*Tekst],6808,4484,4850,,,,,,,,relation empty
+candidates,conj_322,wToelichtingGeseed[Wijziging*Wijziging],7753,4905,5336,,,,,,,,relation empty
+candidates,conj_323,wVormGeseed[Wijziging*Wijziging],7178,4727,5119,,,,,,,,relation empty
+candidates,conj_324,wijzigtEis[Wijziging*Eis],6398,4290,4628,,,,,,,,relation empty
+candidates,conj_325,PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role],2277,2277,2277,1,0.0002,0.0002,0.0002,0.999,0.999,True,
+candidates,conj_326,anonymeRol[Role*Role],1393,1393,1393,0,0.00018,0.00018,0.00018,1.007,1.016,True,
+candidates,conj_326,sessionAllowedRoles[SESSION*Role],2354,2354,2354,1,0.00021,0.0002,0.00022,0.951,1.056,True,
+candidates,conj_331,PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface],12180,8267,8963,0,0.00029,0.00027,0.00029,0.907,0.996,True,
+candidates,conj_332,PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface],5472,5472,5472,3,0.00027,0.00025,0.00024,0.925,0.907,True,
+candidates,conj_333,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],12405,8339,9053,0,0.00028,0.00026,0.00026,0.957,0.944,True,
+candidates,conj_334,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],5592,5592,5592,1,0.00022,0.00023,0.00022,1.018,0.982,True,
+candidates,conj_335,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],13102,8709,9473,0,0.00031,0.00031,0.00032,0.987,1.002,True,
+candidates,conj_336,PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],12907,8641,9390,0,0.00031,0.0003,0.0003,0.969,0.98,True,
+candidates,conj_337,PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],5808,5808,5808,3,0.00025,0.00025,0.00026,1.011,1.034,True,
+candidates,conj_338,accDeactivateReq[Account*Account],7569,5309,5699,,,,,,,,relation empty
+candidates,conj_339,accDeactivateReq[Account*Account],3574,3574,3574,,,,,,,,relation empty
+candidates,conj_340,accIsActive[Account*Account],7194,5189,5549,0,0.00027,0.00027,0.00025,0.99,0.931,True,
+candidates,conj_341,accIsActive[Account*Account],3374,3374,3374,3,0.00023,0.00024,0.00022,1.03,0.973,True,
+candidates,conj_342,accIsInitialized[Account*Account],7569,5309,5699,0,0.00025,0.00026,0.00025,1.028,0.983,True,
+candidates,conj_343,accIsInitialized[Account*Account],3574,3574,3574,3,0.00023,0.00023,0.00023,0.985,0.985,True,
+candidates,conj_344,anonymeRol[Role*Role],6366,4698,5001,0,0.00025,0.00026,0.00025,1.058,1.04,True,
+candidates,conj_345,anonymeRol[Role*Role],3020,3020,3020,1,0.00021,0.00021,0.00022,0.993,1.043,True,
+candidates,conj_346,basiseis[Eis*Eis],6025,4521,4799,0,0.00026,0.00026,0.00027,1.011,1.051,True,
+candidates,conj_347,basiseis[Eis*Eis],2862,2862,2862,3,0.00024,0.00025,0.00024,1.027,1.017,True,
+candidates,conj_348,bijschrijvingVerplicht[Bijschrijving*Bijschrijving],9435,6347,6869,,,,,,,,relation empty
+candidates,conj_349,bijschrijvingVerplicht[Bijschrijving*Bijschrijving],4402,4402,4402,,,,,,,,relation empty
+candidates,conj_350,defaultRolGeseed[SESSION*SESSION],7569,5309,5699,,,,,,,,relation empty
+candidates,conj_351,defaultRolGeseed[SESSION*SESSION],3574,3574,3574,,,,,,,,relation empty
+candidates,conj_352,dgIsDIFF[DekkingGroep*DekkingGroep],8149,5862,6284,,,,,,,,relation empty
+candidates,conj_353,dgIsDIFF[DekkingGroep*DekkingGroep],3744,3744,3744,,,,,,,,relation empty
+candidates,conj_354,eisInBewerking[Eis*Eis],6475,4665,4979,,,,,,,,relation empty
+candidates,conj_355,eisInBewerking[Eis*Eis],3102,3102,3102,,,,,,,,relation empty
+candidates,conj_356,eisInConcept[Eis*Eis],6325,4617,4919,,,,,,,,relation empty
+candidates,conj_357,eisInConcept[Eis*Eis],3022,3022,3022,,,,,,,,relation empty
+candidates,conj_358,eisInvoerverbod[Eis*Eis],6550,4689,5009,0,0.00027,0.00027,0.00026,0.983,0.957,True,
+candidates,conj_359,eisInvoerverbod[Eis*Eis],3142,3142,3142,3,0.00026,0.00025,0.00025,0.977,0.96,True,
+candidates,conj_360,eisTypeInvoerverbod[Eistype*Eistype],7794,5381,5789,0,0.00025,0.00028,0.00025,1.09,0.998,True,
+candidates,conj_361,eisTypeInvoerverbod[Eistype*Eistype],3694,3694,3694,2,0.00024,0.00023,0.00023,0.96,0.973,True,
+candidates,conj_362,kenmerkHeeftDrager[Kenmerk*Kenmerk],7799,5421,5823,0,0.00057,0.00057,0.00058,1.006,1.012,True,
+candidates,conj_363,kenmerkHeeftDrager[Kenmerk*Kenmerk],3686,3686,3686,3,0.00053,0.00053,0.00054,1.005,1.016,True,
+candidates,conj_364,landeneis[Eis*Eis],6100,4545,4829,0,0.00028,0.00029,0.00029,1.045,1.048,True,
+candidates,conj_365,landeneis[Eis*Eis],2902,2902,2902,3,0.00027,0.00026,0.00026,0.982,0.983,True,
+candidates,conj_366,maakNieuweEis[SESSION*SESSION],7299,5217,5586,,,,,,,,relation empty
+candidates,conj_367,maakNieuweEis[SESSION*SESSION],3434,3434,3434,,,,,,,,relation empty
+candidates,conj_368,maakWijziging[Eis*Eis],6400,4641,4949,,,,,,,,relation empty
+candidates,conj_369,maakWijziging[Eis*Eis],3062,3062,3062,,,,,,,,relation empty
+candidates,conj_370,sessionIfcsSet[SESSION*SESSION],7419,5261,5639,,,,,,,,relation empty
+candidates,conj_371,sessionIfcsSet[SESSION*SESSION],3494,3494,3494,,,,,,,,relation empty
+candidates,conj_372,sessionIsAgent[SESSION*SESSION],7419,5261,5639,,,,,,,,relation empty
+candidates,conj_373,sessionIsAgent[SESSION*SESSION],3494,3494,3494,,,,,,,,relation empty
+candidates,conj_374,sessionIsAnon[SESSION*SESSION],7299,5217,5586,0,0.00025,0.00027,0.00027,1.067,1.06,True,
+candidates,conj_375,sessionIsAnon[SESSION*SESSION],3434,3434,3434,1,0.00022,0.00022,0.00022,0.983,1.01,True,
+candidates,conj_376,sessionIsUser[SESSION*SESSION],7344,5237,5609,,,,,,,,relation empty
+candidates,conj_377,sessionIsUser[SESSION*SESSION],3454,3454,3454,,,,,,,,relation empty
+candidates,conj_378,sessionLoginAssist[SESSION*SESSION],7719,5357,5759,,,,,,,,relation empty
+candidates,conj_379,sessionLoginAssist[SESSION*SESSION],3654,3654,3654,,,,,,,,relation empty
+candidates,conj_380,sessionLogoutReq[SESSION*SESSION],7569,5309,5699,,,,,,,,relation empty
+candidates,conj_381,sessionLogoutReq[SESSION*SESSION],3574,3574,3574,,,,,,,,relation empty
+candidates,conj_382,systemRole[Role*Role],6411,4718,5024,0,0.00026,0.00029,0.00028,1.115,1.107,True,
+candidates,conj_383,systemRole[Role*Role],3040,3040,3040,3,0.00024,0.00025,0.00023,1.034,0.963,True,
+candidates,conj_384,wAangebodenReview[Wijziging*Wijziging],8116,5631,6059,,,,,,,,relation empty
+candidates,conj_385,wAangebodenReview[Wijziging*Wijziging],3810,3810,3810,,,,,,,,relation empty
+candidates,conj_386,wBegindatumGeseed[Wijziging*Wijziging],8116,5631,6059,,,,,,,,relation empty
+candidates,conj_387,wBegindatumGeseed[Wijziging*Wijziging],3810,3810,3810,,,,,,,,relation empty
+candidates,conj_388,wBronGeseed[Wijziging*Wijziging],7666,5487,5879,,,,,,,,relation empty
+candidates,conj_389,wBronGeseed[Wijziging*Wijziging],3570,3570,3570,,,,,,,,relation empty
+candidates,conj_390,wConcept[Wijziging*Wijziging],7441,5415,5789,,,,,,,,relation empty
+candidates,conj_391,wConcept[Wijziging*Wijziging],3450,3450,3450,,,,,,,,relation empty
+candidates,conj_392,wEisTekstGeseed[Wijziging*Wijziging],7966,5583,5999,,,,,,,,relation empty
+candidates,conj_393,wEisTekstGeseed[Wijziging*Wijziging],3730,3730,3730,,,,,,,,relation empty
+candidates,conj_394,wEisTypeGeseed[Wijziging*Wijziging],7846,5539,5946,,,,,,,,relation empty
+candidates,conj_395,wEisTypeGeseed[Wijziging*Wijziging],3670,3670,3670,,,,,,,,relation empty
+candidates,conj_396,wGoedgekeurd[Wijziging*Wijziging],7741,5511,5909,,,,,,,,relation empty
+candidates,conj_397,wGoedgekeurd[Wijziging*Wijziging],3610,3610,3610,,,,,,,,relation empty
+candidates,conj_398,wKenmerkEinddatumGeseed[Kenmerk*Kenmerk],8174,5541,5973,,,,,,,,relation empty
+candidates,conj_399,wKenmerkEinddatumGeseed[Kenmerk*Kenmerk],3886,3886,3886,,,,,,,,relation empty
+candidates,conj_400,wKenmerkGetalGeseed[Kenmerk*Kenmerk],7874,5445,5853,,,,,,,,relation empty
+candidates,conj_401,wKenmerkGetalGeseed[Kenmerk*Kenmerk],3726,3726,3726,,,,,,,,relation empty
+candidates,conj_402,wKenmerkHerkomstGeseed[Kenmerk*Kenmerk],8099,5517,5943,,,,,,,,relation empty
+candidates,conj_403,wKenmerkHerkomstGeseed[Kenmerk*Kenmerk],3846,3846,3846,,,,,,,,relation empty
+candidates,conj_404,wKenmerkKlasseGeseed[Kenmerk*Kenmerk],7949,5469,5883,,,,,,,,relation empty
+candidates,conj_405,wKenmerkKlasseGeseed[Kenmerk*Kenmerk],3766,3766,3766,,,,,,,,relation empty
+candidates,conj_406,wKenmerkOperatorGeseed[Kenmerk*Kenmerk],8099,5517,5943,,,,,,,,relation empty
+candidates,conj_407,wKenmerkOperatorGeseed[Kenmerk*Kenmerk],3846,3846,3846,,,,,,,,relation empty
+candidates,conj_408,wKenmerkProcentGeseed[Kenmerk*Kenmerk],8024,5493,5913,,,,,,,,relation empty
+candidates,conj_409,wKenmerkProcentGeseed[Kenmerk*Kenmerk],3806,3806,3806,,,,,,,,relation empty
+candidates,conj_410,wKenmerkSoortGeseed[Kenmerk*Kenmerk],7874,5445,5853,,,,,,,,relation empty
+candidates,conj_411,wKenmerkSoortGeseed[Kenmerk*Kenmerk],3726,3726,3726,,,,,,,,relation empty
+candidates,conj_412,wKenmerkStatusGeseed[Kenmerk*Kenmerk],7949,5469,5883,,,,,,,,relation empty
+candidates,conj_413,wKenmerkStatusGeseed[Kenmerk*Kenmerk],3766,3766,3766,,,,,,,,relation empty
+candidates,conj_414,wKenmerkToepasbaarGeseed[Kenmerk*Kenmerk],8249,5565,6003,,,,,,,,relation empty
+candidates,conj_415,wKenmerkToepasbaarGeseed[Kenmerk*Kenmerk],3926,3926,3926,,,,,,,,relation empty
+candidates,conj_416,wKenmerkWaardeGeseed[Kenmerk*Kenmerk],7904,5449,5860,,,,,,,,relation empty
+candidates,conj_417,wKenmerkWaardeGeseed[Kenmerk*Kenmerk],3746,3746,3746,,,,,,,,relation empty
+candidates,conj_418,wLandGeseed[Wijziging*Wijziging],7666,5487,5879,,,,,,,,relation empty
+candidates,conj_419,wLandGeseed[Wijziging*Wijziging],3570,3570,3570,,,,,,,,relation empty
+candidates,conj_420,wNaamGeseed[Wijziging*Wijziging],7666,5487,5879,,,,,,,,relation empty
+candidates,conj_421,wNaamGeseed[Wijziging*Wijziging],3570,3570,3570,,,,,,,,relation empty
+candidates,conj_422,wOrganismeGeseed[Wijziging*Wijziging],8041,5607,6029,,,,,,,,relation empty
+candidates,conj_423,wOrganismeGeseed[Wijziging*Wijziging],3770,3770,3770,,,,,,,,relation empty
+candidates,conj_424,wOrganismeZonderGeseed[Wijziging*Wijziging],8491,5751,6209,,,,,,,,relation empty
+candidates,conj_425,wOrganismeZonderGeseed[Wijziging*Wijziging],4010,4010,4010,,,,,,,,relation empty
+candidates,conj_426,wProductGeseed[Wijziging*Wijziging],7891,5559,5969,,,,,,,,relation empty
+candidates,conj_427,wProductGeseed[Wijziging*Wijziging],3690,3690,3690,,,,,,,,relation empty
+candidates,conj_428,wSectorGeseed[Wijziging*Wijziging],7816,5535,5939,,,,,,,,relation empty
+candidates,conj_429,wSectorGeseed[Wijziging*Wijziging],3650,3650,3650,,,,,,,,relation empty
+candidates,conj_430,wSluit[Wijziging*Wijziging],7291,5367,5729,,,,,,,,relation empty
+candidates,conj_431,wSluit[Wijziging*Wijziging],3370,3370,3370,,,,,,,,relation empty
+candidates,conj_432,wStatusGeseed[Wijziging*Wijziging],7816,5535,5939,,,,,,,,relation empty
+candidates,conj_433,wStatusGeseed[Wijziging*Wijziging],3650,3650,3650,,,,,,,,relation empty
+candidates,conj_434,wToelichtingGeseed[Wijziging*Wijziging],8146,5635,6066,,,,,,,,relation empty
+candidates,conj_435,wToelichtingGeseed[Wijziging*Wijziging],3830,3830,3830,,,,,,,,relation empty
+candidates,conj_436,wVormGeseed[Wijziging*Wijziging],7666,5487,5879,,,,,,,,relation empty
+candidates,conj_437,wVormGeseed[Wijziging*Wijziging],3570,3570,3570,,,,,,,,relation empty
+candidates,conj_438,PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface],3928,3928,3928,3,0.00021,0.00021,0.00022,0.999,1.041,True,
+candidates,conj_439,PrototypeContext.isPublic[PrototypeContext.Interface*PrototypeContext.Interface],4006,4006,4006,1,0.0002,0.00019,0.0002,0.922,0.988,True,
+candidates,conj_440,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],982,982,982,0,0.00012,0.00012,0.00012,1.002,0.987,True,
+candidates,conj_441,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],1011,1011,1011,0,0.00013,0.00014,0.00015,1.062,1.104,True,
+candidates,conj_441,PrototypeContext.isSubItemOfCopy[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],2503,2503,2503,3,0.00022,0.00023,0.00023,1.045,1.041,True,
+candidates,conj_442,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],2551,2551,2551,3,0.00022,0.00022,0.00021,0.995,0.959,True,
+candidates,conj_442,PrototypeContext.isSubItemOfCopy[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],987,987,987,0,0.00012,0.00016,0.00014,1.245,1.122,True,
+candidates,conj_443,PrototypeContext.isSubItemOfPlus[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],1014,1014,1014,0,0.00014,0.00017,0.00013,1.216,0.986,True,
+candidates,conj_443,PrototypeContext.isSubItemOfStar[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],2557,2557,2557,1,0.00018,0.00018,0.00016,0.981,0.912,True,
+candidates,conj_444,PrototypeContext.isSubItemOfPlus[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],2956,2956,2956,3,0.0002,0.0002,0.00021,0.987,1.048,True,
+candidates,conj_444,PrototypeContext.isSubItemOfStar[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],3760,3760,3760,0,0.00017,0.00016,0.00018,0.977,1.064,True,
+candidates,conj_445,PrototypeContext.isVisible[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],4137,4137,4137,3,0.00026,0.00026,0.00026,1.0,0.973,True,
+candidates,conj_446,PrototypeContext.ifc[PrototypeContext.NavMenuItem*PrototypeContext.Interface],9909,9909,9909,8,0.00069,0.00071,0.0007,1.038,1.026,True,
+candidates,conj_446,PrototypeContext.ifcRoles[PrototypeContext.Interface*PrototypeContext.Role],9957,9957,9957,4,0.00049,0.00049,0.00051,0.998,1.04,True,
+candidates,conj_446,PrototypeContext.isSubItemOfStar[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],7957,7957,7957,8,0.00044,0.00044,0.00043,1.005,0.977,True,
+candidates,conj_446,PrototypeContext.navItemRoles[PrototypeContext.NavMenuItem*PrototypeContext.Role],10173,10173,10173,0,0.00027,0.00027,0.00026,0.973,0.953,True,
+candidates,conj_447,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],882,882,882,0,0.00032,0.0002,0.00019,0.63,0.613,True,
+candidates,conj_447,PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role],2067,2067,2067,1,0.0002,0.0002,0.00021,0.999,1.048,True,
+candidates,conj_448,PrototypeContext.sessionAllowedRoles[SESSION*PrototypeContext.Role],5840,5840,5840,0,0.00027,0.00025,0.00028,0.924,1.002,True,
+candidates,conj_448,roleEquiv[Role*PrototypeContext.Role],5011,5011,5011,0,0.00038,0.00027,0.00028,0.723,0.739,True,
+candidates,conj_448,sessionAllowedRoles[SESSION*Role],5086,5086,5086,0,0.00027,0.00026,0.00026,0.987,0.98,True,
+candidates,conj_449,accAllowedRoles[Account*Role],9300,9300,9300,3,0.00036,0.00038,0.00037,1.049,1.023,True,
+candidates,conj_449,systemRole[Role*Role],3884,2925,3282,0,0.00026,0.00029,0.00027,1.098,1.028,True,
+candidates,conj_450,accDeactivateReq[Account*Account],4296,1603,2642,,,,,,,,relation empty
+candidates,conj_450,sessionAccount[SESSION*Account],7629,5189,5567,,,,,,,,relation empty
+candidates,conj_451,accDeactivateReq[Account*Account],2700,2700,2700,,,,,,,,relation empty
+candidates,conj_452,accIsActive[Account*Account],2570,2570,2570,3,0.00028,0.00028,0.00027,1.012,0.987,True,
+candidates,conj_453,accIsActive[Account*Account],734,734,734,0,0.00019,0.0002,0.0002,1.051,1.02,True,
+candidates,conj_453,accIsInitialized[Account*Account],1508,1508,1508,3,0.00024,0.00023,0.00026,0.989,1.104,True,
+candidates,conj_454,accIsInitialized[Account*Account],2700,2700,2700,3,0.00029,0.00027,0.00026,0.956,0.914,True,
+candidates,conj_455,anonymeRol[Role*Role],2349,2349,2349,1,0.00034,0.00033,0.0003,0.977,0.887,True,
+candidates,conj_456,basiseis[Eis*Eis],4941,1085,1363,0,7.99568,0.04684,0.04582,0.006,0.006,True,
+candidates,conj_456,land[Eis*Gebied],6228,4645,4923,0,0.09013,0.08773,0.08489,0.973,0.942,True,
+candidates,conj_457,basiseis[Eis*Eis],2252,2252,2252,3,0.00042,0.00046,0.00043,1.102,1.027,True,
+candidates,conj_458,bijschrijvingVerplicht[Bijschrijving*Bijschrijving],3216,3216,3216,,,,,,,,relation empty
+candidates,conj_459,defaultRolGeseed[SESSION*SESSION],2700,2700,2700,,,,,,,,relation empty
+candidates,conj_460,dgBasisDekking[DekkingGroep*Dekking],724,724,724,,,,,,,,relation empty
+candidates,conj_460,dgDekking[DekkingGroep*Dekking],1620,1620,1620,0,0.00024,0.00022,0.00023,0.905,0.97,True,
+candidates,conj_461,dgBasisSubgroep[DekkingGroep*DekkingGroep],767,767,767,,,,,,,,relation empty
+candidates,conj_461,dgSubgroep[DekkingGroep*DekkingGroep],1727,1727,1727,0,0.00023,0.00022,0.00023,0.959,1.021,True,
+candidates,conj_462,dgBasisDekking[DekkingGroep*Dekking],16626,9353,11032,,,,,,,,relation empty
+candidates,conj_462,dgBasisSubgroep[DekkingGroep*DekkingGroep],16607,9501,11101,,,,,,,,relation empty
+candidates,conj_462,dgIsDIFF[DekkingGroep*DekkingGroep],10870,4291,6691,,,,,,,,relation empty
+candidates,conj_463,dgIsDIFF[DekkingGroep*DekkingGroep],5356,2168,3420,,,,,,,,relation empty
+candidates,conj_463,dgOperator[DekkingGroep*DekkingOperator],9821,6999,7457,0,0.00036,0.00036,0.00034,0.984,0.946,True,
+candidates,conj_464,dgIsDIFF[DekkingGroep*DekkingGroep],2792,2792,2792,,,,,,,,relation empty
+candidates,conj_465,dgIsDIFF[DekkingGroep*DekkingGroep],379,379,379,,,,,,,,relation empty
+candidates,conj_466,eisFacetGelijk[Eis*Eis],28522,11926,15597,,,,,,,,relation empty
+candidates,conj_466,eisMistOrganisme[Eis*Eis],11106,7561,8207,,,,,,,,relation empty
+candidates,conj_466,organisme[Eis*Organisme],34447,15989,18674,0,0.00059,0.00061,0.00064,1.028,1.08,True,
+candidates,conj_467,eisFacetGelijk[Eis*Eis],26890,11624,15077,,,,,,,,relation empty
+candidates,conj_467,eisMistProduct[Eis*Eis],10518,7215,7833,,,,,,,,relation empty
+candidates,conj_467,product[Eis*Product],32557,15297,17804,0,0.00055,0.00061,0.00062,1.118,1.136,True,
+candidates,conj_468,eisFacetGelijk[Eis*Eis],26728,11224,14587,,,,,,,,relation empty
+candidates,conj_468,eisMistVorm[Eis*Eis],10498,7090,7708,,,,,,,,relation empty
+candidates,conj_468,productVorm[Eis*Vorm],32571,14822,17307,0,0.00057,0.00057,0.00064,0.998,1.119,True,
+candidates,conj_469,eisFacetGelijk[Eis*Eis],23753,8732,12112,,,,,,,,relation empty
+candidates,conj_469,eisInBewerking[Eis*Eis],44586,13286,15902,,,,,,,,relation empty
+candidates,conj_469,eisType[Eis*Eistype],26475,14956,16728,0,0.00074,0.00069,0.00074,0.939,1.007,True,
+candidates,conj_469,land[Eis*Gebied],26232,14755,16527,0,0.00066,0.00064,0.00079,0.97,1.207,True,
+candidates,conj_469,sector[Eis*Sector],26298,14803,16575,0,0.00062,0.0006,0.00074,0.967,1.181,True,
+candidates,conj_470,bijschrijving[Eis*Bijschrijving],0,87169,106448,0,,0.00918,0.39576,,,True,A:absent
+candidates,conj_470,dekkingVanEis[Dekking*Eis],900726,81133,97532,0,0.00863,0.0074,0.52161,0.857,60.418,True,
+candidates,conj_470,eisBegindatum[Eis*Datum],902078,116343,131840,0,0.00751,0.00634,0.04776,0.843,6.356,True,
+candidates,conj_470,eisDekkinggroep[Eis*DekkingGroep],930190,81881,99032,0,0.00819,0.00758,0.42569,0.925,51.996,True,
+candidates,conj_470,eisEinddatum[Eis*Datum],963842,104593,121018,0,0.00939,0.00709,20.44387,0.755,2177.128,True,
+candidates,conj_470,eisGelijkBuitenOpsommingen[Eis*Eis],471860,82532,91810,,,,,,,,relation empty
+candidates,conj_470,eisGelijkeKenmerken[Eis*Eis],0,264111,299190,,,,,,,,relation empty
+candidates,conj_470,organismeZonder[Eis*Organisme],793647,102126,117728,,,,,,,,relation empty
+candidates,conj_470,sector[Eis*Sector],689049,107962,122473,0,0.00574,0.00619,,1.078,,True,C:timeout
+candidates,conj_471,eisFacetGelijk[Eis*Eis],163207,30876,36014,,,,,,,,relation empty
+candidates,conj_471,eisGelijkeKenmerken[Eis*Eis],44480,13515,14992,,,,,,,,relation empty
+candidates,conj_471,eisSig[Eis*KenmerkSig],80935,21336,25363,0,0.00143,0.00157,0.00182,1.094,1.269,True,
+candidates,conj_471,kenmerk[Eis*Kenmerk],120849,28492,33096,0,0.00212,0.00257,0.00225,1.211,1.059,True,
+candidates,conj_471,kenmerkSig[Kenmerk*KenmerkSig],81803,20610,25175,0,0.0014,0.00149,0.00158,1.063,1.131,True,
+candidates,conj_472,eisInBewerking[Eis*Eis],19621,7408,9937,,,,,,,,relation empty
+candidates,conj_472,wConcept[Wijziging*Wijziging],32144,12861,14743,,,,,,,,relation empty
+candidates,conj_472,wNieuweEis[Wijziging*Eis],26765,13259,15141,,,,,,,,relation empty
+candidates,conj_472,wijzigtEis[Wijziging*Eis],26765,13259,15141,,,,,,,,relation empty
+candidates,conj_473,eisInBewerking[Eis*Eis],2408,2408,2408,,,,,,,,relation empty
+candidates,conj_474,eisInBewerking[Eis*Eis],349,349,349,,,,,,,,relation empty
+candidates,conj_475,eisInConcept[Eis*Eis],9493,3203,5995,,,,,,,,relation empty
+candidates,conj_475,wConcept[Wijziging*Wijziging],17433,9427,10729,,,,,,,,relation empty
+candidates,conj_475,wijzigtEis[Wijziging*Eis],17291,9825,11127,,,,,,,,relation empty
+candidates,conj_476,eisInConcept[Eis*Eis],2356,2356,2356,,,,,,,,relation empty
+candidates,conj_477,eisInConcept[Eis*Eis],1374,1374,1374,,,,,,,,relation empty
+candidates,conj_477,maakWijziging[Eis*Eis],1364,1364,1364,,,,,,,,relation empty
+candidates,conj_478,eisInConcept[Eis*Eis],347,347,347,,,,,,,,relation empty
+candidates,conj_479,eisInvoerverbod[Eis*Eis],5259,3129,3979,0,0.00043,0.08608,0.00069,200.389,1.596,True,
+candidates,conj_479,eisType[Eis*Eistype],9592,6042,6754,0,0.101,0.0852,0.08785,0.844,0.87,True,
+candidates,conj_479,eisTypeInvoerverbod[Eistype*Eistype],4824,3237,3541,6,0.10086,0.08589,0.08629,0.852,0.856,True,
+candidates,conj_480,eisInvoerverbod[Eis*Eis],2434,2434,2434,3,0.00031,0.00032,0.0003,1.016,0.981,True,
+candidates,conj_481,eisInvoerverbod[Eis*Eis],350,350,350,0,0.00018,0.00017,0.00019,0.948,1.033,True,
+candidates,conj_482,eisFacetGelijk[Eis*Eis],9845,7631,7963,,,,,,,,relation empty
+candidates,conj_482,eisMistOrganisme[Eis*Eis],11041,8011,8933,,,,,,,,relation empty
+candidates,conj_482,organisme[Eis*Organisme],27212,12229,14914,0,0.00046,0.00048,0.00049,1.028,1.051,True,
+candidates,conj_483,eisFacetGelijk[Eis*Eis],1418,1418,1418,,,,,,,,relation empty
+candidates,conj_483,eisMistOrganisme[Eis*Eis],694,694,694,,,,,,,,relation empty
+candidates,conj_484,eisFacetGelijk[Eis*Eis],9239,7267,7571,,,,,,,,relation empty
+candidates,conj_484,eisMistProduct[Eis*Eis],10419,7689,8539,,,,,,,,relation empty
+candidates,conj_484,product[Eis*Product],25728,11733,14240,0,0.00043,0.00049,0.00049,1.133,1.137,True,
+candidates,conj_485,eisFacetGelijk[Eis*Eis],1394,1394,1394,,,,,,,,relation empty
+candidates,conj_485,eisMistProduct[Eis*Eis],692,692,692,,,,,,,,relation empty
+candidates,conj_486,eisFacetGelijk[Eis*Eis],9189,7112,7416,,,,,,,,relation empty
+candidates,conj_486,eisMistVorm[Eis*Eis],10397,7565,8412,,,,,,,,relation empty
+candidates,conj_486,productVorm[Eis*Vorm],25724,11415,13900,0,0.00057,0.00054,0.00062,0.949,1.086,True,
+candidates,conj_487,eisFacetGelijk[Eis*Eis],1352,1352,1352,,,,,,,,relation empty
+candidates,conj_487,eisMistVorm[Eis*Eis],688,688,688,,,,,,,,relation empty
+candidates,conj_488,eisGelijkBuitenOpsommingen[Eis*Eis],0,133951,155960,,,,,,,,relation empty
+candidates,conj_488,eisMistOrganisme[Eis*Eis],710796,59184,74939,,,,,,,,relation empty
+candidates,conj_488,eisMistProduct[Eis*Eis],699375,58500,73936,,,,,,,,relation empty
+candidates,conj_488,eisMistVorm[Eis*Eis],712314,58389,74063,,,,,,,,relation empty
+candidates,conj_488,eisSamenvoegbaar[Eis*Eis],364085,56442,65929,,,,,,,,relation empty
+candidates,conj_488,organisme[Eis*Organisme],872735,71364,87246,0,0.00814,0.00923,0.01192,1.134,1.465,True,
+candidates,conj_488,product[Eis*Product],734243,88956,102411,0,0.00709,0.00772,0.01077,1.09,1.519,True,
+candidates,conj_488,productVorm[Eis*Vorm],806085,78118,92974,0,0.00689,0.00784,0.01005,1.137,1.457,True,
+candidates,conj_489,eisSamenvoegbaar[Eis*Eis],351,351,351,,,,,,,,relation empty
+candidates,conj_490,eisSig[Eis*KenmerkSig],3172,3172,3172,0,0.00036,0.00036,0.00033,0.984,0.921,True,
+candidates,conj_490,kenmerk[Eis*Kenmerk],2952,2952,2952,0,0.00212,0.00183,0.00181,0.862,0.854,True,
+candidates,conj_490,kenmerkSig[Kenmerk*KenmerkSig],2831,2831,2831,3,1.08651,1.07949,1.06005,0.994,0.976,True,
+candidates,conj_491,eisTypeInvoerverbod[Eistype*Eistype],2778,2778,2778,2,0.00024,0.00027,0.00025,1.104,1.02,True,
+candidates,conj_493,kenmerk[Eis*Kenmerk],35467,18044,22564,0,2.0439,2.15536,2.18035,1.055,1.067,True,
+candidates,conj_493,kenmerkHeeftDrager[Kenmerk*Kenmerk],32072,13846,18912,0,0.00068,2.15887,0.00102,3165.493,1.491,True,
+candidates,conj_493,organismeKenmerk[Organisme*Kenmerk],33373,16948,21309,,,,,,,,relation empty
+candidates,conj_493,productKenmerk[Product*Kenmerk],34710,17773,22178,,,,,,,,relation empty
+candidates,conj_493,synoniemKenmerk[Synoniem*Kenmerk],35564,17932,22315,,,,,,,,relation empty
+candidates,conj_493,wKenmerk[Wijziging*Kenmerk],41681,20868,25301,,,,,,,,relation empty
+candidates,conj_494,kenmerkHeeftDrager[Kenmerk*Kenmerk],2784,2784,2784,3,0.0006,0.00056,0.00056,0.945,0.942,True,
+candidates,conj_495,kenmerkHeeftDrager[Kenmerk*Kenmerk],393,393,393,0,0.00017,0.00017,0.00017,1.004,1.001,True,
+candidates,conj_496,datatype[KenmerkNaam*Datatype],5704,5704,5704,0,0.00023,0.00023,0.00022,1.023,0.973,True,
+candidates,conj_496,kenmerkNaam[Kenmerk*KenmerkNaam],5675,5675,5675,0,0.00068,0.00065,0.00067,0.946,0.982,True,
+candidates,conj_496,kenmerkSignatuur[Kenmerk*Signatuur],5900,5900,5900,,,,,,,,relation empty
+candidates,conj_496,sigArgtype[Signatuur*Datatype],4865,4865,4865,0,0.00028,0.00033,0.00029,1.16,1.045,True,
+candidates,conj_497,kenmerkOperator[Kenmerk*Operator],3230,3230,3230,,,,,,,,relation empty
+candidates,conj_497,kenmerkSignatuur[Kenmerk*Signatuur],3452,3452,3452,,,,,,,,relation empty
+candidates,conj_497,opSignatuur[Operator*Signatuur],3268,3268,3268,0,0.00025,0.00022,0.00034,0.91,1.376,True,
+candidates,conj_498,land[Eis*Gebied],5927,4344,4622,0,0.09516,0.09337,0.0936,0.981,0.984,True,
+candidates,conj_498,landeneis[Eis*Eis],3385,1454,2238,0,0.00046,0.0891,0.00053,191.913,1.148,True,
+candidates,conj_499,landeneis[Eis*Eis],2278,2278,2278,3,0.00032,0.00031,0.00032,0.962,0.995,True,
+candidates,conj_500,landeneis[Eis*Eis],344,344,344,0,0.00019,0.0002,0.00019,1.041,0.989,True,
+candidates,conj_502,accIsActive[Account*Account],6266,3569,4249,0,0.00028,0.00029,0.00031,1.05,1.126,True,
+candidates,conj_502,accUserid[Account*Userid],12305,7381,8421,0,0.00032,0.00034,0.00035,1.066,1.116,True,
+candidates,conj_502,loginNaam[SESSION*Userid],13147,8927,10210,,,,,,,,relation empty
+candidates,conj_503,maakNieuweEis[SESSION*SESSION],2607,2607,2607,,,,,,,,relation empty
+candidates,conj_504,maakWijziging[Eis*Eis],2382,2382,2382,,,,,,,,relation empty
+candidates,conj_506,productNaam[Product*WetenschappelijkeNaam],811,811,811,1,0.00021,0.00021,0.0002,1.019,0.957,True,
+candidates,conj_506,productZoeknaamGezet[Product*WetenschappelijkeNaam],1782,1782,1782,3,0.03469,0.03474,0.03464,1.001,0.999,True,
+candidates,conj_507,productNaam[Product*WetenschappelijkeNaam],1863,1863,1863,2,0.00411,0.00409,0.00418,0.996,1.017,True,
+candidates,conj_507,productZoeknaamGezet[Product*WetenschappelijkeNaam],784,784,784,0,0.00019,0.00019,0.00019,0.994,1.029,True,
+candidates,conj_508,accIsActive[Account*Account],3121,2104,2482,0,0.00022,0.00022,0.00023,1.004,1.037,True,
+candidates,conj_508,sessionAccount[SESSION*Account],6396,6396,6396,,,,,,,,relation empty
+candidates,conj_509,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],4885,4885,4885,1,0.00021,0.00022,0.00022,1.061,1.043,True,
+candidates,conj_509,roleEquiv[Role*PrototypeContext.Role],4204,4204,4204,1,0.00029,0.00021,0.00024,0.723,0.803,True,
+candidates,conj_509,sessionActiveRoles[SESSION*Role],5257,5257,5257,0,0.00023,0.00023,0.00023,1.004,0.993,True,
+candidates,conj_510,accAllowedRoles[Account*Role],5146,5146,5146,0,0.00027,0.00027,0.00027,0.999,1.014,True,
+candidates,conj_510,accDefaultRole[Account*Role],5140,5140,5140,0,0.00027,0.00027,0.00028,0.997,1.029,True,
+candidates,conj_510,anonymeRol[Role*Role],11212,11212,11212,1,0.00031,0.0003,0.0003,0.962,0.958,True,
+candidates,conj_510,sessionAccount[SESSION*Account],6825,6825,6825,,,,,,,,relation empty
+candidates,conj_510,sessionAllowedRoles[SESSION*Role],8323,8323,8323,0,0.00029,0.00029,0.0003,1.0,1.016,True,
+candidates,conj_511,sessionIfcsSet[SESSION*SESSION],2648,2648,2648,,,,,,,,relation empty
+candidates,conj_512,sessionAgentAccount[SESSION*AgentAccount],8568,5588,6036,,,,,,,,relation empty
+candidates,conj_512,sessionIsAgent[SESSION*SESSION],5267,2069,3288,,,,,,,,relation empty
+candidates,conj_513,sessionIsAgent[SESSION*SESSION],2648,2648,2648,,,,,,,,relation empty
+candidates,conj_514,sessionAccount[SESSION*Account],7922,5482,5860,,,,,,,,relation empty
+candidates,conj_514,sessionAgentAccount[SESSION*AgentAccount],8887,5907,6355,,,,,,,,relation empty
+candidates,conj_514,sessionIsAnon[SESSION*SESSION],13707,6529,7355,0,0.00028,0.0003,0.00029,1.066,1.031,True,
+candidates,conj_515,sessionIsAnon[SESSION*SESSION],2607,2607,2607,1,0.00023,0.00024,0.00023,1.038,1.002,True,
+candidates,conj_516,sessionAccount[SESSION*Account],7590,5150,5528,,,,,,,,relation empty
+candidates,conj_516,sessionIsUser[SESSION*SESSION],4655,1962,3001,,,,,,,,relation empty
+candidates,conj_517,sessionIsUser[SESSION*SESSION],2622,2622,2622,,,,,,,,relation empty
+candidates,conj_518,sessionLoginAssist[SESSION*SESSION],2752,2752,2752,,,,,,,,relation empty
+candidates,conj_519,sessionIsAnon[SESSION*SESSION],1587,1587,1587,0,0.00019,0.0002,0.00019,1.022,0.999,True,
+candidates,conj_519,sessionLoginAssist[SESSION*SESSION],725,725,725,,,,,,,,relation empty
+candidates,conj_520,sessionLogoutReq[SESSION*SESSION],2700,2700,2700,,,,,,,,relation empty
+candidates,conj_521,accUserid[Account*Userid],3074,3074,3074,0,0.0002,0.00021,0.00021,1.018,1.019,True,
+candidates,conj_521,sessionAccount[SESSION*Account],2995,2995,2995,,,,,,,,relation empty
+candidates,conj_521,sessionUserid[SESSION*Userid],3251,3251,3251,,,,,,,,relation empty
+candidates,conj_523,systemRole[Role*Role],2364,2364,2364,3,0.00023,0.00024,0.00024,1.014,1.036,True,
+candidates,conj_524,wAangebodenReview[Wijziging*Wijziging],2846,2846,2846,,,,,,,,relation empty
+candidates,conj_525,wBegindatumGeseed[Wijziging*Wijziging],2846,2846,2846,,,,,,,,relation empty
+candidates,conj_526,wBronGeseed[Wijziging*Wijziging],2690,2690,2690,,,,,,,,relation empty
+candidates,conj_527,wCommitDoel[Wijziging*Eis],14299,8715,9402,,,,,,,,relation empty
+candidates,conj_527,wConcept[Wijziging*Wijziging],28744,17215,18833,,,,,,,,relation empty
+candidates,conj_527,wGoedgekeurd[Wijziging*Wijziging],28600,17167,18773,,,,,,,,relation empty
+candidates,conj_527,wNieuweEis[Wijziging*Eis],16394,16394,16394,,,,,,,,relation empty
+candidates,conj_527,wijzigtEis[Wijziging*Eis],12800,12800,12800,,,,,,,,relation empty
+candidates,conj_528,wCommitDoel[Wijziging*Eis],719,719,719,,,,,,,,relation empty
+candidates,conj_528,wResultaatEis[Wijziging*Eis],1471,1471,1471,,,,,,,,relation empty
+candidates,conj_529,wBegindatum[Wijziging*Datum],12073,9122,9482,,,,,,,,relation empty
+candidates,conj_529,wBegindatumGeseed[Wijziging*Wijziging],5376,3411,3771,,,,,,,,relation empty
+candidates,conj_529,wConcept[Wijziging*Wijziging],8392,5739,6099,,,,,,,,relation empty
+candidates,conj_530,wBron[Wijziging*Bron],10932,8576,8892,,,,,,,,relation empty
+candidates,conj_530,wBronGeseed[Wijziging*Wijziging],4956,3326,3642,,,,,,,,relation empty
+candidates,conj_530,wConcept[Wijziging*Wijziging],7590,5454,5770,,,,,,,,relation empty
+candidates,conj_531,wConcept[Wijziging*Wijziging],8438,5774,6146,,,,,,,,relation empty
+candidates,conj_531,wEisTekst[Wijziging*EisTekst],12176,9220,9592,,,,,,,,relation empty
+candidates,conj_531,wEisTekstGeseed[Wijziging*Wijziging],5456,3466,3838,,,,,,,,relation empty
+candidates,conj_532,wConcept[Wijziging*Wijziging],8210,5678,6036,,,,,,,,relation empty
+candidates,conj_532,wEisType[Wijziging*Eistype],11849,9043,9401,,,,,,,,relation empty
+candidates,conj_532,wEisTypeGeseed[Wijziging*Wijziging],5328,3428,3786,,,,,,,,relation empty
+candidates,conj_533,wConcept[Wijziging*Wijziging],7778,5532,5864,,,,,,,,relation empty
+candidates,conj_533,wLand[Wijziging*Gebied],11222,8744,9076,,,,,,,,relation empty
+candidates,conj_533,wLandGeseed[Wijziging*Wijziging],5088,3376,3708,,,,,,,,relation empty
+candidates,conj_534,wConcept[Wijziging*Wijziging],7684,5493,5817,,,,,,,,relation empty
+candidates,conj_534,wNaam[Wijziging*Tekst],11077,8660,8984,,,,,,,,relation empty
+candidates,conj_534,wNaamGeseed[Wijziging*Wijziging],5022,3351,3675,,,,,,,,relation empty
+candidates,conj_535,wConcept[Wijziging*Wijziging],8648,5853,6239,,,,,,,,relation empty
+candidates,conj_535,wOrganisme[Wijziging*Organisme],12485,9380,9766,,,,,,,,relation empty
+candidates,conj_535,wOrganismeGeseed[Wijziging*Wijziging],5579,3500,3886,,,,,,,,relation empty
+candidates,conj_536,wConcept[Wijziging*Wijziging],9344,6093,6515,,,,,,,,relation empty
+candidates,conj_536,wOrganismeZonder[Wijziging*Organisme],13469,9836,10258,,,,,,,,relation empty
+candidates,conj_536,wOrganismeZonderGeseed[Wijziging*Wijziging],5921,3554,3976,,,,,,,,relation empty
+candidates,conj_537,wConcept[Wijziging*Wijziging],8220,5691,6049,,,,,,,,relation empty
+candidates,conj_537,wProduct[Wijziging*Product],11859,9056,9414,,,,,,,,relation empty
+candidates,conj_537,wProductGeseed[Wijziging*Wijziging],5325,3428,3786,,,,,,,,relation empty
+candidates,conj_538,wConcept[Wijziging*Wijziging],8006,5610,5954,,,,,,,,relation empty
+candidates,conj_538,wSector[Wijziging*Sector],11546,8894,9238,,,,,,,,relation empty
+candidates,conj_538,wSectorGeseed[Wijziging*Wijziging],5198,3392,3736,,,,,,,,relation empty
+candidates,conj_539,wConcept[Wijziging*Wijziging],8014,5614,5958,,,,,,,,relation empty
+candidates,conj_539,wStatus[Wijziging*Status],11554,8898,9242,,,,,,,,relation empty
+candidates,conj_539,wStatusGeseed[Wijziging*Wijziging],5206,3396,3740,,,,,,,,relation empty
+candidates,conj_540,wConcept[Wijziging*Wijziging],8494,5764,6130,,,,,,,,relation empty
+candidates,conj_540,wToelichting[Wijziging*Tekst],12223,9183,9549,,,,,,,,relation empty
+candidates,conj_540,wToelichtingGeseed[Wijziging*Wijziging],5432,3418,3784,,,,,,,,relation empty
+candidates,conj_541,wConcept[Wijziging*Wijziging],7578,5448,5764,,,,,,,,relation empty
+candidates,conj_541,wVorm[Wijziging*Vorm],10920,8570,8886,,,,,,,,relation empty
+candidates,conj_541,wVormGeseed[Wijziging*Wijziging],4944,3320,3636,,,,,,,,relation empty
+candidates,conj_542,wConcept[Wijziging*Wijziging],2612,2612,2612,,,,,,,,relation empty
+candidates,conj_543,wEisTekstGeseed[Wijziging*Wijziging],2794,2794,2794,,,,,,,,relation empty
+candidates,conj_544,wEisTypeGeseed[Wijziging*Wijziging],2753,2753,2753,,,,,,,,relation empty
+candidates,conj_545,wGoedgekeurd[Wijziging*Wijziging],4332,1627,2678,,,,,,,,relation empty
+candidates,conj_545,wGoedkeurder[Wijziging*Account],7701,5283,5665,,,,,,,,relation empty
+candidates,conj_546,wGoedgekeurd[Wijziging*Wijziging],2716,2716,2716,,,,,,,,relation empty
+candidates,conj_547,wGoedgekeurd[Wijziging*Wijziging],371,371,371,,,,,,,,relation empty
+candidates,conj_548,wAuteur[Wijziging*Account],2575,1725,2107,,,,,,,,relation empty
+candidates,conj_548,wGoedkeurder[Wijziging*Account],8941,8941,8941,,,,,,,,relation empty
+candidates,conj_549,wKenmerkEinddatumGeseed[Kenmerk*Kenmerk],2914,2914,2914,,,,,,,,relation empty
+candidates,conj_550,wKenmerkGetalGeseed[Kenmerk*Kenmerk],2810,2810,2810,,,,,,,,relation empty
+candidates,conj_551,wKenmerkHerkomstGeseed[Kenmerk*Kenmerk],2888,2888,2888,,,,,,,,relation empty
+candidates,conj_552,wKenmerkKlasseGeseed[Kenmerk*Kenmerk],2836,2836,2836,,,,,,,,relation empty
+candidates,conj_553,wKenmerkOperatorGeseed[Kenmerk*Kenmerk],2888,2888,2888,,,,,,,,relation empty
+candidates,conj_554,wKenmerkProcentGeseed[Kenmerk*Kenmerk],2862,2862,2862,,,,,,,,relation empty
+candidates,conj_555,wKenmerkSoortGeseed[Kenmerk*Kenmerk],2810,2810,2810,,,,,,,,relation empty
+candidates,conj_556,wKenmerkStatusGeseed[Kenmerk*Kenmerk],2836,2836,2836,,,,,,,,relation empty
+candidates,conj_557,wKenmerkToepasbaarGeseed[Kenmerk*Kenmerk],2940,2940,2940,,,,,,,,relation empty
+candidates,conj_558,wKenmerkWaardeGeseed[Kenmerk*Kenmerk],2821,2821,2821,,,,,,,,relation empty
+candidates,conj_559,wLandGeseed[Wijziging*Wijziging],2690,2690,2690,,,,,,,,relation empty
+candidates,conj_560,wNaamGeseed[Wijziging*Wijziging],2690,2690,2690,,,,,,,,relation empty
+candidates,conj_561,wOrganismeGeseed[Wijziging*Wijziging],2820,2820,2820,,,,,,,,relation empty
+candidates,conj_562,wOrganismeZonderGeseed[Wijziging*Wijziging],2976,2976,2976,,,,,,,,relation empty
+candidates,conj_563,wProductGeseed[Wijziging*Wijziging],2768,2768,2768,,,,,,,,relation empty
+candidates,conj_564,wSectorGeseed[Wijziging*Wijziging],2742,2742,2742,,,,,,,,relation empty
+candidates,conj_565,wSluit[Wijziging*Wijziging],2560,2560,2560,,,,,,,,relation empty
+candidates,conj_566,wStatusGeseed[Wijziging*Wijziging],2742,2742,2742,,,,,,,,relation empty
+candidates,conj_567,wToelichtingGeseed[Wijziging*Wijziging],2857,2857,2857,,,,,,,,relation empty
+candidates,conj_568,wVormGeseed[Wijziging*Wijziging],2690,2690,2690,,,,,,,,relation empty
+candidates,conj_569,accAllowedRoles[Account*Role],48561,22682,25517,0,0.00073,0.00074,0.00081,1.011,1.101,True,
+candidates,conj_569,accEmail[Account*Emailadres],24923,12501,14234,,,,,,,,relation empty
+candidates,conj_570,accDefaultRole[Account*Role],6386,4117,4468,3,0.00028,0.00029,0.00027,1.023,0.981,True,
+candidates,conj_571,dgBasisDekking[DekkingGroep*Dekking],12325,8837,9252,,,,,,,,relation empty
+candidates,conj_571,dgBasisSubgroep[DekkingGroep*DekkingGroep],13265,9339,9803,,,,,,,,relation empty
+candidates,conj_571,dgIsDIFF[DekkingGroep*DekkingGroep],11245,5595,6474,,,,,,,,relation empty
+candidates,conj_572,dgSubgroep[DekkingGroep*DekkingGroep],14587,7954,9463,3,0.03099,0.03627,0.03233,1.17,1.043,True,
+candidates,conj_572,eisDekkinggroep[Eis*DekkingGroep],12425,6619,8200,3,0.0074,0.02448,0.00751,3.31,1.016,True,
+candidates,conj_573,dgIsDIFF[DekkingGroep*DekkingGroep],6003,3545,4003,,,,,,,,relation empty
+candidates,conj_573,dgOperator[DekkingGroep*DekkingOperator],14492,10828,11286,0,0.00034,0.00034,0.00035,1.015,1.028,True,
+candidates,conj_574,eisInBewerking[Eis*Eis],18625,8449,10331,,,,,,,,relation empty
+candidates,conj_574,wConcept[Wijziging*Wijziging],38625,16138,18020,,,,,,,,relation empty
+candidates,conj_574,wNieuweEis[Wijziging*Eis],33316,16794,18676,,,,,,,,relation empty
+candidates,conj_574,wijzigtEis[Wijziging*Eis],33316,16794,18676,,,,,,,,relation empty
+candidates,conj_575,eisInConcept[Eis*Eis],9617,5035,6337,,,,,,,,relation empty
+candidates,conj_575,wConcept[Wijziging*Wijziging],22333,12662,13964,,,,,,,,relation empty
+candidates,conj_575,wijzigtEis[Wijziging*Eis],22774,13318,14620,,,,,,,,relation empty
+candidates,conj_576,eisInvoerverbod[Eis*Eis],5403,3816,4120,3,0.09895,0.08302,0.08372,0.839,0.846,True,
+candidates,conj_576,eisType[Eis*Eistype],13920,8938,9650,1,0.09598,0.08091,0.0808,0.843,0.842,True,
+candidates,conj_576,eisTypeInvoerverbod[Eistype*Eistype],7654,5547,5851,4692,2.44678,2.80108,2.65556,1.145,1.085,True,
+candidates,conj_577,land[Eis*Gebied],8637,6632,6910,3,0.08731,0.08339,0.08346,0.955,0.956,True,
+candidates,conj_577,landeneis[Eis*Eis],3831,2432,2710,3,0.09153,0.09037,0.08795,0.987,0.961,True,
+candidates,conj_578,gebiedCode[Gebied*Gebiedcode],6572,4285,4655,,,,,,,,relation empty
+candidates,conj_579,naam[Gebied*Naam],5414,3775,4061,3,0.00154,0.00154,0.00155,0.999,1.003,True,
+candidates,conj_580,kenmerk[Eis*Kenmerk],10048,7671,7975,3,1.9833,2.10058,2.08981,1.059,1.054,True,
+candidates,conj_580,kenmerkHeeftDrager[Kenmerk*Kenmerk],27214,12970,14808,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_580,organismeKenmerk[Organisme*Kenmerk],12032,8525,8931,,,,,,,,relation empty
+candidates,conj_580,productKenmerk[Product*Kenmerk],11474,8269,8647,,,,,,,,relation empty
+candidates,conj_580,synoniemKenmerk[Synoniem*Kenmerk],11753,8397,8789,,,,,,,,relation empty
+candidates,conj_580,wKenmerk[Wijziging*Kenmerk],10992,8189,8547,,,,,,,,relation empty
+candidates,conj_581,kenmerk[Eis*Kenmerk],13683,7641,8987,3,2.12195,2.27831,2.25948,1.074,1.065,True,
+candidates,conj_581,kenmerkSig[Kenmerk*KenmerkSig],10299,6311,6993,,,,,,,,A:timeout B:timeout C:timeout
+candidates,conj_582,kenmerkOperator[Kenmerk*Operator],15888,8383,9886,,,,,,,,relation empty
+candidates,conj_582,kenmerkSignatuur[Kenmerk*Signatuur],11482,6594,7392,,,,,,,,relation empty
+candidates,conj_583,kenmerkHeeftDrager[Kenmerk*Kenmerk],724,724,724,3,0.00022,0.00022,0.00022,1.002,0.994,True,
+candidates,conj_584,PrototypeContext.label[PrototypeContext.Interface*PrototypeContext.Label],11054,6828,7492,3,0.00042,0.00041,0.00042,0.997,1.004,True,
+candidates,conj_585,PrototypeContext.isSubItemOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],12627,7653,8417,0,0.00038,0.0004,0.00038,1.068,1.021,True,
+candidates,conj_586,PrototypeContext.isPartOf[PrototypeContext.NavMenuItem*PrototypeContext.NavMenu],11784,7181,7895,3,0.00039,0.00038,0.00039,0.985,0.99,True,
+candidates,conj_587,PrototypeContext.label[PrototypeContext.NavMenuItem*PrototypeContext.Label],11308,6982,7662,3,0.00038,0.00038,0.00038,1.01,1.004,True,
+candidates,conj_588,PrototypeContext.isSubItemOfStar[PrototypeContext.NavMenuItem*PrototypeContext.NavMenuItem],994,994,994,2,0.00024,0.00024,0.00025,0.984,1.023,True,
+candidates,conj_589,label[Role*PFLabel],5559,3818,4118,3,0.00032,0.00032,0.00031,1.005,0.995,True,
+candidates,conj_590,roleEquiv[Role*PrototypeContext.Role],7361,4718,5154,3,0.00029,0.0003,0.0003,1.013,1.023,True,
+candidates,conj_591,PrototypeContext.sessionActiveRoles[SESSION*PrototypeContext.Role],20885,10384,11352,0,0.00052,0.00051,0.00051,0.982,0.989,True,
+candidates,conj_591,accDefaultRole[Account*Role],43722,15683,18240,0,0.00065,0.00071,0.00074,1.1,1.137,True,
+candidates,conj_591,defaultRolGeseed[SESSION*SESSION],15802,8315,9283,,,,,,,,relation empty
+candidates,conj_591,roleEquiv[Role*PrototypeContext.Role],43166,15714,18189,0,0.00069,0.00073,0.00076,1.053,1.101,True,
+candidates,conj_591,sessionAccount[SESSION*Account],43530,16107,18432,,,,,,,,relation empty
+candidates,conj_592,accDefaultRole[Account*Role],47021,18879,22290,0,0.00087,0.00086,0.00086,0.99,0.992,True,
+candidates,conj_592,accUserid[Account*Userid],151453,42408,52210,0,0.00198,0.00209,0.0024,1.059,1.217,True,
+candidates,conj_592,loginNaam[SESSION*Userid],170499,37675,47451,,,,,,,,relation empty
+candidates,conj_592,sessionLand[SESSION*Gebied],36089,17588,22302,,,,,,,,relation empty
+candidates,conj_592,sessionSector[SESSION*Sector],36353,17674,22400,,,,,,,,relation empty
+candidates,conj_593,sessionAccount[SESSION*Account],11278,8066,8444,,,,,,,,relation empty
+candidates,conj_593,sessionIsUser[SESSION*SESSION],4821,2715,3093,,,,,,,,relation empty
+candidates,conj_594,sessionAgentAccount[SESSION*AgentAccount],12697,8735,9183,,,,,,,,relation empty
+candidates,conj_594,sessionIsAgent[SESSION*SESSION],5434,2878,3326,,,,,,,,relation empty
+candidates,conj_595,sessionAnonIfc[SESSION*NavToIfc],14943,9519,10291,,,,,,,,relation empty
+candidates,conj_595,sessionIfcsSet[SESSION*SESSION],8934,4636,5408,,,,,,,,relation empty
+candidates,conj_595,sessionUserIfc[SESSION*NavToIfc],15659,10235,11007,,,,,,,,relation empty
+candidates,conj_596,sectorNaam[Sector*Naam],5954,3949,4271,3,0.00067,0.00064,0.00064,0.956,0.952,True,
+candidates,conj_597,voorkeursnaam[Synoniem*WetenschappelijkeNaam],8271,5163,5655,3,0.0032,0.00327,0.00327,1.023,1.023,True,
+candidates,conj_598,uidUserid[UID*Userid],5689,3801,4109,,,,,,,,relation empty
+candidates,conj_599,botZoeknaam[WetenschappelijkeNaam*Naam],7949,5133,5581,3,0.08225,0.0822,0.08137,0.999,0.989,True,
+candidates,conj_600,wGoedgekeurd[Wijziging*Wijziging],4882,2786,3168,,,,,,,,relation empty
+candidates,conj_600,wGoedkeurder[Wijziging*Account],11500,8338,8720,,,,,,,,relation empty
+candidates,conj_601,eisInConcept[Eis*Eis],1374,1374,1374,,,,,,,,relation empty
+candidates,conj_601,maakWijziging[Eis*Eis],680,680,680,,,,,,,,relation empty
+candidates,conj_602,kenmerkGebied[Kenmerk*Gebied],10086,7386,7738,,,,,,,,relation empty
+candidates,conj_602,kenmerkGetal[Kenmerk*Getal],10129,7407,7757,,,,,,,,relation empty
+candidates,conj_602,kenmerkHerkomst[Kenmerk*Herkomst],10900,7764,8156,0,0.00039,0.00037,0.00038,0.957,0.981,True,
+candidates,conj_602,kenmerkKlasse[Kenmerk*Klasse],10236,7456,7814,,,,,,,,relation empty
+candidates,conj_602,kenmerkProcent[Kenmerk*Procent],10643,7645,8023,,,,,,,,relation empty
+candidates,conj_602,kenmerkTekst[Kenmerk*Tekst],10129,7407,7757,0,0.00044,0.00049,0.00045,1.11,1.025,True,
+candidates,conj_602,kenmerkVerwachtType[Kenmerk*Datatype],40698,25498,27678,,,,,,,,relation empty
+candidates,conj_603,PrototypeContext.ifc[PrototypeContext.NavMenuItem*PrototypeContext.Interface],1101,1101,1101,0,0.0002,0.0002,0.0002,1.028,1.024,True,
+candidates,conj_603,PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface],1107,1107,1107,0,0.00021,0.00021,0.00021,1.0,1.022,True,
+candidates,conj_604,sessionLogoutReq[SESSION*SESSION],321,321,321,,,,,,,,relation empty
+candidates,conj_605,maakNieuweEis[SESSION*SESSION],125,125,125,,,,,,,,relation empty
+candidates,conj_606,sessionKeurtGoed[SESSION*Wijziging],129,129,129,,,,,,,,relation empty
+candidates,conj_607,wSluit[Wijziging*Wijziging],119,119,119,,,,,,,,relation empty

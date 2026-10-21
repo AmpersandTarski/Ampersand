@@ -19,6 +19,10 @@ data JSONConjunct = JSONConjunct
     cnjJSONsignalRuleNames :: [Text],
     cnjJSONinvariantRuleNames :: [Text],
     cnjJSONviolationsSQL :: Text,
+    -- | Trial for issue #1739, not for merging: the violation query with
+    --   every repeated subterm shared in a WITH clause; empty when too long.
+    cnjJSONviolationsSQLShared :: Text,
+    cnjJSONviolationsSQLMergeable :: Text,
     -- | Optional (issue #1684): per relation occurring in this conjunct, the
     --   candidate query for delta-scoped re-evaluation. Nothing when the term
     --   falls outside the supported class; runtimes that do not know this
@@ -41,7 +45,9 @@ data JSONConjunct = JSONConjunct
 data JSONDeltaQuery = JSONDeltaQuery
   { dltJSONrelation :: Text,
     dltJSONdeltaTable :: Text,
-    dltJSONcandidateSQL :: Text
+    dltJSONcandidateSQL :: Text,
+    dltJSONcandidateSQLUnshared :: Text,
+    dltJSONcandidateSQLMergeable :: Text
   }
   deriving (Generic, Show)
 
@@ -73,6 +79,8 @@ instance JSON Conjunct JSONConjunct where
         cnjJSONsignalRuleNames = map fullName . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONinvariantRuleNames = map fullName . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONviolationsSQL = sqlQuery fSpec violTerm,
+        cnjJSONviolationsSQLShared = fromMaybe "" (sqlQuerySharedWithinLimit fSpec violTerm),
+        cnjJSONviolationsSQLMergeable = sqlQuerySharedMergeable fSpec violTerm,
         cnjJSONdeltaQueries = mapMaybe deltaQuery <$> deltaQueriesFor violTerm,
         cnjJSONcostProfile =
           let profile = costProfileFor fSpec conj violTerm
@@ -90,5 +98,7 @@ instance JSON Conjunct JSONConjunct where
           JSONDeltaQuery
             { dltJSONrelation = fullName rel <> tshow (sign rel),
               dltJSONdeltaTable = deltaTableName rel,
-              dltJSONcandidateSQL = candSQL
+              dltJSONcandidateSQL = candSQL,
+              dltJSONcandidateSQLUnshared = fromMaybe "" (sqlQueryUnsharedWithinLimit (withDeltaPlugs fSpec) candTerm),
+              dltJSONcandidateSQLMergeable = sqlQuerySharedMergeable (withDeltaPlugs fSpec) candTerm
             }
