@@ -2,6 +2,7 @@ module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Classes (isIdent)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.Prototype.PHP
@@ -80,7 +81,9 @@ getAllPairViewExps fSpec = concatMap getPairViewExps . toList $ vrules fSpec `Se
       Nothing -> []
       Just (PairView pvsegs) ->
         [ (expr, "violation view for rule " <> fullName r, origin r)
-          | PairViewExp _ _ expr <- NE.toList pvsegs
+          | PairViewExp _ _ expr <- NE.toList pvsegs,
+            -- SRC I and TGT I run no query in the prototype (issue #1727)
+            not (isIdent expr)
         ]
 
 getAllIdExps :: FSpec -> [ValidationExp]

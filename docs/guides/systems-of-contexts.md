@@ -138,7 +138,7 @@ and the result is the same as before: being included changes nothing for the inc
 
 ## One context, one database
 
-Every context has a database of its own and an application of its own.
+By default every context has a database of its own and an application of its own.
 Each fact is stored once, in the database of the context that declares it.
 
 ![The permits application has all rights on its own database and reads the database of the register; the registry application only knows its own database](../assets/systems-of-contexts.svg)
@@ -182,6 +182,7 @@ because the register requires that.
 The command `ampersand deploy` generates what you need to run both applications.
 It is part of the compiler from v5.10.0 (see the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/main/ReleaseNotes.md)),
 and the applications it describes need prototype framework v2.16.0 or later.
+
 
 ```bash
 ampersand deploy permits.adl --output-dir deploy
@@ -245,6 +246,50 @@ Inclusion has no cycles.
 A context cannot include itself, directly or by way of another context.
 That is what makes it possible to deploy a context without the contexts that include it.
 
+## Two contexts on one database
+
+A database of its own suits the register: another organisation keeps it,
+and the permit system only looks in.
+Sometimes the included context is a part of your own system,
+such as a module that you keep in a script of its own to give its names a prefix.
+A database per module then costs more than it brings.
+Every term that combines the two reads two databases,
+and a relation from your context to a concept of the module gets a table of its own,
+where it would have been a column in the table of that concept.
+
+The word `NAMED` names the database of a context.
+Contexts with the same database name land on one database.
+
+```text
+CONTEXT School INCLUDES Library FROM "library.adl" NAMED School
+```
+
+The library lands on the database `School`, where the school already is.
+You can also name the database after the included context, or give both contexts a name of your own.
+
+```text
+CONTEXT School NAMED Library INCLUDES Library FROM "library.adl"
+CONTEXT School NAMED Campus INCLUDES Library FROM "library.adl" NAMED Campus
+```
+
+In all three cases the two contexts land on one database, and the tables are laid out as in a single context.
+A relation `readingList[Library.Book*Pupil] [UNI]` of the school becomes a column in the table of the books,
+and `CLASSIFY Pupil ISA Library.Member` puts pupils and members in one table.
+
+One database has one application: that of the context which includes the other contexts on it.
+Here that is the school.
+It installs the database with the tables of both contexts, and it guards the rules of both.
+The library has no application of its own, so its interfaces are not generated;
+the compiler tells you so in a warning, with the names of the interfaces.
+If the library needs screens of its own, give it a database of its own.
+
+The compiler refuses a database name that cannot be installed: a context that is given two names,
+two contexts on one database without a context that includes both,
+and two databases that read each other.
+A context that reads the shared database also includes the context that installs it, the school here,
+because that context gives the tables their names.
+The messages are in the table at the end of this guide.
+
 ## Two contexts with the same name
 
 Sometimes two included contexts carry the same name.
@@ -259,6 +304,10 @@ CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
 An alias is a second name for an included context.
 In the script of `Migration`, `old.r` is the relation `r` of the existing system and `new.r` is the relation `r` of the desired system.
 You can give an alias to any included context, for instance to shorten a long name.
+
+The two versions need two databases.
+Without `NAMED` the compiler numbers them in the order of the statement, `Kurk_1` and `Kurk_2`.
+With `NAMED` you choose the names: `Kurk FROM "desired.adl" AS new NAMED Kurk2026`.
 
 ## Migrating data to a new version
 
@@ -310,9 +359,12 @@ Each part of this script does one thing.
 The last line is the heart of the migration.
 The data that arrives from the existing system violates the new rule,
 so the rule cannot be enforced yet.
-The migration context relaxes it, and the compiler takes care that it hardens again:
-an atom that satisfies the rule is held to it from then on,
-so a violation that a user has repaired cannot come back.
+The migration context relaxes it with steps 3 to 5 of the method.
+Besides the role of step 5, it states a relation that registers every atom that satisfies the rule (steps 3 and 4),
+and a blocking invariant that holds such an atom to the rule from then on.
+So a violation that a user has repaired cannot come back.
+An atom that arrives without satisfying the rule is work, like the ones from the existing system.
+If the migration script leaves steps 3 and 4 out, compiler v5.11.0 adds them.
 When the last violation is repaired,
 the desired system satisfies its own invariant on its own database,
 and it can be taken into use as it is.
@@ -323,6 +375,32 @@ The script of the desired system contains nothing that serves the migration.
 
 This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024).
 The reference describes [what the compiler adds to the migration context](../reference-material/syntax-of-ampersand.md#rules-classifications-and-writing).
+
+*Proof track: [PRF-14 — a repaired violation of a relaxed invariant does not return](../proofs/README.md#prf-14).*
+
+## Seeing the migration at work
+
+A demonstration shows this migration running, so that you can see what the users notice of it.
+It migrates the plot register of a community garden to a release with a new rule, every plot has a keeper,
+while the gardeners keep working.
+
+To watch it, see the [video on YouTube](https://youtu.be/DUtOYUZfkI8), which takes 7 minutes and 41 seconds.
+It walks through the migration and shows the three scripts.
+
+To run it yourself, you need Docker and a copy of the Ampersand repository.
+
+```bash
+git clone https://github.com/AmpersandTarski/Ampersand.git
+cd Ampersand/demos/migration
+./demo.sh up garden
+```
+
+Then open `http://localhost:8200` in a browser.
+The page has a button for each step of the migration: start it, switch the users over, and clean up.
+The first start builds the images of the three systems, which takes a few minutes.
+`./demo.sh down garden` removes the demonstration again.
+The [README of the demonstration](https://github.com/AmpersandTarski/Ampersand/blob/main/demos/migration/README.md)
+tells what you see at each step, how the demonstration works, and how to change its scripts.
 
 ## When a context writes in another database
 
@@ -348,12 +426,19 @@ and the interfaces of a context are the user interface of its own application.
 | Two included contexts with the same name and no alias | The compiler asks you to add `AS` and an alias to each. |
 | A context that includes itself, directly or indirectly | The compiler shows the cycle. |
 | An included context that no name in your script refers to | A warning: the inclusion is not used. |
+| One context with two database names, in two statements | "The context Registry lands on two databases: Kaart and Register." |
+| Two contexts with one database name, neither of which includes the other | "The contexts Registry, Towns land on one database, Shared, and none of them includes all the others." |
+| A context on database `X` that includes a context on `Y`, which includes a context on `X` | "The databases X and Y read each other." |
+| A context that shares the database of the context that includes it, compiled with `--context` | "The context Registry lands on the database Permits together with Permits, which includes it." Compile `Permits`. |
+| A context that shares a database and has interfaces | A warning: it has no application of its own, so its interfaces are not generated. |
+| A context that includes a context on a shared database, and not the context that installs that database | "The context Town reads the database School of Library, which School installs, and it does not include School." |
 
 ## Summary
 
 - `CONTEXT A INCLUDES B FROM "file"` lets context `A` use what context `B` declares and stores.
 - A thing of `B` is written in `A` with the prefix `B.`, or with an alias if you gave one.
-- Every context has one database and one application.
+- Every context lands on one database, by default one of its own, with one application.
+  `NAMED` puts contexts on one database together, with one application.
   Each fact is stored once.
 - A rule over data of another context is a rule for a role.
 - `ampersand deploy` generates the files to run all applications together.

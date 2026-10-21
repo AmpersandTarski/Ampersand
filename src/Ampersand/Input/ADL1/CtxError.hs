@@ -59,6 +59,7 @@ module Ampersand.Input.ADL1.CtxError
     mkUndeclaredError,
     mkUnusedCptDefWarning,
     mkUnusedInclusionWarning,
+    mkNoApplicationWarning,
     mkOrphanedRepresentWarning,
     mustBeBound,
     mustBeOrdered,
@@ -758,6 +759,18 @@ mkUnusedInclusionWarning orig includer included =
       "\n  "
       [ "The context " <> includer <> " includes the context " <> included <> " and refers to nothing in it.",
         "You can leave the inclusion out."
+      ]
+
+-- | A context that shares its database with the context that installs it has no application of its own,
+--   so its interfaces are not generated.
+mkNoApplicationWarning :: Origin -> Text -> Text -> Text -> [Text] -> Warning
+mkNoApplicationWarning orig ctx db root ifcs =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ "The context " <> ctx <> " lands on the database " <> db <> " together with " <> root <> ", which includes it, so it has no application of its own.",
+        "Its interfaces are not generated: " <> T.intercalate ", " ifcs <> ".",
+        "Give " <> ctx <> " a database of its own with NAMED if it needs an application."
       ]
 
 mkTurtleWarning :: Origin -> [Text] -> Warning

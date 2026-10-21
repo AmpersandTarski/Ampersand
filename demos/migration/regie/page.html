@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration demonstrator</title>
+<style>
+  :root {
+    --ground: #f6f5f1; --panel: #ffffff; --ink: #1d2327; --soft: #5d6970; --line: #cfd4d6;
+    --accent: #0b6e8f; --accent-ink: #ffffff; --faint: #e9ecec; --mark: #f1d58a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #15191b; --panel: #1e2427; --ink: #e8ecee; --soft: #9aa7ad; --line: #3a4449;
+      --accent: #58b7d6; --accent-ink: #0c1215; --faint: #2a3236; --mark: #7a6420;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+         display: flex; flex-direction: column; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 16px;
+           background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0 8px 0 0; font-weight: 600; }
+  button { font: inherit; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--accent);
+           background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  button:disabled { background: var(--faint); border-color: var(--line); color: var(--soft); cursor: default; }
+  button.quiet { background: transparent; color: var(--soft); border-color: var(--line); margin-left: auto; }
+  .lang { color: var(--soft); text-decoration: none; font-size: 13px; }
+  main { flex: 1; display: flex; min-height: 0; }
+  aside { width: 430px; max-width: 46vw; padding: 14px 16px; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); }
+  #status { font-size: 16px; margin: 0 0 4px; min-height: 2.9em; }
+  #problem { color: var(--ink); background: var(--mark); padding: 6px 8px; border-radius: 4px; display: none; margin: 6px 0; }
+  svg { width: 100%; height: auto; display: block; margin: 6px 0 2px; }
+  svg text { fill: var(--ink); font: 12px system-ui, sans-serif; }
+  svg .small { fill: var(--soft); font-size: 10.5px; }
+  .box { fill: var(--panel); stroke: var(--ink); stroke-width: 1.4; }
+  .absent .box { stroke: var(--line); stroke-dasharray: 4 4; }
+  .absent text { fill: var(--soft); }
+  .starting .box { stroke-dasharray: 6 3; animation: march 1s linear infinite; }
+  .routed .box { stroke: var(--accent); stroke-width: 3; }
+  @keyframes march { to { stroke-dashoffset: -9; } }
+  .wire { stroke: var(--line); stroke-width: 1.4; fill: none; }
+  .wire.live { stroke: var(--accent); stroke-width: 3; }
+  .wire.data { stroke: var(--soft); stroke-dasharray: 3 3; }
+  .gone { display: none; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); margin: 16px 0 6px; font-weight: 600; }
+  #work { margin: 0; padding-left: 18px; }
+  #events { margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--soft); }
+  #events time { font-variant-numeric: tabular-nums; margin-right: 6px; }
+  details { margin-top: 14px; } details p { margin: 6px 0; }
+  iframe { flex: 1; border: 0; background: #fff; min-width: 0; }
+  @media (max-width: 800px) { main { flex-direction: column; } aside { width: auto; max-width: none; border-right: 0; border-bottom: 1px solid var(--line); } iframe { min-height: 70vh; } }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <button id="start" disabled></button>
+  <button id="switch" disabled></button>
+  <button id="cleanup" disabled></button>
+  <button id="reset" class="quiet"></button>
+  <a class="lang" id="lang"></a>
+</header>
+<main>
+  <aside>
+    <p id="status"></p>
+    <p id="problem"></p>
+    <svg viewBox="0 0 400 300" role="img" aria-labelledby="status">
+      <defs><marker id="tip" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="context-stroke"/></marker></defs>
+      <text x="200" y="16" text-anchor="middle" id="t-users"></text>
+      <path class="wire live" d="M200,22 V40" marker-end="url(#tip)"/>
+      <g id="n-flipper"><rect class="box" x="140" y="42" width="120" height="30" rx="15"/>
+        <text x="200" y="61" text-anchor="middle">flipper</text></g>
+      <path class="wire" id="w-existing" d="M165,72 L70,118" marker-end="url(#tip)"/>
+      <path class="wire" id="w-migration" d="M200,72 V118" marker-end="url(#tip)"/>
+      <path class="wire" id="w-desired" d="M235,72 L330,118" marker-end="url(#tip)"/>
+      <g id="n-existing"><rect class="box" x="10" y="120" width="120" height="48" rx="6"/>
+        <text x="70" y="141" text-anchor="middle" id="t-existing"></text>
+        <text x="70" y="157" text-anchor="middle" class="small" id="s-existing"></text></g>
+      <g id="n-migration"><rect class="box" x="140" y="120" width="120" height="48" rx="6"/>
+        <text x="200" y="141" text-anchor="middle" id="t-migration"></text>
+        <text x="200" y="157" text-anchor="middle" class="small" id="s-migration"></text></g>
+      <g id="n-desired"><rect class="box" x="270" y="120" width="120" height="48" rx="6"/>
+        <text x="330" y="141" text-anchor="middle" id="t-desired"></text>
+        <text x="330" y="157" text-anchor="middle" class="small" id="s-desired"></text></g>
+      <path class="wire" id="o-existing" d="M70,168 V214"/>
+      <path class="wire" id="o-migration" d="M200,168 V214"/>
+      <path class="wire" id="o-desired" d="M330,168 V214"/>
+      <path class="wire data" id="r-existing" d="M165,168 L100,214" marker-end="url(#tip)"/>
+      <path class="wire data" id="r-desired" d="M235,168 L300,214" marker-end="url(#tip)"/>
+      <text x="124" y="198" text-anchor="end" class="small" id="l-reads"></text>
+      <text x="276" y="198" class="small" id="l-writes"></text>
+      <g id="d-existing"><path class="box" d="M25,222 a45,8 0 0 1 90,0 v34 a45,8 0 0 1 -90,0 z M25,222 a45,8 0 0 0 90,0"/>
+        <text x="70" y="251" text-anchor="middle" class="small" id="dn-existing"></text></g>
+      <g id="d-migration"><path class="box" d="M155,222 a45,8 0 0 1 90,0 v34 a45,8 0 0 1 -90,0 z M155,222 a45,8 0 0 0 90,0"/>
+        <text x="200" y="251" text-anchor="middle" class="small" id="dn-migration"></text></g>
+      <g id="d-desired"><path class="box" d="M285,222 a45,8 0 0 1 90,0 v34 a45,8 0 0 1 -90,0 z M285,222 a45,8 0 0 0 90,0"/>
+        <text x="330" y="251" text-anchor="middle" class="small" id="dn-desired"></text></g>
+      <text x="200" y="290" text-anchor="middle" class="small" id="l-server"></text>
+    </svg>
+    <div id="workbox"><h2 id="h-work"></h2><ul id="work"></ul></div>
+    <h2 id="h-events"></h2>
+    <ul id="events"></ul>
+    <details id="storybox"><summary id="h-story"></summary><div id="story"></div></details>
+  </aside>
+  <iframe id="app" title="application"></iframe>
+</main>
+<script>
+const lang = ['nl', 'en'].find(l => l === new URLSearchParams(location.search).get('lang')) || '__LANG__';
+document.documentElement.lang = lang;
+const T = {
+  nl: {
+    start: 'Migratie starten', switch: 'Omzetten', cleanup: 'Migratie opruimen', reset: 'Opnieuw beginnen',
+    other: 'English', users: 'gebruikers', existing: 'bestaand systeem', migration: 'migratiesysteem', desired: 'gewenst systeem',
+    absent: 'draait niet', starting: 'start…', running: 'draait', reads: 'leest', writes: 'leest en schrijft',
+    server: 'één databaseserver, één database per systeem', work: 'Nog te herstellen', events: 'Wat er gebeurde', story: 'Het verhaal',
+    phase: {
+      starting: 'Het bestaande systeem start.',
+      existing: 'Gebruikers werken in het bestaande systeem. Het is het enige systeem dat draait.',
+      preparing: 'Het gewenste systeem en het migratiesysteem starten. Gebruikers werken door in het bestaande systeem.',
+      catching: 'Het migratiesysteem haalt de laatste wijzigingen uit het bestaande systeem op.',
+      prepared: 'Het migratiesysteem loopt gelijk met het bestaande systeem. Gebruikers werken nog in het bestaande systeem.',
+      work: n => `Gebruikers werken in het migratiesysteem. Er ${n === 1 ? 'is nog 1 overtreding' : 'zijn nog ' + n + ' overtredingen'} van de nieuwe regel te herstellen.`,
+      clean: 'Gebruikers werken in het migratiesysteem. Alle overtredingen zijn hersteld; de nieuwe regel werkt nu als invariant.',
+      completed: 'Gebruikers werken in het gewenste systeem. Het bestaande systeem en het migratiesysteem zijn verwijderd.',
+    },
+  },
+  en: {
+    start: 'Start migration', switch: 'Switch over', cleanup: 'Clean up migration', reset: 'Start again',
+    other: 'Nederlands', users: 'users', existing: 'existing system', migration: 'migration system', desired: 'desired system',
+    absent: 'not running', starting: 'starting…', running: 'running', reads: 'reads', writes: 'reads and writes',
+    server: 'one database server, one database per system', work: 'Left to repair', events: 'What happened', story: 'The story',
+    phase: {
+      starting: 'The existing system is starting.',
+      existing: 'Users work in the existing system. It is the only system that runs.',
+      preparing: 'The desired system and the migration system are starting. Users keep working in the existing system.',
+      catching: 'The migration system is fetching the latest changes from the existing system.',
+      prepared: 'The migration system is level with the existing system. Users still work in the existing system.',
+      work: n => `Users work in the migration system. ${n === 1 ? '1 violation' : n + ' violations'} of the new rule ${n === 1 ? 'is' : 'are'} left to repair.`,
+      clean: 'Users work in the migration system. All violations are repaired; the new rule now works as an invariant.',
+      completed: 'Users work in the desired system. The existing system and the migration system have been removed.',
+    },
+  },
+}[lang];
+const $ = id => document.getElementById(id);
+const parts = ['existing', 'migration', 'desired'];
+for (const b of ['start', 'switch', 'cleanup', 'reset']) {
+  $(b).textContent = T[b];
+  $(b).onclick = () => fetch('/action/' + b, {method: 'POST'}).then(refresh);
+}
+$('lang').textContent = T.other; $('lang').href = lang === 'en' ? '/?lang=nl' : '/?lang=en';
+$('t-users').textContent = T.users; $('l-reads').textContent = T.reads; $('l-writes').textContent = T.writes;
+$('l-server').textContent = T.server; $('h-work').textContent = T.work; $('h-events').textContent = T.events; $('h-story').textContent = T.story;
+for (const p of parts) $('t-' + p).textContent = T[p];
+
+let route = null, storyShown = false;
+function show(s) {
+  $('title').textContent = s.title; document.title = s.title;
+  if (!storyShown && s.story) {
+    const paragraphs = s.story[lang] || s.story.en || [];
+    $('story').replaceChildren(...paragraphs.map(t => Object.assign(document.createElement('p'), {textContent: t})));
+    $('storybox').style.display = paragraphs.length ? '' : 'none'; storyShown = true;
+  }
+  const idle = !s.busy, n = s.violations.length;
+  $('start').disabled = !(idle && s.phase === 'existing');
+  $('switch').disabled = !(idle && s.phase === 'prepared' && s.ready);
+  $('cleanup').disabled = !(idle && s.phase === 'migrating' && n === 0);
+  $('reset').disabled = !idle;
+  $('status').textContent =
+    s.phase === 'prepared' ? (s.ready ? T.phase.prepared : T.phase.catching)
+    : s.phase === 'migrating' ? (n ? T.phase.work(n) : T.phase.clean)
+    : T.phase[s.phase] || '';
+  $('problem').textContent = s.error; $('problem').style.display = s.error ? 'block' : 'none';
+  for (const p of parts) {
+    const c = s.containers[p] || 'absent';
+    $('n-' + p).setAttribute('class', c + (s.route === p && c === 'running' ? ' routed' : ''));
+    $('s-' + p).textContent = T[c];
+    $('w-' + p).setAttribute('class', 'wire' + (s.route === p ? ' live' : c === 'absent' ? ' gone' : ''));
+    $('d-' + p).setAttribute('class', s.databases[p] ? '' : 'absent');
+    $('dn-' + p).textContent = s.databases[p] || '';
+    $('o-' + p).setAttribute('class', 'wire' + (c === 'absent' ? ' gone' : ''));
+  }
+  const migrating = (s.containers.migration || 'absent') !== 'absent';
+  for (const id of ['r-existing', 'r-desired', 'l-reads', 'l-writes']) $(id).style.display = migrating ? '' : 'none';
+  $('workbox').style.display = s.phase === 'migrating' || (s.phase === 'prepared' && n) ? '' : 'none';
+  $('work').replaceChildren(...s.violations.map(v => Object.assign(document.createElement('li'), {textContent: v})));
+  $('events').replaceChildren(...s.events.slice().reverse().map(e => {
+    const li = document.createElement('li');
+    li.append(Object.assign(document.createElement('time'), {textContent: new Date(e.time * 1000).toLocaleTimeString(lang, {hour12: false})}), e[lang]);
+    return li;
+  }));
+  if (s.route !== route) {   // the frame shows the system that serves the users, and nothing while none does
+    route = s.route;
+    if (route) setTimeout(() => { $('app').src = `http://${location.hostname}:${s.appPort}${s.home}?${Date.now()}`; }, 400);
+    else $('app').src = 'about:blank';
+  }
+}
+function refresh() { return fetch('/state').then(r => r.json()).then(show).catch(() => {}); }
+refresh(); setInterval(refresh, 1000);
+</script>
+</body>
+</html>

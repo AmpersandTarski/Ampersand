@@ -14,7 +14,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.Core.AbstractSyntaxTree (Guarded (..), makeTypologies, sortGeneric2Specific, storageComponents)
-import Ampersand.Core.ParseTree (foreignContexts, foreignLabelViews)
+import Ampersand.Core.ParseTree (contextDatabases, foreignContexts, foreignLabelViews, ownDatabase)
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
 import qualified RIO.List as L
@@ -60,9 +60,10 @@ attributesOfConcept fSpec c = case lookupCpt fSpec c of
 --
 --   `neededConcepts` are the concepts that some generated query enumerates, as
 --   computed by `Ampersand.FSpec.ToFSpec.ConceptTables.conceptsNeedingATable`.
---   A typology whose table would hold no relation columns and none of whose
---   concepts is enumerated gets no table: such a table would only administrate
---   atoms that nothing ever reads. See issue #1672.
+--   A typology of values that stores no relation and none of whose concepts is
+--   enumerated gets no table: such a table would only administrate atoms that
+--   nothing ever reads. A typology is stored as a whole or not at all, and a
+--   typology that holds objects is always stored. See issues #1672 and #1727.
 makeGeneratedSqlPlugs :: (HasFSpecGenOpts env) => env -> A_Context -> [A_Concept] -> [PlugSQL]
 makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- ++tableForONE toevoegen is onjuist omdat ONE al in inspectedCandidateTables zit.
   where
@@ -119,10 +120,13 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
     candidateTables :: [PlugSQL]
     candidateTables = concatMap tablesOf scopes
 
-    -- In a system of contexts, every context has a database of its own.
-    -- The tables of a context are a function of its own declarations, so that
-    -- the context that owns a table and a context that reads it agree on its layout.
-    -- That is why the tables are made per owner.
+    -- In a system of contexts, every context lands on a database, and contexts can share one.
+    -- The tables of a database are a function of the declarations of the contexts on it, so that
+    -- the context that installs a database and a context that reads it agree on the layout of its tables.
+    -- That is why the tables are made per database. Within one database the layout is the usual one:
+    -- a univalent relation to a concept on the same database is a column in the table of that concept,
+    -- and concepts that a classification relates share a table. A classification that relates concepts
+    -- on two databases does not make them share a table.
     labels :: [Text]
     labels = map fst (foreignContexts (ctxmetas context))
     ownerOf :: Name -> Maybe Text
@@ -133,7 +137,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
     inSystem = not (null labels) || view allConceptTablesL env
     scopes :: [Scope]
     scopes
-      | inSystem = scopeOf Nothing : map (scopeOf . Just) labels
+      | inSystem = map scopeOf databases
       | otherwise =
           [ Scope
               { scMine = const True,
@@ -143,27 +147,51 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 scLocalise = id
               }
           ]
-    scopeOf :: Maybe Text -> Scope
-    scopeOf owner =
+    -- The databases of the system: for each one the label of the context that installs it
+    -- (Nothing for the compiled context) and the labels of the contexts on it.
+    -- Without the metadata of a system, every context is on a database of its own.
+    databases :: [(Maybe Text, [Maybe Text])]
+    databases
+      | null known = [(o, [o]) | o <- owners]
+      | otherwise =
+          [ (root, onIt)
+            | db <- L.nub (mapMaybe databaseOf owners),
+              let onIt = [o | o <- owners, databaseOf o == Just db],
+              let root = case [o | o <- onIt, installs o] of
+                    r : _ -> r
+                    [] -> fatal ("No context installs the database " <> db <> ".")
+          ]
+      where
+        owners = Nothing : map Just labels
+        known = contextDatabases (ctxmetas context)
+        databaseOf Nothing = ownDatabase (ctxmetas context)
+        databaseOf (Just l) = listToMaybe [db | (l', db, _) <- known, l' == l]
+        -- The context that installs a database is the one whose tables carry no prefix there.
+        installs Nothing = True
+        installs (Just l) = not (null [() | (l', _, "") <- known, l' == l])
+    -- The scope of one database. Its tables carry the names that the context which installs it gives them,
+    -- so that every context that reads the database computes the same names. In this context, the tables
+    -- of another database carry the label of that context as a prefix.
+    scopeOf :: (Maybe Text, [Maybe Text]) -> Scope
+    scopeOf (root, onIt) =
       Scope
-        { scMine = (== owner) . ownerOf,
-          scView = maybe id viewOf owner,
-          scTypologies = concatMap (split owner) (multiKernels (ctxInfo context)),
+        { scMine = (`elem` onIt) . ownerOf,
+          scView = maybe id viewOf root,
+          scTypologies = concatMap (split onIt) (multiKernels (ctxInfo context)),
           scPrune = False,
-          scLocalise = maybe id localise owner
+          scLocalise = maybe id localise root
         }
-    -- The part of a typology that one context owns. A classification that relates concepts
-    -- of two contexts does not make them share a table.
-    split :: Maybe Text -> Typology -> [Typology]
-    split owner typol =
-      case makeTypologies (Set.unions (Set.toList (tyMultiTable typol))) (Graph.induce ((== owner) . ownerOfSet) (tyGrph typol)) of
+    -- The part of a typology that the contexts on one database own.
+    split :: [Maybe Text] -> Typology -> [Typology]
+    split onIt typol =
+      case makeTypologies (Set.unions (Set.toList (tyMultiTable typol))) (Graph.induce ((`elem` onIt) . ownerOfSet) (tyGrph typol)) of
         Checked ts _ -> ts
-        Errors _ -> fatal ("The concepts of one context in the typology of " <> tshow (tyroot typol) <> " have no single most generic concept.")
+        Errors _ -> fatal ("The concepts of one database in the typology of " <> tshow (tyroot typol) <> " have no single most generic concept.")
       where
         ownerOfSet aliasSet = case Set.toList aliasSet of
           nm : _ -> ownerOf nm
           [] -> Nothing
-    -- The name that the owner of a table has for a thing, given the name in this context.
+    -- The name that the context which installs a database has for a thing, given the name in this context.
     viewOf :: Text -> Name -> Name
     viewOf owner nm = case nameSpaceOf nm of
       h : rest
@@ -176,14 +204,15 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
       [] -> nm
       where
         rename ns = withNameSpace ns (mkName (nameType nm) (localName nm NE.:| []))
-    -- A table of another context is known here by the label of that context and the name that its owner gave it.
+    -- A table of another database is known here by the label of the context that installs that database,
+    -- followed by the name that the table has there.
     localise :: Text -> PlugSQL -> PlugSQL
-    localise owner plug
+    localise root plug
       | T.length localName' > maxLengthOfDatabaseTableName =
-          fatal ("The name " <> localName' <> " is too long for a table. Give the context " <> owner <> " a shorter alias.")
+          fatal ("The name " <> localName' <> " is too long for a table. Give the context " <> root <> " a shorter alias.")
       | otherwise = plug {sqlname = text1ToSqlName (toText1Unsafe localName')}
       where
-        localName' = owner <> "." <> text1ToText (sqlColumNameToText1 (sqlname plug))
+        localName' = root <> "." <> text1ToText (sqlColumNameToText1 (sqlname plug))
 
     tablesOf :: Scope -> [PlugSQL]
     tablesOf sc = map (scLocalise sc . makeTable) components
@@ -196,25 +225,50 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             -- Orphan relations are relations that cause link tables in the database,
             -- i.e relation that are neither univalent nor injective.
             comps =
-              (filter tableIsWorthGenerating . map componentsForStorage . filter (not . isVirtualRoot) $ allStorageComponents)
+              concatMap storedComponents (scTypologies sc)
                 <> (map componentsForOrphanRelation . filter isOrphan $ allRelationsInContext)
+            -- The tables of one typology. A typology is stored as a whole or not at
+            -- all: once a typology falls apart into several tables (issue #1716),
+            -- the table of a specialisation is the only place that records which
+            -- atoms belong to it, so it cannot be left out while the table of its
+            -- generalisation stays (issue #1727).
+            storedComponents :: Typology -> [(Maybe StorageComponent, [Relation])]
+            storedComponents typol
+              | typologyIsWorthStoring = candidates
+              | otherwise = []
+              where
+                components' = storageComponentsOf typol
+                candidates = map componentsForStorage . filter (not . isVirtualRoot) $ components'
+                cpts = concatMap scCpts components'
+                -- A typology earns its tables by storing relations, by answering
+                -- "what are the atoms of this concept?" for a query that asks, or by
+                -- holding objects: the existence of an object is a fact by itself,
+                -- where a value such as a text exists whether or not it is stored.
+                -- A typology of values that does none of these administrates atoms
+                -- that nothing reads. (issues #1672 and #1727)
+                -- A typology of a type whose atoms cannot be listed, such as
+                -- INTEGER, never gets a table: every integer exists beforehand.
+                typologyIsWorthStoring =
+                  all listable cpts
+                    && ( not (scPrune sc)
+                           || not (all (null . snd) candidates)
+                           || any isNeeded cpts
+                           || any holdsObjects cpts
+                       )
             -- A MULTITABLE union concept has no table of its own (issue #1716). It
             -- is cut loose from its members by the mark, so it is a component by
             -- itself, and that component gets no table.
             isVirtualRoot :: StorageComponent -> Bool
             isVirtualRoot comp = isJust (unionMembersIn (ctxunions context) (scRoot comp))
-            -- A concept table earns its keep by storing relations, or by answering
-            -- "what are the atoms of this concept?" for a query that asks. A table
-            -- that does neither administrates atoms that nothing reads. (issue #1672)
-            tableIsWorthGenerating :: (Maybe StorageComponent, [Relation]) -> Bool
-            tableIsWorthGenerating (mComp, rels) =
-              not (scPrune sc) || not (null rels) || case mComp of
-                Nothing -> True
-                Just comp -> any isNeeded (scCpts comp)
             -- Eq on A_Concept is alias intersection, so compare with `elem` rather
             -- than through a Set (whose Ord instance compares whole alias sets).
             isNeeded :: A_Concept -> Bool
             isNeeded cpt = cpt `elem` neededConcepts
+            -- ONE is an object by type, and it never has a table.
+            holdsObjects :: A_Concept -> Bool
+            holdsObjects cpt = cpt /= ONE && ctxReprType context cpt `elem` [Object, MultiTable]
+            listable :: A_Concept -> Bool
+            listable = canBeEnumerated . ctxReprType context
             componentsForStorage comp =
               (Just comp, filter (relationBelongsToConceptTable comp) allRelationsInContext)
             componentsForOrphanRelation rel = (Nothing, [rel])
@@ -476,18 +530,22 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             t : _ -> t
             [] -> typol
         conceptTableOf :: Relation -> Maybe A_Concept
-        conceptTableOf = fst . wayToStore env (scMine sc . name)
+        conceptTableOf = fst . wayToStore env mayHoldRelations
         isStoredFlipped :: Relation -> Bool
-        isStoredFlipped = snd . wayToStore env (scMine sc . name)
+        isStoredFlipped = snd . wayToStore env mayHoldRelations
+        -- A relation is a column in the table of a concept of this context, if that concept has a table at all:
+        -- a concept whose atoms cannot be listed, such as an INTEGER, has none, so its relations get a table of their own.
+        mayHoldRelations :: A_Concept -> Bool
+        mayHoldRelations c = scMine sc (name c) && canBeEnumerated (ctxReprType context c)
 
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It returns a boolean
 --   that tells wether or not the relation is stored flipped.
 wayToStore :: (HasFSpecGenOpts env) => env -> (A_Concept -> Bool) -> Relation -> (Maybe A_Concept, Bool)
-wayToStore env sameOwner dcl
+wayToStore env mayHold dcl
   | view sqlBinTablesL env = (Nothing, False) -- binary tables only
-  | isUni (EDcD dcl) && sameOwner (source d) = (Just $ source d, False) -- to concept table, plain
-  | isInj (EDcD dcl) && sameOwner (target d) = (Just $ target d, True) -- to concept table, flipped
+  | isUni (EDcD dcl) && mayHold (source d) = (Just $ source d, False) -- to concept table, plain
+  | isInj (EDcD dcl) && mayHold (target d) = (Just $ target d, True) -- to concept table, flipped
   | otherwise = (Nothing, not (isTot d) && isSur d) -- to link-table
   -- The order of columns in a linked table could
   -- potentially speed up queries, in cases where
@@ -511,14 +569,16 @@ data Scope = Scope
     scLocalise :: PlugSQL -> PlugSQL
   }
 
--- | A table that another context owns: the label of that context and the name of the table in its database.
---   The compiled context reads and writes it through a view with the name of the plug.
-foreignTable :: [Text] -> PlugSQL -> Maybe (Text, Text)
-foreignTable labels plug =
+-- | A table in another database: the label of the context that owns its main item, and the name of the table
+--   in that database. The compiled context reads and writes it through a view with the name of the plug.
+--   The argument pairs the label of every context on another database with the label of the context that
+--   installs that database; the name of the plug carries the latter as a prefix.
+foreignTable :: [(Text, Text)] -> PlugSQL -> Maybe (Text, Text)
+foreignTable roots plug =
   case nameSpaceOf (either name name (mainItem plug)) of
     h : _
-      | namePartToText h `elem` labels ->
-          Just (namePartToText h, T.drop (T.length (namePartToText h) + 1) (text1ToText (sqlColumNameToText1 (sqlname plug))))
+      | Just root <- L.lookup (namePartToText h) roots ->
+          Just (namePartToText h, T.drop (T.length root + 1) (text1ToText (sqlColumNameToText1 (sqlname plug))))
     _ -> Nothing
 
 suitableAsKey :: TType -> Bool

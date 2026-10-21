@@ -1,5 +1,5 @@
 name: ampersand
-version: 5.11.0
+version: 5.12.0
 author: Stef Joosten
 maintainer: stef.joosten@ou.nl
 synopsis: Toolsuite for automated design of enterprise information systems.
@@ -217,6 +217,7 @@ library:
     - Ampersand.Test.Incremental.CandidateProperties
     - Ampersand.Test.Incremental.CostProfileTests
     - Ampersand.Test.MultiContext.QualifyProperties
+    - Ampersand.Test.Multitable.StorageLayoutTests
     - Ampersand.Test.Incremental.Properties
     - Ampersand.Test.Parser.ArbitraryTree
     - Ampersand.Test.Parser.ParserTest

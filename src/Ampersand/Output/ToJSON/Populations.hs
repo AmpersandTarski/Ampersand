@@ -6,7 +6,7 @@ module Ampersand.Output.ToJSON.Populations (Populations) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
-import Ampersand.Core.ParseTree (foreignContexts)
+import Ampersand.Core.ParseTree (foreignContexts, labelsOnOwnDatabase)
 import Ampersand.Output.ToJSON.JSONutils
 
 data Populations = Populations
@@ -52,10 +52,15 @@ instance JSON FSpec Populations where
         epJSONlinks = map (fromAmpersand env fSpec) (filter isOwn ((toList . vrels) fSpec))
       }
     where
-      -- The initial population of a concept or a relation is installed by the context that owns it.
+      -- The initial population of a concept or a relation is installed by the context that owns it,
+      -- or by the context that installs the database on which the owner lands.
       isOwn :: (Named a) => a -> Bool
       isOwn x = case nameSpaceOf x of
-        h : _ -> namePartToText h `notElem` map fst (foreignContexts (metas fSpec))
+        h : _ ->
+          namePartToText h
+            `notElem` map fst (foreignContexts (metas fSpec))
+            || namePartToText h
+            `elem` labelsOnOwnDatabase (metas fSpec)
         [] -> True
 
 -- instance JSON (MultiFSpecs,Bool) Populations where
