@@ -8,7 +8,7 @@ on:
       # Build kernel: only changes to what the compiler build actually
       # consumes should trigger a (re)build. Update this list only when you
       # change what goes into the build. Everything else (docs, memorybank,
-      # ReleaseNotes.md, READMEs, the workflow files themselves) is ignored
+      # ReleaseNotes.md, READMEs, the other workflow files) is ignored
       # on purpose, so non-build changes do not spin up the Haskell build.
       - "src/**"
       - "app/**"
@@ -25,10 +25,11 @@ on:
       - ".hlint.yaml"
       - "weeder.dhall"
       - "hie.yaml"
+      - ".github/workflows/ci2.yml"  # a change to this workflow is tested by running it
 jobs:
   build-and-test-docker:
     name: Build with Docker
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}
     env:
       DOCKER_AMPERSAND_IMAGE: ampersandtarski/ampersand
     steps:
@@ -70,8 +71,8 @@ jobs:
         run: docker push ${DOCKER_AMPERSAND_IMAGE}:latest
 
   build-and-test-ubuntu:
-    name: Build and test on ubuntu-24.04 🏗 🧪
-    runs-on: ubuntu-24.04
+    name: Build and test on Linux 🏗 🧪
+    runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v5
@@ -89,8 +90,8 @@ jobs:
           cache-save-always: true
 
   build-and-test-windows:
-    name: Build and test on windows-2022 🏗 🧪
-    runs-on: windows-2022
+    name: Build and test on Windows 🏗 🧪
+    runs-on: ${{ vars.WINDOWS_RUNNER || 'windows-latest' }}
     steps:
       - name: Checkout project contents 📡
         uses: actions/checkout@v5
