@@ -1,0 +1,8 @@
+CONTEXT NAMED IN ENGLISH
+
+PURPOSE CONTEXT NAMED
+{+ NAMED is recognised by its position in an inclusion statement, so it remains an ordinary identifier elsewhere. +}
+
+RELATION named[NAMED*Name] [UNI]
+POPULATION named[NAMED*Name] CONTAINS [ ("n1", "one") ]
+ENDCONTEXT

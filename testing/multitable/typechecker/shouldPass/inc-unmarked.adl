@@ -1,0 +1,7 @@
+CONTEXT T5
+CLASSIFY Document ISA Artefact
+CLASSIFY Claim ISA Artefact
+RELATION r[Document*Tekst] [UNI]
+RELATION s[Claim*Tekst] [UNI]
+RULE Insluiting : r |- s
+ENDCONTEXT

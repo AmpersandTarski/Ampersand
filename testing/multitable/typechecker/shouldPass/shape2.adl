@@ -1,0 +1,42 @@
+CONTEXT Shape2
+-- The second shape of issue #1716: the root is the union of its members and has no table of its own.
+CLASSIFY C IS A \/ B
+CLASSIFY D ISA A
+REPRESENT C TYPE MULTITABLE
+RELATION naam[C*Text] [UNI]
+RELATION ra[A*Text] [UNI]
+RELATION rb[B*Text] [UNI]
+RELATION rd[D*Text] [UNI]
+RELATION link[A*B]
+RELATION refc[A*C]
+RELATION refa[C*A] [UNI]
+POPULATION naam CONTAINS [ ("a1","A een"), ("b1","B een"), ("d1","D een"), ("a2","A twee") ]
+POPULATION ra CONTAINS [ ("a1","ra een"), ("d1","ra dee") ]
+POPULATION rb CONTAINS [ ("b1","rb een") ]
+POPULATION rd CONTAINS [ ("d1","rd een") ]
+POPULATION link CONTAINS [ ("a1","b1"), ("d1","b1") ]
+POPULATION refc CONTAINS [ ("a1","b1"), ("d1","a2") ]
+POPULATION refa CONTAINS [ ("b1","d1"), ("a2","a1") ]
+POPULATION B CONTAINS [ "b2" ]
+POPULATION A CONTAINS [ "a2" ]
+RULE r1 : I[A] /\ naam;naam~ |- ra;ra~
+RULE r2 : I[D] |- ra;ra~
+RULE r3 : link;link~ |- I[A]
+RULE r4 : refc;refa |- I[A]
+RULE r5 : I[C] - I[A] |- I[B]
+RULE r6 : -(I[A]) /\ I[C] |- I[C]
+RULE r7 : V[A*B] |- link
+RULE r8 : refc;naam |- ra
+RULE r9 : I[A];I[C];naam |- naam
+RULE r10 : refa~;refc |- I[C]
+RULE r11 : ra |- I[A];naam
+RULE r13 : refc - V[A*B] |- refc
+RULE r14 : link~;ra |- rb
+RULE r15 : I[C] |- naam;naam~
+RULE r16 : naam~;naam |- I[Text]
+RULE r17 : I[B] /\ naam;naam~ |- rb;rb~
+ROLE Tester MAINTAINS r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r13, r14, r15, r16, r17
+INTERFACE Cs : "_SESSION";V[SESSION*C] cRud BOX [ naam : naam cRud ]
+INTERFACE As : "_SESSION";V[SESSION*A] cRud BOX [ naam : naam cRud, ra : ra cRud, link : link cRud, refc : refc cRud ]
+INTERFACE Bs : "_SESSION";V[SESSION*B] cRud BOX [ naam : naam cRud, rb : rb cRud ]
+ENDCONTEXT

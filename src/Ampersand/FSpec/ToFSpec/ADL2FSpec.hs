@@ -248,6 +248,7 @@ makeFSpec env context =
           | prp == Inj && isInj (EDcD dcl) -> [] -- Enforced by the database
           | otherwise -> rolesFromScript
         Identity _ -> []
+        UnionDef _ -> []
         Enforce ->
           [ Role
               { pos = origin r,
@@ -266,6 +267,7 @@ makeFSpec env context =
         Propty _ _ -> False
         Identity _ -> False
         Enforce -> False
+        UnionDef _ -> False
     -- Lookup view by id in fSpec.
     lookupView' :: Name -> Maybe ViewDef
     lookupView' viewId =

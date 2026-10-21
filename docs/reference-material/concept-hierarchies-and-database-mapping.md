@@ -134,6 +134,99 @@ The database table contains:
 
 ### Query Examples
 
+## Storing specialisations in tables of their own (MULTITABLE)
+
+A wide table reaches the row-size limit of MySQL and MariaDB, 65535 bytes, when a hierarchy has many specialisations with univalent relations of their own: every identity column and every relation column costs up to 1022 bytes.
+The compiler now estimates the row size of every table it generates and reports a table that would not fit, with the remedy below.
+
+The remedy is to mark the concept whose direct specialisations should be stored apart:
+
+```ampersand
+CLASSIFY Document, Claim ISA Artefact
+REPRESENT Artefact TYPE MULTITABLE
+RELATION naam[Artefact*Text] [UNI]
+```
+
+This gives three tables.
+The table `Artefact` holds the key column and the relations declared on `Artefact`, such as `naam`, and it holds a row for every artefact, also for the atoms that are neither a `Document` nor a `Claim`.
+The table `Document` holds the key column and the relations declared on `Document`, and likewise for `Claim`.
+A document is one row in `Artefact` and one row in `Document`; the two rows carry the same atom, and a query joins them on that value.
+A specialisation that is not marked itself stays in one table together with its own specialisations, so a hierarchy below `Document` is still one wide table.
+
+The storage graph is the concept graph without the edges that lead into a marked concept.
+Every weakly connected component of that graph with one root becomes one wide table.
+A component with several roots arises when a declared meet, `CLASSIFY DocClaim IS Document /\ Claim`, sits below two separately stored siblings; it is cut loose at that meet, so the meet gets a table of its own.
+
+The mark also decides what the type checker accepts.
+Two concepts with a join that is not marked have a meet, even without a declared common specialisation: an atom that is both fits in one record of the shared table, so a term such as `I[Document] /\ I[Claim]` or `r;s` through `Document` and `Claim` is accepted.
+That meet gets no vertex in the concept graph; the compiler keeps it to itself, as the intersection of the two concepts, and reads it from the shared table where both columns are filled.
+Two concepts whose join is marked have no meet: the mark says they are disjoint, and the same terms are type errors.
+
+When the root should not have atoms of its own, declare it as the union of its members:
+
+```ampersand
+CLASSIFY Artefact IS Document \/ Claim
+REPRESENT Artefact TYPE MULTITABLE
+RELATION naam[Artefact*Text] [UNI]
+```
+
+This gives two tables, `Document` and `Claim`, each with its own column `naam`.
+A read of `naam`, or of `I[Artefact]`, is the union over the two tables, and a pair of `naam` is written in the table that holds its atom.
+`Artefact` has no table and no atoms of its own, so no interface can create one; the generated rule `I[Artefact] |- I[Document] \/ I[Claim]` reports an artefact that is neither.
+Because `naam` is stored in two tables, its univalence is not enforced by a key column: an atom that enters both tables could hold two names, and the runtime evaluates the univalence rule as a query for such a relation.
+
+The runtime learns the layout from `concepts.json` and `relations.json`: `conceptTables` lists every table that holds a row for an atom of a concept, `allAtomsQuery` lists the atoms of a union concept, and `mysqlTables` lists every table that stores a part of a relation.
+
+*Proof track: [PRF-13 — an atom of a concept has a row in the table of every component that contains that concept or a generalisation of it](../proofs/README.md#prf-13).*
+
+## Which hierarchies get tables
+
+The compiler leaves out a table that would only list atoms that nothing reads.
+To decide that, it looks at a hierarchy as a whole: all concepts that are connected by `CLASSIFY` statements, with a concept that has no such statement as a hierarchy of one.
+A hierarchy is stored when at least one of the following holds.
+
+- It stores a relation: a univalent or injective relation is a column in the table of one of its concepts.
+- A term asks for the atoms of one of its concepts.
+  That is the case for `I[A]`, for `V` with `A` as its source or target, for a complement over `A`, and for an atom of `A` that a term names.
+- It holds objects: one of its concepts has the type `OBJECT`, because of a `REPRESENT` statement, an interface, a view or an identity,
+  or one of its concepts is marked `REPRESENT ... TYPE MULTITABLE`.
+  That an object exists is a fact by itself, so it is stored even when no term asks for it.
+
+A hierarchy that meets none of these gets no table at all.
+In practice that is a concept of values, such as `Text` in `RELATION naam[Artefact*Text]`:
+the texts in use are found in the column of `naam`, and no table lists them a second time.
+For such a concept `concepts.json` says `"conceptTable": null`.
+
+A hierarchy is stored completely or not at all.
+When it is stored in several tables, every concept of it has a column in one of them, whether or not a term names that concept.
+The table of a specialisation that is stored apart is the only place that records which atoms belong to it.
+
+The option `--all-concept-tables` stores every hierarchy.
+A context that is part of a system of contexts is compiled that way, because another context may read its concepts.
+
+### Concepts whose atoms cannot be listed
+
+Every integer exists, whether or not a model uses it, and the same holds for every number and every moment in time.
+So a concept of type `INTEGER`, `FLOAT`, `DATE` or `DATETIME` never has a table, with or without `--all-concept-tables`.
+A relation with such a concept as its source or target is stored in the table of the concept at its other side, or in a table of its own.
+
+For the same reason a term cannot ask for all atoms of such a concept, and the compiler reports an error when one does.
+With `REPRESENT Age TYPE INTEGER` and `RELATION age[Person*Age] [UNI]`:
+
+| Term | Accepted | Why |
+| --- | --- | --- |
+| `parentOf |- age;>;age~` | yes | a comparison between two relations compares the ages in use |
+| `age;41[Age]` | yes | the age 41 exists without being stored |
+| `I[Age] |- age~;age` | no | `I[Age]` is the set of all integers |
+| `age;-olderThan;age~` | no | the complement of `olderThan[Age*Age]` holds all pairs of integers that are not in it |
+| `I[Person] |- age;V` | no | `V` with `Age` as its source holds every integer; write `age;age~` |
+
+`SRC I` and `TGT I` in a violation message are not such terms.
+They name the violating atom itself, and the prototype puts it in the message without a query.
+
+A text type, such as `ALPHANUMERIC`, is not treated this way.
+It is the type of every concept without a `REPRESENT` statement, so a concept of that type may hold things that somebody entered, and its atoms in use can be listed.
+
 ## Algorithm Summary
 
 Ampersand's concept-to-table mapping follows these steps:

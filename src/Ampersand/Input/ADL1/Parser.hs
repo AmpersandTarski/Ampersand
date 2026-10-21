@@ -247,10 +247,11 @@ pIncludeStatement =
 -- | The statement that contexts include other contexts.
 --   It stands outside every CONTEXT block, because it relates contexts.
 --   @CONTEXT A, B INCLUDES C FROM "c.adl" AS X, D@ says that A and B each include C and D.
+--   @CONTEXT A NAMED Kaart INCLUDES B NAMED Kaart@ says, in addition, that A and B land on one database, called Kaart.
 data Inclusion = Inclusion
   { incOrigin :: !Origin,
-    -- | the contexts before the word INCLUDES
-    incIncluders :: !(NonEmpty Name),
+    -- | the contexts before the word INCLUDES, each with the name of its database if the statement gives one
+    incIncluders :: !(NonEmpty (Name, Maybe Text)),
     -- | the contexts after the word INCLUDES
     incItems :: !(NonEmpty InclusionItem)
   }
@@ -264,7 +265,9 @@ data InclusionItem = InclusionItem
     -- | the preprocessor variables with which that file is read
     itDefs :: ![Text],
     -- | a second name for the included context, for use in the including context
-    itAlias :: !(Maybe NamePart)
+    itAlias :: !(Maybe NamePart),
+    -- | the name of the database on which the included context lands, if the statement gives one
+    itDatabase :: !(Maybe Text)
   }
 
 --- File ::= (InclusionStatement | Context)+
@@ -277,16 +280,17 @@ pFile = partitionEithers <$> many1 (Left <$> pInclusion <|> Right <$> pContext) 
     -- Without this check, a statement with a mistake in it would be ignored in silence.
     atEnd = pEndOfFile <|> void pContext
 
---- InclusionStatement ::= 'CONTEXT' Name (',' Name)* 'INCLUDES' InclusionItem (',' InclusionItem)*
---- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)?
+--- InclusionStatement ::= 'CONTEXT' Includer (',' Includer)* 'INCLUDES' InclusionItem (',' InclusionItem)*
+--- Includer ::= Name ('NAMED' DatabaseName)?
+--- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)? ('NAMED' DatabaseName)?
 pInclusion :: AmpParser Inclusion
 pInclusion = do
-  -- The words INCLUDES, FROM and AS are no keywords, so that scripts that use them as
+  -- The words INCLUDES, FROM, AS and NAMED are no keywords, so that scripts that use them as
   -- identifiers keep compiling. They are recognised by their position.
   (orig, includers) <- try $ do
     orig <- currPos
     _ <- (pKey . toText1Unsafe) "CONTEXT"
-    includers <- pNameWithoutLabel ContextName `sepBy1` pComma
+    includers <- ((,) <$> pNameWithoutLabel ContextName <*> pDatabase) `sepBy1` pComma
     pWord "INCLUDES"
     pure (orig, includers)
   items <- pItem `sepBy1` pComma
@@ -298,7 +302,11 @@ pInclusion = do
         <$> pNameWithoutLabel ContextName
         <*> pMaybe (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
         <*> pMaybe (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
+        <*> pDatabase
     build nm mFrom = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom)
+    -- The name of a database is an identifier of MariaDB: letters, digits and underscores.
+    pDatabase :: AmpParser (Maybe Text)
+    pDatabase = pMaybe (pWord "NAMED" *> ((text1ToText <$> (pUpperCaseID <|> pLowerCaseID)) <?> "the name of a database"))
     pWord :: Text -> AmpParser ()
     pWord w = try (pUpperCaseID >>= isWord) <?> T.unpack w
       where
@@ -438,7 +446,7 @@ pEnforce =
           )
             orig
 
---- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
+--- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'IS' ConceptRef ('\/' ConceptRef)+ | 'ISA' ConceptRef)
 pClassify :: AmpParser [PClassify] -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify =
   fun
@@ -446,34 +454,44 @@ pClassify =
     <* (pKey . toText1Unsafe) "CLASSIFY"
     <*> pConceptRef
     `sepBy1` pComma
-    <*> ( is
-            <$ (pKey . toText1Unsafe) "IS"
-            <*> pCterm
+    <*> ( (pKey . toText1Unsafe) "IS"
+            *> (try (union <$> pUnionTerm) <|> is <$> pCterm)
             <|> isa
             <$ (pKey . toText1Unsafe) "ISA"
             <*> pConceptRef
         )
   where
-    fun :: Origin -> NE.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
-    fun p lhs (isISA, rhs) = NE.toList $ fmap f lhs
+    fun :: Origin -> NE.NonEmpty P_Concept -> (ClassifyShape, [P_Concept]) -> [PClassify]
+    fun p lhs (shape, rhs) = NE.toList $ fmap f lhs
       where
         f s =
           PClassify
             { pos = p,
               specific = s,
-              generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
+              generics = case shape of
+                ClassifyIsa -> s NE.:| rhs
+                _ -> PARTIAL.fromList rhs,
+              pc_isUnion = shape == ClassifyUnion
             }
     --- Cterm ::= Cterm1 ('/\' Cterm1)*
     --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
     pCterm = concat <$> pCterm1 `sepBy1` (pOperator . toText1Unsafe) "/\\"
+    --- UnionTerm ::= ConceptRef ('\/' ConceptRef)+     (issue #1716: CLASSIFY C IS A \/ B)
+    pUnionTerm :: AmpParser [P_Concept]
+    pUnionTerm = (:) <$> pConceptRef <*> many1 ((pOperator . toText1Unsafe) "\\/" *> pConceptRef)
     pCterm1 =
       pure
         <$> pConceptRef
         <|> pParens pCterm -- brackets are allowed for educational reasons.
-    is :: [P_Concept] -> (Bool, [P_Concept])
-    is gens = (False, gens)
-    isa :: P_Concept -> (Bool, [P_Concept])
-    isa gen = (True, [gen])
+    is :: [P_Concept] -> (ClassifyShape, [P_Concept])
+    is gens = (ClassifyIs, gens)
+    isa :: P_Concept -> (ClassifyShape, [P_Concept])
+    isa gen = (ClassifyIsa, [gen])
+    union :: [P_Concept] -> (ClassifyShape, [P_Concept])
+    union members = (ClassifyUnion, members)
+
+-- | The three shapes of a CLASSIFY statement.
+data ClassifyShape = ClassifyIsa | ClassifyIs | ClassifyUnion deriving (Eq)
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
@@ -753,6 +771,7 @@ pAdlTType =
     <|> k Integer "INTEGER"
     <|> k Float "FLOAT"
     <|> k Object "OBJECT"
+    <|> k MultiTable "MULTITABLE"
   where
     k tt str = f <$> (pKey . toText1Unsafe) str where f _ = tt
 

@@ -1,0 +1,20 @@
+CONTEXT School NAMED Campus INCLUDES Library FROM "../contexts/library.adl" NAMED Campus
+
+CONTEXT School IN ENGLISH
+
+PURPOSE CONTEXT School
+{+ Both contexts are given the database Campus. The classification puts the members of the library and the
+pupils of the school in one typology, and in one database that is one table. +}
+
+CLASSIFY Pupil ISA Library.Member
+RELATION class[Pupil*Class] [UNI]
+POPULATION class[Pupil*Class] CONTAINS [ ("m1", "1A") ]
+
+RULE pupilsHaveNames : I[Pupil] |- Library.memberName;Library.memberName~
+MEANING "A pupil is a member and so has a name."
+
+INTERFACE Pupils : "_SESSION";V[SESSION*Pupil] CRud BOX
+  [ "name" : Library.memberName cRUd
+  , "class" : class cRUd
+  ]
+ENDCONTEXT

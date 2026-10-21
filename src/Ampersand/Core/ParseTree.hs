@@ -11,6 +11,11 @@ module Ampersand.Core.ParseTree
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
+    mkDatabaseMeta,
+    contextDatabases,
+    ownDatabase,
+    databaseOfLabel,
+    labelsOnOwnDatabase,
     mkRelaxedMeta,
     relaxedRules,
     mkFileMeta,
@@ -43,6 +48,8 @@ module Ampersand.Core.ParseTree
     PCDDef (..),
     P_Representation (..),
     TType (..),
+    valueTType,
+    canBeEnumerated,
     P_Population (..),
     PAtomPair (..),
     PAtomValue (..),
@@ -199,6 +206,44 @@ foreignContextFiles ms =
       mtName m == fileMetaName,
       let (lbl, rest) = T.break (== ' ') (mtVal m)
   ]
+
+-- | The metadata by which a joined context says on which database a context lands.
+--   There is one for the compiled context and one for every context it reaches.
+--   Its value holds the label of the context (a dash for the compiled context), the name of the database,
+--   and the prefix that the tables of the context carry in that database (a dash if they carry none).
+--   A table carries a prefix if the context shares its database with the context that installs it:
+--   the prefix is the label that the installing context has for it.
+databaseMetaName :: Text1
+databaseMetaName = toText1Unsafe "multicontext.database"
+
+mkDatabaseMeta :: Origin -> Maybe NamePart -> Text -> Maybe NamePart -> MetaData
+mkDatabaseMeta orig lbl db prefix =
+  MetaData orig databaseMetaName (T.unwords [maybe "-" namePartToText lbl, db, maybe "-" namePartToText prefix])
+
+-- | The database of every context of a joined context: label (empty for the compiled context),
+--   name of the database, and the prefix of its tables in that database (empty if they carry none).
+contextDatabases :: [MetaData] -> [(Text, Text, Text)]
+contextDatabases ms =
+  [ (dash lbl, db, dash prefix)
+    | m <- ms,
+      mtName m == databaseMetaName,
+      [lbl, db, prefix] <- [T.words (mtVal m)]
+  ]
+  where
+    dash t = if t == "-" then "" else t
+
+-- | The database of the compiled context, if it is part of a system of contexts.
+ownDatabase :: [MetaData] -> Maybe Text
+ownDatabase ms = listToMaybe [db | ("", db, _) <- contextDatabases ms]
+
+-- | The database on which the context with the given label lands, and the prefix of its tables there.
+databaseOfLabel :: [MetaData] -> Text -> Maybe (Text, Text)
+databaseOfLabel ms lbl = listToMaybe [(db, prefix) | (l, db, prefix) <- contextDatabases ms, l == lbl]
+
+-- | The labels of the contexts that land on the database of the compiled context.
+--   The compiled context installs their tables and their initial population.
+labelsOnOwnDatabase :: [MetaData] -> [Text]
+labelsOnOwnDatabase ms = [l | (l, db, _) <- contextDatabases ms, l /= "", Just db == ownDatabase ms]
 
 -- | The metadata by which a joined context says that a context relaxes an invariant of a context it includes:
 --   it assigns the rule to a role, while no role maintains the rule in its own context.
@@ -469,8 +514,27 @@ data TType
   | Integer
   | Float
   | Object
+  | -- | An OBJECT whose direct specialisations are stored in separate tables (issue #1716).
+    --   For the value of an atom it is the same as 'Object'; see 'valueTType'.
+    MultiTable
   | TypeOfOne -- special type for the special concept ONE.
   deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
+
+-- | The type of the value of an atom. A 'MultiTable' concept holds objects,
+--   so wherever a consumer asks what kind of value an atom is, the answer is
+--   'Object'; the storage choice is of no concern to it.
+valueTType :: TType -> TType
+valueTType MultiTable = Object
+valueTType tt = tt
+
+-- | Whether the atoms of a concept of this type can be listed (issue #1727).
+--   Every integer, every number and every moment in time exists beforehand, so
+--   a concept of such a type has no table that lists its atoms, and a term that
+--   asks for all of them cannot be computed. A text type is not among them: it
+--   is the type of every concept without a REPRESENT statement, so it is also
+--   the type of concepts that hold things somebody entered.
+canBeEnumerated :: TType -> Bool
+canBeEnumerated tt = tt `notElem` [Integer, Float, Date, DateTime]
 
 instance Unique TType where
   showUnique = toText1Unsafe . tshow
@@ -490,6 +554,7 @@ instance Show TType where
     Integer -> "INTEGER"
     Float -> "FLOAT"
     Object -> "OBJECT"
+    MultiTable -> "MULTITABLE"
     TypeOfOne -> "TYPEOFONE"
 
 instance Hashable TType where
@@ -1467,13 +1532,17 @@ data PClassify = PClassify
     -- | Left hand side concept
     specific :: P_Concept,
     -- | Right hand side concept
-    generics :: NE.NonEmpty P_Concept
+    generics :: NE.NonEmpty P_Concept,
+    -- | True for `CLASSIFY C IS A \/ B` (issue #1716): the left hand side
+    --   concept is the union of the right hand side concepts, so each of them
+    --   is a specialisation of it, and it has no atoms of its own.
+    pc_isUnion :: Bool
   }
   deriving (Show)
 
 -- (Stef April 29th, 2020) Eq PClassify is used to generate P-contexts without duplicate PClassify's in it.
 instance Eq PClassify where
-  p == q = specific p == specific q && generics p == generics q
+  p == q = specific p == specific q && generics p == generics q && pc_isUnion p == pc_isUnion q
 
 instance Traced PClassify where
   origin PClassify {pos = orig} = orig

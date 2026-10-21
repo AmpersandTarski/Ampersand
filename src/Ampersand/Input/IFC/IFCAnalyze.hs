@@ -338,7 +338,8 @@ mkIfcContext schema insts =
       [ PClassify
           { pos = orig,
             specific = mkConcept sub,
-            generics = mkConcept sup NE.:| []
+            generics = mkConcept sup NE.:| [],
+            pc_isUnion = False
           }
         | (sub, sup) <- classifyEdges
       ]

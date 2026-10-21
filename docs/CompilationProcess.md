@@ -126,8 +126,9 @@ In Ampersand's concept hierarchy:
 This lattice structure ensures that type operations are mathematically well-defined and enables sound type inference.  `topCpt` and `botCpt` yield type errors, but are needed while checking.
 
 Ampersand expects the user to ensure that two comparable concepts have a unique join, and returns a type error if he fails to accomplish that.
-If, however, a user fails to define a meet for two comparable concepts, Ampersand generates it by creating an intersection concept.
-This ensures that every concept is part of a lattice, even if it is merely a singleton lattice.
+Two concepts with a join have a meet as well, even without a declared common specialisation, as long as that join is not marked `REPRESENT ... TYPE MULTITABLE`: an atom that is both fits in one record of the shared table.
+That implicit meet is the constructor `ISECT` of `A_Concept`; it gets no vertex in the concept graph and lives only in the type checker and the SQL generator (issue #1716).
+Two concepts whose join is marked `MULTITABLE` are stored apart and have no meet.
 
 #### Concept Graph and Alias Graph
 

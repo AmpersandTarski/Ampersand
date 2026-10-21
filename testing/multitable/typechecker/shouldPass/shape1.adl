@@ -1,0 +1,21 @@
+CONTEXT Shape1
+CLASSIFY A, B ISA C
+CLASSIFY D ISA A
+REPRESENT C TYPE MULTITABLE
+RELATION naam[C*Text] [UNI]
+RELATION ra[A*Text] [UNI]
+RELATION rb[B*Text] [UNI]
+RELATION rd[D*Text] [UNI]
+RELATION link[A*B]
+POPULATION naam CONTAINS [ ("c1","C een"), ("a1","A een"), ("b1","B een"), ("d1","D een") ]
+POPULATION ra CONTAINS [ ("a1","ra een"), ("d1","ra dee") ]
+POPULATION rb CONTAINS [ ("b1","rb een") ]
+POPULATION rd CONTAINS [ ("d1","rd een") ]
+POPULATION link CONTAINS [ ("a1","b1") ]
+POPULATION C CONTAINS [ "c1" ]
+RULE Alles : I[C] |- I[C]
+INTERFACE Cs : "_SESSION";V[SESSION*C] cRud BOX [ naam : naam cRud ]
+INTERFACE As : "_SESSION";V[SESSION*A] cRud BOX [ naam : naam cRud, ra : ra cRud, link : link cRud ]
+INTERFACE Bs : "_SESSION";V[SESSION*B] cRud BOX [ naam : naam cRud, rb : rb cRud ]
+INTERFACE Ds : "_SESSION";V[SESSION*D] cRud BOX [ naam : naam, rd : rd ]
+ENDCONTEXT

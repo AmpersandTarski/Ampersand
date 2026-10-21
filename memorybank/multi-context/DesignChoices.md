@@ -330,6 +330,41 @@ counted from 1 for contexts with the same name.
 
 *Impact in production:* one container per context.
 
+**Contexts with the same database name land on one database, which has one application.**
+*DC-21 · decided · 2026-10-16*
+
+The word `NAMED` in an inclusion statement names the database of a context, on either side of `INCLUDES`.
+Without it, the database carries the name of the context; two unnamed contexts with the same name are numbered
+in the order of the inclusion statements. Contexts with the same database name land on one database.
+The context on that database which includes all the others on it installs the database and runs its only application;
+the other contexts on it have no application, and their interfaces are not generated (a warning says so).
+Within one database the tables are laid out as in a single context, so the layout of a database follows from
+the declarations of all contexts on it. The compiler refuses a context with two database names, a shared database
+without a context that includes the others, and two databases that read each other.
+
+*Considerations:*
+
+1. Stef asked for this on 16 October 2026: a database per context is a disadvantage when the contexts belong together,
+   and a table should not be spread over two databases.
+2. Two applications on one database do not work in the prototype framework: an installation drops the whole database,
+   and the application compares the model hash that the database records with its own model.
+   So one database has one application. The alternative, an installer that creates only its own tables and a model
+   hash per context, is framework work and was not chosen.
+3. The layout per database, instead of per owner, is what makes a univalent relation to a concept of another context
+   a column in the table of that concept, and what lets a classification across contexts share a table.
+   Every context in the system knows the grouping, because it is derived from all inclusion statements of the system,
+   so every context computes the same layout for a database it reads.
+4. The placeholder in the generated SQL names the database, `{{db:Registry}}`, instead of the label of the context,
+   so the prototype framework fills it in as before and needs no change. `ampersand deploy` sets `AMPERSAND_CONTEXT_DBNAMES`
+   per database.
+5. The interfaces of a context that shares a database could be generated into the application of that database instead.
+   That was not done, because the frontend has not been tried with the prefixed interface names; the warning makes the choice visible.
+
+*Impact on the specification:* `database` is no longer injective; `installs` is added (`AmpersandData/FormalAmpersand/MultiContext.adl`).
+
+*Impact in production:* one container per database instead of one per context. The default name of a database is the name of the context
+instead of a lowercased name with a version number.
+
 ## Inside the compiler
 
 **The compiler joins the compiled context and the contexts it reaches into one context.**
