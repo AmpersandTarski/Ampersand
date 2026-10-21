@@ -12,15 +12,14 @@ module Ampersand.FSpec.ToFSpec.NormalForms
   )
 where
 
+import Algebra.Graph.AdjacencyMap (vertex)
 import Ampersand.ADL1
-import Ampersand.ADL1.P2A_Converters (ConceptMap)
 import Ampersand.Basics
 import Ampersand.Classes.Relational
 import Ampersand.Core.AbstractSyntaxTree (geq, meet)
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Ampersand.Input (parseRule)
-import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -45,8 +44,8 @@ Ideas for future work:
 -- The following was built for the purpose of testing confluence.
 -- These functions produce all derivations of results from the normalizer.
 -- A useful side effect is that it implicitly tests for soundness.
-dfProofs :: ConceptMap -> Expression -> [(Expression, Proof Expression)]
-dfProofs pCpt2aCpt = prfs True
+dfProofs :: Expression -> [(Expression, Proof Expression)]
+dfProofs = prfs True
   where
     prfs :: Bool -> Expression -> [(Expression, Proof Expression)]
     prfs dnf expr =
@@ -61,7 +60,7 @@ dfProofs pCpt2aCpt = prfs True
                    (t, deriv) <- f (rhs dstep)
                ]
           where
-            dsteps = [dstep | dstep <- dSteps (tceDerivRules pCpt2aCpt) term, w (rhs dstep) < w term]
+            dsteps = [dstep | dstep <- dSteps tceDerivRules term, w (rhs dstep) < w term]
         w = weightNF dnf -- the weight function for disjunctive normal form.
         showStep dstep = " weight: " <> (tshow . w . lhs) dstep <> ",   " <> showIT tmpl <> " = " <> showIT stp <> "  with unifier: " <> showIT unif
           where
@@ -710,8 +709,8 @@ data DerivStep = DStep
     rhs :: RTerm
   }
 
-dRule :: ConceptMap -> Term TermPrim -> [DerivRule]
-dRule pCpt2aCpt term0 = case term0 of
+dRule :: Term TermPrim -> [DerivRule]
+dRule term0 = case term0 of
   (PEqu _ l r) -> [DEquiR {lTerm = term2rTerm l, rTerm = term2rTerm r}]
   (PInc _ l r) -> [DInclR {lTerm = term2rTerm l, rTerm = term2rTerm r}]
   _ -> fatal ("Illegal use of dRule with term " <> showP term0)
@@ -719,10 +718,22 @@ dRule pCpt2aCpt term0 = case term0 of
   -- For that reason, we need a function term2rTerm to translate a term obtained by parsing (type: Term TermPrim) to a RTerm.
   where
     term2rTerm :: Term TermPrim -> RTerm
-    getConcept :: Origin -> P_Concept -> A_Concept
-    getConcept orig pcpt = case pCpt2aCpt orig pcpt of
-      Checked c _ -> c
-      Errors errs -> fatal ("Concept lookup failed in dRule: " <> tshow orig <> " " <> tshow errs)
+    -- The concepts in a derivation rule are placeholders, like the relation names r, s and q:
+    -- 'matches' binds a concept by its name and 'substitute' looks it up by its name.
+    -- So a placeholder gets a concept of its own, and a rule does not depend on the
+    -- concepts of the script under analysis (issue #1725).
+    getConcept :: P_Concept -> A_Concept
+    getConcept P_ONE = ONE
+    getConcept (PCpt nm) =
+      PlainConcept
+        { aliases = Set.singleton nm,
+          typology =
+            Typology
+              { tyroot = PCpt nm,
+                tyCpts = [Set.singleton nm],
+                tyGrph = vertex (Set.singleton nm)
+              }
+        }
 
     term2rTerm term1 =
       if isValid result
@@ -784,15 +795,15 @@ dRule pCpt2aCpt term0 = case term0 of
             PFlp _ e -> RFlp (term2rTerm e)
             PBrk _ e -> term2rTerm e
             Prim (PFlipped trm) -> RFlp (term2rTerm (Prim trm))
-            Prim (Pid _ c) -> RId (getConcept (Origin "Pid") c)
-            Prim (PBind _ oper c) -> RBind oper (getConcept (Origin "PBind") c)
-            Prim (Pfull _ s t) -> RVee (getConcept (Origin "Pfull") s) (getConcept (Origin "Pfull") t)
-            Prim (Patm _ a (Just c)) -> RAtm a (getConcept (Origin "Patm") c)
+            Prim (Pid _ c) -> RId (getConcept c)
+            Prim (PBind _ oper c) -> RBind oper (getConcept c)
+            Prim (Pfull _ s t) -> RVee (getConcept s) (getConcept t)
+            Prim (Patm _ a (Just c)) -> RAtm a (getConcept c)
             Prim (PI _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PBin _ _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (Patm _ _ Nothing) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
             Prim (PVee _) -> fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
-            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (getConcept (Origin "PNamedR") (pSrc sgn)) (getConcept (Origin "PNamedR") (pTgt sgn))
+            Prim (PNamedR (PNamedRel _ str (Just sgn))) -> RVar str (getConcept (pSrc sgn)) (getConcept (pTgt sgn))
             Prim (PNamedR (PNamedRel _ _ Nothing)) ->
               fatal ("Cannot cope with untyped " <> showP term1 <> " in a dRule inside the normalizer.")
 
@@ -1056,10 +1067,10 @@ safezip _ _ = fatal "Zip of two lists with different lengths!"
 -- If rules are ill formed, this will result in fatal errors.
 
 -- Type conserving equivalences: The following equivalences have an identical signature on either side.
-tceDerivRules :: ConceptMap -> [DerivRule]
-tceDerivRules pCpt2aCpt =
+tceDerivRules :: [DerivRule]
+tceDerivRules =
   concatMap
-    (dRule pCpt2aCpt . parseRule)
+    (dRule . parseRule)
     --    [ "r[A*B]\\/s[A*B] = s[A*B]\\/r[A*B]"                         --  Commutativity of \/
     --    , "r[A*B]/\\s[A*B] = s[A*B]/\\r[A*B]"                         --  Commutativity of /\
     --    , "(r[A*B]\\/s[A*B])\\/q[A*B] = r[A*B]\\/(s[A*B]\\/q[A*B])"   --  Associativity of \/
@@ -1102,8 +1113,11 @@ tceDerivRules pCpt2aCpt =
       "r[A*B]/\\-r[A*B] = -V[A*B]", --  Contradiction
       "r[A*B]\\/-r[A*B] =  V[A*B]", --  Tautology
       "-r[A*B]\\/r[A*B] = V[A*B]", --  Tautology
+      -- The five absorption laws are machine-checked in proofs/rewriteLaws/RewriteLaws.lean
+      -- (absorb1 to absorb5, claim PRF-13). The second one used to read (r\/-s)/\s = s-r,
+      -- which is false: for a pair in both r and s the left side holds and the right side does not.
       "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]", --  Absorption
-      "(r[A*B]\\/-s[A*B])/\\ s[A*B] = s[A*B]-r[A*B]", --  Absorption
+      "(r[A*B]\\/-s[A*B])/\\ s[A*B] = r[A*B]/\\s[A*B]", --  Absorption
       "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]", --  Absorption
       "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]", --  Absorption
       "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]", --  Absorption
@@ -1117,34 +1131,6 @@ tceDerivRules pCpt2aCpt =
       "I[A]\\/r[A*A]+ = r[A*A]*" --  rStar_eq_Id_un_rPlus
     ]
 
-{-
--- Type conserving inclusions: The following inclusions have an identical signature on either side.
-tciDerivRules :: [DerivRule]
-tciDerivRules = concatMap (dRule.parseRule)
- [ "(r[A*B]\\I[A]);s[A*C] |- r[A*B]\\s[A*C]"                   --  T{r\\I[A]}=[B*A] ; T{(r\\I[A]);s}=[B*C] ; T{r\\s}=[B*C] ; Jipsen&Tsinakis
- , "r[A*C];(I[C]/s[B*C]) |- r[A*C]/s[B*C]"                     --  Jipsen&Tsinakis
- , "(r[A*B]\\s[A*C]);q[C*D] |- r[A*B]\\(s[A*C];q[C*D])"        --  Jipsen&Tsinakis
- , "r[A*B];(s[B*C]/q[D*C]) |- (r[A*B];s[B*C])/q[D*C]"          --  Jipsen&Tsinakis
- , "(r[A*B]\\s[A*C]);(s[A*C]\\q[A*D]) |- r[A*B]\\q[A*D]"       --  Jipsen&Tsinakis
- , "(r[A*B]/s[A*C]);(s[A*C]/q[D*B]) |- r[A*B]/q[D*B]"          --  Jipsen&Tsinakis
- , "r[A*B];(s[B*C]!q[C*D]) |- (r[A*B];s[B*C])!q[C*D]"          --  Peirce
- , "(r[A*B]!s[B*C]);q[C*D] |- r[A*B]!(s[B*C];q[C*D])"          --  Peirce
- , "(r[A*B]/\\s[A*B]);q[B*C] |- r[A*B];q[B*C]/\\s[A*B];q[B*C]" --  Distribution
- , "r[A*B];(s[B*C]/\\q[B*C]) |- r[A*B];s[B*C]/\\r[A*B];q[B*C]" --  Distribution
- , "(r[A*B];s[B*C])/s[B*C] |- r[A*B]"                          --  Absorption
- , "r[A*B]\\(r[A*B];s[B*C]) |- s[B*C]"                         --  Absorption
- , "I[A] |- r[A*A]*"
- , "r[A*B] |- V[A*B]"
- ]
--}
-{-
--- Type altering equivalences: The following equivalences have an different signature on either side.
-taeDerivRules :: [DerivRule]
-taeDerivRules = concatMap (dRule.parseRule)
- [ "-r[A*B]\\/(q[A*C]/s[B*C]) = -(r[A*B];s[B*C])\\/q[A*C]"     -- T{ -r\\/(q/s)} = [A*B] ;   T{ -(r;s)\\/q} = [A*C] ; remove left residual (/)
- , "(r[A*B]\\q[A*C])\\/-s[B*C] = -(r[A*B];s[B*C])\\/q[A*C]"    -- T{ (r\\q)\\/-s)} = [B*C] ; T{ -(r;s)\\/q} = [A*C] ; remove right residual (\\)
- ]
--}
 {-
 -- | This delta is meant to be used as a placeholder for inserting or removing links from terms.
 delta :: Signature -> Expression
