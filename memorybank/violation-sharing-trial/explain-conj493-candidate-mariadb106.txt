@@ -1,0 +1,80 @@
+rules: ['Compute3051482710755657027'] relation: kenmerkHeeftDrager[Kenmerk*Kenmerk]
+
+===== A unshared: 32072 characters
+  id=1 SIMPLE           table=delta_kenmerkHeeftDrager_639 type=index   key=PRIMARY                  rows=3 extra=Using where; Using index; Using temporary
+  id=1 SIMPLE           table=Kenmerk                      type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=Kenmerk                      type=eq_ref  key=Kenmerk_0                rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=productKenmerk               type=ref     key=productKenmerk_1         rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=productKenmerk               type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=organismeKenmerk             type=ref     key=organismeKenmerk_1       rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=organismeKenmerk             type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=synoniemKenmerk              type=ref     key=synoniemKenmerk_1        rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=synoniemKenmerk              type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=wKenmerk                     type=ref     key=wKenmerk_1               rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=wKenmerk                     type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+
+===== B shared, DISTINCT: 13846 characters
+  id=1 PRIMARY          table=delta_kenmerkHeeftDrager_639 type=index   key=PRIMARY                  rows=3 extra=Using where; Using index; Using temporary
+  id=1 PRIMARY          table=<derived2>                   type=ALL     key=None                     rows=88283 extra=Using where; Using join buffer (flat, BNL join)
+  id=1 PRIMARY          table=<derived32>                  type=ALL     key=None                     rows=88283 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived6>                   type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived34>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived4>                   type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived36>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived8>                   type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived38>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived10>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=1 PRIMARY          table=<derived40>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (incremental, BNL join)
+  id=40 DERIVED          table=wKenmerk                     type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=40 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=10 DERIVED          table=wKenmerk                     type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=10 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=38 DERIVED          table=synoniemKenmerk              type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=38 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=8 DERIVED          table=synoniemKenmerk              type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=8 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=36 DERIVED          table=organismeKenmerk             type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=36 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=4 DERIVED          table=organismeKenmerk             type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=4 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=34 DERIVED          table=productKenmerk               type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=34 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=6 DERIVED          table=productKenmerk               type=index   key=PRIMARY                  rows=1 extra=Using where; Using index; Using temporary
+  id=6 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=32 DERIVED          table=Kenmerk                      type=range   key=Kenmerk_0                rows=88283 extra=Using where; Using index; Using temporary
+  id=32 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=2 DERIVED          table=Kenmerk                      type=range   key=Kenmerk_0                rows=88283 extra=Using where; Using index; Using temporary
+  id=2 DERIVED          table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+
+===== C shared, mergeable: 18912 characters
+  id=1 SIMPLE           table=delta_kenmerkHeeftDrager_639 type=index   key=PRIMARY                  rows=3 extra=Using where; Using index; Using temporary
+  id=1 SIMPLE           table=Kenmerk                      type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=Kenmerk                      type=eq_ref  key=Kenmerk_0                rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=productKenmerk               type=ref     key=productKenmerk_1         rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=productKenmerk               type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=organismeKenmerk             type=ref     key=organismeKenmerk_1       rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=organismeKenmerk             type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=synoniemKenmerk              type=ref     key=synoniemKenmerk_1        rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=synoniemKenmerk              type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=wKenmerk                     type=ref     key=wKenmerk_1               rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=wKenmerk                     type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 SIMPLE           table=t2                           type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct

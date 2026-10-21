@@ -1,0 +1,49 @@
+rules: ['Compute2152161843815728568']
+
+===== UNSHARED: 6775 characters
+select distinct t3.src as src, t3.tgt as tgt from (select t1.src as src, t1.tgt as tgt from (/* EDcD gebiedInHerkomst[Gebied*Herkomst] */ /* Expression: gebiedInHerkomst[Gebied*Herkomst] */ /* Signature : [Gebied*Herkomst] */ select "Gebied" as src, "Herkomst" as tgt from "gebiedInHerkomst" where ("Gebied" is not null) and ("Herkomst" is not null)) as t1 except select t2.src as src, t2.tgt as tgt from (/* EDif (ECps (EKl0 (EDcD ligtIn[Gebied*Gebied]),EFlp (EDcD herkomstGebied[Herkomst*Gebied])),ECps (EKl0 (EDcD ligtIn[Gebied*Gebied]),EFlp (EDcD herkomstZonder[Herkomst*Gebied]))) */ /* Expression: ligtIn[Gebied*Gebied]*;herkomstGebied[Herkomst*Gebied]~-ligtIn[Gebied*Gebied]*;herkomstZonder[Herkomst*Gebied]~ */ /* Signature : [Gebied*Herkomst] */ /* case: EDif (l,r) */ /* Expression: ligtIn[Gebied*Gebied]*;herkomstGebied[Herkomst*Gebied]~-ligtIn[Gebied*Gebied]*;herkomstZonder[Herkomst*Gebied]~ */ /* Signature : [Gebied*Herkomst] */ /* EIsc (ECps (EKl0 (EDcD ligtIn[Gebied*Gebied]),EFlp (EDcD herkomstGebied[Herkomst*Gebied])),ECpl (ECps (EKl0 (EDcD ligtIn[Gebied*Gebied]),EFlp (EDcD herkomstZonder[Herkomst*Gebied])))) */ /* Expression: ligtIn[Gebied*Gebied]*;herkomstGebied[Herkomst*Gebied]~/\ -ligtIn[Gebied*Gebied]*;herkomstZonder[Herkomst*Gebied]~ */ /* Signature : [Gebied*Herkomst] */ /* Optimized case for: <expr1> minus the term <expr2>, which the database materialises (set difference). */ /* where */ /* <expr1> = ligtIn[Gebied*Gebied]*;herkomstGebied[Herkomst*Gebied]~ (sign: [
+  id=1 PRIMARY          table=<derived2>                   type=ALL     key=None                     rows=2259 extra=Using temporary
+  id=2 DERIVED          table=gebiedInHerkomst             type=index   key=PRIMARY                  rows=2259 extra=Using where; Using index
+  id=4 EXCEPT           table=<derived6>                   type=ALL     key=None                     rows=2547 extra=
+  id=6 DERIVED          table=<derived8>                   type=ALL     key=None                     rows=283 extra=Using where
+  id=6 DERIVED          table=herkomstGebied               type=ref     key=herkomstGebied_1         rows=9 extra=Using where; Using index
+  id=8 DERIVED          table=Gebied                       type=index   key=Gebied                   rows=281 extra=Using where; Using index
+  id=9 UNION            table=<derived11>                  type=ALL     key=None                     rows=2 extra=Using where; Using temporary
+  id=11 DERIVED          table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=12 RECURSIVE UNION  table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=12 RECURSIVE UNION  table=<derived11>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (flat, BNL join)
+  id=None UNION RESULT     table=<union11,12>                 type=ALL     key=None                     rows=None extra=
+  id=None UNION RESULT     table=<union8,9>                   type=ALL     key=None                     rows=None extra=
+  id=15 EXCEPT           table=herkomstZonder               type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=15 EXCEPT           table=<derived17>                  type=ALL     key=None                     rows=283 extra=Using where; Using join buffer (flat, BNL join)
+  id=17 DERIVED          table=Gebied                       type=index   key=Gebied                   rows=281 extra=Using where; Using index
+  id=18 UNION            table=<derived20>                  type=ALL     key=None                     rows=2 extra=Using where; Using temporary
+  id=20 DERIVED          table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=21 RECURSIVE UNION  table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=21 RECURSIVE UNION  table=<derived20>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (flat, BNL join)
+  id=None UNION RESULT     table=<union20,21>                 type=ALL     key=None                     rows=None extra=
+  id=None UNION RESULT     table=<union17,18>                 type=ALL     key=None                     rows=None extra=
+  id=None EXCEPT RESULT    table=<except6,15>                 type=ALL     key=None                     rows=None extra=
+  id=None EXCEPT RESULT    table=<except2,4>                  type=ALL     key=None                     rows=None extra=
+
+===== SHARED: 4085 characters
+with _shared1 as (/* EDcI Gebied */ /* Expression: I[Gebied] */ /* Signature : [Gebied] */ /* case: EDcI c */ /* Expression: I[Gebied] */ /* Signature : [Gebied] */ select "Gebied" as src, "Gebied" as tgt from "Gebied" where "Gebied" is not null union distinct /* EKl1 (EDcD ligtIn[Gebied*Gebied]) */ /* Expression: ligtIn[Gebied*Gebied]+ */ /* Signature : [Gebied*Gebied] */ /* case: EKl1 expr -- (Kleene plus) */ /* Expression: ligtIn[Gebied*Gebied]+ */ /* Signature : [Gebied*Gebied] */ select distinct src as src, tgt as tgt from (with recursive TheExpression as (/* EDcD ligtIn[Gebied*Gebied] */ /* Expression: ligtIn[Gebied*Gebied] */ /* Signature : [Gebied*Gebied] */ select "SrcGebied" as src, "TgtGebied" as tgt from "ligtIn" where ("SrcGebied" is not null) and ("TgtGebied" is not null)), TransitiveClosure as (select src as src, tgt as tgt from "TheExpression" union distinct select "TransitiveClosure".src as src, "TheExpression".tgt as tgt from "TransitiveClosure", "TheExpression" where "TheExpression".src = "TransitiveClosure".tgt) select src as src, tgt as tgt from "TransitiveClosure") as enforceAnsisql) select distinct t1.src as src, t1.tgt as tgt from (select "Gebied" as src, "Herkomst" as tgt from "gebiedInHerkomst" where ("Gebied" is not null) and ("Herkomst" is not null)) as t1 left join (select t1.src as src, t1.tgt as tgt from (/* ECps (EDcD _shared1[Gebied*Gebied],EFlp (EDcD herkomstGebied[Herkomst*Gebied])) */ /* Expression: _shared1[Gebied*Gebied];herkomstGebied[He
+  id=1 PRIMARY          table=gebiedInHerkomst             type=index   key=PRIMARY                  rows=2259 extra=Using where; Using index; Using temporary
+  id=1 PRIMARY          table=<derived2>                   type=ALL     key=None                     rows=283 extra=Using where; Distinct
+  id=1 PRIMARY          table=herkomstGebied               type=eq_ref  key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 PRIMARY          table=herkomstZonder               type=ref     key=PRIMARY                  rows=1 extra=Using where; Using index; Distinct
+  id=1 PRIMARY          table=<derived17>                  type=ALL     key=None                     rows=283 extra=Using where; Distinct
+  id=17 DERIVED          table=Gebied                       type=index   key=Gebied                   rows=281 extra=Using where; Using index
+  id=18 UNION            table=<derived20>                  type=ALL     key=None                     rows=2 extra=Using temporary
+  id=20 DERIVED          table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=21 RECURSIVE UNION  table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=21 RECURSIVE UNION  table=<derived20>                  type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (flat, BNL join)
+  id=None UNION RESULT     table=<union20,21>                 type=ALL     key=None                     rows=None extra=
+  id=None UNION RESULT     table=<union17,18>                 type=ALL     key=None                     rows=None extra=
+  id=2 DERIVED          table=Gebied                       type=index   key=Gebied                   rows=281 extra=Using where; Using index
+  id=3 UNION            table=<derived5>                   type=ALL     key=None                     rows=2 extra=Using temporary
+  id=5 DERIVED          table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=6 RECURSIVE UNION  table=ligtIn                       type=index   key=PRIMARY                  rows=1 extra=Using where; Using index
+  id=6 RECURSIVE UNION  table=<derived5>                   type=ALL     key=None                     rows=2 extra=Using where; Using join buffer (flat, BNL join)
+  id=None UNION RESULT     table=<union5,6>                   type=ALL     key=None                     rows=None extra=
+  id=None UNION RESULT     table=<union2,3>                   type=ALL     key=None                     rows=None extra=
