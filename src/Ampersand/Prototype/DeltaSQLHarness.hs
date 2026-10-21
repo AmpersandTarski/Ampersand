@@ -32,7 +32,7 @@ import Ampersand.FSpec
 import Ampersand.FSpec.FSpecAux (getRelationTableInfo)
 import Ampersand.FSpec.Incremental.DeltaTerms
 import Ampersand.FSpec.Incremental.Synthetic
-import Ampersand.FSpec.SQL (sqlQuery)
+import Ampersand.FSpec.SQL (sqlQuery, sqlQuerySharedWithinLimit)
 import Ampersand.Prototype.PHP
 import Ampersand.Prototype.TableSpec (createTableSql, doubleQuote, plug2TableSpec, queryAsSQL)
 import qualified RIO.List as L
@@ -287,7 +287,9 @@ runDeltaSqlHarness replay scale txCount refEvery seed fSpec = do
 
     -- the delta protocol for one (conjunct, changed relation)
     maintain nm term candTerm =
-      let candSQL = sqlQuery (withDeltaPlugs fSpec) candTerm
+      let candSQL =
+            fromMaybe (fatal ("candidate query too long for " <> nm))
+              $ sqlQuerySharedWithinLimit (withDeltaPlugs fSpec) candTerm
           violSQL = sqlQuery fSpec term
           inCands col =
             "(" <> col <> ".\"src\", " <> col <> ".\"tgt\") IN (SELECT \"src\", \"tgt\" FROM (" <> candSQL <> ") AS cand)"
