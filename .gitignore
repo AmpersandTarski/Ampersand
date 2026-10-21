@@ -87,6 +87,10 @@ testing_with_populations
 *.sh
 # Checked-in tooling under scripts/ is deliberate, so exempt it from *.sh
 !scripts/*.sh
+# The demonstration of a migration is checked in with its scripts and its director.
+!demos/migration/**/*.sh
+!demos/migration/regie/*.py
+!demos/migration/**/*.json
 
 # Scratch / werkmateriaal (lokaal houden, niet committen) - expliciet benoemd
 # Analyse-notities (root)

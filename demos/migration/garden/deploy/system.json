@@ -1,0 +1,45 @@
+{
+    "contexts": [
+        {
+            "context": "Migration",
+            "databaseVariable": "MIGRATION_DBNAME",
+            "defaultDatabase": "migration_1",
+            "label": "",
+            "port": 8080,
+            "reaches": [
+                {
+                    "label": "old",
+                    "service": "old"
+                },
+                {
+                    "label": "new",
+                    "service": "new"
+                }
+            ],
+            "service": "migration"
+        },
+        {
+            "context": "Garden",
+            "databaseVariable": "OLD_DBNAME",
+            "defaultDatabase": "garden_1",
+            "label": "old",
+            "port": 8081,
+            "reaches": [],
+            "service": "old"
+        },
+        {
+            "context": "Garden",
+            "databaseVariable": "NEW_DBNAME",
+            "defaultDatabase": "garden_2",
+            "label": "new",
+            "port": 8082,
+            "reaches": [],
+            "service": "new"
+        }
+    ],
+    "installOrder": [
+        "old",
+        "new",
+        "migration"
+    ]
+}
