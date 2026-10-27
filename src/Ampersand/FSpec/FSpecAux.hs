@@ -1,8 +1,19 @@
-module Ampersand.FSpec.FSpecAux (getRelationTableInfo, relationTableInfos, getConceptTableInfo, lookupConceptTable) where
+module Ampersand.FSpec.FSpecAux
+  ( getRelationTableInfo,
+    relationTableInfos,
+    getConceptTableInfo,
+    lookupConceptTable,
+    isViewRelation,
+    isViewPlug,
+    derivedViewPlugs,
+    hasUniqueConstraint,
+  )
+where
 
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ToFSpec.ADL2Plug (suitableAsKey)
 import RIO.List (repeat)
 
 -- return table name and source and target column names for relation dcl
@@ -40,6 +51,42 @@ lookupConceptTable fSpec cpt =
     [] -> Nothing
     [x] -> Just x -- Any of the resulting plugs should do.
     xs -> fatal ("Only one result expected:" <> tshow xs)
+
+-- | Whether a relation is generated as a database view (issue #1744).
+isViewRelation :: FSpec -> Relation -> Bool
+isViewRelation fSpec rel = rel `elem` map fst (fDerivedViews fSpec)
+
+-- | Whether a plug is the view of a derived relation, rather than a table (issue #1744).
+--   Such a plug holds one relation, its own, and no concept.
+isViewPlug :: FSpec -> PlugSQL -> Bool
+isViewPlug fSpec plug = case (mainItem plug, dLkpTbl plug) of
+  (Right rel, [store]) -> rsDcl store == rel && isViewRelation fSpec rel && null (cLkpTbl plug)
+  _ -> False
+
+-- | The views of the derived relations, each with its relation and defining term, in an
+--   order in which the views can be created (issue #1744).
+derivedViewPlugs :: FSpec -> [(PlugSQL, Relation, Expression)]
+derivedViewPlugs fSpec = [(fst (getRelationTableInfo fSpec rel), rel, definition) | (rel, definition) <- fDerivedViews fSpec]
+
+-- | Whether the generated database structure puts a UNIQUE constraint on this column of
+--   this table, with @--foreign-keys@ on (issue #1744): a column that holds one side of a
+--   relation and that the layout knows to be unique, of a type the database can index.
+--   The identity column of a specialisation in a wide table is left out: it repeats the key
+--   of its row, so it is unique by construction. The same predicate decides, in the cost
+--   profile, that the conjunct of that multiplicity is structural (claim PRF-20).
+hasUniqueConstraint :: FSpec -> PlugSQL -> SqlAttribute -> Bool
+hasUniqueConstraint fSpec plug att =
+  fForeignKeys fSpec
+    && attUniq att
+    && not (isPrimaryKey att)
+    && suitableAsKey (attType att)
+    && not (isViewPlug fSpec plug)
+    && case plug of
+      BinSQL {} -> True
+      TblSQL {} -> case attExpr att of
+        EDcD {} -> True
+        EFlp (EDcD {}) -> True
+        _ -> False
 
 -- return table name and source and target column names for relation rel.
 --   Use `lookupConceptTable` instead where a concept without a table is a

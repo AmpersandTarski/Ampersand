@@ -72,6 +72,14 @@ class HasFSpecGenOpts a where
   failOnCartesianProductL = fSpecGenOptsL . lens xfailOnCartesianProduct (\x y -> x {xfailOnCartesianProduct = y})
   confineIncludesL :: Lens' a Bool
   confineIncludesL = fSpecGenOptsL . lens xconfineIncludes (\x y -> x {xconfineIncludes = y})
+  derivedViewsL :: Lens' a Bool
+  derivedViewsL = fSpecGenOptsL . lens xderivedViews (\x y -> x {xderivedViews = y})
+  materializeL :: Lens' a [Text]
+  materializeL = fSpecGenOptsL . lens xmaterialize (\x y -> x {xmaterialize = y})
+  foreignKeysL :: Lens' a Bool
+  foreignKeysL = fSpecGenOptsL . lens xforeignKeys (\x y -> x {xforeignKeys = y})
+  schemaViewsL :: Lens' a Bool
+  schemaViewsL = fSpecGenOptsL . lens xschemaViews (\x y -> x {xschemaViews = y})
 
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -324,7 +332,17 @@ data FSpecGenOpts = FSpecGenOpts
     -- | May an INCLUDE only name a file in the directory of a root file or below?
     --   No command-line option sets this. @ampersand serve@ switches it on, because
     --   it compiles scripts of callers it does not know on a machine that is not theirs.
-    xconfineIncludes :: !Bool
+    xconfineIncludes :: !Bool,
+    -- | Generate a derived relation (@ENFORCE r := term@) as a database view instead of a
+    --   stored table maintained by the ExecEngine (issue #1744).
+    xderivedViews :: !Bool,
+    -- | The derived relations that stay stored and maintained as before, by name, when
+    --   @--derived-views@ is on (issue #1744).
+    xmaterialize :: ![Text],
+    -- | Generate FOREIGN KEY and UNIQUE constraints in the database structure (issue #1744).
+    xforeignKeys :: !Bool,
+    -- | Generate a named view per conjunct and per interface field (issue #1744).
+    xschemaViews :: !Bool
   }
   deriving (Show)
 
@@ -346,7 +364,11 @@ instance HasOptions FSpecGenOpts where
       ("--build-recipe", tshow $ xrecipe opts),
       ("--ignore-invariant-violations", tshow $ xallowInvariantViolations opts),
       ("--fail-on-oscillation", tshow $ xfailOnOscillation opts),
-      ("--fail-on-cartesian-product", tshow $ xfailOnCartesianProduct opts)
+      ("--fail-on-cartesian-product", tshow $ xfailOnCartesianProduct opts),
+      ("--derived-views", tshow $ xderivedViews opts),
+      ("--materialize", T.intercalate "," $ xmaterialize opts),
+      ("--foreign-keys", tshow $ xforeignKeys opts),
+      ("--schema-views", tshow $ xschemaViews opts)
     ]
 
 data FSpecFormat

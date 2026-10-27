@@ -214,9 +214,16 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
       where
         localName' = root <> "." <> text1ToText (sqlColumNameToText1 (sqlname plug))
 
+    -- The derived relations that are generated as views (issue #1744): they get no column
+    -- and no link table, but a view plug with the columns src and tgt.
+    allViewRelations :: [Relation]
+    allViewRelations = [enfRel e | e <- enforces context, enfStorage e == DerivedView]
+
     tablesOf :: Scope -> [PlugSQL]
-    tablesOf sc = map (scLocalise sc . makeTable) components
+    tablesOf sc = map (scLocalise sc . makeTable) components <> map (scLocalise sc . makeViewPlug) viewRelations
       where
+        viewRelations :: [Relation]
+        viewRelations = filter (scMine sc . name) allViewRelations
         components :: [(Maybe StorageComponent, [Relation])]
         components =
           -- trace ("7. components count: " <> tshow (length comps) <> "\n   components: " <> tshow comps)
@@ -283,7 +290,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 Just _ -> False
                 Nothing -> False
 
-        allRelationsInContext = filter (scMine sc . name) (toList (relsDefdIn context))
+        allRelationsInContext = filter (\r -> scMine sc (name r) && r `notElem` allViewRelations) (toList (relsDefdIn context))
 
         -- The storage components of the typologies of this scope (issue #1716):
         -- an unmarked typology is one component and gets one wide table, as
@@ -433,6 +440,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 scope =
                   map toConceptOrRelation allKeyConcepts
                     <> map toConceptOrRelation allLinkTableRelations
+                    <> map toConceptOrRelation viewRelations
 
             bindedExp :: Expression
             bindedExp = EDcD dcl
@@ -479,6 +487,47 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                   attDBNull = False, -- false for link tables
                   attUniq = isInj codExpr,
                   attFlipped = isStoredFlipped dcl
+                }
+        -----------------------------------------
+        -- makeViewPlug
+        -----------------------------------------
+        -- A derived relation that is generated as a view (issue #1744) is read like a link
+        -- table with the columns src and tgt. The view is named like the link table would
+        -- have been, in the same scope, so that its name clashes with no table.
+        makeViewPlug :: Relation -> PlugSQL
+        makeViewPlug rel =
+          BinSQL
+            { sqlname =
+                determineSqlName
+                  (scView sc)
+                  ( map toConceptOrRelation allKeyConcepts
+                      <> map toConceptOrRelation allLinkTableRelations
+                      <> map toConceptOrRelation viewRelations
+                  )
+                  (toConceptOrRelation rel),
+              cLkpTbl = [],
+              dLkpTbl =
+                [ RelStore
+                    { rsDcl = rel,
+                      rsStoredFlipped = False,
+                      rsSrcAtt = viewColumn "src" (EDcI (source rel)) (source rel),
+                      rsTrgAtt = viewColumn "tgt" (EDcD rel) (target rel)
+                    }
+                ],
+              mainItem = toConceptOrRelation rel
+            }
+          where
+            viewColumn :: Text -> Expression -> A_Concept -> SqlAttribute
+            viewColumn nm e cpt =
+              Att
+                { attSQLColName = text1ToSqlName (toText1Unsafe nm),
+                  attExpr = e,
+                  attType = ctxReprType context cpt,
+                  attUse = PlainAttr,
+                  attNull = False,
+                  attDBNull = False,
+                  attUniq = False,
+                  attFlipped = False
                 }
         -- tableForONE :: [PlugSQL]
         -- tableForONE =

@@ -5,6 +5,8 @@
 module Ampersand.Output.ToJSON.Conjuncts (Conjuncts) where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.DerivedViews (inlineViews)
+import Ampersand.FSpec.FSpecAux (isViewRelation)
 import Ampersand.FSpec.Incremental.CostProfile (CostProfile (..), costClassText, costProfileFor)
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaQueriesFor, deltaTableName, withDeltaPlugs)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
@@ -73,9 +75,13 @@ instance JSON Conjunct JSONConjunct where
         cnjJSONsignalRuleNames = map fullName . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONinvariantRuleNames = map fullName . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONviolationsSQL = sqlQuery fSpec violTerm,
-        cnjJSONdeltaQueries = mapMaybe deltaQuery <$> deltaQueriesFor violTerm,
+        -- A conjunct that reads a view keeps full re-evaluation: the candidate calculus
+        -- (PRF-7) assumes a delta table per relation, and a view has none (issue #1744).
+        cnjJSONdeltaQueries = if readsAView then Nothing else mapMaybe deltaQuery <$> deltaQueriesFor violTerm,
+        -- The cost profile speaks about the tables the query really reads, so the views are
+        -- substituted by their definitions before the classification (issue #1744).
         cnjJSONcostProfile =
-          let profile = costProfileFor fSpec conj violTerm
+          let profile = costProfileFor fSpec conj (inlineViews (fDerivedViews fSpec) violTerm)
            in JSONCostProfile
                 { cstJSONclass = costClassText (cpClass profile),
                   cstJSONscanTables = cpScanTables profile
@@ -83,6 +89,7 @@ instance JSON Conjunct JSONConjunct where
       }
     where
       violTerm = conjNF env . notCpl . rcConjunct $ conj
+      readsAView = any (isViewRelation fSpec) (toList (bindedRelationsIn violTerm))
       deltaQuery :: (Relation, Expression) -> Maybe JSONDeltaQuery
       deltaQuery (rel, candTerm) = do
         candSQL <- sqlQuerySharedWithinLimit (withDeltaPlugs fSpec) candTerm

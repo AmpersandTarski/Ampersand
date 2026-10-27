@@ -146,6 +146,27 @@ spec is generated. The build target is passed to the framework as `global.produc
 which keeps generation and publication consistent. See the prototype documentation and
 [Generating an OpenAPI description](the-tools-we-use/openapi-generation.md) for details.
 
+`--derived-views` generates every derived relation (`ENFORCE r := term`) as a database view
+on the SQL of its term, instead of a table that the ExecEngine maintains. A relation named
+in `--materialize` (repeat the option, or separate names with commas) stays a stored table.
+See [Derived relations as views](reference-material/syntax-of-ampersand.md#derived-relations-as-views)
+for what becomes a view, what stays stored, and what a prototype framework needs for it.
+
+`--foreign-keys` adds the constraints that a database enforces by itself to `database.sql`:
+a `FOREIGN KEY` from every column that holds an atom to the key column of the table of its
+concept, and a `UNIQUE` constraint on every column that holds the unique side of a relation
+(`INJ`, and `UNI` where the relation is stored on its target side), both after all tables.
+A bulk load that writes rows in its own order must run with `SET FOREIGN_KEY_CHECKS=0` and
+switch the checks on again afterwards. The conjunct of a multiplicity that such a `UNIQUE`
+enforces gets the cost profile `structural` in `conjuncts.json`.
+
+`--schema-views` adds the named external schema to `database.sql`: one view per conjunct
+(`conj_<id>`, the id of `conjuncts.json`, selecting the violations) and one view per interface
+field (`ifc_<interface>_<field>`, along the path of the field, with the names escaped as the
+REST API escapes them, selecting the pairs of the field's term). The JSON files keep their
+queries; the views make the same queries visible to the database, to `EXPLAIN`, to a report
+and to another front end.
+
 ### deploy
 
 ```bash

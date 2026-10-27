@@ -856,6 +856,18 @@ PURPOSE ENFORCE mayDrive
 +}
 ```
 
+#### Derived relations as views {#derived-relations-as-views}
+
+A relation that an `ENFORCE r := term` statement defines is a derived relation: its population is a function of other relations. The prototype realises such a statement in one of two ways.
+
+By default the relation is a stored table, and the ExecEngine keeps it equal to the term: after every transaction it computes which pairs are missing and which are superfluous, and inserts or deletes them. The table is a copy that lags behind until the ExecEngine has run, and keeping it costs time in every transaction that touches a relation of the term.
+
+With the compiler option `--derived-views` the relation is a database view on the SQL of the term. A view is computed by the database when a query reads it, so it can never lag behind, nothing maintains it, and the ExecEngine has nothing to do for it. Every rule and interface reads the view as it read the table. A view cannot be written: an interface field on such a relation is read-only, a `POPULATION` of it is not possible, and an `{EX} InsPair` or `DelPair` on it fails. The compiler warns where a script asks for such a write.
+
+A derived relation stays a stored table, with a warning that says why, when another `ENFORCE` statement writes the same relation (a view takes no extra pairs), when a `POPULATION` statement gives it pairs of its own, when its definition refers to itself directly or through other derived relations (SQL has no such view), when it belongs to a context on another database, or when it is named in the option `--materialize`. That last option is the way to keep a relation stored on purpose: a view whose definition holds a closure (`*` or `+`) is computed in full every time a query reads it, and for a large closure a stored table that the ExecEngine maintains can cost less. The compiler warns for such a view, and reports for every derived relation whether it is a view or a stored table.
+
+A prototype framework that does not know views installs and reads such a prototype, but cannot delete an atom that occurs in a derived relation, because it writes to every relation of the atom's concept; a framework that reads the field `storage` of `relations.json` skips the views. The option is off until such a framework is the common one.
+
 #### Miscellaneous
 
 - Both the sources and the targets of the relation and the term must match. An error message is given otherwise.

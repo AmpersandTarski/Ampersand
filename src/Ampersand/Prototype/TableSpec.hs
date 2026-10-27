@@ -5,6 +5,9 @@ module Ampersand.Prototype.TableSpec
     getTableName,
     plug2TableSpec,
     createViewSql,
+    createDerivedViewSql,
+    constraintQueries,
+    schemaViewQueries,
     databasePlaceholder,
     tableSpec2Queries,
     dropTableIfExistsSql,
@@ -23,6 +26,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
+import Ampersand.FSpec.FSpecAux (hasUniqueConstraint, isViewPlug, lookupConceptTable)
 import Ampersand.FSpec.SQL
 import Ampersand.FSpec.ToFSpec.ADL2Plug (suitableAsKey)
 import Ampersand.Prototype.ProtoUtil
@@ -153,6 +157,129 @@ createViewSql withComment db remote tSpec
         <> databasePlaceholder db
         <> "."
         <> doubleQuote remote
+
+-- | The view of a derived relation (issue #1744): @CREATE VIEW@ on the SQL of the term that
+--   @ENFORCE r := term@ gives. The plug names the view; the relation and the term go into
+--   the comment, so that a reader of @database.sql@ sees where the view comes from.
+createDerivedViewSql :: Bool -> FSpec -> PlugSQL -> Relation -> Expression -> SqlQuery
+createDerivedViewSql withComment fSpec plug rel definition
+  | withComment =
+      SqlQueryPretty
+        $ commentBlockSQL
+          [ "Plug " <> text1ToText (showUnique plug),
+            "",
+            "A view for the derived relation " <> showA rel <> ",",
+            "defined by ENFORCE " <> fullName rel <> " := " <> showA definition <> "."
+          ]
+        <> [header <> " AS"]
+        <> map (T.replicate 5 " " <>) (derivedViewQuery 5 fSpec definition)
+  | otherwise = SqlQueryPlain (header <> " AS " <> derivedViewQueryPlain fSpec definition)
+  where
+    header = "CREATE VIEW " <> doubleQuote (text1ToText (showUnique plug))
+
+-- | The declarative constraints of the database structure, with @--foreign-keys@ on
+--   (issue #1744): a FOREIGN KEY from every column that holds an atom of a concept to the
+--   key column of the table of that concept, where that key is a PRIMARY KEY (the table of
+--   a scalar concept has none, issue #341, and a concept of a type that cannot be listed has
+--   no table), and a UNIQUE constraint on every column that 'hasUniqueConstraint' names.
+--   @RESTRICT@ on both sides: the prototype framework removes the links of an atom before
+--   it deletes the atom, and merges atoms by deleting and adding links, so a cascade would
+--   hide a defect rather than help. The statements come after every table, because a
+--   constraint names two tables. The argument says which plugs are views on another
+--   database, which take no constraint and can be referred to by none.
+constraintQueries :: FSpec -> (PlugSQL -> Bool) -> [SqlQuery]
+constraintQueries fSpec isForeign =
+  [ SqlQuerySimple
+      ( "ALTER TABLE "
+          <> tableOf plug
+          <> " ADD FOREIGN KEY ("
+          <> columnOf att
+          <> ") REFERENCES "
+          <> tableOf refPlug
+          <> " ("
+          <> columnOf refAtt
+          <> ") ON DELETE RESTRICT ON UPDATE RESTRICT"
+      )
+    | plug <- plugs,
+      att <- NE.toList (plugAttributes plug),
+      ForeignKey c <- [attUse att],
+      Just (refPlug, refAtt) <- [lookupConceptTable fSpec c],
+      isPrimaryKey refAtt,
+      not (isForeign refPlug),
+      not (isViewPlug fSpec refPlug),
+      attType att == attType refAtt
+  ]
+    <> [ SqlQuerySimple ("ALTER TABLE " <> tableOf plug <> " ADD UNIQUE (" <> columnOf att <> ")")
+         | plug <- plugs,
+           att <- NE.toList (plugAttributes plug),
+           hasUniqueConstraint fSpec plug att
+       ]
+  where
+    plugs = [p | InternalPlug p <- plugInfos fSpec, not (isForeign p), not (isViewPlug fSpec p)]
+    tableOf = doubleQuote . text1ToText . showUnique
+    columnOf = doubleQuote . text1ToText . sqlColumNameToText1 . attSQLColName
+
+-- | The named external schema, with @--schema-views@ on (issue #1744): one view per conjunct,
+--   named by the id of the conjunct in @conjuncts.json@ and selecting its violations, and one
+--   view per interface field, named @ifc_<interface>_<field>@ along the path of the field,
+--   with the field names escaped as the REST API escapes them, selecting the pairs of the
+--   field's term. A name longer than the database allows is cut and gets a hash, and so does
+--   a name that another view has when case is ignored. Every query that the JSON files carry
+--   gets a view: an interface field query differs from its view only by the filter on the
+--   source atom that the prototype adds, and no query depends on anything but the tables.
+schemaViewQueries :: Bool -> FSpec -> [SqlQuery]
+schemaViewQueries withComment fSpec =
+  [ viewOf
+      nm
+      ( [ "Conjunct " <> text1ToText (rc_id conj) <> ": " <> showA (rcConjunct conj),
+          "Rules:"
+        ]
+          <> map (\r -> "  " <> fullName r <> ": " <> showA r) (NE.toList (rc_orgRules conj))
+      )
+      (conjNF () . notCpl . rcConjunct $ conj)
+    | (nm, conj) <- zip conjNames (allConjuncts fSpec)
+  ]
+    <> [ viewOf nm ["Interface " <> fullName ifc <> ", field " <> path <> ": " <> showA (objExpression obj)] (conjNF () (objExpression obj))
+         | (nm, (ifc, path, obj)) <- zip ifcNames fieldObjects
+       ]
+  where
+    conjNames = uniqueNames (map (text1ToText . rc_id) (allConjuncts fSpec))
+    ifcNames = uniqueNames [T.intercalate "_" ("ifc" : fullName ifc : map escape pathParts) | (ifc, _, _, pathParts) <- fieldObjectsWithPath]
+    fieldObjects = [(ifc, path, obj) | (ifc, path, obj, _) <- fieldObjectsWithPath]
+    fieldObjectsWithPath :: [(Interface, Text, ObjectDef, [Text])]
+    fieldObjectsWithPath =
+      [ (ifc, T.intercalate "/" pathParts, obj, pathParts)
+        | ifc <- interfaceS fSpec,
+          (pathParts, obj) <- objectsIn [] (ifcObj ifc)
+      ]
+    objectsIn :: [Text] -> ObjectDef -> [([Text], ObjectDef)]
+    objectsIn path obj = (path, obj) : concat [objectsIn (path <> [fieldName sub]) sub | sub <- fields obj]
+    fieldName :: ObjectDef -> Text
+    fieldName = maybe "field" text1ToText . objPlainName
+    escape :: Text -> Text
+    escape nm = case T.uncons nm of
+      Nothing -> nm
+      Just (c, cs) -> text1ToText (escapeIdentifier (Text1 c cs))
+    viewOf :: Text -> [Text] -> Expression -> SqlQuery
+    viewOf nm cmnt expr
+      | withComment =
+          SqlQueryPretty
+            $ commentBlockSQL cmnt
+            <> ["CREATE VIEW " <> doubleQuote nm <> " AS"]
+            <> map (T.replicate 5 " " <>) (case prettySQLQuery 5 fSpec expr of SqlQueryPretty xs -> xs; q -> [queryAsSQL q])
+      | otherwise = SqlQueryPlain ("CREATE VIEW " <> doubleQuote nm <> " AS " <> sqlQuery fSpec expr)
+    -- A name fits in 64 characters and is unique when case is ignored.
+    uniqueNames :: [Text] -> [Text]
+    uniqueNames nms = zipWith pick nms [0 :: Int ..]
+      where
+        fitted = map fit nms
+        lower = map T.toLower fitted
+        pick nm i
+          | length (filter (== T.toLower (fit nm)) lower) > 1 = fit (nm <> "_" <> tshow i)
+          | otherwise = fit nm
+        fit nm
+          | T.length nm <= 64 = nm
+          | otherwise = T.take 56 nm <> "_" <> T.take 7 (tshow (sha1hash nm))
 
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec =

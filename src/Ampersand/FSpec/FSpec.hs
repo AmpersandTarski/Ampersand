@@ -156,6 +156,16 @@ data FSpec = FSpec
     specializationsOf :: !(A_Concept -> [A_Concept]),
     generalizationsOf :: !(A_Concept -> [A_Concept]),
     allEnforces :: ![AEnforce],
+    -- | The derived relations that are generated as database views (issue #1744), with the
+    --   defining term of each, in an order in which the views can be created: a definition
+    --   comes after every view it reads. Empty unless @--derived-views@ is on.
+    fDerivedViews :: ![(Relation, Expression)],
+    -- | Whether the database structure carries FOREIGN KEY and UNIQUE constraints
+    --   (@--foreign-keys@, issue #1744). The cost profile of a conjunct depends on it.
+    fForeignKeys :: !Bool,
+    -- | Whether the database structure carries a named view per conjunct and per
+    --   interface field (@--schema-views@, issue #1744).
+    fSchemaViews :: !Bool,
     isSignal :: !(Rule -> Bool),
     -- | Function to get label for a concept from its definition
     conceptLabel :: !(A_Concept -> Maybe Label)
@@ -606,6 +616,9 @@ emptyFSpec nm =
       specializationsOf = fatal "Don't ask for specializations in the empty FSpec.",
       generalizationsOf = fatal "Don't ask for generalizations in the empty FSpec.",
       allEnforces = [],
+      fDerivedViews = [],
+      fForeignKeys = False,
+      fSchemaViews = False,
       isSignal = fatal "Don't ask for isSignal in an empty FSpec.",
       conceptLabel = fatal "Don't ask for concept labels in the empty FSpec."
     }

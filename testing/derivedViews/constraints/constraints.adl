@@ -1,0 +1,47 @@
+CONTEXT Constraints
+-- Regression test for issue #1744: `--foreign-keys` puts a FOREIGN KEY on every relation
+-- column and a UNIQUE constraint on every injective column; `--schema-views` adds a view
+-- per conjunct and per interface field. `ampersand validate` creates the database with
+-- these statements and compares every query with the evaluator of the compiler, so the
+-- test checks that the constraints accept the population and that the views are created.
+
+RELATION naam[Persoon*Naam] [UNI]
+RELATION woontIn[Persoon*Stad] [UNI]
+RELATION paspoort[Persoon*Paspoortnummer] [UNI,INJ]
+RELATION kent[Persoon*Persoon]
+RELATION baas[Persoon*Persoon] [UNI]
+RELATION burgemeester[Stad*Persoon] [UNI,INJ]
+RELATION leeftijd[Persoon*Leeftijd] [UNI]
+RELATION label[Stad*Tekst] [UNI]
+REPRESENT Naam, Paspoortnummer, Tekst TYPE ALPHANUMERIC
+REPRESENT Leeftijd TYPE INTEGER
+CLASSIFY Ambtenaar ISA Persoon
+RELATION dienst[Ambtenaar*Stad] [UNI]
+
+POPULATION naam CONTAINS [ ("p1","Anna"), ("p2","Bert"), ("p3","Cees") ]
+POPULATION woontIn CONTAINS [ ("p1","Utrecht"), ("p2","Utrecht"), ("p3","Zwolle") ]
+POPULATION paspoort CONTAINS [ ("p1","NL1"), ("p2","NL2") ]
+POPULATION kent CONTAINS [ ("p1","p2"), ("p2","p3"), ("p3","p1") ]
+POPULATION baas CONTAINS [ ("p1","p3"), ("p2","p3") ]
+POPULATION burgemeester CONTAINS [ ("Zwolle","p3") ]
+POPULATION leeftijd CONTAINS [ ("p1",31), ("p2",42) ]
+POPULATION label CONTAINS [ ("Utrecht","Domstad") ]
+POPULATION dienst CONTAINS [ ("p3","Zwolle") ]
+
+RULE BaasWoontErgens : baas |- baas;woontIn;woontIn~
+RULE BurgemeesterWoontInStad : burgemeester |- woontIn~
+RULE Uniek : paspoort;paspoort~ |- I[Persoon]
+
+INTERFACE Personen : "_SESSION";V[SESSION*Persoon] cRud BOX
+  [ naam : naam cRud
+  , "woont in" : woontIn cRud
+  , paspoort : paspoort cRud
+  , kent : kent cRud BOX [ naam : naam cRud ]
+  , baas : baas cRud
+  ]
+INTERFACE Steden : "_SESSION";V[SESSION*Stad] cRud BOX
+  [ label : label cRud
+  , burgemeester : burgemeester cRud
+  , inwoners : woontIn~ cRud
+  ]
+ENDCONTEXT

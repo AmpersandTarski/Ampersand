@@ -35,7 +35,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux (lookupConceptTable, relationTableInfos)
+import Ampersand.FSpec.FSpecAux (hasUniqueConstraint, lookupConceptTable, relationTableInfos)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -112,10 +112,19 @@ costProfileFor fSpec conj violTerm
 --   holds, and its sampled self-check keeps covering skipped conjuncts.
 structurallyEnforced :: FSpec -> Rule -> Bool
 structurallyEnforced fSpec rule = case rrkind rule of
-  Propty Uni rel -> keySideIsPrimary rel (not . rsStoredFlipped) rsSrcAtt
-  Propty Inj rel -> keySideIsPrimary rel rsStoredFlipped rsTrgAtt
+  Propty Uni rel -> keySideIsPrimary rel (not . rsStoredFlipped) rsSrcAtt || uniqueColumn rel rsSrcAtt
+  Propty Inj rel -> keySideIsPrimary rel rsStoredFlipped rsTrgAtt || uniqueColumn rel rsTrgAtt
   _ -> False
   where
+    -- With @--foreign-keys@ (issue #1744) the DDL puts UNIQUE on the column that holds the
+    -- side of the relation that must be unique: the source column for UNI, the target
+    -- column for INJ. The database then refuses a second pair with the same atom there, so
+    -- the violation set is empty in every state (claim PRF-20). 'hasUniqueConstraint' is
+    -- the predicate the DDL uses, so the two cannot drift apart.
+    uniqueColumn rel sideAtt =
+      case relationTableInfos fSpec rel of
+        [(plug, store)] -> hasUniqueConstraint fSpec plug (sideAtt store)
+        _ -> False
     -- A relation stored in several tables (a MULTITABLE union, issue #1716)
     -- has a key column per table and none across them, so its multiplicity
     -- is not structural and the conjunct runs as a query.

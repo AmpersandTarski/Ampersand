@@ -10,6 +10,8 @@ module Ampersand.FSpec.SQL
     broadQueryWithPlaceholder,
     commentBlockSQL,
     cartesianProductMarker,
+    derivedViewQuery,
+    derivedViewQueryPlain,
   )
 where
 
@@ -57,6 +59,39 @@ prettyBroadQueryWithPlaceholder i fSpec =
     . T.lines
     . prettyQueryExpr theDialect
     . broadQuery fSpec
+
+-- | The query that defines the view of a derived relation (issue #1744): the SQL of its
+--   defining term. The outer DISTINCT is left out when the translation is one SELECT, so
+--   that the database can merge the view into the query that reads it; every generated
+--   query that reads the view applies its own DISTINCT, so a duplicate row in the view
+--   changes no result. A set operation or a WITH clause is a temporary table in any case,
+--   and keeps its DISTINCT.
+derivedViewBinQuery :: FSpec -> Expression -> BinQueryExpr
+derivedViewBinQuery fSpec expr = case bqe of
+  BinSelect {} -> bqe
+  _ -> setDistinct bqe
+  where
+    bqe = selectExpr fSpec (anchorComplements expr)
+
+-- | The view query, prettyprinted with comments, indented by the given amount.
+derivedViewQuery :: Int -> FSpec -> Expression -> [Text]
+derivedViewQuery i fSpec =
+  T.lines
+    . T.intercalate ("\n" <> T.replicate i " ")
+    . T.lines
+    . prettyQueryExpr theDialect
+    . toSQL
+    . derivedViewBinQuery fSpec
+
+-- | The view query on one line, without comments.
+derivedViewQueryPlain :: FSpec -> Expression -> Text
+derivedViewQueryPlain fSpec =
+  T.unwords
+    . T.words
+    . prettyQueryExpr theDialect
+    . toSQL
+    . stripComment
+    . derivedViewBinQuery fSpec
 
 -- | The longest query the compiler hands to the database.
 maxQueryLength :: Int

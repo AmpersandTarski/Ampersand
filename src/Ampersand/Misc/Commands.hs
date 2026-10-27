@@ -10,6 +10,8 @@ module Ampersand.Misc.Commands
   )
 where
 
+{-getProgName,-}
+import Ampersand.ADL1 (AEnforce (..), EnforceOperator (..), EnforceStorage (..))
 import Ampersand.Basics
 import Ampersand.Commands.Daemon
 import Ampersand.Commands.Deploy
@@ -23,8 +25,7 @@ import Ampersand.Commands.Proto
 import Ampersand.Commands.Serve
 import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
-{-getProgName,-}
-import Ampersand.FSpec (FSpec)
+import Ampersand.FSpec (FSpec (..))
 import Ampersand.FSpec.Oscillation (oscillationWarnings)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
@@ -434,6 +435,20 @@ doOrDie theAction = do
   case mFSpec of
     Checked a ws -> do
       mapM_ (logWarn . displayShow) ws
+      derivedOn <- view derivedViewsL
+      let readers e = maybe 0 length (lookup (enfRel e) (allConjsPerDecl a))
+      when derivedOn
+        $ forM_ [e | e <- allEnforces a, IsSameSet {} <- [enfOp e]]
+        $ \e ->
+          logInfo
+            . display
+            $ "Derived relation "
+            <> fullName (enfRel e)
+            <> ": "
+            <> ( if enfStorage e == DerivedView
+                   then "a view in the database, read by " <> tshow (readers e) <> " conjunct" <> (if readers e == 1 then "." else "s.")
+                   else "a stored table, maintained by the ExecEngine."
+               )
       failOnOsc <- view failOnOscillationL
       failOnCart <- view failOnCartesianProductL
       env <- ask

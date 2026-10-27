@@ -1,0 +1,8 @@
+testCmds:
+  - command: ampersand validate --derived-views
+    exitcode: 0
+  - command: ampersand proto --no-frontend --derived-views
+    exitcode: 0
+  # Without the flag the derived relations are stored tables, empty until an ExecEngine fills
+  # them, so the rules that read them are violated in the population of the script; that is the
+  # difference between a stored derived relation and a view, and not a test of the compiler.
