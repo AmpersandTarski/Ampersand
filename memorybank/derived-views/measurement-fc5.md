@@ -123,6 +123,20 @@ G2 is 4 281 against 4 282 ms. `BehoudtDeelverzameling` is back at 6 ms, because
    stored table pays it at every transaction that touches a facet. The incremental route of
    issue #1675 is the answer for those, not this change.
 
+## The other two options on the same model (counts, not timings)
+
+`ampersand proto --no-frontend --derived-views --foreign-keys --schema-views` on the same
+model gives a `database.sql` with 282 tables and 1 011 views: 495 for the interface fields
+(the number the research note counted in `interfaces.json`), 499 for the conjuncts and 17
+for the derived relations. 90 view names were longer than 64 characters and were cut and
+given a hash; no two names, tables included, coincide when case is ignored. The longest
+name is `ifc_Eis_Kenmerken_32__38__32_registratie_Kenmerken_32__4_b68f0e0`. 169 foreign
+keys and 47 `UNIQUE` constraints are generated; 84 of the 253 relation columns get no
+foreign key, because their target is a concept whose table has no primary key (a value
+such as `Userid`, `Emailadres` or `Naam`, issue #341) or no table at all. The installation
+of this schema in a database was not tried on this model; the regression test
+`testing/derivedViews/constraints` installs the same statements for a small model.
+
 ## What was not measured
 
 The import time of the corpus, the wall-clock time of `admin/execengine/run` and
