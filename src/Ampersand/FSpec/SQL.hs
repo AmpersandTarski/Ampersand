@@ -12,6 +12,7 @@ module Ampersand.FSpec.SQL
     cartesianProductMarker,
     derivedViewQuery,
     derivedViewQueryPlain,
+    derivedViewIsMergeable,
   )
 where
 
@@ -68,10 +69,18 @@ prettyBroadQueryWithPlaceholder i fSpec =
 --   and keeps its DISTINCT.
 derivedViewBinQuery :: FSpec -> Expression -> BinQueryExpr
 derivedViewBinQuery fSpec expr = case bqe of
-  BinSelect {} -> bqe
+  BinSelect {} -> bqe {bseSetQuantifier = SQDefault}
   _ -> setDistinct bqe
   where
     bqe = selectExpr fSpec (anchorComplements expr)
+
+-- | Whether the database can merge the view into the query that reads it: the translation
+--   is one SELECT without DISTINCT. A view with a set operation, a WITH clause or a DISTINCT
+--   is computed in full, as a temporary table without an index, at every use (issue #1744).
+derivedViewIsMergeable :: FSpec -> Expression -> Bool
+derivedViewIsMergeable fSpec expr = case derivedViewBinQuery fSpec expr of
+  BinSelect {} -> True
+  _ -> False
 
 -- | The view query, prettyprinted with comments, indented by the given amount.
 derivedViewQuery :: Int -> FSpec -> Expression -> [Text]

@@ -181,7 +181,9 @@ createDerivedViewSql withComment fSpec plug rel definition
 --   (issue #1744): a FOREIGN KEY from every column that holds an atom of a concept to the
 --   key column of the table of that concept, where that key is a PRIMARY KEY (the table of
 --   a scalar concept has none, issue #341, and a concept of a type that cannot be listed has
---   no table), and a UNIQUE constraint on every column that 'hasUniqueConstraint' names.
+--   no table); an atom of a specialisation that shares a wide table has the key of that table,
+--   so the column refers to that key. And a UNIQUE constraint on every column that
+--   'hasUniqueConstraint' names.
 --   @RESTRICT@ on both sides: the prototype framework removes the links of an atom before
 --   it deletes the atom, and merges atoms by deleting and adding links, so a cascade would
 --   hide a defect rather than help. The statements come after every table, because a
@@ -203,11 +205,13 @@ constraintQueries fSpec isForeign =
     | plug <- plugs,
       att <- NE.toList (plugAttributes plug),
       ForeignKey c <- [attUse att],
-      Just (refPlug, refAtt) <- [lookupConceptTable fSpec c],
+      Just (refPlug, _) <- [lookupConceptTable fSpec c],
+      -- the key of the table, which an atom of a specialisation in that table shares
+      let refAtt = NE.head (plugAttributes refPlug),
       isPrimaryKey refAtt,
       not (isForeign refPlug),
       not (isViewPlug fSpec refPlug),
-      attType att == attType refAtt
+      showSQL (attType att) == showSQL (attType refAtt) -- the same SQL type: a specialisation may carry another TType than its key (ALPHANUMERIC against OBJECT)
   ]
     <> [ SqlQuerySimple ("ALTER TABLE " <> tableOf plug <> " ADD UNIQUE (" <> columnOf att <> ")")
          | plug <- plugs,

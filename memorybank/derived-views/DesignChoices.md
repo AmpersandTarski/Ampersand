@@ -92,7 +92,7 @@ reads `r` from the view as it read it from the table.
 paths and refuses a direct write with a message; a runtime that does not treats
 the view as a table.
 
-**The view query keeps the SQL of the term; the outer `DISTINCT` is left out when the translation is one `SELECT`, and kept when it is a set operation or a `WITH` clause.**
+**The view query keeps the SQL of the term; the `DISTINCT` is left out when the translation is one `SELECT`, and kept when it is a set operation or a `WITH` clause.**
 *DC-4 · valid · 2026-10-27 · origin: issue #1744, measurement E5 of the research note*
 
 *Considerations:*
@@ -100,7 +100,12 @@ the view as a table.
 1. MariaDB merges a view into the query that reads it (the `MERGE` algorithm) only
    when the view has no `DISTINCT`, no `UNION` and no recursion; otherwise it
    materialises the whole view at every use (E5: 55 ms for one product). A view of
-   one `SELECT` without `DISTINCT` stays mergeable.
+   one `SELECT` without `DISTINCT` stays mergeable. The SQL generator itself writes
+   `select distinct` for most shapes (a composition, the anchored difference), so the
+   `DISTINCT` of a one-`SELECT` translation is taken out for the view; 14 of the 17
+   views of the Landeneisenregister are merged that way, and the three with a union
+   are computed in full (`measurement-fc5.md`). The report line per derived relation
+   says which of the two a view is.
 2. Every generated query that reads the view applies `SELECT DISTINCT` at its
    top (`getBinQueryExpr` for a term), so a duplicate row in the view changes no
    result. This is the boundary of claim PRF-19.
@@ -209,10 +214,13 @@ conjuncts for the base relations of a view; `conjuncts.json` carries no
 1. A relation declared `[PROP]` or `[UNI,INJ]` gets a rule per property, and the
    prototype evaluates the conjunct of each rule after a transaction that touches
    the relation. For a stored table that costs little. For a view it recomputes the
-   view, twice for a rule such as `r;r~ |- I`. In the first measurement the
-   property rules of `eisHeeftTweeling := I[Eis] /\ eisFacetGelijk;eisFacetGelijk~`
-   alone took 51 of the 76 seconds that all conjuncts took with views (0.6 ms with
-   the stored table), and five property rules of `eisInBewerking` another 12.
+   view, twice for a rule such as `r;r~ |- I`. In the first measurement on the
+   Landeneisenregister the property rules of
+   `eisHeeftTweeling := I[Eis] /\ eisFacetGelijk;eisFacetGelijk~` alone took 51 of
+   the 76 seconds that all conjuncts took with views (0.6 ms with the stored table),
+   and five property rules of `eisInBewerking` another 12; with the omission the 499
+   remaining conjuncts take 12.7 seconds, and 4.3 with four relations materialised
+   (`measurement-fc5.md`).
 2. A definition that is a subset of the identity (`I /\ ...`, `I - ...`, a named
    atom, a composition of two such terms) is univalent, injective, symmetric,
    antisymmetric and transitive in every population; univalence, injectivity and
@@ -254,8 +262,11 @@ derived relations that carry properties.
 3. A key column of a scalar concept table is not a primary key (issue #341), a
    concept of a type that cannot be listed has no table (issue #1727), and a
    table of another database is a view here (v5.10.0): a column that refers to
-   such a concept gets no foreign key. The types of the two columns must be the
-   same, which the generator guarantees because both come from the
+   such a concept gets no foreign key. A column that refers to a specialisation
+   that shares a wide table refers to the key column of that table, which an atom
+   of the specialisation has by construction; the identity column of the
+   specialisation itself carries no unique index. The types of the two columns
+   must be the same, which the generator guarantees because both come from the
    representation of the concept.
 4. The identity column of a specialisation in a wide table repeats the key of
    its row, so it is unique by construction and gets no constraint of its own; a
@@ -313,6 +324,9 @@ transaction with a violation; the conjuncts of the multiplicities that a
 5. The views are created last, so that they can read the views of the derived
    relations (DC-1); `ampersand validate` creates them as well, which checks
    that every one of them is accepted.
+   Boundary: the names are made unique among the schema views; a relation that a
+   script happens to call `conj_3` or `ifc_...` would give a table with the name
+   of a view, which the database refuses at install. No model has such a name.
 6. The evidence that the Oracle lane of the Landeneisenregister can follow the
    model: the view below is generated from
    `testing/derivedViews/constraints/constraints.adl` with `--schema-views`, and

@@ -7,6 +7,7 @@ module Ampersand.FSpec.FSpecAux
     isViewPlug,
     derivedViewPlugs,
     hasUniqueConstraint,
+    effectiveCrud,
   )
 where
 
@@ -14,6 +15,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug (suitableAsKey)
+import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import RIO.List (repeat)
 
 -- return table name and source and target column names for relation dcl
@@ -67,6 +69,15 @@ isViewPlug fSpec plug = case (mainItem plug, dLkpTbl plug) of
 --   order in which the views can be created (issue #1744).
 derivedViewPlugs :: FSpec -> [(PlugSQL, Relation, Expression)]
 derivedViewPlugs fSpec = [(fst (getRelationTableInfo fSpec rel), rel, definition) | (rel, definition) <- fDerivedViews fSpec]
+
+-- | The CRUD rights of an interface object as the prototype gets them: what the script asks
+--   for, except on a field whose term is a derived relation that is a view, or its converse,
+--   which can only be read (issue #1744). Both @interfaces.json@ and @openapi.json@ use this,
+--   so the API description advertises no write that the prototype refuses.
+effectiveCrud :: FSpec -> ObjectDef -> Cruds
+effectiveCrud fSpec od = case getExpressionRelation (conjNF () (objExpression od)) of
+  Just (_, decl, _, _) | isViewRelation fSpec decl -> (objcrud od) {crudC = False, crudU = False, crudD = False}
+  _ -> objcrud od
 
 -- | Whether the generated database structure puts a UNIQUE constraint on this column of
 --   this table, with @--foreign-keys@ on (issue #1744): a column that holds one side of a

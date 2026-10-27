@@ -27,6 +27,7 @@ import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
 import Ampersand.FSpec (FSpec (..))
 import Ampersand.FSpec.Oscillation (oscillationWarnings)
+import Ampersand.FSpec.SQL (derivedViewIsMergeable)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
@@ -446,7 +447,15 @@ doOrDie theAction = do
             <> fullName (enfRel e)
             <> ": "
             <> ( if enfStorage e == DerivedView
-                   then "a view in the database, read by " <> tshow (readers e) <> " conjunct" <> (if readers e == 1 then "." else "s.")
+                   then
+                     "a view in the database, read by "
+                       <> tshow (readers e)
+                       <> " conjunct"
+                       <> (if readers e == 1 then "" else "s")
+                       <> ( if derivedViewIsMergeable a (enfExpr e)
+                              then ", merged into every query that reads it."
+                              else ", computed in full at every use (its SQL has a set operation, a recursion or a DISTINCT); --materialize keeps it stored."
+                          )
                    else "a stored table, maintained by the ExecEngine."
                )
       failOnOsc <- view failOnOscillationL

@@ -17,6 +17,7 @@ REPRESENT Naam, Paspoortnummer, Tekst TYPE ALPHANUMERIC
 REPRESENT Leeftijd TYPE INTEGER
 CLASSIFY Ambtenaar ISA Persoon
 RELATION dienst[Ambtenaar*Stad] [UNI]
+RELATION chef[Persoon*Ambtenaar] [UNI]
 
 POPULATION naam CONTAINS [ ("p1","Anna"), ("p2","Bert"), ("p3","Cees") ]
 POPULATION woontIn CONTAINS [ ("p1","Utrecht"), ("p2","Utrecht"), ("p3","Zwolle") ]
@@ -27,6 +28,7 @@ POPULATION burgemeester CONTAINS [ ("Zwolle","p3") ]
 POPULATION leeftijd CONTAINS [ ("p1",31), ("p2",42) ]
 POPULATION label CONTAINS [ ("Utrecht","Domstad") ]
 POPULATION dienst CONTAINS [ ("p3","Zwolle") ]
+POPULATION chef CONTAINS [ ("p1","p3") ]
 
 RULE BaasWoontErgens : baas |- baas;woontIn;woontIn~
 RULE BurgemeesterWoontInStad : burgemeester |- woontIn~

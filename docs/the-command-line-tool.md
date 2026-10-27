@@ -148,7 +148,10 @@ which keeps generation and publication consistent. See the prototype documentati
 
 `--derived-views` generates every derived relation (`ENFORCE r := term`) as a database view
 on the SQL of its term, instead of a table that the ExecEngine maintains. A relation named
-in `--materialize` (repeat the option, or separate names with commas) stays a stored table.
+in `--materialize` (repeat the option, or separate names with commas) stays a stored table;
+the compiler's report per derived relation says whether the database merges a view into the
+queries that read it or computes it in full at every use, and how many rules read it, which
+is what the choice turns on.
 See [Derived relations as views](reference-material/syntax-of-ampersand.md#derived-relations-as-views)
 for what becomes a view, what stays stored, and what a prototype framework needs for it.
 
