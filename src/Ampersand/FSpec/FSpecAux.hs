@@ -13,7 +13,6 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ToFSpec.ADL2Plug (suitableAsKey)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import RIO.List (repeat)
 
