@@ -19,6 +19,7 @@ module Ampersand.ADL1.DerivedViews
     decideDerivedViews,
     viewDefinitions,
     viewDefinitionsInOrder,
+    rulesInEnforceOrder,
     inlineViews,
     materialises,
     readsAClosure,
@@ -188,7 +189,14 @@ viewDefinitions enfs = [(enfRel e, enfExpr e) | e <- enfs, enfStorage e == Deriv
 --   a definition comes after every view it reads. The decision excludes cycles,
 --   so the order exists; a remainder, which cannot occur, is appended as it is.
 viewDefinitionsInOrder :: [(Relation, Expression)] -> [(Relation, Expression)]
-viewDefinitionsInOrder = go []
+viewDefinitionsInOrder = inDependencyOrder fst snd
+
+-- | Items that each define a relation by a term, in an order in which every item
+--   comes after the items whose relation its term reads. The items that read no
+--   relation of the remaining items go first, repeatedly; a remainder in which
+--   every item reads another (a cycle) is appended in the order given.
+inDependencyOrder :: (a -> Relation) -> (a -> Expression) -> [a] -> [a]
+inDependencyOrder rel term = go []
   where
     go done [] = reverse done
     go done todo =
@@ -196,7 +204,27 @@ viewDefinitionsInOrder = go []
         ([], _) -> reverse done <> todo
         (rdy, rest) -> go (reverse rdy <> done) rest
       where
-        ready (_, definition) = not (any (`elem` map fst todo) (Set.toList (bindedRelationsIn definition)))
+        ready item = not (any (`elem` map rel todo) (Set.toList (bindedRelationsIn (term item))))
+
+-- | The rules a role maintains, in the order in which the ExecEngine does the least
+--   work (issue #1749): first the rules of the ENFORCE statements, each statement
+--   after the statements whose relation its term reads, and then the other rules in
+--   the order given. The ExecEngine runs the rules of a round in this order and applies
+--   every insertion at once, so a derived relation that reads another is computed
+--   after it in the same round, and a chain of derived relations fills in one round
+--   instead of one round per link. The order changes no fixpoint: the ExecEngine
+--   repeats its rounds until no rule has a violation.
+rulesInEnforceOrder :: [AEnforce] -> [Rule] -> [Rule]
+rulesInEnforceOrder enfs rules = statementRules <> others
+  where
+    maintained = Set.fromList rules
+    statementRules =
+      [ r
+        | e <- inDependencyOrder enfRel enfExpr enfs,
+          r <- L.sort (enfRules e),
+          r `Set.member` maintained
+      ]
+    others = filter (`notElem` concatMap enfRules enfs) rules
 
 -- | A term in which every view relation is replaced by its definition, until
 --   no view relation is left. Views do not refer to themselves (see
