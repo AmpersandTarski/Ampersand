@@ -2,7 +2,7 @@
 
 Supports the law set `tceDerivRules` in `src/Ampersand/FSpec/ToFSpec/NormalForms.hs`:
 the five absorption laws with which the normaliser rewrites terms.
-It is the artefact of claim PRF-13 in `docs/proofs/README.md`.
+It is the artefact of claim PRF-22 in `docs/proofs/README.md`.
 
 `RewriteLaws.lean` states the laws over relations as sets of pairs.
 The complement is typed as Ampersand types it: `-s` is `V − s`,

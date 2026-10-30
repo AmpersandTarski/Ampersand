@@ -1114,7 +1114,7 @@ tceDerivRules =
       "r[A*B]\\/-r[A*B] =  V[A*B]", --  Tautology
       "-r[A*B]\\/r[A*B] = V[A*B]", --  Tautology
       -- The five absorption laws are machine-checked in proofs/rewriteLaws/RewriteLaws.lean
-      -- (absorb1 to absorb5, claim PRF-13). The second one used to read (r\/-s)/\s = s-r,
+      -- (absorb1 to absorb5, claim PRF-22). The second one used to read (r\/-s)/\s = s-r,
       -- which is false: for a pair in both r and s the left side holds and the right side does not.
       "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]", --  Absorption
       "(r[A*B]\\/-s[A*B])/\\ s[A*B] = r[A*B]/\\s[A*B]", --  Absorption
