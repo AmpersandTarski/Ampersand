@@ -1,0 +1,7 @@
+testCmds:
+  - command: ampersand validate --foreign-keys --schema-views
+    exitcode: 0
+  - command: ampersand validate --foreign-keys --schema-views --derived-views
+    exitcode: 0
+  - command: ampersand proto --no-frontend --foreign-keys --schema-views
+    exitcode: 0

@@ -5,6 +5,7 @@ import Ampersand.Basics
 import Ampersand.Core.ParseTree (contextDatabases, databaseOfLabel, ownDatabase)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
+import Ampersand.FSpec.FSpecAux (derivedViewPlugs, isViewPlug)
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaPlugs)
 import Ampersand.FSpec.SQL
 import Ampersand.FSpec.ToFSpec.ADL2Plug (foreignTable)
@@ -22,11 +23,18 @@ databaseStructureSql fSpec =
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment =
-  concatMap structure [p | InternalPlug p <- plugInfos fSpec]
+  concatMap structure [p | InternalPlug p <- plugInfos fSpec, not (isViewPlug fSpec p)]
     -- delta tables for incremental violation maintenance (issue #1684):
     -- one two-column table per relation occurring in a conjunct, holding the
     -- transaction's touched pairs; empty outside transactions.
     <> concatMap (tableSpec2Queries withComment . plug2TableSpec) (deltaPlugs fSpec)
+    -- the views of the derived relations (issue #1744), after every table they
+    -- read, and each after the views it reads.
+    <> [createDerivedViewSql withComment fSpec plug rel definition | (plug, rel, definition) <- derivedViewPlugs fSpec]
+    -- the declarative constraints (issue #1744), after every table they name
+    <> (if fForeignKeys fSpec then constraintQueries fSpec (isJust . foreignTable roots) else [])
+    -- the named external schema (issue #1744): a view per conjunct and per interface field
+    <> (if fSchemaViews fSpec then schemaViewQueries withComment fSpec else [])
     <> additionalDatabaseSettings
   where
     -- A context creates the tables of its own database: its own things and those of the contexts that land on it.

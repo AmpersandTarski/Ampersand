@@ -19,6 +19,7 @@ module Ampersand.ADL1.P2A_Converters
 where
 
 import Algebra.Graph.AdjacencyMap
+import Ampersand.ADL1.DerivedViews
 import Ampersand.ADL1.Expression
 import Ampersand.Basics hiding (conc, guard, join, set)
 import Ampersand.Classes
@@ -491,10 +492,68 @@ pCtx2aCtx
       warnUnusedConcepts actx -- Warn if there are concepts defined that are not used in relations
       -- Note: warnCartesianProducts is now emitted by pCtx2Fspec, because it needs FSpec
       -- (for normalization and SQL generation) when --verbose is active.
+      actx' <- markDerivedViews actx -- Under --derived-views: which ENFORCE r := term statements become views (issue #1744)
       -- In a system of contexts, the interfaces of another context have served their purpose now:
       -- they told the type checker which concepts hold objects. They belong to the application of their own context.
-      return actx {ctxifcs = filter (isNothing . ownerLabel . name) (ctxifcs actx)}
+      return actx' {ctxifcs = filter (isNothing . ownerLabel . name) (ctxifcs actx')}
     where
+      -- \| Decide for every `ENFORCE r := term` whether `r` becomes a database view (issue #1744).
+      --   A view statement loses its ExecEngine rules. Each relation that stays stored for a
+      --   reason gets a warning, and so does a write to a view relation that the script asks for.
+      markDerivedViews :: A_Context -> Guarded A_Context
+      markDerivedViews actx
+        | not flagOn = pure actx
+        | otherwise = addWarnings warnings (pure actx')
+        where
+          flagOn = view derivedViewsL env
+          allEnfs = ctxEnforces actx <> concatMap ptenfs (ctxpats actx)
+          allPops = ctxpopus actx <> concatMap ptups (ctxpats actx)
+          decisions = decideDerivedViews flagOn (view materializeL env) (view forceViewL env) (isJust . ownerLabel . name) allPops otherRules fieldTerms allEnfs
+          -- The rules that are not the Compute rules of a `:=` statement; those depend on the decision.
+          otherRules =
+            Set.toList (udefrules actx `Set.union` proprules actx `Set.union` identityRules actx `Set.union` unionRules actx)
+              <> [r | e <- allEnfs, notDefining e, r <- enfRules e]
+          notDefining e = case enfOp e of
+            IsSameSet {} -> False
+            _ -> True
+          fieldTerms =
+            [ ("the field " <> maybe "(unnamed)" text1ToText (objPlainName o) <> " of interface " <> fullName ifc, objExpression o)
+              | ifc <- ctxifcs actx,
+                o <- allFields (ifcObj ifc)
+            ]
+          viewRels = [enfRel e | (e, AsView) <- decisions]
+          mark e
+            | IsSameSet {} <- enfOp e,
+              enfRel e `elem` viewRels =
+                e {enfStorage = DerivedView, enfRules = []}
+            | otherwise = e
+          actx' =
+            actx
+              { ctxEnforces = map mark (ctxEnforces actx),
+                ctxpats = [p {ptenfs = map mark (ptenfs p)} | p <- ctxpats actx]
+              }
+          defs = viewDefinitions (ctxEnforces actx' <> concatMap ptenfs (ctxpats actx'))
+          warnings =
+            [mkDerivedRelationStoredWarning (origin e) (fullName (enfRel e)) reason | (e, Stored reason) <- decisions]
+              <> [mkDerivedViewClosureWarning (origin e) (fullName (enfRel e)) | e <- allEnfs, enfStorage (mark e) == DerivedView, readsAClosure defs (enfExpr e)]
+              <> [ mkDerivedViewWriteWarning (origin o) (fullName rel) ("The field " <> maybe "(unnamed)" text1ToText (objPlainName o) <> " of interface " <> fullName ifc <> " (" <> crudText (objcrud o) <> ")")
+                   | ifc <- ctxifcs actx',
+                     o <- allFields (ifcObj ifc),
+                     Just (_, rel, _, _) <- [getExpressionRelation (objExpression o)],
+                     rel `elem` viewRels,
+                     crudC (objcrud o) || crudU (objcrud o) || crudD (objcrud o)
+                 ]
+              <> [ mkDerivedViewWriteWarning (origin r) (fullName rel) ("The violation text of rule " <> fullName r)
+                   | r <- Set.toList (allRules actx'),
+                     Just (PairView segs) <- [rrviol r],
+                     rel <- viewRels,
+                     any (mentionsWrite rel) (NE.toList segs)
+                 ]
+          crudText c = T.pack [if crudC c then 'C' else 'c', if crudR c then 'R' else 'r', if crudU c then 'U' else 'u', if crudD c then 'D' else 'd']
+          allFields o = o : concatMap allFields (fields o)
+          mentionsWrite rel seg = case seg of
+            PairViewText _ txt -> any (`T.isInfixOf` txt) [cmd <> ";" <> fullName rel <> ";" | cmd <- ["InsPair", "DelPair"]]
+            _ -> False
       -- The label of the context that owns a thing, if that is another context than the compiled one.
       ownerLabel :: Name -> Maybe Text
       ownerLabel nm = case nameSpaceOf nm of
@@ -1241,6 +1300,7 @@ pCtx2aCtx
                   enfOp = oper,
                   enfExpr = expr,
                   enfPatName = mPat,
+                  enfStorage = StoredRelation, -- decided for the whole context in decideDerivedViews
                   enfRules = case oper of
                     IsSuperSet {} -> insPairs
                     IsSubSet {} -> delPairs

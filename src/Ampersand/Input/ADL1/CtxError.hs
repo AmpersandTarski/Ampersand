@@ -58,6 +58,9 @@ module Ampersand.Input.ADL1.CtxError
     mkTurtleWarning,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
+    mkDerivedRelationStoredWarning,
+    mkDerivedViewClosureWarning,
+    mkDerivedViewWriteWarning,
     mkUnusedInclusionWarning,
     mkNoApplicationWarning,
     mkOrphanedRepresentWarning,
@@ -779,6 +782,38 @@ mkTurtleWarning orig msg =
 
 mkCrudWarning :: P_Cruds -> [Text] -> Warning
 mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
+
+-- | Under @--derived-views@ a derived relation stays a stored table for a reason (issue #1744).
+mkDerivedRelationStoredWarning :: Origin -> Text -> Text -> Warning
+mkDerivedRelationStoredWarning orig rel reason =
+  Warning orig
+    $ "The derived relation "
+    <> rel
+    <> " stays a stored table, maintained by the ExecEngine, because "
+    <> reason
+    <> "."
+
+-- | A view whose definition holds a Kleene closure recomputes the whole closure at every use (issue #1744).
+mkDerivedViewClosureWarning :: Origin -> Text -> Warning
+mkDerivedViewClosureWarning orig rel =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ "The derived relation " <> rel <> " is a view whose definition holds a closure (* or +).",
+        "The database recomputes the whole closure every time a query reads the view.",
+        "Name the relation in --materialize to keep it stored, if that costs less."
+      ]
+
+-- | Something in the script writes to a derived relation that is a view (issue #1744).
+mkDerivedViewWriteWarning :: Origin -> Text -> Text -> Warning
+mkDerivedViewWriteWarning orig rel what =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ what <> " writes to the derived relation " <> rel <> ", which is a view under --derived-views.",
+        "A view cannot be written: the prototype refuses the write, or the database does.",
+        "Name the relation in --materialize to keep it a stored table, or take the write away."
+      ]
 
 mkUnusedCptDefWarning :: AConceptDef -> Warning
 mkUnusedCptDefWarning cptDef =
