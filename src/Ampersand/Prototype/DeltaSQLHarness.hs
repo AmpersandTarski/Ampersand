@@ -29,7 +29,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
-import Ampersand.FSpec.FSpecAux (getRelationTableInfo)
+import Ampersand.FSpec.FSpecAux (getRelationTableInfo, isViewRelation)
 import Ampersand.FSpec.Incremental.DeltaTerms
 import Ampersand.FSpec.Incremental.Synthetic
 import Ampersand.FSpec.SQL (sqlQuery, sqlQuerySharedWithinLimit)
@@ -71,7 +71,8 @@ runDeltaSqlHarness replay scale txCount refEvery seed fSpec = do
           | (nm, term) <- conjTerms,
             Just dqs <- [deltaQueriesFor term]
         ]
-      termRels = Set.toList . Set.unions $ map (bindedRelationsIn . snd) conjTerms
+      -- a view is read and not written, so it is not among the relations the harness mutates (issue #1744)
+      termRels = filter (not . isViewRelation fSpec) . Set.toList . Set.unions $ map (bindedRelationsIn . snd) conjTerms
       scriptPops = ctxpopus ctx <> concatMap ptups (patterns ctx)
       scriptShadow :: Shadow
       scriptShadow =

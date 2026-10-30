@@ -1,0 +1,72 @@
+CONTEXT DerivedViews
+-- Regression test for issue #1744: a derived relation (ENFORCE r := term) as a database view.
+-- `ampersand validate --derived-views` compares every generated query with the evaluator of
+-- the compiler, so a rule or interface that reads a view inside a composite term checks that
+-- the view selects the pairs that the definition denotes.
+
+RELATION land[Eis*Land] [UNI]
+RELATION sector[Eis*Sector] [UNI]
+RELATION naam[Eis*Tekst] [UNI]
+RELATION parent[Naam*Naam]
+RELATION productNaam[Product*Naam]
+RELATION kenmerk[Eis*Kenmerk]
+RELATION sessieSector[SESSION*Sector] [UNI]
+
+POPULATION land CONTAINS [ ("e1","AR"), ("e2","AR"), ("e4","BR") ]
+POPULATION sector CONTAINS [ ("e1","ZZ"), ("e2","BB"), ("e3","ZZ"), ("e4","ZZ"), ("e5","BB") ]
+POPULATION naam CONTAINS [ ("e1","een"), ("e2","twee"), ("e3","drie"), ("e4","vier"), ("e5","vijf") ]
+POPULATION parent CONTAINS [ ("Malus domestica","Malus"), ("Malus","Rosaceae"), ("Pyrus communis","Pyrus"), ("Pyrus","Rosaceae") ]
+POPULATION productNaam CONTAINS [ ("appel","Malus domestica"), ("peer","Pyrus communis"), ("roos","Rosaceae") ]
+POPULATION kenmerk CONTAINS [ ("e1","k1"), ("e3","k1"), ("e3","k2") ]
+
+-- a view: an Eis without a Land is a basiseis (a one-SELECT view, left as it is)
+RELATION basiseis[Eis*Eis] [PROP]
+ENFORCE basiseis := I[Eis] - land;land~
+
+-- a view that reads another view
+RELATION basisInSector[Eis*Sector]
+ENFORCE basisInSector := basiseis;sector
+
+-- a view with a closure (a WITH RECURSIVE view)
+RELATION onder[Naam*Naam]
+ENFORCE onder := parent~*
+
+-- a view on the closure view
+RELATION productDekt[Product*Naam]
+ENFORCE productDekt := productNaam;onder
+
+-- a view with a union (a set operation, keeps its DISTINCT)
+RELATION zzOfBasis[Eis*Eis] [PROP]
+ENFORCE zzOfBasis := basiseis \/ (I[Eis] /\ sector;"ZZ";sector~)
+
+-- a derived relation with a POPULATION of its own stays a stored table (with a warning)
+RELATION bewaard[Eis*Eis] [PROP]
+ENFORCE bewaard := I[Eis] /\ kenmerk;kenmerk~
+POPULATION bewaard CONTAINS [ ("e5","e5") ]
+
+-- an insert-only ENFORCE is not a definition and stays as it is
+RELATION gezien[Eis*Kenmerk]
+ENFORCE gezien >: kenmerk
+
+-- rules that read the views inside composite terms
+RULE BasisHeeftSector : basiseis |- sector;sector~
+RULE BasisInSectorIsSector : basisInSector |- sector
+RULE OnderIsReflexief : I[Naam] |- onder
+RULE ProductDektZichzelf : productNaam |- productDekt
+RULE ZzOfBasisDektBasis : basiseis |- zzOfBasis
+RULE Ongeldig : basiseis;land |- -V
+
+-- an interface that reads a view (read-only), and a session-scoped read through a view
+INTERFACE Eisen : "_SESSION";V[SESSION*Eis] cRud BOX
+  [ naam : naam cRud
+  , basis : basiseis cRud
+  , basisSector : basisInSector cRud
+  , alles : zzOfBasis cRud
+  ]
+INTERFACE Producten : "_SESSION";V[SESSION*Product] cRud BOX
+  [ dekt : productDekt cRud
+  ]
+INTERFACE MijnBasis : "_SESSION";sessieSector;basisInSector~ cRud BOX
+  [ naam : naam cRud
+  ]
+ENDCONTEXT

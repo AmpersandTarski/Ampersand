@@ -35,7 +35,11 @@ data RelationJson = RelationJson
     -- | Optional (issue #1684): the table that holds this relation's touched
     --   pairs during a transaction, for delta-scoped re-evaluation. Present
     --   only for relations that occur in some conjunct.
-    relJSONdeltaTable :: !(Maybe Text)
+    relJSONdeltaTable :: !(Maybe Text),
+    -- | How the relation is stored (issue #1744): @"table"@, or @"view"@ for a derived
+    --   relation that is generated as a database view. A view is read like a table and
+    --   cannot be written; a runtime that does not know this field treats it as a table.
+    relJSONstorage :: !Text
   }
   deriving (Generic, Show)
 
@@ -90,12 +94,14 @@ instance JSON Relation RelationJson where
         relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ decDefaults dcl,
         relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl,
         relJSONdeltaTable =
-          if isJust (lookup dcl (allConjsPerDecl fSpec))
+          if isJust (lookup dcl (allConjsPerDecl fSpec)) && not isView
             then Just (deltaTableName dcl)
-            else Nothing
+            else Nothing,
+        relJSONstorage = if isView then "view" else "table"
       }
     where
       bindedExp = EDcD dcl
+      isView = isViewRelation fSpec dcl
       tableInfos = map (relTableInfo env fSpec dcl) (relationTableInfos fSpec dcl)
       is :: SrcOrTgt -> ARelDefault -> Bool
       is st x = case x of

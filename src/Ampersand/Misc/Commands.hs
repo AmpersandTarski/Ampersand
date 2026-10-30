@@ -10,6 +10,9 @@ module Ampersand.Misc.Commands
   )
 where
 
+{-getProgName,-}
+import Ampersand.ADL1 (AEnforce (..), EnforceOperator (..), EnforceStorage (..))
+import Ampersand.ADL1.DerivedViews (inlineViews, materialises)
 import Ampersand.Basics
 import Ampersand.Commands.Daemon
 import Ampersand.Commands.Deploy
@@ -23,9 +26,9 @@ import Ampersand.Commands.Proto
 import Ampersand.Commands.Serve
 import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
-{-getProgName,-}
-import Ampersand.FSpec (FSpec)
+import Ampersand.FSpec (FSpec (..))
 import Ampersand.FSpec.Oscillation (oscillationWarnings)
+import Ampersand.FSpec.SQL (derivedViewIsMergeable)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
@@ -434,6 +437,38 @@ doOrDie theAction = do
   case mFSpec of
     Checked a ws -> do
       mapM_ (logWarn . displayShow) ws
+      derivedOn <- view derivedViewsL
+      let readers e = maybe 0 length (lookup (enfRel e) (allConjsPerDecl a))
+      when derivedOn
+        $ forM_ [e | e <- allEnforces a, IsSameSet {} <- [enfOp e]]
+        $ \e ->
+          logInfo
+            . display
+            $ "Derived relation "
+            <> fullName (enfRel e)
+            <> ": "
+            <> ( if enfStorage e == DerivedView
+                   then
+                     "a view in the database, read by "
+                       <> tshow (readers e)
+                       <> " conjunct"
+                       <> (if readers e == 1 then "" else "s")
+                       <> ( if derivedViewIsMergeable a (enfExpr e)
+                              then ", merged into every query that reads it."
+                              else ", computed in full at every use (its SQL has a set operation, a recursion or a DISTINCT); --materialize keeps it stored."
+                          )
+                   else "a stored table, maintained by the ExecEngine."
+               )
+      -- The shape test that decided the storage ('materialises') against the SQL of the view:
+      -- the two are written apart, and the experiment of issue #1744 found them apart once.
+      when derivedOn
+        $ forM_ [e | e <- allEnforces a, enfStorage e == DerivedView, derivedViewIsMergeable a (enfExpr e) == materialises (inlineViews (fDerivedViews a) (enfExpr e))]
+        $ \e ->
+          logWarn
+            . display
+            $ "The shape test of the compiler and the SQL of the view of "
+            <> fullName (enfRel e)
+            <> " disagree on whether the database merges the view; the view may cost more than reported. Please report this at issue #1744."
       failOnOsc <- view failOnOscillationL
       failOnCart <- view failOnCartesianProductL
       env <- ask
