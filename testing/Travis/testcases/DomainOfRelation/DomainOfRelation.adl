@@ -1,0 +1,62 @@
+CONTEXT DomainOfRelation IN ENGLISH
+
+PURPOSE CONTEXT DomainOfRelation MARKDOWN
+{+ The term `I[A] /\ e;e~` denotes the domain of `e` on the atoms of `A`: the pairs (x,x) such that
+   x is in A and has a partner in e. The SQL generator translates it as a selection on the concept
+   table of A (claim PRF-21, issue #1748), where the general translation would compute e;e~ first.
+   This script pins the outcome of every shape the special case covers, on a population in which
+   the general translation and the special case would differ in work: the target "shared" has
+   three sources, so e;e~ holds nine rows for it, while its domain holds three atoms.
+   `ampersand validate` compares the generated SQL with the compiler's own evaluator.
++}
+
+CONCEPT A ""
+CONCEPT B ""
+CONCEPT Sub "" 
+CLASSIFY Sub ISA A
+
+RELATION e[A*B]
+POPULATION e CONTAINS
+  [ ("a1","shared"), ("a2","shared"), ("a3","shared"), ("a4","own"), ("s1","shared") ]
+
+POPULATION A CONTAINS [ "a1", "a2", "a3", "a4", "a5", "s1", "s2" ]
+POPULATION Sub CONTAINS [ "s1", "s2" ]
+POPULATION B CONTAINS [ "shared", "own", "unused" ]
+
+-- The domain of e, both orders of the intersection.
+RELATION domE[A*A]
+POPULATION domE CONTAINS [ ("a1","a1"), ("a2","a2"), ("a3","a3"), ("a4","a4"), ("s1","s1") ]
+RULE domainLeft : I[A] /\ e;e~ = domE
+RULE domainRight : e;e~ /\ I[A] = domE
+
+-- The range of e, both orders of the intersection.
+RELATION rngE[B*B]
+POPULATION rngE CONTAINS [ ("shared","shared"), ("own","own") ]
+RULE rangeLeft : I[B] /\ e~;e = rngE
+RULE rangeRight : e~;e /\ I[B] = rngE
+
+-- The domain restricted to a smaller concept: the concept table of Sub does the restriction.
+RELATION domSub[Sub*Sub]
+POPULATION domSub CONTAINS [ ("s1","s1") ]
+RULE domainSub : I[Sub] /\ e;e~ = domSub
+
+-- A composite term in the place of e.
+RELATION f[B*A]
+POPULATION f CONTAINS [ ("shared","a5"), ("own","a1") ]
+RELATION domEF[A*A]
+POPULATION domEF CONTAINS [ ("a1","a1"), ("a2","a2"), ("a3","a3"), ("a4","a4"), ("s1","s1") ]
+RULE domainComposite : I[A] /\ (e;f);(e;f)~ = domEF
+
+-- The complement variant keeps its own translation (atoms of A without a partner).
+RELATION noE[A*A]
+POPULATION noE CONTAINS [ ("a5","a5"), ("s2","s2") ]
+RULE noPartner : I[A] /\ -(e;e~) = noE
+
+-- The domain inside a composition, as the FC5 model writes it.
+RELATION g[A*A]
+POPULATION g CONTAINS [ ("a1","a5"), ("a5","a2"), ("a2","s2") ]
+RELATION gFromDom[A*A]
+POPULATION gFromDom CONTAINS [ ("a1","a5"), ("a2","s2") ]
+RULE composed : (I[A] /\ e;e~);g = gFromDom
+
+ENDCONTEXT

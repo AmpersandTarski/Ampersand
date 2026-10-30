@@ -241,7 +241,7 @@ evaluated in full when a transaction touches a relation without a candidate
 query.
 
 **The compiler writes a candidate term with one union per node, and computes every repeated subterm of a candidate query once, as a view in a WITH clause.**
-*DC-21 · valid · 2026-10-21 · origin: issues #1728 and #1739, claims PRF-16 to PRF-18*
+*DC-21 · valid · 2026-10-30 · origin: issues #1728, #1739 and #1748, claims PRF-16 to PRF-18*
 
 `candidateTerm` in `DeltaTerms.hs` follows the equations of the candidate
 calculus (`candg` in `Candidates.thy`) and leaves out a branch in which the
@@ -292,7 +292,14 @@ them in a WITH clause.
    violation queries had a repeated subterm; sharing them made the total
    3.5 times slower with DISTINCT views (26.9 s against 7.6 s on 10.6) and
    left it unchanged without DISTINCT, while one query became 15 times
-   slower in both forms.
+   slower in both forms. The mechanism behind both numbers was measured on
+   30 October 2026 on MariaDB 10.6.27 and 12.3.3, with one definition
+   referenced six times (issue #1748): a WITH definition without DISTINCT is
+   merged into every reference, like a view, and a definition with DISTINCT
+   is materialised anew at every reference, six temporary tables in one
+   plan. A WITH clause shortens the text of a query and shares none of its
+   computation. So a derived relation that one query reads many times is
+   cheaper as a stored table than as a view or a WITH definition.
 
 *Impact on the specification:* none.
 

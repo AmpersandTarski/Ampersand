@@ -278,6 +278,59 @@ conjuncts for the base relations of a view; `conjuncts.json` carries no
 *Impact in production:* fewer conjuncts in `conjuncts.json` for a model with
 derived relations that carry properties.
 
+**The rules a role maintains are listed with the rules of the ENFORCE statements first, each statement after the statements whose relation its term reads, and the other rules after them in the order of their names.**
+*DC-18 · valid · 2026-10-30 · origin: issue #1749, the ExecEngine pass of the FC5 deployment of 30 October 2026*
+
+`rulesInEnforceOrder` in `Ampersand.ADL1.DerivedViews` orders the list that
+`roles.json` carries per role; `inDependencyOrder` is the order in which the
+views are created (`viewDefinitionsInOrder`), generalised to any item that
+defines a relation by a term.
+
+*Considerations:*
+
+1. The ExecEngine runs the rules it maintains in rounds until none has a violation.
+   Within a round it takes the rules in the order of `roles.json` and applies every
+   `InsPair` at once, so a rule later in the round sees what an earlier rule
+   inserted. The list was the `Set` of rules in the order of their names, and a
+   `Compute` rule is named after the hash of its label, so the order was arbitrary
+   with respect to what reads what. The FC5 derives `eisSamenvoegbaar` in five
+   stored steps that each read the previous one; in hash order the last step ran
+   its query, of more than 405 seconds, while the first step was still empty, and
+   the chain needed a round per link, each round running every affected query in
+   full.
+2. The order changes no result: the fixpoint of the rounds is the same whatever
+   the order, because the ExecEngine repeats until no rule has a violation. Only
+   the number of rounds changes, so this is a design choice and not a proof
+   obligation. The rules a round checks are the rules the transaction has
+   affected when the round starts (`Transaction::runExecEngine` in the framework
+   takes `getAffectedRules` once per round). So the chain fills in one round when
+   the transaction touches a relation that every link reads, as the import of
+   the FC5 does, where every link also reads `product`, `kenmerk` or another base
+   relation; a transaction that touches only the first link's input still brings
+   one link per round into the loop, and the order gains nothing there.
+3. The rules of the ENFORCE statements come before the other rules, because an
+   automated rule that a modeller writes usually reads a derived relation and
+   acts on it (the FC5 merges requirements that `eisSamenvoegbaar` pairs), and
+   seldom the other way round. A statement whose term reads its own relation, or a
+   cycle of statements, keeps the order of the script.
+4. Ordering in the prototype framework was set aside: the framework knows the
+   rules and not the terms of the statements that generated them, and it already
+   runs the rules in the order the compiler gives, so the compiler decides and no
+   framework release is needed.
+5. The alternative set aside is to leave the order to the ExecEngine's rounds and
+   lower the cost of a query instead (issue #1748 does that for `I[A] /\ e;e~`).
+   Both apply: a cheaper query still runs once per round, and the rounds are what
+   this choice takes away.
+
+*Impact on the specification:* none.
+
+*Impact in production:* `roles.json` lists the `Compute` rules of a chain of
+derived relations in dependency order; a chain whose links a transaction all
+affects, and that needed one round per link, fills in one round. There is no
+regression test that reads the order: the test
+runner runs commands and checks exit codes, so the order was observed on a
+three-link chain and on the FC5 model and is recorded in the pull request.
+
 ## The database as guardian
 
 **With `--foreign-keys` the database structure carries a FOREIGN KEY from every column that holds an atom to the key column of its concept table, where that key is a PRIMARY KEY, named `fk_<table>_<column>`, `RESTRICT` on delete and update; no UNIQUE constraint, so a multiplicity stays a conjunct.**
