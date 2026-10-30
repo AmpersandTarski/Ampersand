@@ -26,8 +26,9 @@ data Concept = Concept
     cptJSONaffectedConjuncts :: [Text],
     cptJSONinterfaces :: [Text],
     cptJSONdefaultViewName :: Maybe Text,
-    -- | Nothing for a concept that has no concept table of its own: ONE, and
-    --   any concept whose atoms no generated query enumerates (issue #1672).
+    -- | Nothing for a concept that has no concept table of its own: ONE, a
+    --   MULTITABLE union concept, and a concept of a typology of values that
+    --   stores no relation and that no generated query enumerates (issue #1672).
     cptJSONconceptTable :: Maybe TableCols,
     -- | Every table that holds a row for an atom of this concept, with the
     --   columns of that row that name the atom (issue #1716). In a typology
@@ -108,9 +109,12 @@ instance JSON A_Concept Concept where
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
         cptJSONinterfaces = fmap fullName . filter hasAsSourceCpt . interfaceS $ fSpec,
         cptJSONdefaultViewName = fmap fullName . getDefaultViewForConcept fSpec $ cpt,
-        cptJSONconceptTable = case conceptTablesOf fSpec cpt of
-          [] -> Nothing -- this concept has no concept table; see issue #1672
-          own : _ -> Just own,
+        -- The table of a generalisation is not the table of the concept: a runtime
+        -- that took it for one would count every atom of the generalisation as an
+        -- atom of this concept (issue #1727).
+        cptJSONconceptTable = case (lookupCpt fSpec cpt, conceptTablesOf fSpec cpt) of
+          (_ : _, own : _) -> Just own
+          _ -> Nothing, -- this concept has no concept table of its own; see issue #1672
         cptJSONconceptTables = conceptTablesOf fSpec cpt,
         cptJSONallAtomsQuery = case unionMembersIn (conceptUnions fSpec) cpt of
           Nothing -> Nothing

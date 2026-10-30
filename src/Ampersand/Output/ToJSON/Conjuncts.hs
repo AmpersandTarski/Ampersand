@@ -5,6 +5,8 @@
 module Ampersand.Output.ToJSON.Conjuncts (Conjuncts) where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.DerivedViews (inlineViews)
+import Ampersand.FSpec.FSpecAux (isViewRelation)
 import Ampersand.FSpec.Incremental.CostProfile (CostProfile (..), costClassText, costProfileFor)
 import Ampersand.FSpec.Incremental.DeltaTerms (deltaQueriesFor, deltaTableName, withDeltaPlugs)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
@@ -22,10 +24,12 @@ data JSONConjunct = JSONConjunct
     -- | Optional (issue #1684): per relation occurring in this conjunct, the
     --   candidate query for delta-scoped re-evaluation. Nothing when the term
     --   falls outside the supported class; runtimes that do not know this
-    --   field keep full re-evaluation. A relation whose candidate query is
-    --   longer than the compiler hands to a database is left out of the list
-    --   (issue #1728); the runtime evaluates the conjunct in full when a
-    --   transaction touches a relation without a candidate query.
+    --   field keep full re-evaluation. A candidate query computes every
+    --   repeated subterm once, in a WITH clause, so its length is linear in
+    --   the size of the violation term (issue #1728, claim PRF-18). A
+    --   relation whose candidate query is still longer than the compiler
+    --   hands to a database is left out of the list; the runtime evaluates
+    --   the conjunct in full when a transaction touches such a relation.
     cnjJSONdeltaQueries :: Maybe [JSONDeltaQuery],
     -- | The compile-time cost profile of the violation query (issue #1692,
     --   contract DC-17): the shape class plus the tables the query reads in
@@ -71,9 +75,13 @@ instance JSON Conjunct JSONConjunct where
         cnjJSONsignalRuleNames = map fullName . filter (isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONinvariantRuleNames = map fullName . filter (not . isSignal fSpec) . NE.toList . rc_orgRules $ conj,
         cnjJSONviolationsSQL = sqlQuery fSpec violTerm,
-        cnjJSONdeltaQueries = mapMaybe deltaQuery <$> deltaQueriesFor violTerm,
+        -- A conjunct that reads a view keeps full re-evaluation: the candidate calculus
+        -- (PRF-7) assumes a delta table per relation, and a view has none (issue #1744).
+        cnjJSONdeltaQueries = if readsAView then Nothing else mapMaybe deltaQuery <$> deltaQueriesFor violTerm,
+        -- The cost profile speaks about the tables the query really reads, so the views are
+        -- substituted by their definitions before the classification (issue #1744).
         cnjJSONcostProfile =
-          let profile = costProfileFor fSpec conj violTerm
+          let profile = costProfileFor fSpec conj (inlineViews (fDerivedViews fSpec) violTerm)
            in JSONCostProfile
                 { cstJSONclass = costClassText (cpClass profile),
                   cstJSONscanTables = cpScanTables profile
@@ -81,12 +89,10 @@ instance JSON Conjunct JSONConjunct where
       }
     where
       violTerm = conjNF env . notCpl . rcConjunct $ conj
-      -- A candidate term holds the whole violation term once for every
-      -- occurrence of the relation, so its query grows with the square of the
-      -- number of occurrences and can pass the length that 'sqlQuery' accepts.
+      readsAView = any (isViewRelation fSpec) (toList (bindedRelationsIn violTerm))
       deltaQuery :: (Relation, Expression) -> Maybe JSONDeltaQuery
       deltaQuery (rel, candTerm) = do
-        candSQL <- sqlQueryWithinLimit (withDeltaPlugs fSpec) candTerm
+        candSQL <- sqlQuerySharedWithinLimit (withDeltaPlugs fSpec) candTerm
         pure
           JSONDeltaQuery
             { dltJSONrelation = fullName rel <> tshow (sign rel),

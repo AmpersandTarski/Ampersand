@@ -1,0 +1,5 @@
+name = "candidateSharing"
+defaultTargets = ["CandidateSharing"]
+
+[[lean_lib]]
+name = "CandidateSharing"

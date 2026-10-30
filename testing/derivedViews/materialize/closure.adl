@@ -1,0 +1,35 @@
+CONTEXT Materialize
+-- Regression test for issue #1744: with --derived-views on, a relation named in
+-- --materialize stays a stored table, maintained by the ExecEngine, and a view may read it.
+-- testinfo.yaml names `onder` in --materialize, so `onder` keeps its Compute rules and its
+-- table, while `productDekt`, which reads it, is a view.
+
+RELATION parent[Naam*Naam]
+RELATION productNaam[Product*Naam]
+RELATION onder[Naam*Naam]
+RELATION productDekt[Product*Naam]
+-- a definition that refers to itself cannot be a view and stays stored, with a warning
+RELATION kring[Naam*Naam]
+-- two definitions that refer to each other stay stored as well
+RELATION heen[Naam*Naam]
+RELATION terug[Naam*Naam]
+
+POPULATION parent CONTAINS [ ("Malus domestica","Malus"), ("Malus","Rosaceae"), ("Pyrus communis","Pyrus"), ("Pyrus","Rosaceae") ]
+POPULATION productNaam CONTAINS [ ("appel","Malus domestica"), ("peer","Pyrus communis"), ("roos","Rosaceae") ]
+
+ENFORCE onder := parent~*
+ENFORCE productDekt := productNaam;onder
+ENFORCE kring := parent \/ kring;parent
+ENFORCE heen := parent \/ terug
+ENFORCE terug := parent~ \/ heen
+
+-- `onder` is stored, so it is empty until the ExecEngine of a prototype fills it; a rule that
+-- needs its content would be violated in the population of the script. This one holds in
+-- every state, because the view is exactly the composition.
+RULE DektViaOnder : productDekt |- productNaam;onder
+
+INTERFACE Producten : "_SESSION";V[SESSION*Product] cRud BOX
+  [ dekt : productDekt cRud
+  , naam : productNaam cRud
+  ]
+ENDCONTEXT
