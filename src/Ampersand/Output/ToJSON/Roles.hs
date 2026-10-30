@@ -5,6 +5,8 @@
 module Ampersand.Output.ToJSON.Roles (Roles) where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.DerivedViews (rulesInEnforceOrder)
+import Ampersand.Classes
 import Ampersand.Output.ToJSON.JSONutils
 
 newtype Roles = Roles [RoleJson] deriving (Generic, Show)
@@ -32,5 +34,6 @@ instance JSON (Role, Int) RoleJson where
       { roleJSONname = text1ToText . idWithoutType' $ role',
         roleJSONlabel = label role',
         roleJSONisService = rlIsService role',
-        roleJSONmaintains = map fullName . toList . fMaintains fSpec $ role'
+        -- The ENFORCE rules first, in the order of their dependencies (issue #1749).
+        roleJSONmaintains = map fullName . rulesInEnforceOrder (enforces fSpec) . toList . fMaintains fSpec $ role'
       }

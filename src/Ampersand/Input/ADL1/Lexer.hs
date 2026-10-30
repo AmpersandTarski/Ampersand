@@ -227,9 +227,9 @@ mainLexer p cs@(c : s)
             | iskeyword name'' = LexKeyword name''
             | otherwise = LexSafeID name''
        in returnToken tokt p mainLexer p' s'
-  | prefixIsOperator (T.pack cs) =
+  | prefixIsOperator cs =
       let (name', s') = getOp cs
-       in returnToken (LexOperator name') p mainLexer (foldl' updatePos p (T.unpack . text1ToText $ name')) (T.unpack s')
+       in returnToken (LexOperator name') p mainLexer (foldl' updatePos p (T.unpack . text1ToText $ name')) s'
   | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
   | isDigit c =
       case getDateTime cs of
@@ -249,12 +249,14 @@ mainLexer p cs@(c : s)
     beginFile (FilePos _ 1 1) = True
     beginFile _ = False
     -- Finds the longest prefix of cs occurring in keywordsops
-    getOp :: String -> (Text1, Text)
+    -- The rest of the input stays a String: converting it to Text for every operator made the lexer
+    -- quadratic in the length of the file.
+    getOp :: String -> (Text1, String)
     getOp cs' = case s' of
-      [] -> (fatal "prefixIsOperator should have been tested in the only place where getOp is used.", T.pack str)
-      (h : tl) -> (Text1 h $ T.pack tl, T.pack str)
+      [] -> (fatal "prefixIsOperator should have been tested in the only place where getOp is used.", str)
+      (h : tl) -> (Text1 h $ T.pack tl, str)
       where
-        (s', str) = findOper (map (T.unpack . text1ToText) operators) cs' ""
+        (s', str) = findOper operatorStrings cs' ""
         findOper :: [String] -> String -> String -> (String, String)
         findOper [] _ _ = ("", cs')
         findOper _ [] op = (op, [])
@@ -281,8 +283,14 @@ iskeyword str = str `elem` keywords
 isSymbol :: Char -> Bool
 isSymbol c = c `elem` symbols
 
-prefixIsOperator :: Text -> Bool
-prefixIsOperator str = any ((`T.isPrefixOf` str) . text1ToText) operators
+-- | Does the input start with an operator? Only the first few characters of the input are inspected,
+--   so the rest of the input is not converted or copied.
+prefixIsOperator :: String -> Bool
+prefixIsOperator str = any (`L.isPrefixOf` str) operatorStrings
+
+-- | The operators as strings, computed once.
+operatorStrings :: [String]
+operatorStrings = map (T.unpack . text1ToText) operators
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the remaining contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
