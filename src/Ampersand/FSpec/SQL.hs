@@ -17,6 +17,7 @@ module Ampersand.FSpec.SQL
 where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.DerivedViews (readsAClosure)
 import Ampersand.Basics hiding (Name)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
@@ -66,21 +67,28 @@ prettyBroadQueryWithPlaceholder i fSpec =
 --   that the database can merge the view into the query that reads it; every generated
 --   query that reads the view applies its own DISTINCT, so a duplicate row in the view
 --   changes no result. A set operation or a WITH clause is a temporary table in any case,
---   and keeps its DISTINCT.
+--   and keeps its DISTINCT. The translation of a term comes wrapped in comments, which the
+--   match looks through.
 derivedViewBinQuery :: FSpec -> Expression -> BinQueryExpr
-derivedViewBinQuery fSpec expr = case bqe of
-  BinSelect {} -> bqe {bseSetQuantifier = SQDefault}
-  _ -> setDistinct bqe
+derivedViewBinQuery fSpec expr = withoutOuterDistinct (selectExpr fSpec (anchorComplements expr))
   where
-    bqe = selectExpr fSpec (anchorComplements expr)
+    withoutOuterDistinct bqe = case bqe of
+      BinQEComment c x -> BinQEComment c (withoutOuterDistinct x)
+      BinSelect {} -> bqe {bseSetQuantifier = SQDefault}
+      _ -> setDistinct bqe
 
 -- | Whether the database can merge the view into the query that reads it: the translation
---   is one SELECT without DISTINCT. A view with a set operation, a WITH clause or a DISTINCT
---   is computed in full, as a temporary table without an index, at every use (issue #1744).
+--   is one SELECT without DISTINCT, and the term reads no closure. A view with a set
+--   operation or a DISTINCT is computed in full, as a temporary table without an index, at
+--   every use, and so is the recursive WITH clause of a closure inside a SELECT (issue #1744).
 derivedViewIsMergeable :: FSpec -> Expression -> Bool
-derivedViewIsMergeable fSpec expr = case derivedViewBinQuery fSpec expr of
-  BinSelect {} -> True
-  _ -> False
+derivedViewIsMergeable fSpec expr =
+  oneSelect (derivedViewBinQuery fSpec expr) && not (readsAClosure (fDerivedViews fSpec) expr)
+  where
+    oneSelect bqe = case bqe of
+      BinQEComment _ x -> oneSelect x
+      BinSelect {} -> bseSetQuantifier bqe == SQDefault
+      _ -> False
 
 -- | The view query, prettyprinted with comments, indented by the given amount.
 derivedViewQuery :: Int -> FSpec -> Expression -> [Text]

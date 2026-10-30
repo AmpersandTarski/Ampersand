@@ -189,39 +189,53 @@ createDerivedViewSql withComment fSpec plug rel definition
 --   hide a defect rather than help. The statements come after every table, because a
 --   constraint names two tables. The argument says which plugs are views on another
 --   database, which take no constraint and can be referred to by none.
+--   Every constraint gets a name, @fk_<table>_<column>@ or @uq_<table>_<column>@, so that the
+--   error of the database names the column, and a migration script can drop the constraint
+--   by a name that does not depend on the order of the statements.
 constraintQueries :: FSpec -> (PlugSQL -> Bool) -> [SqlQuery]
 constraintQueries fSpec isForeign =
-  [ SqlQuerySimple
-      ( "ALTER TABLE "
-          <> tableOf plug
-          <> " ADD FOREIGN KEY ("
-          <> columnOf att
-          <> ") REFERENCES "
-          <> tableOf refPlug
-          <> " ("
-          <> columnOf refAtt
-          <> ") ON DELETE RESTRICT ON UPDATE RESTRICT"
-      )
-    | plug <- plugs,
-      att <- NE.toList (plugAttributes plug),
-      ForeignKey c <- [attUse att],
-      Just (refPlug, _) <- [lookupConceptTable fSpec c],
-      -- the key of the table, which an atom of a specialisation in that table shares
-      let refAtt = NE.head (plugAttributes refPlug),
-      isPrimaryKey refAtt,
-      not (isForeign refPlug),
-      not (isViewPlug fSpec refPlug),
-      showSQL (attType att) == showSQL (attType refAtt) -- the same SQL type: a specialisation may carry another TType than its key (ALPHANUMERIC against OBJECT)
-  ]
-    <> [ SqlQuerySimple ("ALTER TABLE " <> tableOf plug <> " ADD UNIQUE (" <> columnOf att <> ")")
-         | plug <- plugs,
-           att <- NE.toList (plugAttributes plug),
-           hasUniqueConstraint fSpec plug att
-       ]
+  zipWith (\nm mk -> SqlQuerySimple (mk (doubleQuote nm))) (uniqueNames (map fst constraints)) (map snd constraints)
   where
+    constraints = foreignKeys <> uniques
+    foreignKeys =
+      [ ( "fk_" <> nameOf plug <> "_" <> colName att,
+          \nm ->
+            "ALTER TABLE "
+              <> tableOf plug
+              <> " ADD CONSTRAINT "
+              <> nm
+              <> " FOREIGN KEY ("
+              <> columnOf att
+              <> ") REFERENCES "
+              <> tableOf refPlug
+              <> " ("
+              <> columnOf refAtt
+              <> ") ON DELETE RESTRICT ON UPDATE RESTRICT"
+        )
+        | plug <- plugs,
+          att <- NE.toList (plugAttributes plug),
+          ForeignKey c <- [attUse att],
+          Just (refPlug, _) <- [lookupConceptTable fSpec c],
+          -- the key of the table, which an atom of a specialisation in that table shares
+          let refAtt = NE.head (plugAttributes refPlug),
+          isPrimaryKey refAtt,
+          not (isForeign refPlug),
+          not (isViewPlug fSpec refPlug),
+          showSQL (attType att) == showSQL (attType refAtt) -- the same SQL type: a specialisation may carry another TType than its key (ALPHANUMERIC against OBJECT)
+      ]
+    uniques =
+      [ ( "uq_" <> nameOf plug <> "_" <> colName att,
+          \nm -> "ALTER TABLE " <> tableOf plug <> " ADD CONSTRAINT " <> nm <> " UNIQUE (" <> columnOf att <> ")"
+        )
+        | plug <- plugs,
+          att <- NE.toList (plugAttributes plug),
+          hasUniqueConstraint fSpec plug att
+      ]
     plugs = [p | InternalPlug p <- plugInfos fSpec, not (isForeign p), not (isViewPlug fSpec p)]
-    tableOf = doubleQuote . text1ToText . showUnique
-    columnOf = doubleQuote . text1ToText . sqlColumNameToText1 . attSQLColName
+    nameOf = text1ToText . showUnique
+    colName = text1ToText . sqlColumNameToText1 . attSQLColName
+    tableOf = doubleQuote . nameOf
+    columnOf = doubleQuote . colName
 
 -- | The named external schema, with @--schema-views@ on (issue #1744): one view per conjunct,
 --   named by the id of the conjunct in @conjuncts.json@ and selecting its violations, and one
@@ -272,18 +286,20 @@ schemaViewQueries withComment fSpec =
             <> ["CREATE VIEW " <> doubleQuote nm <> " AS"]
             <> map (T.replicate 5 " " <>) (case prettySQLQuery 5 fSpec expr of SqlQueryPretty xs -> xs; q -> [queryAsSQL q])
       | otherwise = SqlQueryPlain ("CREATE VIEW " <> doubleQuote nm <> " AS " <> sqlQuery fSpec expr)
-    -- A name fits in 64 characters and is unique when case is ignored.
-    uniqueNames :: [Text] -> [Text]
-    uniqueNames nms = zipWith pick nms [0 :: Int ..]
-      where
-        fitted = map fit nms
-        lower = map T.toLower fitted
-        pick nm i
-          | length (filter (== T.toLower (fit nm)) lower) > 1 = fit (nm <> "_" <> tshow i)
-          | otherwise = fit nm
-        fit nm
-          | T.length nm <= 64 = nm
-          | otherwise = T.take 56 nm <> "_" <> T.take 7 (tshow (sha1hash nm))
+
+-- | Names for database objects that fit in the 64 characters of MariaDB and are unique when
+--   case is ignored: a longer name is cut and gets seven characters of a hash, and a name
+--   that another one has gets its position as well.
+uniqueNames :: [Text] -> [Text]
+uniqueNames nms = zipWith pick nms [0 :: Int ..]
+  where
+    lower = map (T.toLower . fit) nms
+    pick nm i
+      | length (filter (== T.toLower (fit nm)) lower) > 1 = fit (nm <> "_" <> tshow i)
+      | otherwise = fit nm
+    fit nm
+      | T.length nm <= 64 = nm
+      | otherwise = T.take 56 nm <> "_" <> T.take 7 (tshow (sha1hash nm))
 
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec =
