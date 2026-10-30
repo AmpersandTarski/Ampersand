@@ -275,9 +275,15 @@ them in a WITH clause.
    starts with a letter, so no relation or table of the model can have that
    name, and a view never hides a table that the query reads; the proof of
    PRF-17 assumes exactly this separation of views from relations.
-7. The violation queries are not shared yet. They have repeated subterms as
-   well, but MariaDB may inline or materialize a view referenced more than
-   once, so the effect on their running time is to be measured first.
+7. The violation queries are not shared. They have repeated subterms as
+   well, but a WITH clause shortens the text of a query and shares none of
+   its computation. Measured on 30 October 2026 on MariaDB 10.6.27 and
+   12.3.3, with one definition referenced six times (issue #1748): a
+   definition without DISTINCT is merged into every reference, like a view,
+   and a definition with DISTINCT is materialised anew at every reference,
+   six temporary tables in one plan. So sharing a violation query would not
+   lower its running time, and a derived relation that one query reads many
+   times is cheaper as a stored table than as a view or a WITH definition.
 
 *Impact on the specification:* none.
 
