@@ -20,6 +20,7 @@ module Ampersand.ADL1.DerivedViews
     viewDefinitions,
     viewDefinitionsInOrder,
     inlineViews,
+    materialises,
     readsAClosure,
   )
 where
@@ -27,6 +28,7 @@ where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Classes.Relational (guaranteedProperties)
 import qualified RIO.List as L
 import qualified RIO.Set as Set
 
@@ -41,7 +43,9 @@ data StorageDecision
 -- | Decide, for every @ENFORCE r := term@ statement, whether @r@ becomes a view.
 --   The arguments: whether @--derived-views@ is on, the names given to
 --   @--materialize@, whether a relation belongs to a context on another database,
---   the populations of the script, and all ENFORCE statements of the context.
+--   the populations of the script, the rules of the context other than the
+--   @Compute@ rules of the @:=@ statements, the interface fields (each with a
+--   description for the warning), and all ENFORCE statements of the context.
 --   The result pairs each statement with its decision; a statement that is not
 --   @:=@ gets no decision and is left out.
 --
@@ -49,42 +53,117 @@ data StorageDecision
 --   in @--materialize@; another ENFORCE statement writes the same relation (a view
 --   cannot take extra pairs); a @POPULATION@ gives it pairs of its own; its
 --   definition refers to itself or to a cycle of definitions (SQL has no
---   recursive view of that kind); or it belongs to another database (a view
---   is created in the database of the compiled context). Every reason is a
---   warning and not an error, so the flag never refuses a script that compiles
---   without it.
+--   recursive view of that kind); it belongs to another database (a view
+--   is created in the database of the compiled context); a rule reads it,
+--   directly or through another view, and the database would compute its view
+--   in full ('materialises': a union or a closure in the definition, with the
+--   other views substituted); or an interface field reads it and its definition
+--   holds a closure, which the database recomputes at every read. The last two
+--   come from the falsification experiment of issue #1744 (tests H2 and H4) and
+--   are decided together, until stable: a relation that stays stored can make a
+--   view that reads it mergeable, so after each relation that is kept stored the
+--   others are judged again. Every reason is a warning and not an error, so the
+--   flag never refuses a script that compiles without it.
 decideDerivedViews ::
   Bool ->
   [Text] ->
   (Relation -> Bool) ->
   [Population] ->
+  [Rule] ->
+  [(Text, Expression)] ->
   [AEnforce] ->
   [(AEnforce, StorageDecision)]
-decideDerivedViews flagOn materialized isForeign pops enfs
+decideDerivedViews flagOn materialized isForeign pops rules ifcFields enfs
   | not flagOn = [(e, Stored "the option --derived-views is off") | e <- defining]
   | otherwise = [(e, decide e) | e <- defining]
   where
     defining = [e | e <- enfs, IsSameSet {} <- [enfOp e]]
     decide e
-      | named (enfRel e) = Stored "it is named in --materialize"
-      | writers (enfRel e) > 1 = Stored "another ENFORCE statement writes the same relation"
-      | populated (enfRel e) = Stored "a POPULATION statement gives it pairs of its own"
-      | isForeign (enfRel e) = Stored "it belongs to a context on another database"
+      | Just reason <- localReason e = Stored reason
       | enfRel e `elem` cyclic = Stored "its definition refers to itself, directly or through other derived relations"
+      | Just reason <- L.lookup (enfRel e) costly = Stored reason
       | otherwise = AsView
+    localReason :: AEnforce -> Maybe Text
+    localReason e
+      | named (enfRel e) = Just "it is named in --materialize"
+      | writers (enfRel e) > 1 = Just "another ENFORCE statement writes the same relation"
+      | populated (enfRel e) = Just "a POPULATION statement gives it pairs of its own"
+      | isForeign (enfRel e) = Just "it belongs to a context on another database"
+      | otherwise = Nothing
     named rel = any (`elem` materialized) [fullName rel, fullName rel <> tshow (sign rel), tshow rel]
     writers rel = length [() | e <- enfs, enfRel e == rel]
     populated rel = not (null [() | p@ARelPopu {} <- pops, popdcl p == rel, not (Set.null (popps p))])
     -- The candidates that passed the local tests; a cycle among them keeps them all stored.
-    candidates =
-      [ (enfRel e, Set.toList (bindedRelationsIn (enfExpr e)))
-        | e <- defining,
-          not (named (enfRel e)),
-          writers (enfRel e) == 1,
-          not (populated (enfRel e)),
-          not (isForeign (enfRel e))
-      ]
-    cyclic = map fst (cyclicPart candidates)
+    candidates = [e | e <- defining, isNothing (localReason e)]
+    cyclic = map fst (cyclicPart [(enfRel e, Set.toList (bindedRelationsIn (enfExpr e))) | e <- candidates])
+    -- The relations that stay stored because of what reads them, with the reason.
+    costly = settle [] [e | e <- candidates, enfRel e `notElem` cyclic]
+    -- Keep one relation stored at a time and judge the rest again. A relation whose own
+    -- definition holds the union or the closure goes first, so that a view that only
+    -- reads it is judged with that relation stored.
+    settle :: [(Relation, Text)] -> [AEnforce] -> [(Relation, Text)]
+    settle stored views =
+      case L.sortOn (not . materialises . enfExpr . fst) [(e, r) | e <- views, Just r <- [reasonFor views e]] of
+        [] -> stored
+        (e, r) : _ -> settle ((enfRel e, r) : stored) (filter (/= e) views)
+    reasonFor views e
+      | materialises definition,
+        (nm : _) <- readers =
+          Just ("rule " <> nm <> " reads it, and the database would compute its view in full, because its definition holds a union or a closure")
+      | readsAClosure defs (enfExpr e),
+        (nm : _) <- fieldReaders =
+          Just (nm <> " reads it, and its view holds a closure, which the database would recompute at every read")
+      | otherwise = Nothing
+      where
+        defs = [(enfRel v, enfExpr v) | v <- views, v /= e]
+        definition = inlineViews defs (enfExpr e)
+        readsIt t = enfRel e `Set.member` bindedRelationsIn (inlineViews defs t)
+        -- The rules that read the relation: the rules given, and the Compute rules of the
+        -- statements that stay stored; not the property rules of the relation itself whose
+        -- property the shape of the definition guarantees, which the compiler leaves out.
+        readers =
+          [ fullName r
+            | r <- rules <> [r | v <- defining, v `notElem` views, r <- enfRules v],
+              not (guaranteed r),
+              readsIt (formalExpression r)
+          ]
+        guaranteed r = case rrkind r of
+          Propty p rel -> rel == enfRel e && p `Set.member` guaranteedProperties (enfExpr e)
+          _ -> False
+        fieldReaders = [nm | (nm, t) <- ifcFields, readsIt t]
+
+-- | Whether the database must materialise the query of a term before it can join it.
+--   The query of a closure is a recursive common table expression, and the query of a union is a set operator;
+--   MariaDB merges neither into an enclosing join, so the result is a temporary table without an index.
+--   A query built from declared relations by composition, intersection and converse is merged,
+--   and a join onto it uses the indexes of the tables underneath.
+--   The test is deliberately one-sided: EXCEPT computes its whole right-hand side, also when the left-hand side is small,
+--   so a term gets it only when the left join certainly has no index to use (measured in issue #1708).
+--   The same test decides which derived relation stays stored under @--derived-views@
+--   ('decideDerivedViews'); the report of the compiler checks it against the SQL of the view.
+materialises :: Expression -> Bool
+materialises e = case e of
+  EKl0 {} -> True
+  EKl1 {} -> True
+  EUni {} -> True
+  EFlp x -> materialises x
+  EBrk x -> materialises x
+  ECpl x -> materialises x
+  ECps (a, b) -> materialises a || materialises b
+  EIsc (a, b) -> materialises a || materialises b
+  EDif (a, b) -> materialises a || materialises b
+  ERad (a, b) -> materialises a || materialises b
+  EPrd (a, b) -> materialises a || materialises b
+  ELrs (a, b) -> materialises a || materialises b
+  ERrs (a, b) -> materialises a || materialises b
+  EDia (a, b) -> materialises a || materialises b
+  EEqu (a, b) -> materialises a || materialises b
+  EInc (a, b) -> materialises a || materialises b
+  EDcD {} -> False
+  EDcI {} -> False
+  EBin {} -> False
+  EDcV {} -> False
+  EMp1 {} -> False
 
 -- | The part of a dependency list that lies on a cycle: repeatedly take away
 --   every node that depends on no remaining node; what remains is cyclic.

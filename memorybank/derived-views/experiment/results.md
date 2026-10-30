@@ -31,7 +31,12 @@ Four defects were found because a claim failed, and three are corrected on the b
 | A view the compiler calls mergeable carried `DISTINCT`, so MariaDB never merged it, and the report said "merged" for a closure | H5 | `derivedViewBinQuery` and `derivedViewIsMergeable` in `src/Ampersand/FSpec/SQL.hs` look through the comment that wraps a translation, and a closure is never mergeable |
 | `Concept::deleteAtom` deleted the atom before its links, which a foreign key refuses in the middle of the transaction | H6 | framework OK-31: the links go first |
 | A view without `DISTINCT` yields a pair twice, and `getAllLinks` passed that on | the stored fill of H1, after the first correction | framework: `getAllLinks` reads a view with `DISTINCT` |
-| A UNIQUE on a column a user writes refuses a valid exchange | H8 | open: "Still to decide" in `../DesignChoices.md` |
+| A UNIQUE on a column a user writes refuses a valid exchange | H8 | decision of 30 October 2026: `--foreign-keys` generates no UNIQUE; a multiplicity stays a conjunct (DC-9) |
+
+The decisions of 30 October 2026 that followed: no `UNIQUE` constraint (DC-9), and a derived
+relation whose view the database computes in full stays stored when a rule reads it, or when
+an interface field reads a closure (DC-2). The tests H7 and H8 below ran on the schema with
+the `uq_` constraints of the commit before that decision.
 
 ## H1: equality
 

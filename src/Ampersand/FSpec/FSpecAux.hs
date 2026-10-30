@@ -6,7 +6,6 @@ module Ampersand.FSpec.FSpecAux
     isViewRelation,
     isViewPlug,
     derivedViewPlugs,
-    hasUniqueConstraint,
     effectiveCrud,
   )
 where
@@ -78,26 +77,6 @@ effectiveCrud :: FSpec -> ObjectDef -> Cruds
 effectiveCrud fSpec od = case getExpressionRelation (conjNF () (objExpression od)) of
   Just (_, decl, _, _) | isViewRelation fSpec decl -> (objcrud od) {crudC = False, crudU = False, crudD = False}
   _ -> objcrud od
-
--- | Whether the generated database structure puts a UNIQUE constraint on this column of
---   this table, with @--foreign-keys@ on (issue #1744): a column that holds one side of a
---   relation and that the layout knows to be unique, of a type the database can index.
---   The identity column of a specialisation in a wide table is left out: it repeats the key
---   of its row, so it is unique by construction. The same predicate decides, in the cost
---   profile, that the conjunct of that multiplicity is structural (claim PRF-20).
-hasUniqueConstraint :: FSpec -> PlugSQL -> SqlAttribute -> Bool
-hasUniqueConstraint fSpec plug att =
-  fForeignKeys fSpec
-    && attUniq att
-    && not (isPrimaryKey att)
-    && suitableAsKey (attType att)
-    && not (isViewPlug fSpec plug)
-    && case plug of
-      BinSQL {} -> True
-      TblSQL {} -> case attExpr att of
-        EDcD {} -> True
-        EFlp (EDcD {}) -> True
-        _ -> False
 
 -- return table name and source and target column names for relation rel.
 --   Use `lookupConceptTable` instead where a concept without a table is a

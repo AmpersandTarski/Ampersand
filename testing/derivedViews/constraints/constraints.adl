@@ -1,6 +1,6 @@
 CONTEXT Constraints
 -- Regression test for issue #1744: `--foreign-keys` puts a FOREIGN KEY on every relation
--- column and a UNIQUE constraint on every injective column; `--schema-views` adds a view
+-- column (and no UNIQUE constraint, DC-9); `--schema-views` adds a view
 -- per conjunct and per interface field. `ampersand validate` creates the database with
 -- these statements and compares every query with the evaluator of the compiler, so the
 -- test checks that the constraints accept the population and that the views are created.

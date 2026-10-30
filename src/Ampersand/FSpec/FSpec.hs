@@ -160,8 +160,8 @@ data FSpec = FSpec
     --   defining term of each, in an order in which the views can be created: a definition
     --   comes after every view it reads. Empty unless @--derived-views@ is on.
     fDerivedViews :: ![(Relation, Expression)],
-    -- | Whether the database structure carries FOREIGN KEY and UNIQUE constraints
-    --   (@--foreign-keys@, issue #1744). The cost profile of a conjunct depends on it.
+    -- | Whether the database structure carries FOREIGN KEY constraints
+    --   (@--foreign-keys@, issue #1744).
     fForeignKeys :: !Bool,
     -- | Whether the database structure carries a named view per conjunct and per
     --   interface field (@--schema-views@, issue #1744).

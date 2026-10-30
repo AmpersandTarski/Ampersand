@@ -243,9 +243,9 @@ fSpecGenOptsParser isForDaemon =
         False
         "foreign-keys"
         ( "generate a FOREIGN KEY from every relation column to the concept "
-            <> "table it refers to, and a UNIQUE constraint for every injective "
-            <> "column (issue #1744). Off by default. A bulk load must switch "
-            <> "FOREIGN_KEY_CHECKS off while it loads."
+            <> "table it refers to (issue #1744). Off by default; the prototype "
+            <> "framework must have design choice OK-31 (v2.21.0). A bulk load must "
+            <> "switch FOREIGN_KEY_CHECKS off while it loads."
         )
         mempty
 

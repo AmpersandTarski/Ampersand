@@ -26,7 +26,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
-import Ampersand.FSpec.FSpecAux (hasUniqueConstraint, isViewPlug, lookupConceptTable)
+import Ampersand.FSpec.FSpecAux (isViewPlug, lookupConceptTable)
 import Ampersand.FSpec.SQL
 import Ampersand.FSpec.ToFSpec.ADL2Plug (suitableAsKey)
 import Ampersand.Prototype.ProtoUtil
@@ -182,22 +182,24 @@ createDerivedViewSql withComment fSpec plug rel definition
 --   key column of the table of that concept, where that key is a PRIMARY KEY (the table of
 --   a scalar concept has none, issue #341, and a concept of a type that cannot be listed has
 --   no table); an atom of a specialisation that shares a wide table has the key of that table,
---   so the column refers to that key. And a UNIQUE constraint on every column that
---   'hasUniqueConstraint' names.
+--   so the column refers to that key. No UNIQUE constraint: a multiplicity stays a conjunct
+--   that the framework checks at the end of a transaction, because MariaDB checks a
+--   constraint at every statement and would refuse a transaction in which two atoms
+--   exchange their values (test H8 of the experiment of issue #1744, decision of
+--   30 October 2026).
 --   @RESTRICT@ on both sides: the prototype framework removes the links of an atom before
 --   it deletes the atom, and merges atoms by deleting and adding links, so a cascade would
 --   hide a defect rather than help. The statements come after every table, because a
 --   constraint names two tables. The argument says which plugs are views on another
 --   database, which take no constraint and can be referred to by none.
---   Every constraint gets a name, @fk_<table>_<column>@ or @uq_<table>_<column>@, so that the
+--   Every constraint gets a name, @fk_<table>_<column>@, so that the
 --   error of the database names the column, and a migration script can drop the constraint
 --   by a name that does not depend on the order of the statements.
 constraintQueries :: FSpec -> (PlugSQL -> Bool) -> [SqlQuery]
 constraintQueries fSpec isForeign =
   zipWith (\nm mk -> SqlQuerySimple (mk (doubleQuote nm))) (uniqueNames (map fst constraints)) (map snd constraints)
   where
-    constraints = foreignKeys <> uniques
-    foreignKeys =
+    constraints =
       [ ( "fk_" <> nameOf plug <> "_" <> colName att,
           \nm ->
             "ALTER TABLE "
@@ -222,14 +224,6 @@ constraintQueries fSpec isForeign =
           not (isForeign refPlug),
           not (isViewPlug fSpec refPlug),
           showSQL (attType att) == showSQL (attType refAtt) -- the same SQL type: a specialisation may carry another TType than its key (ALPHANUMERIC against OBJECT)
-      ]
-    uniques =
-      [ ( "uq_" <> nameOf plug <> "_" <> colName att,
-          \nm -> "ALTER TABLE " <> tableOf plug <> " ADD CONSTRAINT " <> nm <> " UNIQUE (" <> columnOf att <> ")"
-        )
-        | plug <- plugs,
-          att <- NE.toList (plugAttributes plug),
-          hasUniqueConstraint fSpec plug att
       ]
     plugs = [p | InternalPlug p <- plugInfos fSpec, not (isForeign p), not (isViewPlug fSpec p)]
     nameOf = text1ToText . showUnique

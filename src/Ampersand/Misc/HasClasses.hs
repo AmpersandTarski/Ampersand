@@ -339,7 +339,7 @@ data FSpecGenOpts = FSpecGenOpts
     -- | The derived relations that stay stored and maintained as before, by name, when
     --   @--derived-views@ is on (issue #1744).
     xmaterialize :: ![Text],
-    -- | Generate FOREIGN KEY and UNIQUE constraints in the database structure (issue #1744).
+    -- | Generate FOREIGN KEY constraints in the database structure (issue #1744).
     xforeignKeys :: !Bool,
     -- | Generate a named view per conjunct and per interface field (issue #1744).
     xschemaViews :: !Bool

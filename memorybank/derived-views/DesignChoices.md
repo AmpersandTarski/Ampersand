@@ -43,8 +43,8 @@ reads `r` from the view as it read it from the table.
 *Impact in production:* with the flag, a prototype's `database.sql` creates views;
 `ampersand validate` creates them in its temporary database as well.
 
-**A derived relation stays stored, and the compiler says why, when it is named in `--materialize`, when another ENFORCE statement writes it, when a POPULATION gives it pairs, when its definition is cyclic, or when it belongs to another database.**
-*DC-2 · valid · 2026-10-27 · origin: issue #1744, requirement R2 and the researcher's answer 2*
+**A derived relation stays stored, and the compiler says why, when a rule reads it and the database would compute its view in full, when an interface field reads it and its definition holds a closure, when it is named in `--materialize`, when another ENFORCE statement writes it, when a POPULATION gives it pairs, when its definition is cyclic, or when it belongs to another database.**
+*DC-2 · valid · 2026-10-30 · origin: issue #1744, requirement R2 and the researcher's answer 2; the decision of Stef Joosten of 30 October 2026 on tests H2 and H4 of `experiment/`*
 
 *Considerations:*
 
@@ -64,10 +64,34 @@ reads `r` from the view as it read it from the table.
 6. The indication is a compiler flag and not a keyword, because a reserved word is
    a language decision that belongs to the owner of the language; see "Still to
    decide".
+7. Test H2 of the experiment measured, from 1 000 to 64 000 atoms, that a rule
+   which joins a view with a union or a closure makes every write that touches the
+   relation 3 to 10 times more expensive than with the stored table, and the rules
+   over a closure stop at the limit of 60 s from 4 000 atoms on. Test H4 measured
+   that a closure read for one atom grows with the whole relation (3.6 s at 64 000
+   atoms), while a union read for one atom is filtered per atom by the database.
+   So the compiler keeps a relation stored, by itself and with the rule or the
+   field in the warning, when a rule reads it and its definition (with the other
+   views substituted) holds a union or a closure, and when an interface field
+   reads it and the definition holds a closure. The shape test is `materialises`
+   in `Ampersand.ADL1.DerivedViews`, the predicate that the `EXCEPT` translation
+   of PRF-12 already used; the report per derived relation checks it against the
+   SQL of the view and warns when the two disagree, because the experiment found
+   the shape test and the SQL apart once (H5).
+8. The decision is taken for all candidates together, one relation at a time,
+   until it is stable: a relation that stays stored takes its closure or union
+   out of the views that read it, which can make those mergeable. A relation
+   whose own definition holds the union or the closure goes first.
+9. `--materialize` stays the way to store more; there is no option to force a
+   view against the decision, because every measured case of such a view cost
+   more than the table. The alternative set aside is materialisation on an
+   explicit indication only, as requirement R2 asked: the measurement on FC5
+   shows what it costs when the indication is forgotten (`evaluate/all` from
+   4 434 to 12 732 ms), and the decision is mechanical.
 
 *Impact on the specification:* none.
 
-*Impact in production:* a warning per relation that stays stored.
+*Impact in production:* a warning per relation that stays stored, which names the rule or the field that keeps it stored.
 
 **The view is read through a plug with the columns `src` and `tgt`, named like the link table of the relation would have been; `relations.json` keeps a valid `mysqlTable` for it (`tableOf: null`) and gains `"storage": "view"`.**
 *DC-3 · valid · 2026-10-27 · origin: issue #1744, design direction 2*
@@ -254,8 +278,8 @@ derived relations that carry properties.
 
 ## The database as guardian
 
-**With `--foreign-keys` the database structure carries a FOREIGN KEY from every column that holds an atom to the key column of its concept table, where that key is a PRIMARY KEY, and a UNIQUE constraint on every column that holds the unique side of a relation; every constraint has a name, `fk_<table>_<column>` or `uq_<table>_<column>`; `RESTRICT` on delete and update; a conjunct that such a UNIQUE makes empty is `structural`.**
-*DC-9 · valid · 2026-10-29 · origin: issue #1744, requirement R4 and the researcher's answer 7, the two considerations of Stef Joosten (29 October 2026), tests H6 to H9 of `experiment/`; builds on IE-DC-16 and PRF-8*
+**With `--foreign-keys` the database structure carries a FOREIGN KEY from every column that holds an atom to the key column of its concept table, where that key is a PRIMARY KEY, named `fk_<table>_<column>`, `RESTRICT` on delete and update; no UNIQUE constraint, so a multiplicity stays a conjunct.**
+*DC-9 · valid · 2026-10-30 · origin: issue #1744, requirement R4 and the researcher's answer 7, the two considerations of Stef Joosten (29 October 2026) and his decision of 30 October 2026, tests H6 to H9 of `experiment/`; builds on IE-DC-16 and PRF-8*
 
 *Considerations:*
 
@@ -282,14 +306,21 @@ derived relations that carry properties.
    specialisation itself carries no unique index. The types of the two columns
    must be the same, which the generator guarantees because both come from the
    representation of the concept.
-4. The identity column of a specialisation in a wide table repeats the key of
-   its row, so it is unique by construction and gets no constraint of its own; a
-   relation column gets one when the layout knows it to be unique (`attUniq`),
-   which is the target column of an `INJ` relation and the source column of a
-   `UNI` relation stored on its target side or in a link table. The predicate
-   `hasUniqueConstraint` is shared by the DDL and by `structurallyEnforced`, so
-   the cost profile cannot call a conjunct structural whose constraint does not
-   exist (claim PRF-20).
+4. No `UNIQUE` constraint. A multiplicity (`UNI`, `INJ`) stays a conjunct that the
+   framework checks at the end of the transaction, and `structurallyEnforced` is
+   what the table layout guarantees (PRF-8). Test H8 showed that a `UNIQUE` refuses
+   a transaction in which two atoms exchange their values of an `INJ` relation,
+   although its end state satisfies every rule: an Ampersand invariant holds at
+   the end of a transaction, a MariaDB constraint at every statement. The same
+   error would turn a user's own mistake, a second atom with the value of the
+   first, into a database error instead of the violation with the rule's message,
+   against consideration 9. The alternatives set aside: keep the `UNIQUE` and let
+   the framework turn error 1062 on a `uq_` constraint into the rule's violation
+   (an exchange still needs two transactions, and the framework learns a name
+   convention of the compiler); or keep the `UNIQUE` and accept the general error.
+   What it costs: the 159 conjuncts of FC5 that the layout guarantees are not
+   joined by the ones a `UNIQUE` would have made structural; the gain was 19 ms on
+   the trial population. Claim PRF-20 is set aside in the proof track.
 5. A bulk load that writes rows in its own order runs with
    `SET FOREIGN_KEY_CHECKS=0` and switches the checks on again; `ampersand
    validate` does so around the population of its temporary database, and the
@@ -303,8 +334,8 @@ derived relations that carry properties.
    the moment at which its load scripts are ready for the checks, and its
    framework has OK-31.
 8. Code that goes into production follows the generally accepted principles of
-   good SQL: a reference is a foreign key, a uniqueness is a unique constraint, and
-   a constraint has a name (Stef Joosten). The name makes the error of the
+   good SQL: a reference is a foreign key, and a constraint has a name (Stef
+   Joosten); for uniqueness, consideration 4 says why the principle gives way. The name makes the error of the
    database name the column (`CONSTRAINT "fk_r_A" FOREIGN KEY ("A") ...`), and lets
    a migration script drop the constraint by a name that does not depend on the
    order of the statements, as MariaDB's own names (`r_ibfk_1`) do. A name longer
@@ -324,13 +355,12 @@ derived relations that carry properties.
 
 *Impact on the specification:* none.
 
-*Impact in production:* with the option, a write that violates a reference or a
-uniqueness fails at once with a database error instead of at the end of the
-transaction with a violation; through the framework, a refused reference answers
-with the message of consideration 9. The conjuncts of the multiplicities that a
-`UNIQUE` enforces carry the cost profile `structural`. A transaction in which two
-atoms exchange their values of an `INJ` relation is refused (test H8), although
-its end state satisfies every rule; see "Still to decide".
+*Impact in production:* with the option, a write that violates a reference fails
+at once with a database error instead of at the end of the transaction with a
+violation; through the framework, a refused reference answers with the message of
+consideration 9. The prototype framework needs OK-31 (v2.21.0): an earlier
+framework deletes an atom before its links and cannot delete an atom that has a
+link once the foreign keys are in.
 
 ## The external schema
 
@@ -404,34 +434,6 @@ hundred views more; nothing reads them unless something outside the prototype
 does.
 
 ## Still to decide
-
-- **Which derived relation becomes a view by default.** Test H2 of the experiment
-  shows that a view pays when no rule reads it or when the database merges it, and
-  that a view with a union or a closure that a rule joins makes every write that
-  touches it 3 to 10 times more expensive (the FC5 measurement: `evaluate/all` from
-  4 434 to 12 732 ms). Under `--derived-views` the compiler could keep such a
-  relation stored by itself, with a line in its report, and `--materialize` would
-  then name the exceptions in the other direction. That changes requirement R2,
-  which asks for materialisation on an explicit indication; the owner of the
-  language decides.
-
-- **UNIQUE on a column that a user writes.** Test H8 of the experiment refused a
-  transaction in which two atoms exchange their values of an `INJ` relation (error
-  1062 at the first `UPDATE`), although its end state satisfies every rule: an
-  Ampersand invariant holds at the end of a transaction, a MariaDB constraint at
-  every statement. The same error comes when a user gives a second atom the value
-  of the first, which is the user's mistake and today a violation with the rule's
-  message. Both go against consideration 9 of DC-9, by which a constraint fires
-  only on a fault that is not the user's. Three ways:
-  (a) a foreign key only, and the `INJ` and `UNI` rules stay conjuncts, checked
-  at the end of the transaction; consideration 8 then holds for references and not
-  for uniqueness, and the conjuncts that a `UNIQUE` made structural run again;
-  (b) keep the `UNIQUE`, and let the framework turn a 1062 on a `uq_` constraint
-  into the violation of the rule with the rule's message; an exchange still needs
-  two transactions;
-  (c) keep it as it is, a 1062 answers with a general error 500.
-  The recommendation is (a), because it follows from consideration 9 and H8 and
-  takes code away. The owner of the language decides.
 
 - **The keyword.** `ENFORCE MATERIALIZED r := term` would put the indication of DC-2
   in the script, next to the statement it concerns, where `--materialize` puts it in

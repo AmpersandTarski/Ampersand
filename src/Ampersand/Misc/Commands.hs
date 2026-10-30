@@ -12,6 +12,7 @@ where
 
 {-getProgName,-}
 import Ampersand.ADL1 (AEnforce (..), EnforceOperator (..), EnforceStorage (..))
+import Ampersand.ADL1.DerivedViews (inlineViews, materialises)
 import Ampersand.Basics
 import Ampersand.Commands.Daemon
 import Ampersand.Commands.Deploy
@@ -458,6 +459,16 @@ doOrDie theAction = do
                           )
                    else "a stored table, maintained by the ExecEngine."
                )
+      -- The shape test that decided the storage ('materialises') against the SQL of the view:
+      -- the two are written apart, and the experiment of issue #1744 found them apart once.
+      when derivedOn
+        $ forM_ [e | e <- allEnforces a, enfStorage e == DerivedView, derivedViewIsMergeable a (enfExpr e) == materialises (inlineViews (fDerivedViews a) (enfExpr e))]
+        $ \e ->
+          logWarn
+            . display
+            $ "The shape test of the compiler and the SQL of the view of "
+            <> fullName (enfRel e)
+            <> " disagree on whether the database merges the view; the view may cost more than reported. Please report this at issue #1744."
       failOnOsc <- view failOnOscillationL
       failOnCart <- view failOnCartesianProductL
       env <- ask

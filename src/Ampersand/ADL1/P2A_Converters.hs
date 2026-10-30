@@ -508,7 +508,19 @@ pCtx2aCtx
           flagOn = view derivedViewsL env
           allEnfs = ctxEnforces actx <> concatMap ptenfs (ctxpats actx)
           allPops = ctxpopus actx <> concatMap ptups (ctxpats actx)
-          decisions = decideDerivedViews flagOn (view materializeL env) (isJust . ownerLabel . name) allPops allEnfs
+          decisions = decideDerivedViews flagOn (view materializeL env) (isJust . ownerLabel . name) allPops otherRules fieldTerms allEnfs
+          -- The rules that are not the Compute rules of a `:=` statement; those depend on the decision.
+          otherRules =
+            Set.toList (udefrules actx `Set.union` proprules actx `Set.union` identityRules actx `Set.union` unionRules actx)
+              <> [r | e <- allEnfs, notDefining e, r <- enfRules e]
+          notDefining e = case enfOp e of
+            IsSameSet {} -> False
+            _ -> True
+          fieldTerms =
+            [ ("the field " <> maybe "(unnamed)" text1ToText (objPlainName o) <> " of interface " <> fullName ifc, objExpression o)
+              | ifc <- ctxifcs actx,
+                o <- allFields (ifcObj ifc)
+            ]
           viewRels = [enfRel e | (e, AsView) <- decisions]
           mark e
             | IsSameSet {} <- enfOp e,

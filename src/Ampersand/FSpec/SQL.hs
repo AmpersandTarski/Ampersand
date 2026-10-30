@@ -17,7 +17,7 @@ module Ampersand.FSpec.SQL
 where
 
 import Ampersand.ADL1
-import Ampersand.ADL1.DerivedViews (readsAClosure)
+import Ampersand.ADL1.DerivedViews (materialises, readsAClosure)
 import Ampersand.Basics hiding (Name)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
@@ -577,37 +577,6 @@ maybeSpecialCase fSpec expr =
               )
         table1 = uName "t1"
         table2 = uName "t2"
-
--- | Whether the database must materialise the query of a term before it can join it.
---   The query of a closure is a recursive common table expression, and the query of a union is a set operator;
---   MariaDB merges neither into an enclosing join, so the result is a temporary table without an index.
---   A query built from declared relations by composition, intersection and converse is merged,
---   and a join onto it uses the indexes of the tables underneath.
---   The test is deliberately one-sided: EXCEPT computes its whole right-hand side, also when the left-hand side is small,
---   so a term gets it only when the left join certainly has no index to use (measured in issue #1708).
-materialises :: Expression -> Bool
-materialises e = case e of
-  EKl0 {} -> True
-  EKl1 {} -> True
-  EUni {} -> True
-  EFlp x -> materialises x
-  EBrk x -> materialises x
-  ECpl x -> materialises x
-  ECps (a, b) -> materialises a || materialises b
-  EIsc (a, b) -> materialises a || materialises b
-  EDif (a, b) -> materialises a || materialises b
-  ERad (a, b) -> materialises a || materialises b
-  EPrd (a, b) -> materialises a || materialises b
-  ELrs (a, b) -> materialises a || materialises b
-  ERrs (a, b) -> materialises a || materialises b
-  EDia (a, b) -> materialises a || materialises b
-  EEqu (a, b) -> materialises a || materialises b
-  EInc (a, b) -> materialises a || materialises b
-  EDcD {} -> False
-  EDcI {} -> False
-  EBin {} -> False
-  EDcV {} -> False
-  EMp1 {} -> False
 
 nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
 nonSpecialSelectExpr fSpec expr =
