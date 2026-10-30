@@ -1,0 +1,5 @@
+name = "rewriteLaws"
+defaultTargets = ["RewriteLaws"]
+
+[[lean_lib]]
+name = "RewriteLaws"

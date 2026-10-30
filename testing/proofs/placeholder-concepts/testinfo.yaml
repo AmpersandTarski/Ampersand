@@ -1,0 +1,10 @@
+# Regression test for issue #1725: `ampersand proofs` stopped with a fatal error
+# ("Concept lookup failed in dRule") on every script that did not declare concepts
+# named A, B, C and D, because the placeholders of the derivation rules in
+# NormalForms.hs were looked up in the concept map of the script under analysis.
+# The script here declares no concept named A, B, C or D, and holds one small rule, so that the
+# confluence analysis stays small. The command must write its report and exit
+# with 0; the report goes to a directory outside the source tree.
+testCmds:
+  - command: ampersand proofs --output-dir /tmp/ampersand-test-proofs
+    exitcode: 0
