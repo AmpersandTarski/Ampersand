@@ -4,31 +4,53 @@ on:
   push:
     branches:
       - "**" # Only trigger on branches (i.e. not tags, ..)
-    paths:
-      # Build kernel: only changes to what the compiler build actually
-      # consumes should trigger a (re)build. Update this list only when you
-      # change what goes into the build. Everything else (docs, memorybank,
-      # ReleaseNotes.md, READMEs, the other workflow files) is ignored
-      # on purpose, so non-build changes do not spin up the Haskell build.
-      - "src/**"
-      - "app/**"
-      - "AmpersandData/**"      # bundled into the binary (extra-source-files)
-      - "outputTemplates/**"    # bundled into the binary (extra-source-files)
-      - "testing/**"            # test-suite inputs (extra-source-files)
-      - "package.yaml"
-      - "ampersand.cabal"
-      - "stack.yaml"
-      - "stack.yaml.lock"
-      - "Setup.hs"
-      - "Dockerfile"
-      - ".dockerignore"
-      - ".hlint.yaml"
-      - "weeder.dhall"
-      - "hie.yaml"
-      - ".github/workflows/codeQuality.yml"  # a change to this workflow is tested by running it
 jobs:
+  changes:
+    # Build kernel: only changes to what the compiler build actually consumes
+    # should start a (re)build. Update this list only when you change what goes
+    # into the build. Everything else (docs, memorybank, ReleaseNotes.md, READMEs,
+    # the other workflow files) skips the heavy jobs on purpose.
+    # The filter is a job, and no longer a `paths:` filter on the workflow,
+    # because branch protection requires the heavy jobs: a workflow that does not
+    # start leaves its checks pending for ever and blocks the merge, while a job
+    # that its `if:` skips counts as passed (GitHub docs, "Handling skipped but
+    # required checks"). On a branch the filter compares with the merge-base
+    # with main, on main with the commit before the push (the default base of
+    # dorny/paths-filter), so a branch that changed the build keeps building
+    # until it is merged.
+    name: Detect changes to the build
+    runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}
+    outputs:
+      build: ${{ steps.filter.outputs.build }}
+    steps:
+      - name: Checkout project contents 📡
+        uses: actions/checkout@v5
+      - name: Compare with the base
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            build:
+              - "src/**"
+              - "app/**"
+              - "AmpersandData/**"      # bundled into the binary (extra-source-files)
+              - "outputTemplates/**"    # bundled into the binary (extra-source-files)
+              - "testing/**"            # test-suite inputs
+              - "package.yaml"
+              - "ampersand.cabal"
+              - "stack.yaml"
+              - "stack.yaml.lock"
+              - "Setup.hs"
+              - "Dockerfile"
+              - ".dockerignore"
+              - ".hlint.yaml"
+              - "weeder.dhall"
+              - "hie.yaml"
+              - ".github/workflows/codeQuality.yml"  # a change to this workflow is tested by running it
   hlint:
     name: Hlint - Check for code sanity
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}
     permissions:
       # Needed to upload results to GitHub code scanning.
@@ -40,6 +62,8 @@ jobs:
         uses: haskell-actions/hlint-scan@v1
   weeder:
     name: Weeder - Check dead code
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout project contents 📡
