@@ -22,7 +22,7 @@ reads `r` from the view as it read it from the table.
 *Considerations:*
 
 1. The view can never lag behind its definition, and the two `Compute` rules per
-   statement leave the ExecEngine's loop: in the Landeneisenregister that is 78 rules
+   statement leave the ExecEngine's loop: in FC5 that is 78 rules
    and 19% of the SQL text of all conjuncts (the research note attached to the issue).
 2. The alternative set aside is to keep every derived relation stored and only
    maintain it incrementally (issue #1675). That lowers the cost of maintaining a
@@ -51,7 +51,7 @@ reads `r` from the view as it read it from the table.
 1. The flag never refuses a script that compiles without it: every reason is a
    warning, and the relation is then realised as before.
 2. A second `ENFORCE` on the same relation adds or removes pairs; a view cannot
-   take them. The Landeneisenregister has this case:
+   take them. The FC5 has this case:
    `PrototypeContext.sessionAllowedRoles` has `:=` in the SIAM bridge and `>:` in
    `PrototypeContext.adl`, and the framework image writes the relation itself.
 3. A `POPULATION` on a derived relation gives it pairs of its own, which a view
@@ -102,24 +102,34 @@ the view as a table.
    materialises the whole view at every use (E5: 55 ms for one product). A view of
    one `SELECT` without `DISTINCT` stays mergeable. The SQL generator itself writes
    `select distinct` for most shapes (a composition, the anchored difference), so the
-   `DISTINCT` of a one-`SELECT` translation is taken out for the view; 14 of the 17
-   views of the Landeneisenregister are merged that way, and the three with a union
-   are computed in full (`measurement-fc5.md`). The report line per derived relation
-   says which of the two a view is.
+   `DISTINCT` of a one-`SELECT` translation is taken out for the view, looking through
+   the comments that wrap the translation. A term that reads a closure is never
+   mergeable: its recursive `WITH` is a temporary table inside the `SELECT`. The report
+   line per derived relation says which of the two a view is, and test H5 of
+   `experiment/results.md` found `EXPLAIN` in agreement with it for all five shapes.
+   Read for one atom, a mergeable view costs about 0.03 ms more than the stored table,
+   at every size from 1 000 to 64 000 atoms; a union is filtered per atom as well,
+   because MariaDB pushes the condition into its branches; a closure grows with the
+   whole relation (H3, H4).
 2. Every generated query that reads the view applies `SELECT DISTINCT` at its
-   top (`getBinQueryExpr` for a term), so a duplicate row in the view changes no
-   result. This is the boundary of claim PRF-19.
+   top (`getBinQueryExpr` for a term), and the prototype framework reads the pairs of
+   a view relation with `DISTINCT` (`MysqlDB::getAllLinks`), so a duplicate row in the
+   view changes no result. This is the boundary of claim PRF-19.
 3. A set operation and a `WITH` clause are temporary tables in any case; their
    `DISTINCT` costs nothing extra and keeps the view a set.
 4. The term is translated as written, after `anchorComplements` (issue #562), not
    after `conjNF`: the normal form serves the violation queries, and the view
    serves reads.
-5. The measurement on the Landeneisenregister (`measurement-fc5.md`) shows the
+5. The measurement on FC5 (`measurement-fc5.md`) shows the
    other side of the same coin: a view that MariaDB cannot merge (a `UNION`, a
    `DISTINCT`, a recursion) is a temporary table without an index inside every
    query that joins it, the block-nested-loop join of issue #1708. A rule that
    joins such a view is then slower than the same rule on the stored table, even
-   when the view itself reads in a millisecond. The lever is `--materialize` for
+   when the view itself reads in a millisecond. Test H2 of `experiment/results.md`
+   measured it on a synthetic model from 1 000 to 64 000 atoms: a write to a base
+   relation whose rules join a union or a closure costs 3 to 10 times more with
+   views than with stored tables at 64 000 atoms, and the rules over the closure
+   stop at the limit of 60 s from 4 000 atoms on. The lever is `--materialize` for
    that relation; a translation of a union view that the database can merge is
    future work ("Still to decide").
 
@@ -207,7 +217,7 @@ conjuncts for the base relations of a view; `conjuncts.json` carries no
 *Impact in production:* a warning per view with a closure.
 
 **A property rule of a derived relation that is a view is left out when the shape of the definition guarantees the property; the compiler reports per view how many conjuncts read it.**
-*DC-11 · valid · 2026-10-27 · origin: issue #1744, the first measurement on the Landeneisenregister (27 October 2026)*
+*DC-11 · valid · 2026-10-27 · origin: issue #1744, the first measurement on FC5 (27 October 2026)*
 
 *Considerations:*
 
@@ -215,7 +225,7 @@ conjuncts for the base relations of a view; `conjuncts.json` carries no
    prototype evaluates the conjunct of each rule after a transaction that touches
    the relation. For a stored table that costs little. For a view it recomputes the
    view, twice for a rule such as `r;r~ |- I`. In the first measurement on the
-   Landeneisenregister the property rules of
+   FC5 the property rules of
    `eisHeeftTweeling := I[Eis] /\ eisFacetGelijk;eisFacetGelijk~` alone took 51 of
    the 76 seconds that all conjuncts took with views (0.6 ms with the stored table),
    and five property rules of `eisInBewerking` another 12; with the omission the 499
@@ -244,8 +254,8 @@ derived relations that carry properties.
 
 ## The database as guardian
 
-**With `--foreign-keys` the database structure carries a FOREIGN KEY from every column that holds an atom to the key column of its concept table, where that key is a PRIMARY KEY, and a UNIQUE constraint on every column that holds the unique side of a relation; `RESTRICT` on delete and update; a conjunct that such a UNIQUE makes empty is `structural`.**
-*DC-9 · valid · 2026-10-27 · origin: issue #1744, requirement R4 and the researcher's answer 7; builds on IE-DC-16 and PRF-8*
+**With `--foreign-keys` the database structure carries a FOREIGN KEY from every column that holds an atom to the key column of its concept table, where that key is a PRIMARY KEY, and a UNIQUE constraint on every column that holds the unique side of a relation; every constraint has a name, `fk_<table>_<column>` or `uq_<table>_<column>`; `RESTRICT` on delete and update; a conjunct that such a UNIQUE makes empty is `structural`.**
+*DC-9 · valid · 2026-10-29 · origin: issue #1744, requirement R4 and the researcher's answer 7, the two considerations of Stef Joosten (29 October 2026), tests H6 to H9 of `experiment/`; builds on IE-DC-16 and PRF-8*
 
 *Considerations:*
 
@@ -253,12 +263,16 @@ derived relations that carry properties.
    and at the moment of writing (Türker & Gertz 2001, in the research note); a
    conjunct that re-checks them after the transaction is a query the database
    has already answered.
-2. The prototype framework writes in an order the constraints accept: it adds
-   both atoms before it adds a link (`Relation::addLink`), removes the links of an
-   atom before it deletes the atom (`Concept::deleteAtom`), and merges atoms by
-   deleting and adding links. So `RESTRICT` holds, and a cascade would hide a
-   defect in that order rather than help; it would also delete pairs that the
-   delta tables of IE-DC-3 never see.
+2. MariaDB checks a constraint at every statement; it has no deferred
+   constraints. So the order in which the prototype framework writes inside a
+   transaction matters, not only the state at its end. The framework adds both
+   atoms before it adds a link (`Relation::addLink`) and merges atoms by deleting
+   and adding links. Until framework OK-31 it deleted an atom before its links
+   (`Concept::deleteAtom`): test H6 of the experiment found every deletion of an
+   atom with a link refused with error 1451. Since OK-31 the links go first, and
+   the fifteen requests of H6 pass, also with `--derived-views`. A cascade would
+   have hidden that defect instead of showing it; it would also delete pairs that
+   the delta tables of IE-DC-3 never see. So `RESTRICT`.
 3. A key column of a scalar concept table is not a primary key (issue #341), a
    concept of a type that cannot be listed has no table (issue #1727), and a
    table of another database is a view here (v5.10.0): a column that refers to
@@ -279,21 +293,44 @@ derived relations that carry properties.
 5. A bulk load that writes rows in its own order runs with
    `SET FOREIGN_KEY_CHECKS=0` and switches the checks on again; `ampersand
    validate` does so around the population of its temporary database, and the
-   `sqlload` route of the Landeneisenregister needs the same line. The
+   `sqlload` route of FC5 needs the same line. The
    delta-SQL harness (`incremental-bench --sql`) inserts synthetic pairs for
    atoms that no concept table holds and is run without the option.
 6. `NOT NULL` for `TOT` was set aside, as the issue proposes: MariaDB has no
    deferred constraints, and the framework creates an atom before it fills its
    columns.
 7. The option is off by default in this release, so that a deployment chooses
-   the moment at which its load scripts are ready for the checks.
+   the moment at which its load scripts are ready for the checks, and its
+   framework has OK-31.
+8. Code that goes into production follows the generally accepted principles of
+   good SQL: a reference is a foreign key, a uniqueness is a unique constraint, and
+   a constraint has a name (Stef Joosten). The name makes the error of the
+   database name the column (`CONSTRAINT "fk_r_A" FOREIGN KEY ("A") ...`), and lets
+   a migration script drop the constraint by a name that does not depend on the
+   order of the statements, as MariaDB's own names (`r_ibfk_1`) do. A name longer
+   than 64 characters is cut and gets a hash, as the names of DC-10 are.
+9. The constraints are a second line of defence, as the fatals in the Haskell
+   code of Ampersand are: they guard the tables against code that writes them
+   directly, and they are not meant to fire for a user. When one fires anyway, the
+   user should see that this is a deep fault and call the supplier (Stef Joosten).
+   The framework turns errors 1451 and 1452 into a `DatabaseGuardException` with
+   that message (framework OK-31). Test H7 wrote eight broken references and
+   duplicates from outside the framework; the database refused all eight. A
+   reference to a concept without a table of its own, or to a scalar concept, is
+   not guarded (consideration 3).
+10. A foreign key costs one index lookup per written pair. Test H9 measured the
+    bulk insert of 2N pairs into a link table with and without its foreign key,
+    for N from 1 000 to 64 000 (`experiment/results.md`).
 
 *Impact on the specification:* none.
 
 *Impact in production:* with the option, a write that violates a reference or a
 uniqueness fails at once with a database error instead of at the end of the
-transaction with a violation; the conjuncts of the multiplicities that a
-`UNIQUE` enforces carry the cost profile `structural`.
+transaction with a violation; through the framework, a refused reference answers
+with the message of consideration 9. The conjuncts of the multiplicities that a
+`UNIQUE` enforces carry the cost profile `structural`. A transaction in which two
+atoms exchange their values of an `INJ` relation is refused (test H8), although
+its end state satisfies every rule; see "Still to decide".
 
 ## The external schema
 
@@ -327,7 +364,7 @@ transaction with a violation; the conjuncts of the multiplicities that a
    Boundary: the names are made unique among the schema views; a relation that a
    script happens to call `conj_3` or `ifc_...` would give a table with the name
    of a view, which the database refuses at install. No model has such a name.
-6. The evidence that the Oracle lane of the Landeneisenregister can follow the
+6. The evidence that the Oracle/APEX benchmark of FC5 can follow the
    model: the view below is generated from
    `testing/derivedViews/constraints/constraints.adl` with `--schema-views`, and
    next to it stands its translation to Oracle by hand.
@@ -367,6 +404,34 @@ hundred views more; nothing reads them unless something outside the prototype
 does.
 
 ## Still to decide
+
+- **Which derived relation becomes a view by default.** Test H2 of the experiment
+  shows that a view pays when no rule reads it or when the database merges it, and
+  that a view with a union or a closure that a rule joins makes every write that
+  touches it 3 to 10 times more expensive (the FC5 measurement: `evaluate/all` from
+  4 434 to 12 732 ms). Under `--derived-views` the compiler could keep such a
+  relation stored by itself, with a line in its report, and `--materialize` would
+  then name the exceptions in the other direction. That changes requirement R2,
+  which asks for materialisation on an explicit indication; the owner of the
+  language decides.
+
+- **UNIQUE on a column that a user writes.** Test H8 of the experiment refused a
+  transaction in which two atoms exchange their values of an `INJ` relation (error
+  1062 at the first `UPDATE`), although its end state satisfies every rule: an
+  Ampersand invariant holds at the end of a transaction, a MariaDB constraint at
+  every statement. The same error comes when a user gives a second atom the value
+  of the first, which is the user's mistake and today a violation with the rule's
+  message. Both go against consideration 9 of DC-9, by which a constraint fires
+  only on a fault that is not the user's. Three ways:
+  (a) a foreign key only, and the `INJ` and `UNI` rules stay conjuncts, checked
+  at the end of the transaction; consideration 8 then holds for references and not
+  for uniqueness, and the conjuncts that a `UNIQUE` made structural run again;
+  (b) keep the `UNIQUE`, and let the framework turn a 1062 on a `uq_` constraint
+  into the violation of the rule with the rule's message; an exchange still needs
+  two transactions;
+  (c) keep it as it is, a 1062 answers with a general error 500.
+  The recommendation is (a), because it follows from consideration 9 and H8 and
+  takes code away. The owner of the language decides.
 
 - **The keyword.** `ENFORCE MATERIALIZED r := term` would put the indication of DC-2
   in the script, next to the statement it concerns, where `--materialize` puts it in

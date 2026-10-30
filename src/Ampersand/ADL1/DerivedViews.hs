@@ -7,7 +7,7 @@
 --   generates @r@ as a database view on the SQL of @term@ instead: nothing has
 --   to be maintained, and @r@ can never lag behind.
 --
---   The measurement of the two routes on the Landeneisenregister stands in
+--   The measurement of the two routes on FC5 stands in
 --   memorybank/derived-views/measurement-fc5.md, the design choices next to it.
 --
 --   This module decides which statements become views, and gives the helpers
