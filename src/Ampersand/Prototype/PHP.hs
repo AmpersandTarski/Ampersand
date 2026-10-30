@@ -12,6 +12,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 -- import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec
+import Ampersand.FSpec.FSpecAux (derivedViewPlugs, isViewPlug)
 import Ampersand.FSpec.SQL
 import Ampersand.Prototype.TableSpec
 import RIO.Directory
@@ -369,11 +370,30 @@ createTempDatabase fSpec = do
         <> [ "",
              "//// Number of plugs: " <> T.pack (show (length (plugInfos fSpec)))
            ]
-        -- Create all plugs
-        <> concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
-        -- Populate all plugs
-        <> concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
+        -- Create all tables
+        <> concatMap (createTablePHP . plug2TableSpec) tablePlugs
+        -- Create the views of the derived relations (issue #1744), in dependency order
+        <> concatMap (\(plug, rel, definition) -> statementPHP (createDerivedViewSql False fSpec plug rel definition)) (derivedViewPlugs fSpec)
+        -- The declarative constraints and the named external schema (issue #1744)
+        <> (if fForeignKeys fSpec then concatMap statementPHP (constraintQueries fSpec (const False)) else [])
+        <> (if fSchemaViews fSpec then concatMap statementPHP (schemaViewQueries False fSpec) else [])
+        -- Populate all tables (a view has no population of its own). The tables are filled in
+        -- the order of the plugs, so a row can refer to a row that comes later: the foreign
+        -- key checks are off while the population goes in.
+        <> (if fForeignKeys fSpec then statementPHP (SqlQuerySimple "SET FOREIGN_KEY_CHECKS=0") else [])
+        <> concatMap populatePlugPHP tablePlugs
+        <> (if fForeignKeys fSpec then statementPHP (SqlQuerySimple "SET FOREIGN_KEY_CHECKS=1") else [])
       where
+        tablePlugs = [p | InternalPlug p <- plugInfos fSpec, not (isViewPlug fSpec p)]
+        statementPHP :: SqlQuery -> [Text]
+        statementPHP q =
+          [ "$sql=" <> queryAsPHP q <> ";",
+            "mysqli_query($DB_link,$sql);",
+            "if($err=mysqli_error($DB_link)) {",
+            "  $error=true; echo $err.'<br />';",
+            "}",
+            ""
+          ]
         dropDB :: SqlQuery
         dropDB =
           SqlQuerySimple

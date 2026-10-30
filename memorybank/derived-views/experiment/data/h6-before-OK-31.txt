@@ -1,0 +1,47 @@
+reinstall with population	200	committed=n/a	dbrefused=no
+create a new atom of A	200	committed=n/a	dbrefused=no
+add r(a3,b1); a3 is new, b1 exists	200	committed=true	dbrefused=no
+add r(a3,b9), b9 is new	200	committed=true	dbrefused=no
+add t(a3,b9)	200	committed=true	dbrefused=no
+set nummer(a3,n3), n3 is new	200	committed=true	dbrefused=no
+add s(b9,c9), c9 is new	200	committed=true	dbrefused=no
+add parent(c9,c3)	200	committed=true	dbrefused=no
+remove r(a3,b1)	200	committed=true	dbrefused=no
+remove parent(c9,c3)	200	committed=true	dbrefused=no
+delete atom C c2 (parent, s, closure)	500	committed=n/a	dbrefused=YES
+{
+    "error": 500,
+    "msg": "The database refused a change that this application should never make. This is a fault in the application, not in what you did. Please report it to the supplier of the application, with the time of this message. The database guard refused a write. MYSQL err1451: 'Cannot delete or update a parent row: a foreign key constraint fails (\"h6\".\"parent\", CONSTRAINT \"fk_parent_SrcC\" FOREIGN KEY (\"SrcC\") REFERENCES \"C\" (\"C\"))' in query: DELETE FROM \"C\" WHERE \"C\" = 'c2' LIMIT 1",
+    "notifications": {
+        "errors": [],
+        "warnings": [],
+        "
+delete atom B b2 (r, s)	500	committed=n/a	dbrefused=YES
+{
+    "error": 500,
+    "msg": "The database refused a change that this application should never make. This is a fault in the application, not in what you did. Please report it to the supplier of the application, with the time of this message. The database guard refused a write. MYSQL err1451: 'Cannot delete or update a parent row: a foreign key constraint fails (\"h6\".\"r\", CONSTRAINT \"fk_r_B\" FOREIGN KEY (\"B\") REFERENCES \"B\" (\"B\"))' in query: DELETE FROM \"B\" WHERE \"B\" = 'b2' LIMIT 1",
+    "notifications": {
+        "errors": [],
+        "warnings": [],
+        "infos": [],
+    
+delete atom A a1 (r, t, nummer, derived)	500	committed=n/a	dbrefused=YES
+{
+    "error": 500,
+    "msg": "The database refused a change that this application should never make. This is a fault in the application, not in what you did. Please report it to the supplier of the application, with the time of this message. The database guard refused a write. MYSQL err1451: 'Cannot delete or update a parent row: a foreign key constraint fails (\"h6\".\"r\", CONSTRAINT \"fk_r_A\" FOREIGN KEY (\"A\") REFERENCES \"A\" (\"A\"))' in query: DELETE FROM \"A\" WHERE \"A\" = 'a1' LIMIT 1",
+    "notifications": {
+        "errors": [],
+        "warnings": [],
+        "infos": [],
+    
+delete atom A a3	500	committed=n/a	dbrefused=YES
+{
+    "error": 500,
+    "msg": "The database refused a change that this application should never make. This is a fault in the application, not in what you did. Please report it to the supplier of the application, with the time of this message. The database guard refused a write. MYSQL err1451: 'Cannot delete or update a parent row: a foreign key constraint fails (\"h6\".\"r\", CONSTRAINT \"fk_r_A\" FOREIGN KEY (\"A\") REFERENCES \"A\" (\"A\"))' in query: DELETE FROM \"A\" WHERE \"A\" = 'a3' LIMIT 1",
+    "notifications": {
+        "errors": [],
+        "warnings": [],
+        "infos": [],
+    
+reinstall again	200	committed=n/a	dbrefused=no
+log lines with err1451/1452: 8

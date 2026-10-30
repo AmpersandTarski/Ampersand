@@ -208,6 +208,8 @@ termsReachingSQL env context conjs =
     <> [((origin r, "rule " <> fullName r), normalized (notCpl (formalExpression r))) | r <- toList (allRules context)]
     <> concat [[(at o, objExpression o), (at o, normalized (objExpression o))] | o <- allObjectDefs]
     <> [((origin i, "an identity"), e) | i <- identities context, e <- NE.toList (identityAts i)]
+    -- the defining term of a derived relation that is a view (issue #1744)
+    <> [((origin enf, "the derived relation " <> fullName (enfRel enf)), enfExpr enf) | enf <- enforces context, enfStorage enf == DerivedView]
     <> [((origin vd, "a view"), e) | vd <- viewDefs context, ViewExp e <- map vsmLoad (vdats vd)]
     <> [ ((origin r, "the violation message of rule " <> fullName r), e)
          | r <- toList (allRules context),

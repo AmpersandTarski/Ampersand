@@ -1,0 +1,23 @@
+-- Appended to Experiment.adl (before ENDCONTEXT) for test H6 of the falsification experiment:
+-- a population and interfaces that write every base relation, so that the prototype framework
+-- creates atoms, adds and removes pairs, and deletes atoms with --foreign-keys on.
+POPULATION r CONTAINS [ ("a1","b1"), ("a1","b2"), ("a2","b2") ]
+POPULATION t CONTAINS [ ("a1","b1"), ("a2","b3") ]
+POPULATION s CONTAINS [ ("b1","c1"), ("b2","c2"), ("b3","c3") ]
+POPULATION parent CONTAINS [ ("c2","c1"), ("c3","c2") ]
+POPULATION nummer CONTAINS [ ("a1","n1"), ("a2","n2") ]
+
+INTERFACE BewerkA : I[A] CRUD BOX
+  [ r : r CRUD
+  , t : t CRUD
+  , nummer : nummer CRUD
+  , rs : rs cRud
+  , ru : ru cRud
+  ]
+INTERFACE BewerkB : I[B] CRUD BOX
+  [ s : s CRUD
+  ]
+INTERFACE BewerkC : I[C] CRUD BOX
+  [ parent : parent CRUD
+  , voorouder : voorouder cRud
+  ]
