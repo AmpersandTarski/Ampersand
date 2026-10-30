@@ -731,7 +731,8 @@ dRule term0 = case term0 of
             Typology
               { tyroot = PCpt nm,
                 tyCpts = [Set.singleton nm],
-                tyGrph = vertex (Set.singleton nm)
+                tyGrph = vertex (Set.singleton nm),
+                tyMultiTable = Set.empty
               }
         }
 
