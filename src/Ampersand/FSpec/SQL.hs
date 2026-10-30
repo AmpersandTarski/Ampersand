@@ -10,10 +10,14 @@ module Ampersand.FSpec.SQL
     broadQueryWithPlaceholder,
     commentBlockSQL,
     cartesianProductMarker,
+    derivedViewQuery,
+    derivedViewQueryPlain,
+    derivedViewIsMergeable,
   )
 where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.DerivedViews (materialises, readsAClosure)
 import Ampersand.Basics hiding (Name)
 import Ampersand.Classes
 import Ampersand.Core.ShowAStruct
@@ -57,6 +61,54 @@ prettyBroadQueryWithPlaceholder i fSpec =
     . T.lines
     . prettyQueryExpr theDialect
     . broadQuery fSpec
+
+-- | The query that defines the view of a derived relation (issue #1744): the SQL of its
+--   defining term. The outer DISTINCT is left out when the translation is one SELECT, so
+--   that the database can merge the view into the query that reads it; every generated
+--   query that reads the view applies its own DISTINCT, so a duplicate row in the view
+--   changes no result. A set operation or a WITH clause is a temporary table in any case,
+--   and keeps its DISTINCT. The translation of a term comes wrapped in comments, which the
+--   match looks through.
+derivedViewBinQuery :: FSpec -> Expression -> BinQueryExpr
+derivedViewBinQuery fSpec expr = withoutOuterDistinct (selectExpr fSpec (anchorComplements expr))
+  where
+    withoutOuterDistinct bqe = case bqe of
+      BinQEComment c x -> BinQEComment c (withoutOuterDistinct x)
+      BinSelect {} -> bqe {bseSetQuantifier = SQDefault}
+      _ -> setDistinct bqe
+
+-- | Whether the database can merge the view into the query that reads it: the translation
+--   is one SELECT without DISTINCT, and the term reads no closure. A view with a set
+--   operation or a DISTINCT is computed in full, as a temporary table without an index, at
+--   every use, and so is the recursive WITH clause of a closure inside a SELECT (issue #1744).
+derivedViewIsMergeable :: FSpec -> Expression -> Bool
+derivedViewIsMergeable fSpec expr =
+  oneSelect (derivedViewBinQuery fSpec expr) && not (readsAClosure (fDerivedViews fSpec) expr)
+  where
+    oneSelect bqe = case bqe of
+      BinQEComment _ x -> oneSelect x
+      BinSelect {} -> bseSetQuantifier bqe == SQDefault
+      _ -> False
+
+-- | The view query, prettyprinted with comments, indented by the given amount.
+derivedViewQuery :: Int -> FSpec -> Expression -> [Text]
+derivedViewQuery i fSpec =
+  T.lines
+    . T.intercalate ("\n" <> T.replicate i " ")
+    . T.lines
+    . prettyQueryExpr theDialect
+    . toSQL
+    . derivedViewBinQuery fSpec
+
+-- | The view query on one line, without comments.
+derivedViewQueryPlain :: FSpec -> Expression -> Text
+derivedViewQueryPlain fSpec =
+  T.unwords
+    . T.words
+    . prettyQueryExpr theDialect
+    . toSQL
+    . stripComment
+    . derivedViewBinQuery fSpec
 
 -- | The longest query the compiler hands to the database.
 maxQueryLength :: Int
@@ -525,37 +577,6 @@ maybeSpecialCase fSpec expr =
               )
         table1 = uName "t1"
         table2 = uName "t2"
-
--- | Whether the database must materialise the query of a term before it can join it.
---   The query of a closure is a recursive common table expression, and the query of a union is a set operator;
---   MariaDB merges neither into an enclosing join, so the result is a temporary table without an index.
---   A query built from declared relations by composition, intersection and converse is merged,
---   and a join onto it uses the indexes of the tables underneath.
---   The test is deliberately one-sided: EXCEPT computes its whole right-hand side, also when the left-hand side is small,
---   so a term gets it only when the left join certainly has no index to use (measured in issue #1708).
-materialises :: Expression -> Bool
-materialises e = case e of
-  EKl0 {} -> True
-  EKl1 {} -> True
-  EUni {} -> True
-  EFlp x -> materialises x
-  EBrk x -> materialises x
-  ECpl x -> materialises x
-  ECps (a, b) -> materialises a || materialises b
-  EIsc (a, b) -> materialises a || materialises b
-  EDif (a, b) -> materialises a || materialises b
-  ERad (a, b) -> materialises a || materialises b
-  EPrd (a, b) -> materialises a || materialises b
-  ELrs (a, b) -> materialises a || materialises b
-  ERrs (a, b) -> materialises a || materialises b
-  EDia (a, b) -> materialises a || materialises b
-  EEqu (a, b) -> materialises a || materialises b
-  EInc (a, b) -> materialises a || materialises b
-  EDcD {} -> False
-  EDcI {} -> False
-  EBin {} -> False
-  EDcV {} -> False
-  EMp1 {} -> False
 
 nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
 nonSpecialSelectExpr fSpec expr =

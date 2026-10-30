@@ -26,6 +26,7 @@ module Ampersand.Core.AbstractSyntaxTree
     Rules,
     RuleKind (..),
     AEnforce (..),
+    EnforceStorage (..),
     Relation (..),
     Relations,
     ARelDefault (..),
@@ -386,8 +387,20 @@ data AEnforce = AEnforce
     enfExpr :: !Expression,
     -- | If the enforcement rule is defined in the context of a pattern, the name of that pattern.
     enfPatName :: !(Maybe Text),
+    -- | How the prototype realises this statement: by rules that the ExecEngine runs, or,
+    --   for @ENFORCE r := term@ under @--derived-views@, by a database view for @r@
+    --   (issue #1744). A view statement has no rules.
+    enfStorage :: !EnforceStorage,
     enfRules :: ![Rule]
   }
+  deriving (Eq, Show)
+
+-- | How an ENFORCE statement is realised in the generated prototype (issue #1744).
+data EnforceStorage
+  = -- | The relation is a stored table; the ExecEngine maintains it with the rules of the statement.
+    StoredRelation
+  | -- | The relation is a database view on the SQL of the defining term; nothing maintains it.
+    DerivedView
   deriving (Eq, Show)
 
 instance Traced AEnforce where
