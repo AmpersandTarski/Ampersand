@@ -301,7 +301,13 @@ defines a relation by a term.
 2. The order changes no result: the fixpoint of the rounds is the same whatever
    the order, because the ExecEngine repeats until no rule has a violation. Only
    the number of rounds changes, so this is a design choice and not a proof
-   obligation.
+   obligation. The rules a round checks are the rules the transaction has
+   affected when the round starts (`Transaction::runExecEngine` in the framework
+   takes `getAffectedRules` once per round). So the chain fills in one round when
+   the transaction touches a relation that every link reads, as the import of
+   the FC5 does, where every link also reads `product`, `kenmerk` or another base
+   relation; a transaction that touches only the first link's input still brings
+   one link per round into the loop, and the order gains nothing there.
 3. The rules of the ENFORCE statements come before the other rules, because an
    automated rule that a modeller writes usually reads a derived relation and
    acts on it (the FC5 merges requirements that `eisSamenvoegbaar` pairs), and
@@ -319,8 +325,9 @@ defines a relation by a term.
 *Impact on the specification:* none.
 
 *Impact in production:* `roles.json` lists the `Compute` rules of a chain of
-derived relations in dependency order; a chain that needed one round per link
-fills in one round. There is no regression test that reads the order: the test
+derived relations in dependency order; a chain whose links a transaction all
+affects, and that needed one round per link, fills in one round. There is no
+regression test that reads the order: the test
 runner runs commands and checks exit codes, so the order was observed on a
 three-link chain and on the FC5 model and is recorded in the pull request.
 

@@ -211,8 +211,11 @@ inDependencyOrder rel term = go []
 --   after the statements whose relation its term reads, and then the other rules in
 --   the order given. The ExecEngine runs the rules of a round in this order and applies
 --   every insertion at once, so a derived relation that reads another is computed
---   after it in the same round, and a chain of derived relations fills in one round
---   instead of one round per link. The order changes no fixpoint: the ExecEngine
+--   after it in the same round. The rules a round checks are the rules the
+--   transaction has affected when the round starts, so a chain of derived relations
+--   fills in one round when the transaction touches a relation that every link
+--   reads, as an import does; otherwise a link enters the round after the one that
+--   fills what it reads, as before. The order changes no fixpoint: the ExecEngine
 --   repeats its rounds until no rule has a violation.
 rulesInEnforceOrder :: [AEnforce] -> [Rule] -> [Rule]
 rulesInEnforceOrder enfs rules = statementRules <> others
