@@ -10,6 +10,8 @@ module Ampersand.Core.ParseTree
     MetaData (..),
     Inclusion (..),
     InclusionItem (..),
+    InclusionWord (..),
+    inclusionWords,
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
@@ -176,6 +178,17 @@ data InclusionItem = InclusionItem
     itDatabase :: !(Maybe Text)
   }
   deriving (Show)
+
+-- | The words of an inclusion statement. They are no keywords, so that a script that uses them
+--   as identifiers keeps compiling: the parser recognises them by their position, the pretty
+--   printer writes them, and the generator of test scripts keeps them out of a generated name.
+--   'show' yields the spelling of a word in a script.
+data InclusionWord = INCLUDES | FROM | AS | NAMED
+  deriving (Show, Eq, Enum, Bounded)
+
+-- | The spelling of every word of an inclusion statement, derived from 'InclusionWord'.
+inclusionWords :: [Text]
+inclusionWords = map tshow [minBound .. maxBound :: InclusionWord]
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data MetaData = MetaData

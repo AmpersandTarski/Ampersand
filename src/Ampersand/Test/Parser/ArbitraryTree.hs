@@ -211,12 +211,8 @@ instance Arbitrary P_Context where
 instance Arbitrary MetaData where
   arbitrary = MetaData <$> arbitrary <*> safeStr1 <*> safeText
 
--- | The words that an inclusion statement recognises by their position. They are no keywords,
---   so a generated name avoids them: a context called FROM would make the statement ambiguous to read.
-inclusionWords :: [Text]
-inclusionWords = ["INCLUDES", "FROM", "AS", "NAMED"]
-
--- | A name of one word, as an inclusion statement writes it: no name space, and none of the words of the statement.
+-- | A name of one word, as an inclusion statement writes it: no name space, and none of the words
+--   of the statement ('inclusionWords'), for a context called FROM would make the statement ambiguous to read.
 plainNamePart :: Gen NamePart
 plainNamePart =
   ( \x -> case try2Namepart (text1ToText x) of

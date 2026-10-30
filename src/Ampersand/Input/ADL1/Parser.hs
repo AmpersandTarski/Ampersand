@@ -259,13 +259,13 @@ pFile = partitionEithers <$> many1 (Left <$> pInclusion <|> Right <$> pContext) 
 --- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)? ('NAMED' DatabaseName)?
 pInclusion :: AmpParser Inclusion
 pInclusion = do
-  -- The words INCLUDES, FROM, AS and NAMED are no keywords, so that scripts that use them as
+  -- The words of the statement ('InclusionWord') are no keywords, so that scripts that use them as
   -- identifiers keep compiling. They are recognised by their position.
   (orig, includers) <- try $ do
     orig <- currPos
     _ <- (pKey . toText1Unsafe) "CONTEXT"
     includers <- ((,) <$> pNameWithoutLabel ContextName <*> pDatabase) `sepBy1` pComma
-    pWord "INCLUDES"
+    pWord INCLUDES
     pure (orig, includers)
   items <- pItem `sepBy1` pComma
   pure (Inclusion orig includers items)
@@ -274,17 +274,17 @@ pInclusion = do
     pItem =
       build
         <$> pNameWithoutLabel ContextName
-        <*> pMaybe (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
-        <*> pMaybe (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
+        <*> pMaybe (pWord FROM *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
+        <*> pMaybe (pWord AS *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
         <*> pDatabase
     build nm mFrom = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom)
     -- The name of a database is an identifier of MariaDB: letters, digits and underscores.
     pDatabase :: AmpParser (Maybe Text)
-    pDatabase = pMaybe (pWord "NAMED" *> ((text1ToText <$> (pUpperCaseID <|> pLowerCaseID)) <?> "the name of a database"))
-    pWord :: Text -> AmpParser ()
-    pWord w = try (pUpperCaseID >>= isWord) <?> T.unpack w
+    pDatabase = pMaybe (pWord NAMED *> ((text1ToText <$> (pUpperCaseID <|> pLowerCaseID)) <?> "the name of a database"))
+    pWord :: InclusionWord -> AmpParser ()
+    pWord w = try (pUpperCaseID >>= isWord) <?> show w
       where
-        isWord t = if text1ToText t == w then pure () else fail (T.unpack w <> " expected")
+        isWord t = if text1ToText t == tshow w then pure () else fail (show w <> " expected")
     toNamePart :: Text1 -> AmpParser NamePart
     toNamePart t = case try2Namepart (text1ToText t) of
       Right np -> pure np

@@ -122,7 +122,7 @@ instance Pretty Inclusion where
   pretty (Inclusion _ includers items) =
     text "CONTEXT"
       <+> commas (map includer (NE.toList includers))
-      <+> text "INCLUDES"
+      <+> word INCLUDES
       <+> listOf1 items
     where
       includer (nm, db) = pretty nm <> named db
@@ -131,18 +131,22 @@ instance Pretty InclusionItem where
   pretty (InclusionItem nm mFrom defs alias db) =
     pretty nm
       <> maybe empty from mFrom
-      <> maybe empty (\a -> space <> text "AS" <+> (text . T.unpack . namePartToText) a) alias
+      <> maybe empty (\a -> space <> word AS <+> (text . T.unpack . namePartToText) a) alias
       <> named db
     where
       from f =
         space
-          <> text "FROM"
+          <> word FROM
           <+> quote (T.pack f)
           <> (if null defs then empty else space <> brackets (commas (map quote defs)))
 
 -- | The part of an inclusion statement that names a database.
 named :: Maybe Text -> Doc
-named = maybe empty (\d -> space <> text "NAMED" <+> (text . T.unpack) d)
+named = maybe empty (\d -> space <> word NAMED <+> (text . T.unpack) d)
+
+-- | A word of an inclusion statement, as a script spells it.
+word :: InclusionWord -> Doc
+word = text . show
 
 instance Pretty MetaData where
   pretty (MetaData _ nm val) =
