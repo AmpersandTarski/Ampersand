@@ -1,0 +1,7 @@
+CONTEXT FormalAmpersand IN ENGLISH
+INCLUDE "ruit.adl"
+POPULATION FormalAmpersand.includer[FormalAmpersand.Inclusion*FormalAmpersand.Context] CONTAINS [ ("i5", "Towns") ]
+POPULATION FormalAmpersand.included[FormalAmpersand.Inclusion*FormalAmpersand.Context] CONTAINS [ ("i5", "City") ]
+POPULATION FormalAmpersand.alias[FormalAmpersand.Inclusion*FormalAmpersand.Alias] CONTAINS [ ("i5", "Top") ]
+POPULATION FormalAmpersand.includes[FormalAmpersand.Context*FormalAmpersand.Context] CONTAINS [ ("Towns", "City") ]
+ENDCONTEXT

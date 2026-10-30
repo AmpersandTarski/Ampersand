@@ -1,0 +1,12 @@
+CONTEXT Permits INCLUDES Registry FROM "../contexts/registry_in_two_files.adl" AS Reg
+CONTEXT Permits IN ENGLISH
+PURPOSE CONTEXT Permits
+{+ The included context consists of two files, which a plain INCLUDE joins.
+The alias applies to the declarations of both files. +}
+
+
+RELATION applicant[Permit*Reg.Person] [UNI]
+RULE adult : applicant |- applicant;Reg.birthdate;Reg.birthdate~
+ROLE Clerk MAINTAINS adult
+
+ENDCONTEXT

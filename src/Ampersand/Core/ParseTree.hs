@@ -8,6 +8,20 @@ module Ampersand.Core.ParseTree
     Flippable (..),
     mergeContexts,
     MetaData (..),
+    foreignMetaName,
+    mkForeignMeta,
+    foreignContexts,
+    mkDatabaseMeta,
+    contextDatabases,
+    ownDatabase,
+    databaseOfLabel,
+    labelsOnOwnDatabase,
+    mkRelaxedMeta,
+    relaxedRules,
+    mkFileMeta,
+    foreignContextFiles,
+    mkLabelViewMeta,
+    foreignLabelViews,
     P_RoleRule (..),
     Role (..),
     P_Enforce (..),
@@ -34,6 +48,8 @@ module Ampersand.Core.ParseTree
     PCDDef (..),
     P_Representation (..),
     TType (..),
+    valueTType,
+    canBeEnumerated,
     P_Population (..),
     PAtomPair (..),
     PAtomValue (..),
@@ -139,6 +155,116 @@ data MetaData = MetaData
   }
   deriving (Show)
 
+-- | The metadata by which a joined context says which other contexts it contains.
+--   The compiler adds one for every context that the compiled context reaches by inclusion.
+--   Its value holds the label, which is the prefix of the things of that context, and the name of the context.
+foreignMetaName :: Text1
+foreignMetaName = toText1Unsafe "multicontext.foreign"
+
+mkForeignMeta :: Origin -> NamePart -> Text -> MetaData
+mkForeignMeta orig lbl ctxName = MetaData orig foreignMetaName (namePartToText lbl <> " " <> ctxName)
+
+-- | The contexts that a joined context contains besides the compiled one: label and name.
+foreignContexts :: [MetaData] -> [(Text, Text)]
+foreignContexts ms =
+  [ (lbl, T.drop 1 rest)
+    | m <- ms,
+      mtName m == foreignMetaName,
+      let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
+
+-- | The metadata by which a joined context says how one of the contexts it contains calls another one.
+--   Its value holds three labels: that of the first context and that of the second context in the compiled context,
+--   and the label that the first context has for the second one.
+labelViewMetaName :: Text1
+labelViewMetaName = toText1Unsafe "multicontext.label"
+
+mkLabelViewMeta :: Origin -> NamePart -> NamePart -> NamePart -> MetaData
+mkLabelViewMeta orig owner here there =
+  MetaData orig labelViewMetaName (T.unwords (map namePartToText [owner, here, there]))
+
+foreignLabelViews :: [MetaData] -> [(Text, Text, Text)]
+foreignLabelViews ms =
+  [ (owner, here, there)
+    | m <- ms,
+      mtName m == labelViewMetaName,
+      [owner, here, there] <- [T.words (mtVal m)]
+  ]
+
+-- | The metadata by which a joined context says in which file a context that it contains is found.
+fileMetaName :: Text1
+fileMetaName = toText1Unsafe "multicontext.file"
+
+mkFileMeta :: Origin -> NamePart -> FilePath -> MetaData
+mkFileMeta orig lbl file = MetaData orig fileMetaName (namePartToText lbl <> " " <> T.pack file)
+
+-- | The file of every context that a joined context contains besides the compiled one: label and file.
+foreignContextFiles :: [MetaData] -> [(Text, Text)]
+foreignContextFiles ms =
+  [ (lbl, T.drop 1 rest)
+    | m <- ms,
+      mtName m == fileMetaName,
+      let (lbl, rest) = T.break (== ' ') (mtVal m)
+  ]
+
+-- | The metadata by which a joined context says on which database a context lands.
+--   There is one for the compiled context and one for every context it reaches.
+--   Its value holds the label of the context (a dash for the compiled context), the name of the database,
+--   and the prefix that the tables of the context carry in that database (a dash if they carry none).
+--   A table carries a prefix if the context shares its database with the context that installs it:
+--   the prefix is the label that the installing context has for it.
+databaseMetaName :: Text1
+databaseMetaName = toText1Unsafe "multicontext.database"
+
+mkDatabaseMeta :: Origin -> Maybe NamePart -> Text -> Maybe NamePart -> MetaData
+mkDatabaseMeta orig lbl db prefix =
+  MetaData orig databaseMetaName (T.unwords [maybe "-" namePartToText lbl, db, maybe "-" namePartToText prefix])
+
+-- | The database of every context of a joined context: label (empty for the compiled context),
+--   name of the database, and the prefix of its tables in that database (empty if they carry none).
+contextDatabases :: [MetaData] -> [(Text, Text, Text)]
+contextDatabases ms =
+  [ (dash lbl, db, dash prefix)
+    | m <- ms,
+      mtName m == databaseMetaName,
+      [lbl, db, prefix] <- [T.words (mtVal m)]
+  ]
+  where
+    dash t = if t == "-" then "" else t
+
+-- | The database of the compiled context, if it is part of a system of contexts.
+ownDatabase :: [MetaData] -> Maybe Text
+ownDatabase ms = listToMaybe [db | ("", db, _) <- contextDatabases ms]
+
+-- | The database on which the context with the given label lands, and the prefix of its tables there.
+databaseOfLabel :: [MetaData] -> Text -> Maybe (Text, Text)
+databaseOfLabel ms lbl = listToMaybe [(db, prefix) | (l, db, prefix) <- contextDatabases ms, l == lbl]
+
+-- | The labels of the contexts that land on the database of the compiled context.
+--   The compiled context installs their tables and their initial population.
+labelsOnOwnDatabase :: [MetaData] -> [Text]
+labelsOnOwnDatabase ms = [l | (l, db, _) <- contextDatabases ms, l /= "", Just db == ownDatabase ms]
+
+-- | The metadata by which a joined context says that a context relaxes an invariant of a context it includes:
+--   it assigns the rule to a role, while no role maintains the rule in its own context.
+--   Its value holds the name space of the context that relaxes the rule (a dash for the compiled context)
+--   and the name of the rule in the joined context.
+relaxedMetaName :: Text1
+relaxedMetaName = toText1Unsafe "multicontext.relaxed"
+
+mkRelaxedMeta :: Origin -> NameSpace -> Name -> MetaData
+mkRelaxedMeta orig ns rule =
+  MetaData orig relaxedMetaName (T.unwords [if null ns then "-" else T.intercalate "." (map namePartToText ns), fullName rule])
+
+-- | The relaxed invariants of a joined context: the name space of the relaxing context and the name of the rule.
+relaxedRules :: [MetaData] -> [(Text, Text)]
+relaxedRules ms =
+  [ (if ns == "-" then "" else ns, rule)
+    | m <- ms,
+      mtName m == relaxedMetaName,
+      [ns, rule] <- [T.words (mtVal m)]
+  ]
+
 instance Traced MetaData where
   origin (MetaData p _ _) = p
 
@@ -150,6 +276,10 @@ data EnforceOperator
 
 data P_Enforce a = P_Enforce
   { pos :: !Origin,
+    -- | The optional name of this ENFORCE statement, needed to refer to it (e.g. in a PURPOSE)
+    penfNm :: !(Maybe Name),
+    -- | The optional label of this ENFORCE statement
+    penfLbl :: !(Maybe Label),
     penfRel :: !a,
     penfFlipped :: !Bool,
     penfOp :: !EnforceOperator,
@@ -157,13 +287,16 @@ data P_Enforce a = P_Enforce
   }
   deriving (Show)
 
+instance Traced (P_Enforce a) where
+  origin P_Enforce {pos = orig} = orig
+
 instance Functor P_Enforce where fmap = fmapDefault
 
 instance Foldable P_Enforce where foldMap = foldMapDefault
 
 instance Traversable P_Enforce where
-  traverse f (P_Enforce orig rel flipped op expr) =
-    (\r e -> P_Enforce orig r flipped op e)
+  traverse f (P_Enforce orig nm lbl rel flipped op expr) =
+    (\r e -> P_Enforce orig nm lbl r flipped op e)
       <$> f rel
       <*> traverse f expr
 
@@ -381,8 +514,27 @@ data TType
   | Integer
   | Float
   | Object
+  | -- | An OBJECT whose direct specialisations are stored in separate tables (issue #1716).
+    --   For the value of an atom it is the same as 'Object'; see 'valueTType'.
+    MultiTable
   | TypeOfOne -- special type for the special concept ONE.
   deriving (Eq, Ord, Data, Typeable, Enum, Bounded)
+
+-- | The type of the value of an atom. A 'MultiTable' concept holds objects,
+--   so wherever a consumer asks what kind of value an atom is, the answer is
+--   'Object'; the storage choice is of no concern to it.
+valueTType :: TType -> TType
+valueTType MultiTable = Object
+valueTType tt = tt
+
+-- | Whether the atoms of a concept of this type can be listed (issue #1727).
+--   Every integer, every number and every moment in time exists beforehand, so
+--   a concept of such a type has no table that lists its atoms, and a term that
+--   asks for all of them cannot be computed. A text type is not among them: it
+--   is the type of every concept without a REPRESENT statement, so it is also
+--   the type of concepts that hold things somebody entered.
+canBeEnumerated :: TType -> Bool
+canBeEnumerated tt = tt `notElem` [Integer, Float, Date, DateTime]
 
 instance Unique TType where
   showUnique = toText1Unsafe . tshow
@@ -402,6 +554,7 @@ instance Show TType where
     Integer -> "INTEGER"
     Float -> "FLOAT"
     Object -> "OBJECT"
+    MultiTable -> "MULTITABLE"
     TypeOfOne -> "TYPEOFONE"
 
 instance Hashable TType where
@@ -1266,6 +1419,8 @@ data PRef2Obj
   | PRef2Pattern !Name
   | PRef2Interface !Name
   | PRef2Context !Name
+  | PRef2Enforce !Name
+  | PRef2Role !Name
   deriving (Show, Eq, Ord) -- only for fatal error messages
 
 -- instance Named PRef2Obj where
@@ -1377,13 +1532,17 @@ data PClassify = PClassify
     -- | Left hand side concept
     specific :: P_Concept,
     -- | Right hand side concept
-    generics :: NE.NonEmpty P_Concept
+    generics :: NE.NonEmpty P_Concept,
+    -- | True for `CLASSIFY C IS A \/ B` (issue #1716): the left hand side
+    --   concept is the union of the right hand side concepts, so each of them
+    --   is a specialisation of it, and it has no atoms of its own.
+    pc_isUnion :: Bool
   }
   deriving (Show)
 
 -- (Stef April 29th, 2020) Eq PClassify is used to generate P-contexts without duplicate PClassify's in it.
 instance Eq PClassify where
-  p == q = specific p == specific q && generics p == generics q
+  p == q = specific p == specific q && generics p == generics q && pc_isUnion p == pc_isUnion q
 
 instance Traced PClassify where
   origin PClassify {pos = orig} = orig

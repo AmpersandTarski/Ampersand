@@ -54,6 +54,7 @@ Keywords in Ampersand are always written in CAPITALS.
   - [`CONTEXT`, `ENDCONTEXT`](./syntax-of-ampersand#the-context-statement)
   - [`IN`, `ENGLISH`, `DUTCH`](./syntax-of-ampersand#language-support)
   - [`INCLUDE`](./syntax-of-ampersand#the-include-statement)
+  - [`INCLUDES`](./syntax-of-ampersand#systems-of-contexts)
   - [`PATTERN`, `ENDPATTERN`](./syntax-of-ampersand#the-pattern-statement)
   - [`CONCEPT`](./syntax-of-ampersand#the-concept-statement)
 - Keywords for [relations](./syntax-of-ampersand#the-relation-statement)

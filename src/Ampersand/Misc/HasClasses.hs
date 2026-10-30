@@ -52,6 +52,10 @@ class HasFSpecGenOpts a where
   fSpecGenOptsL :: Lens' a FSpecGenOpts
   sqlBinTablesL :: Lens' a Bool
   sqlBinTablesL = fSpecGenOptsL . lens xsqlBinTables (\x y -> x {xsqlBinTables = y})
+  allConceptTablesL :: Lens' a Bool
+  allConceptTablesL = fSpecGenOptsL . lens xallConceptTables (\x y -> x {xallConceptTables = y})
+  compiledContextL :: Lens' a Text
+  compiledContextL = fSpecGenOptsL . lens xcompiledContext (\x y -> x {xcompiledContext = y})
   genInterfacesL :: Lens' a Bool --
   genInterfacesL = fSpecGenOptsL . lens xgenInterfaces (\x y -> x {xgenInterfaces = y})
   namespaceL :: Lens' a Text -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
@@ -64,6 +68,20 @@ class HasFSpecGenOpts a where
   allowInvariantViolationsL = fSpecGenOptsL . lens xallowInvariantViolations (\x y -> x {xallowInvariantViolations = y})
   failOnOscillationL :: Lens' a Bool
   failOnOscillationL = fSpecGenOptsL . lens xfailOnOscillation (\x y -> x {xfailOnOscillation = y})
+  failOnCartesianProductL :: Lens' a Bool
+  failOnCartesianProductL = fSpecGenOptsL . lens xfailOnCartesianProduct (\x y -> x {xfailOnCartesianProduct = y})
+  confineIncludesL :: Lens' a Bool
+  confineIncludesL = fSpecGenOptsL . lens xconfineIncludes (\x y -> x {xconfineIncludes = y})
+  derivedViewsL :: Lens' a Bool
+  derivedViewsL = fSpecGenOptsL . lens xderivedViews (\x y -> x {xderivedViews = y})
+  materializeL :: Lens' a [Text]
+  materializeL = fSpecGenOptsL . lens xmaterialize (\x y -> x {xmaterialize = y})
+  forceViewL :: Lens' a [Text]
+  forceViewL = fSpecGenOptsL . lens xforceView (\x y -> x {xforceView = y})
+  foreignKeysL :: Lens' a Bool
+  foreignKeysL = fSpecGenOptsL . lens xforeignKeys (\x y -> x {xforeignKeys = y})
+  schemaViewsL :: Lens' a Bool
+  schemaViewsL = fSpecGenOptsL . lens xschemaViews (\x y -> x {xschemaViews = y})
 
 instance HasFSpecGenOpts FSpecGenOpts where
   fSpecGenOptsL = id
@@ -77,6 +95,9 @@ instance HasFSpecGenOpts ValidateOpts where
 
 instance HasFSpecGenOpts ProofOpts where
   fSpecGenOptsL = lens x6fSpecGenOpts (\x y -> x {x6fSpecGenOpts = y})
+
+instance HasFSpecGenOpts IncrementalBenchOpts where
+  fSpecGenOptsL = lens xIncBenchFSpecGenOpts (\x y -> x {xIncBenchFSpecGenOpts = y})
 
 instance HasFSpecGenOpts PopulationOpts where
   fSpecGenOptsL = lens x5fSpecGenOpts (\x y -> x {x5fSpecGenOpts = y})
@@ -293,6 +314,11 @@ data Recipe
 data FSpecGenOpts = FSpecGenOpts
   { xrootFile :: !Roots, -- relative paths. Must be set the first time it is read.
     xsqlBinTables :: !Bool,
+    -- | Should every concept get a table, also if no query of this context reads it?
+    --   A context that other contexts include needs that, because they read its tables.
+    xallConceptTables :: !Bool,
+    -- | Which context of a system of contexts to compile. Empty: the first context in the root file.
+    xcompiledContext :: !Text,
     xgenInterfaces :: !Bool, --
     xnamespace :: !Text, -- prefix database identifiers with this namespace, to isolate namespaces within the same database.
     xdefaultCrud :: !(Bool, Bool, Bool, Bool),
@@ -302,7 +328,26 @@ data FSpecGenOpts = FSpecGenOpts
     -- | Should invariant violations be ignored?
     xallowInvariantViolations :: !Bool,
     -- | Should a detected ExecEngine oscillation risk make the run fail (non-zero exit)?
-    xfailOnOscillation :: !Bool
+    xfailOnOscillation :: !Bool,
+    -- | Should a Cartesian product in a violation query make the run fail (non-zero exit)?
+    xfailOnCartesianProduct :: !Bool,
+    -- | May an INCLUDE only name a file in the directory of a root file or below?
+    --   No command-line option sets this. @ampersand serve@ switches it on, because
+    --   it compiles scripts of callers it does not know on a machine that is not theirs.
+    xconfineIncludes :: !Bool,
+    -- | Generate a derived relation (@ENFORCE r := term@) as a database view instead of a
+    --   stored table maintained by the ExecEngine (issue #1744).
+    xderivedViews :: !Bool,
+    -- | The derived relations that stay stored and maintained as before, by name, when
+    --   @--derived-views@ is on (issue #1744).
+    xmaterialize :: ![Text],
+    -- | The derived relations that are views although a rule or a field reads a view the
+    --   database computes in full, by name, when @--derived-views@ is on (issue #1744).
+    xforceView :: ![Text],
+    -- | Generate FOREIGN KEY constraints in the database structure (issue #1744).
+    xforeignKeys :: !Bool,
+    -- | Generate a named view per conjunct and per interface field (issue #1744).
+    xschemaViews :: !Bool
   }
   deriving (Show)
 
@@ -310,6 +355,8 @@ instance HasOptions FSpecGenOpts where
   optsList opts =
     [ ("AMPERSAND_SCRIPT", tshow $ xrootFile opts),
       ("--sql-bin-tables", tshow $ xsqlBinTables opts),
+      ("--all-concept-tables", tshow $ xallConceptTables opts),
+      ("--context", tshow $ xcompiledContext opts),
       ("--interfaces", tshow $ xgenInterfaces opts),
       ("--namespace", tshow $ xnamespace opts),
       ( "--crud-defaults",
@@ -321,7 +368,13 @@ instance HasOptions FSpecGenOpts where
       ("--[no-]trim-cellvalues", tshow $ xtrimXLSXCells opts),
       ("--build-recipe", tshow $ xrecipe opts),
       ("--ignore-invariant-violations", tshow $ xallowInvariantViolations opts),
-      ("--fail-on-oscillation", tshow $ xfailOnOscillation opts)
+      ("--fail-on-oscillation", tshow $ xfailOnOscillation opts),
+      ("--fail-on-cartesian-product", tshow $ xfailOnCartesianProduct opts),
+      ("--derived-views", tshow $ xderivedViews opts),
+      ("--materialize", T.intercalate "," $ xmaterialize opts),
+      ("--view", T.intercalate "," $ xforceView opts),
+      ("--foreign-keys", tshow $ xforeignKeys opts),
+      ("--schema-views", tshow $ xschemaViews opts)
     ]
 
 data FSpecFormat
@@ -518,6 +571,68 @@ newtype ProofOpts = ProofOpts
 instance HasOptions ProofOpts where
   optsList opts =
     optsList (x6fSpecGenOpts opts)
+
+-- | Options for @ampersand incremental-bench@
+data IncrementalBenchOpts = IncrementalBenchOpts
+  { -- | Options required to build the fSpec
+    xIncBenchFSpecGenOpts :: !FSpecGenOpts,
+    -- | Comma-separated population sizes (pairs per relation) to measure at
+    xIncBenchScales :: !Text,
+    -- | Number of single-pair transactions per scale
+    xIncBenchTxCount :: !Int,
+    -- | Seed of the deterministic transaction stream
+    xIncBenchSeed :: !Int,
+    -- | Check every transaction against full re-evaluation (the oracle)
+    xIncBenchVerify :: !Bool,
+    -- | Write per-transaction measurements to this CSV file
+    xIncBenchCsv :: !(Maybe FilePath),
+    -- | Run the delta-SQL referee harness against MariaDB instead of the
+    --   in-memory benchmark (issue #1684)
+    xIncBenchSql :: !Bool,
+    -- | Harness transactions replay pairs from the real population instead
+    --   of synthesizing atoms; works on any table layout
+    xIncBenchReplay :: !Bool,
+    -- | Referee cadence in the SQL harness: check the affected conjuncts
+    --   every k-th transaction (the final full check always runs)
+    xIncBenchRefereeEvery :: !Int
+  }
+  deriving (Show)
+
+instance HasOptions IncrementalBenchOpts where
+  optsList opts =
+    optsList (xIncBenchFSpecGenOpts opts)
+      <> [ ("--scales", xIncBenchScales opts),
+           ("--transactions", tshow (xIncBenchTxCount opts)),
+           ("--seed", tshow (xIncBenchSeed opts)),
+           ("--verify", tshow (xIncBenchVerify opts)),
+           ("--csv", maybe "<not set>" tshow (xIncBenchCsv opts)),
+           ("--sql", tshow (xIncBenchSql opts)),
+           ("--replay", tshow (xIncBenchReplay opts)),
+           ("--referee-every", tshow (xIncBenchRefereeEvery opts))
+         ]
+
+class HasIncrementalBenchOpts env where
+  incrementalBenchOptsL :: Lens' env IncrementalBenchOpts
+  incBenchScalesL :: Lens' env Text
+  incBenchScalesL = incrementalBenchOptsL . lens xIncBenchScales (\x y -> x {xIncBenchScales = y})
+  incBenchTxCountL :: Lens' env Int
+  incBenchTxCountL = incrementalBenchOptsL . lens xIncBenchTxCount (\x y -> x {xIncBenchTxCount = y})
+  incBenchSeedL :: Lens' env Int
+  incBenchSeedL = incrementalBenchOptsL . lens xIncBenchSeed (\x y -> x {xIncBenchSeed = y})
+  incBenchVerifyL :: Lens' env Bool
+  incBenchVerifyL = incrementalBenchOptsL . lens xIncBenchVerify (\x y -> x {xIncBenchVerify = y})
+  incBenchCsvL :: Lens' env (Maybe FilePath)
+  incBenchCsvL = incrementalBenchOptsL . lens xIncBenchCsv (\x y -> x {xIncBenchCsv = y})
+  incBenchSqlL :: Lens' env Bool
+  incBenchSqlL = incrementalBenchOptsL . lens xIncBenchSql (\x y -> x {xIncBenchSql = y})
+  incBenchReplayL :: Lens' env Bool
+  incBenchReplayL = incrementalBenchOptsL . lens xIncBenchReplay (\x y -> x {xIncBenchReplay = y})
+  incBenchRefereeEveryL :: Lens' env Int
+  incBenchRefereeEveryL = incrementalBenchOptsL . lens xIncBenchRefereeEvery (\x y -> x {xIncBenchRefereeEvery = y})
+
+instance HasIncrementalBenchOpts IncrementalBenchOpts where
+  incrementalBenchOptsL = id
+  {-# INLINE incrementalBenchOptsL #-}
 
 -- | Options for @ampersand init@
 data InitOpts = InitOpts

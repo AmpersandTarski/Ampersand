@@ -5,6 +5,7 @@ module Ampersand.Output.ToJSON.Relations (Relationz) where
 
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpecAux
+import Ampersand.FSpec.Incremental.DeltaTerms (deltaTableName)
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.Set as Set
 
@@ -23,8 +24,22 @@ data RelationJson = RelationJson
     relJSONprop :: !Bool,
     relJSONaffectedConjuncts :: ![Text],
     relJSONmysqlTable :: !RelTableInfo,
+    -- | Every table that stores a part of this relation (issue #1716). One
+    --   entry, the same as `mysqlTable`, for every relation except one declared
+    --   on a MULTITABLE union concept: that one has a column in the table of
+    --   each member, and a runtime that writes a pair must write it in the
+    --   table that holds the atom.
+    relJSONmysqlTables :: ![RelTableInfo],
     relJSONdefaultSrc :: ![Text],
-    relJSONdefaultTgt :: ![Text]
+    relJSONdefaultTgt :: ![Text],
+    -- | Optional (issue #1684): the table that holds this relation's touched
+    --   pairs during a transaction, for delta-scoped re-evaluation. Present
+    --   only for relations that occur in some conjunct.
+    relJSONdeltaTable :: !(Maybe Text),
+    -- | How the relation is stored (issue #1744): @"table"@, or @"view"@ for a derived
+    --   relation that is generated as a database view. A view is read like a table and
+    --   cannot be written; a runtime that does not know this field treats it as a table.
+    relJSONstorage :: !Text
   }
   deriving (Generic, Show)
 
@@ -72,12 +87,22 @@ instance JSON Relation RelationJson where
         relJSONsur = isSur bindedExp,
         relJSONprop = isProp bindedExp,
         relJSONaffectedConjuncts = maybe [] (map $ text1ToText . rc_id) . lookup dcl . allConjsPerDecl $ fSpec,
-        relJSONmysqlTable = fromAmpersand env fSpec dcl,
+        relJSONmysqlTable = case tableInfos of
+          info : _ -> info
+          [] -> fatal ("Relation not found in any table: " <> fullName dcl),
+        relJSONmysqlTables = tableInfos,
         relJSONdefaultSrc = concatMap toText . Set.toList . Set.filter (is Src) $ decDefaults dcl,
-        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl
+        relJSONdefaultTgt = concatMap toText . Set.toList . Set.filter (is Tgt) $ decDefaults dcl,
+        relJSONdeltaTable =
+          if isJust (lookup dcl (allConjsPerDecl fSpec)) && not isView
+            then Just (deltaTableName dcl)
+            else Nothing,
+        relJSONstorage = if isView then "view" else "table"
       }
     where
       bindedExp = EDcD dcl
+      isView = isViewRelation fSpec dcl
+      tableInfos = map (relTableInfo env fSpec dcl) (relationTableInfos fSpec dcl)
       is :: SrcOrTgt -> ARelDefault -> Bool
       is st x = case x of
         ARelDefaultAtom st' _ -> st == st'
@@ -87,26 +112,32 @@ instance JSON Relation RelationJson where
         ARelDefaultAtom _ vals -> toList $ fmap showValADL vals
         ARelDefaultEvalPHP _ txt -> ["{php}" <> txt]
 
+-- | The first table of the relation, for callers that expect one.
 instance JSON Relation RelTableInfo where
-  fromAmpersand env fSpec dcl =
-    RelTableInfo
-      { rtiJSONname = text1ToText . showUnique $ plug,
-        rtiJSONtableOf = srcOrtgt,
-        rtiJSONsrcCol = fromAmpersand env fSpec . rsSrcAtt $ relstore,
-        rtiJSONtgtCol = fromAmpersand env fSpec . rsTrgAtt $ relstore
-      }
-    where
-      (plug, relstore) = getRelationTableInfo fSpec dcl
-      -- A concept without a concept table is in no table at all, so it can
-      -- never be the table this relation is stored in (issue #1672).
-      plugSrc = fst <$> lookupConceptTable fSpec (source dcl)
-      plugTrg = fst <$> lookupConceptTable fSpec (target dcl)
-      srcOrtgt :: Maybe Text
-      srcOrtgt
-        | (Just plug == plugSrc) && (plugSrc == plugTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
-        | Just plug == plugSrc = Just "src" -- relation in same table as src concept (UNI relations)
-        | Just plug == plugTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
-        | otherwise = Nothing -- relations in n-n table (not UNI and not INJ)
+  fromAmpersand env fSpec dcl = case relationTableInfos fSpec dcl of
+    info : _ -> relTableInfo env fSpec dcl info
+    [] -> fatal ("Relation not found in any table: " <> fullName dcl)
+
+relTableInfo :: env -> FSpec -> Relation -> (PlugSQL, RelStore) -> RelTableInfo
+relTableInfo env fSpec dcl (plug, relstore) =
+  RelTableInfo
+    { rtiJSONname = text1ToText . showUnique $ plug,
+      rtiJSONtableOf = srcOrtgt,
+      rtiJSONsrcCol = fromAmpersand env fSpec . rsSrcAtt $ relstore,
+      rtiJSONtgtCol = fromAmpersand env fSpec . rsTrgAtt $ relstore
+    }
+  where
+    -- A concept without a concept table is in no table at all, so it can
+    -- never be the table this relation is stored in (issue #1672); a MULTITABLE
+    -- union concept is stored in the tables of its members (issue #1716).
+    plugsSrc = mapMaybe (fmap fst . lookupConceptTable fSpec) (storageMembersIn (conceptUnions fSpec) (source dcl))
+    plugsTrg = mapMaybe (fmap fst . lookupConceptTable fSpec) (storageMembersIn (conceptUnions fSpec) (target dcl))
+    srcOrtgt :: Maybe Text
+    srcOrtgt
+      | (plug `elem` plugsSrc) && (plug `elem` plugsTrg) = Just $ if rsStoredFlipped relstore then "tgt" else "src" -- relations where src and tgt concepts are in the same classification tree as well as relations that are UNI or INJ
+      | plug `elem` plugsSrc = Just "src" -- relation in same table as src concept (UNI relations)
+      | plug `elem` plugsTrg = Just "tgt" -- relation in same table as tgt concept (INJ relations that are not UNI)
+      | otherwise = Nothing -- relations in n-n table (not UNI and not INJ)
 
 instance JSON SqlAttribute TableCol where
   fromAmpersand _ _ att =

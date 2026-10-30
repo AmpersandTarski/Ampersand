@@ -1,0 +1,6 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
+CONTEXT Fail IN ENGLISH
+-- Rgs is not an alias, so Rgs.address is not a relation.
+RELATION applicant[Permit*Reg.Person]
+RULE located : applicant |- applicant;Rgs.address;Rgs.address~
+ENDCONTEXT

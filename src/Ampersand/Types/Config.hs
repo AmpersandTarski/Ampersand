@@ -210,6 +210,9 @@ instance (HasFSpecGenOpts a, HasDirPrototype a) => HasDirPrototype (ExtendedRunn
 instance (HasProtoOpts a) => HasProtoOpts (ExtendedRunner a) where
   protoOptsL = cmdOptsL . protoOptsL
 
+instance (HasIncrementalBenchOpts a) => HasIncrementalBenchOpts (ExtendedRunner a) where
+  incrementalBenchOptsL = cmdOptsL . incrementalBenchOptsL
+
 instance (HasPopulationOpts a) => HasPopulationOpts (ExtendedRunner a) where
   populationOptsL = cmdOptsL . populationOptsL
 

@@ -23,6 +23,7 @@
 module Ampersand.FSpec.ToFSpec.ConceptTables
   ( conceptsNeedingATable,
     conceptsReadBy,
+    termsThatEnumerate,
   )
 where
 
@@ -40,7 +41,16 @@ import qualified RIO.NonEmpty as NE
 --   to a literal, and its @EDcV@ case never forces the table lookup of an @ONE@
 --   end.
 conceptsReadBy :: Expression -> [A_Concept]
-conceptsReadBy = L.nub . filter (/= ONE) . go
+conceptsReadBy = conceptsReadWith True
+
+-- | The concepts of which the given term needs all atoms. That is
+--   'conceptsReadBy' without the concepts that the term only reads to look up
+--   one atom that it names: naming the atom @3@ does not ask for every integer.
+conceptsEnumeratedBy :: Expression -> [A_Concept]
+conceptsEnumeratedBy = conceptsReadWith False
+
+conceptsReadWith :: Bool -> Expression -> [A_Concept]
+conceptsReadWith atomsToo = L.nub . filter (/= ONE) . go
   where
     -- selectExpr = fromMaybe (nonSpecialSelectExpr expr) (maybeSpecialCase expr)
     go :: Expression -> [A_Concept]
@@ -85,12 +95,12 @@ conceptsReadBy = L.nub . filter (/= ONE) . go
         -- WHERE clause, so they read no table -- unless they are all there is,
         -- in which case the intersection is compiled as that atom literal.
         case filter (not . isMp1) . NE.toList . exprIsc2list $ expr of
-          [] -> [source expr]
+          [] -> [source expr | atomsToo]
           ts -> concatMap go ts
       EUni (l, r) -> go l <> go r
       ECps {} -> composition expr
       EFlp e -> go e
-      EMp1 _ c -> [c]
+      EMp1 _ c -> [c | atomsToo]
       EDcV sgn -> [source sgn, target sgn]
       EDcI c -> [c]
       EBin _ sgn -> [source sgn]
@@ -135,7 +145,9 @@ conceptsReadBy = L.nub . filter (/= ONE) . go
             | otherwise = case e of
                 EDcV {} -> []
                 ECpl EDcI {} -> []
-                EBin _ sgn -> [source sgn] -- no fence, but the pole names the column
+                -- no fence: the comparison becomes a condition between its neighbours,
+                -- so it reads their columns and asks for no list of atoms
+                EBin _ sgn -> [source sgn | atomsToo]
                 _ -> go e
 
 -- | The concepts that need a concept table of their own, given a context and
@@ -153,24 +165,19 @@ conceptsReadBy = L.nub . filter (/= ONE) . go
 conceptsNeedingATable :: env -> A_Context -> [Conjunct] -> [A_Concept]
 conceptsNeedingATable env context conjs =
   L.nub
-    $ concatMap conceptsReadBy termsReachingSQL
+    . filter (canBeEnumerated . ctxReprType context)
+    . concatMap storedIn
+    $ concatMap (conceptsReadBy . snd) (termsReachingSQL env context conjs)
     <> broadQueryConcepts
   where
-    normalized = conjNF env
-
-    termsReachingSQL :: [Expression]
-    termsReachingSQL =
-      map (normalized . notCpl . rcConjunct) conjs
-        <> map (normalized . notCpl . formalExpression) (toList (allRules context))
-        <> concatMap (\o -> [objExpression o, normalized (objExpression o)]) allObjectDefs
-        <> concatMap (NE.toList . identityAts) (identities context)
-        <> [e | vd <- viewDefs context, ViewExp e <- map vsmLoad (vdats vd)]
-        <> [ e
-             | r <- toList (allRules context),
-               Just (PairView pvsegs) <- [rrviol r],
-               PairViewExp _ _ e <- NE.toList pvsegs
-           ]
-
+    -- A concept without a table of its own is read from the tables of its
+    -- storage members: a MULTITABLE union concept from those of its members,
+    -- and an implicit meet (ISECT) from those of the concepts it intersects
+    -- (issue #1716).
+    storedIn :: A_Concept -> [A_Concept]
+    storedIn c = case c of
+      ISECT s -> concatMap storedIn (toList s)
+      _ -> storageMembersIn (ctxunions context) c
     -- broadQuery calls getConceptTableInfo on the target of an object's term
     -- whenever that object has a BOX with terms below it, and joins the concept
     -- table of the source of the terms in that BOX.
@@ -193,3 +200,44 @@ conceptsNeedingATable env context conjs =
       where
         objDefsIn :: ObjectDef -> [ObjectDef]
         objDefsIn o = o : concatMap objDefsIn (fields o)
+
+-- | The terms that are handed to the SQL generator, each with what it belongs to.
+termsReachingSQL :: env -> A_Context -> [Conjunct] -> [((Origin, Text), Expression)]
+termsReachingSQL env context conjs =
+  [((origin r, "rule " <> fullName r), normalized (notCpl (rcConjunct conj))) | conj <- conjs, r <- take 1 (NE.toList (rc_orgRules conj))]
+    <> [((origin r, "rule " <> fullName r), normalized (notCpl (formalExpression r))) | r <- toList (allRules context)]
+    <> concat [[(at o, objExpression o), (at o, normalized (objExpression o))] | o <- allObjectDefs]
+    <> [((origin i, "an identity"), e) | i <- identities context, e <- NE.toList (identityAts i)]
+    -- the defining term of a derived relation that is a view (issue #1744)
+    <> [((origin enf, "the derived relation " <> fullName (enfRel enf)), enfExpr enf) | enf <- enforces context, enfStorage enf == DerivedView]
+    <> [((origin vd, "a view"), e) | vd <- viewDefs context, ViewExp e <- map vsmLoad (vdats vd)]
+    <> [ ((origin r, "the violation message of rule " <> fullName r), e)
+         | r <- toList (allRules context),
+           Just (PairView pvsegs) <- [rrviol r],
+           PairViewExp _ _ e <- NE.toList pvsegs,
+           -- SRC I and TGT I name the violating atom itself: the prototype puts
+           -- that atom in the message without a query (ViolationSegment.php), and
+           -- the compiler generates none (Ampersand.Output.ToJSON.Rules).
+           not (isIdent e)
+       ]
+  where
+    normalized = conjNF env
+    at o = (origin o, "an interface")
+    allObjectDefs :: [ObjectDef]
+    allObjectDefs = concatMap (objDefsIn . ifcObj) (ctxifcs context)
+      where
+        objDefsIn :: ObjectDef -> [ObjectDef]
+        objDefsIn o = o : concatMap objDefsIn (fields o)
+
+-- | The terms that ask for all atoms of a concept whose atoms cannot be
+--   listed (see 'canBeEnumerated'), each with where it stands and the concept.
+--   The compiler refuses such a term (issue #1727).
+termsThatEnumerate :: env -> A_Context -> [Conjunct] -> [((Origin, Text), A_Concept)]
+termsThatEnumerate env context conjs =
+  L.nubBy
+    (\a b -> fst (fst a) == fst (fst b) && snd a == snd b)
+    [ (place, c)
+      | (place, term) <- termsReachingSQL env context conjs,
+        c <- conceptsEnumeratedBy term,
+        not (canBeEnumerated (ctxReprType context c))
+    ]

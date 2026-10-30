@@ -1,0 +1,7 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
+CONTEXT Fail IN ENGLISH
+-- Address and Reg.Address are different concepts, so these relations cannot be compared.
+RELATION applicant[Permit*Reg.Person]
+RELATION address[Permit*Address]
+RULE sameAddress : address |- applicant;Reg.address
+ENDCONTEXT

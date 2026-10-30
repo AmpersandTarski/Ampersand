@@ -1,0 +1,25 @@
+CONTEXT Cleanup INCLUDES Orders FROM "../contexts/orders.adl"
+CONTEXT Cleanup IN ENGLISH
+PURPOSE CONTEXT Cleanup
+{+ A context relaxes two invariants of the context it includes, by assigning them to a role.
+Its population violates both, which the context Orders itself would refuse.
+The compiler adds, for each of the two rules, a relation that registers what satisfies it
+and a blocking invariant that keeps what is registered from violating it again.
+This context shows the registered orders in an interface. +}
+
+ROLE Clerk MAINTAINS Orders.hasCustomer, Orders.deliveredAtCustomer
+
+POPULATION Orders.customer[Orders.Order*Orders.Customer] CONTAINS [ ("o1", "Ada") ]
+POPULATION Orders.address[Orders.Customer*Orders.Address] CONTAINS [ ("Ada", "Main Street 1") ]
+POPULATION Orders.delivered[Orders.Order*Orders.Address] CONTAINS
+  [ ("o1", "Main Street 1")
+  ; ("o2", "Harbour Road 2")
+  ]
+
+INTERFACE Work FOR Clerk : "_SESSION";V[SESSION*Orders.Order] cRud BOX
+  [ "order" : I cRud
+  , "has a customer" : fixedHasCustomer cRud
+  , "delivered at its customer" : fixedDeliveredAtCustomer cRud
+  ]
+
+ENDCONTEXT

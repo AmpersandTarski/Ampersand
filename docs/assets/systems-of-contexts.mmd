@@ -1,0 +1,10 @@
+flowchart LR
+    subgraph server[one database server]
+        dbP[(database of Permits)]
+        dbR[(database of Registry)]
+    end
+    U2[clerks] --> P[permits application]
+    U1[users of the register] --> R[registry application]
+    P -->|reads and writes| dbP
+    P -.->|reads| dbR
+    R -->|reads and writes| dbR

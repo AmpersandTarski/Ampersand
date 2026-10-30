@@ -2,9 +2,13 @@ module Ampersand.Output.FSpec2SQL (dumpSQLqueries, databaseStructureSql) where
 
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Core.ParseTree (contextDatabases, databaseOfLabel, ownDatabase)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
+import Ampersand.FSpec.FSpecAux (derivedViewPlugs, isViewPlug)
+import Ampersand.FSpec.Incremental.DeltaTerms (deltaPlugs)
 import Ampersand.FSpec.SQL
+import Ampersand.FSpec.ToFSpec.ADL2Plug (foreignTable)
 import Ampersand.Prototype.TableSpec
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
@@ -19,8 +23,37 @@ databaseStructureSql fSpec =
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment =
-  concatMap (tableSpec2Queries withComment) ([plug2TableSpec p | InternalPlug p <- plugInfos fSpec])
+  concatMap structure [p | InternalPlug p <- plugInfos fSpec, not (isViewPlug fSpec p)]
+    -- delta tables for incremental violation maintenance (issue #1684):
+    -- one two-column table per relation occurring in a conjunct, holding the
+    -- transaction's touched pairs; empty outside transactions.
+    <> concatMap (tableSpec2Queries withComment . plug2TableSpec) (deltaPlugs fSpec)
+    -- the views of the derived relations (issue #1744), after every table they
+    -- read, and each after the views it reads.
+    <> [createDerivedViewSql withComment fSpec plug rel definition | (plug, rel, definition) <- derivedViewPlugs fSpec]
+    -- the declarative constraints (issue #1744), after every table they name
+    <> (if fForeignKeys fSpec then constraintQueries fSpec (isJust . foreignTable roots) else [])
+    -- the named external schema (issue #1744): a view per conjunct and per interface field
+    <> (if fSchemaViews fSpec then schemaViewQueries withComment fSpec else [])
     <> additionalDatabaseSettings
+  where
+    -- A context creates the tables of its own database: its own things and those of the contexts that land on it.
+    -- For a table in another database it creates a view on that table.
+    -- The view names the database by the placeholder for its name, and the table by the name it has there.
+    structure plug = case foreignTable roots plug of
+      Nothing -> tableSpec2Queries withComment (plug2TableSpec plug)
+      Just (lbl, remote) -> case databaseOfLabel (metas fSpec) lbl of
+        Just (db, _) -> [createViewSql withComment db remote (plug2TableSpec plug)]
+        Nothing -> fatal ("The context " <> lbl <> " lands on no database.")
+    -- The contexts on other databases, each with the label of the context that installs its database.
+    roots :: [(Text, Text)]
+    roots =
+      [ (lbl, root)
+        | (lbl, db, _) <- contextDatabases (metas fSpec),
+          lbl /= "",
+          Just db /= ownDatabase (metas fSpec),
+          root <- take 1 [l | (l, db', "") <- contextDatabases (metas fSpec), db' == db]
+      ]
 
 dumpSQLqueries :: env -> FSpec -> Text
 dumpSQLqueries env fSpec =

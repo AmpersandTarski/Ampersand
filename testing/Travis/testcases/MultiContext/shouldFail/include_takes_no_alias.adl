@@ -1,0 +1,5 @@
+CONTEXT Fail IN ENGLISH
+-- INCLUDE brings in the text of a file. A context is included with CONTEXT ... INCLUDES ...
+INCLUDE "../contexts/registry.adl" AS Reg
+RELATION applicant[Permit*Reg.Person]
+ENDCONTEXT

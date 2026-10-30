@@ -1,0 +1,13 @@
+CONTEXT Catalogue IN ENGLISH
+PURPOSE CONTEXT Catalogue
+{+ A context with a rule that the preprocessor leaves out unless the variable `Strict` is set.
+It serves the case `alias_with_variables.adl`, which sets that variable in its inclusion statement. +}
+
+RELATION price[Product*Amount] [UNI]
+
+--#IF Strict
+RULE priced : I[Product] |- price;price~
+MEANING "Every product has a price."
+--#ENDIF
+
+ENDCONTEXT

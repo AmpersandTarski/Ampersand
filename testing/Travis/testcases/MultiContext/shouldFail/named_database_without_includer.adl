@@ -1,0 +1,8 @@
+CONTEXT School INCLUDES Library FROM "../contexts/library.adl" NAMED Shared, Registry FROM "../contexts/registry.adl" NAMED Shared
+
+CONTEXT School IN ENGLISH
+-- The library and the registry share the database Shared, but neither includes the other,
+-- so no application can install that database.
+RELATION pupil[Pupil*Library.Member] [UNI,TOT]
+RELATION parent[Pupil*Registry.Person] [UNI]
+ENDCONTEXT

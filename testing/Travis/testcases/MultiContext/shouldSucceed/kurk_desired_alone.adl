@@ -1,0 +1,10 @@
+CONTEXT KurkDesired IN ENGLISH
+PURPOSE CONTEXT KurkDesired
+{+ The desired system of the migration case, compiled by itself, with its blocking invariant.
+A plain INCLUDE makes the declarations of the file part of this context. +}
+
+INCLUDE "../contexts/kurk_desired.adl"
+
+POPULATION r[A*B] CONTAINS [ ("a1", "b1") ]
+
+ENDCONTEXT

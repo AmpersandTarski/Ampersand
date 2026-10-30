@@ -1,0 +1,16 @@
+CONTEXT Twins INCLUDES Registry FROM "../contexts/registry.adl" AS North,
+                       Registry FROM "../contexts/registry.adl" AS South
+CONTEXT Twins IN ENGLISH
+PURPOSE CONTEXT Twins
+{+ One context is included twice, under two aliases.
+It remains one context with one database, so `North.Person`, `South.Person` and `Registry.Person`
+are three references to one concept, and `North.name` and `South.name` are one relation. +}
+
+RELATION knows[North.Person*South.Person]
+POPULATION knows[North.Person*South.Person] CONTAINS [ ("p1", "p2") ]
+
+RULE sameRelation : North.name = South.name
+RULE alsoByName : Registry.name = North.name
+RULE named : knows |- North.name;V[Registry.Name*South.Name];South.name~
+
+ENDCONTEXT

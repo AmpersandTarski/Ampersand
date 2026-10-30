@@ -91,7 +91,47 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   positives, so a green run never blocks a good PR. Link cross-repo and README targets
   with the `.md` extension so Docusaurus resolves them to the right route.
 
+## Proof track
+
+Machine-checked proofs are part of the deliverable, not an afterthought.
+
+- `proofs/` holds the proof sessions (Isabelle/HOL today; **prefer Lean 4 with
+  mathlib for new formalisations**). `docs/proofs/README.md` is the published
+  register: claims `PRF-n` and trails `TRAIL-n`, with statuses
+  `machine-checked` / `paper proof` / `stated` / `in progress`.
+- Identifiers are permanent — never renumber, never reuse; check the git
+  history before assigning a number.
+- A new or changed proof session gets its register row **in the same change**.
+  `scripts/check-proof-track.js` (CI workflow "Documentation hygiene") enforces
+  the register's consistency; run it before pushing.
+- Ordinary documentation pages refer to a claim only via the fixed one-liner
+  `*Proof track: [PRF-n — <claim>](../proofs/README.md#prf-n).*` — no formal
+  notation or proof sketches outside `docs/proofs/`.
+- Claim `machine-checked` only after observing the build yourself
+  (`isabelle build -D proofs/<session>`, or `lake build` for Lean). One
+  `isabelle build` at a time — concurrent builds corrupt the shared heap
+  database.
+- **Planning discipline:** a task that changes semantics-bearing code — the
+  rewrite laws in `NormalForms.hs`, the delta calculus, the SQL generation of
+  terms, the typology/affected-conjunct logic — includes a proof obligation:
+  state the claim in the register (status `stated`) as part of the task, and
+  plan the proof. The claim precedes the proof; the proof precedes the
+  confidence.
+
 ## Gotcha
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
   **new** workflow file requires `git add -f`.
+- The `.gitignore` pattern `*.py` ignores every Python script, also a measurement
+  script under `memorybank/` that a note refers to; add such a script with `git add -f`.
+- `ampersand validate` and `ampersand incremental-bench --sql` write their PHP
+  helper to a **fixed** temp path (`$TMPDIR/tmpPhpQueryOfAmpersand.php`, see
+  `executePHPStr` in `src/Ampersand/Prototype/PHP.hs`) and use a temp database
+  named after the context. Two concurrent runs (e.g. an interactive
+  `ampersand validate` next to a running `stack test`) clobber each other's
+  script and fail spuriously with exit 60 or a "Parse error on php result"
+  fatal (exit 2). Serialize them: never run either while the regression suite
+  is running; `scripts/test-local.sh` serializes suite runs between terminals
+  with the lock directory `/tmp/ampersand-regression-db.lock`, and a manual
+  run should take that lock too (`mkdir` it, run, `rmdir` it). An interrupted
+  harness leaves its temp database behind; drop it before the next run.

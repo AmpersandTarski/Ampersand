@@ -1,0 +1,13 @@
+CONTEXT DuplicateEnforceName IN ENGLISH
+-- Two ENFORCE statements may not share a name, because a PURPOSE ENFORCE would not know which one it documents.
+
+RELATION r[A*B]
+RELATION s[A*B]
+RELATION t[A*B]
+
+ENFORCE fill : r >: s
+ENFORCE fill : r >: t
+PURPOSE ENFORCE fill
+{+ Which of the two does this document? +}
+
+ENDCONTEXT

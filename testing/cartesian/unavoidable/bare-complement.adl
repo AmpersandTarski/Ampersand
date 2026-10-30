@@ -1,0 +1,9 @@
+CONTEXT BareComplement
+-- A rule with a bare complement on the left of the inclusion: its violation
+-- term -r /\ -s contains no complement-free member, so there is no anchor
+-- and the Cartesian product V[A*B] is semantically necessary. The compiler
+-- must report this (warning; exit 46 under --fail-on-cartesian-product).
+RELATION r[A*B]
+RELATION s[A*B]
+RULE noAnchor : -r |- s
+ENDCONTEXT

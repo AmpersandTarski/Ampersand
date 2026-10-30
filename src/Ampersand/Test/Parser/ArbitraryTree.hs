@@ -385,12 +385,16 @@ instance Arbitrary (P_Rule TermPrim) where
 
 instance Arbitrary (P_Enforce TermPrim) where
   arbitrary =
-    P_Enforce
+    build
       <$> arbitrary
+      <*> arbitrary
       <*> (PNamedR <$> arbitrary) -- Always PNamedR; penfFlipped Bool controls the tilde
       <*> arbitrary
       <*> arbitrary
       <*> genNonRuleTerm
+    where
+      -- A label can only occur together with a name, just like in the parser.
+      build orig mNmLbl = P_Enforce orig (fst <$> mNmLbl) (mNmLbl >>= snd)
 
 instance Arbitrary EnforceOperator where
   arbitrary =
@@ -529,7 +533,9 @@ instance Arbitrary PRef2Obj where
         PRef2ViewDef <$> arbitrary,
         PRef2Pattern <$> uppercaseName,
         PRef2Interface <$> arbitrary,
-        PRef2Context <$> uppercaseName
+        PRef2Context <$> uppercaseName,
+        PRef2Enforce <$> arbitrary,
+        PRef2Role <$> arbitrary
       ]
 
 instance Arbitrary PMeaning where
@@ -559,6 +565,7 @@ instance Arbitrary PClassify where
       `suchThat` notIsONE
       <*> arbitrary
       `suchThat` all notIsONE
+      <*> pure False
 
 instance Arbitrary Lang where
   arbitrary = elements [minBound ..]

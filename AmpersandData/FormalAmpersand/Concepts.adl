@@ -25,9 +25,9 @@ PATTERN FormalAmpersand.Concepts
     RELATION FormalAmpersand.name[FormalAmpersand.Relation*FormalAmpersand.RelationName] [UNI,TOT]
     RELATION FormalAmpersand.ttype[FormalAmpersand.Concept*FormalAmpersand.TType][UNI]
     RULE FormalAmpersand.enumerationOfTType : I[FormalAmpersand.TType] = 
-      "ALPHANUMERIC" \/ "BIGALPHANUMERIC" \/ "HUGEALPHANUMERIC" \/ "PASSWORD" \/ "BINARY" \/ "BIGBINARY" \/ "HUGEBINARY" \/ "DATE" \/ "DATETIME" \/ "BOOLEAN" \/ "INTEGER" \/ "FLOAT" \/ "OBJECT"
+      "ALPHANUMERIC" \/ "BIGALPHANUMERIC" \/ "HUGEALPHANUMERIC" \/ "PASSWORD" \/ "BINARY" \/ "BIGBINARY" \/ "HUGEBINARY" \/ "DATE" \/ "DATETIME" \/ "BOOLEAN" \/ "INTEGER" \/ "FLOAT" \/ "OBJECT" \/ "MULTITABLE"
     POPULATION FormalAmpersand.TType CONTAINS [
-      "ALPHANUMERIC",   "BIGALPHANUMERIC",   "HUGEALPHANUMERIC",   "PASSWORD",   "BINARY",   "BIGBINARY",   "HUGEBINARY",   "DATE",   "DATETIME",   "BOOLEAN",   "INTEGER",   "FLOAT",   "OBJECT" ]
+      "ALPHANUMERIC",   "BIGALPHANUMERIC",   "HUGEALPHANUMERIC",   "PASSWORD",   "BINARY",   "BIGBINARY",   "HUGEBINARY",   "DATE",   "DATETIME",   "BOOLEAN",   "INTEGER",   "FLOAT",   "OBJECT",   "MULTITABLE" ]
 
     IDENT FormalAmpersand.Concept : FormalAmpersand.Concept(FormalAmpersand.name,FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context])
     RELATION FormalAmpersand.meaning[FormalAmpersand.ConceptDef*FormalAmpersand.Meaning][UNI]

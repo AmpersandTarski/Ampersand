@@ -146,6 +146,67 @@ spec is generated. The build target is passed to the framework as `global.produc
 which keeps generation and publication consistent. See the prototype documentation and
 [Generating an OpenAPI description](the-tools-we-use/openapi-generation.md) for details.
 
+`--derived-views` generates every derived relation (`ENFORCE r := term`) as a database view
+on the SQL of its term, instead of a table that the ExecEngine maintains. A relation named
+in `--materialize` (repeat the option, or separate names with commas) stays a stored table;
+the compiler's report per derived relation says whether the database merges a view into the
+queries that read it or computes it in full at every use, and how many rules read it, which
+is what the choice turns on.
+See [Derived relations as views](reference-material/syntax-of-ampersand.md#derived-relations-as-views)
+for what becomes a view, what stays stored, and what a prototype framework needs for it.
+
+`--foreign-keys` adds the constraints that a database enforces by itself to `database.sql`:
+a `FOREIGN KEY` from every column that holds an atom to the key column of the table of its
+concept, and a `UNIQUE` constraint on every column that holds the unique side of a relation
+(`INJ`, and `UNI` where the relation is stored on its target side), both after all tables.
+A bulk load that writes rows in its own order must run with `SET FOREIGN_KEY_CHECKS=0` and
+switch the checks on again afterwards. The conjunct of a multiplicity that such a `UNIQUE`
+enforces gets the cost profile `structural` in `conjuncts.json`.
+
+`--schema-views` adds the named external schema to `database.sql`: one view per conjunct
+(`conj_<id>`, the id of `conjuncts.json`, selecting the violations) and one view per interface
+field (`ifc_<interface>_<field>`, along the path of the field, with the names escaped as the
+REST API escapes them, selecting the pairs of the field's term). The JSON files keep their
+queries; the views make the same queries visible to the database, to `EXPLAIN`, to a report
+and to another front end.
+
+### deploy
+
+```bash
+ampersand deploy main.adl --output-dir deploy
+```
+
+Generates what is needed to run a [system of contexts](./reference-material/syntax-of-ampersand.md#systems-of-contexts), in which every database has an application of its own:
+
+- `compose.yaml` with one MariaDB server and one service per database;
+- `<service>/Dockerfile`, which builds the application of one database on the prototype framework;
+- `install.sh`, which installs the applications, a database after every database it reads;
+- `.env.example` with the names of the databases and the ports;
+- `db-init/01-grant.sql` with the rights of the database user;
+- `system.json` with the same facts for a program to read.
+
+The script names the databases: a context lands on a database with its own name, unless an inclusion statement gives it another name with `NAMED`, and contexts with the same database name share one database.
+The compose file takes every name from the environment, with the name in the script as the default (`REGISTRY_DBNAME=Registry`).
+So you can still decide at deployment which version runs on which database.
+A new name means a new, empty database: a new version runs next to the old one until its data has been migrated.
+
+Two options of the other commands serve a system of contexts.
+`--context <name>` compiles one context of the system, by its name or alias in the root file; the generated Dockerfiles use it for the context that installs each database.
+`--all-concept-tables` gives every concept a table, which a context needs if other contexts include it; the generated Dockerfiles set it.
+
+### serve
+
+Keeps the compiler running as an HTTP/JSON service, so that other programs can ask it questions.
+
+```bash
+ampersand serve
+```
+
+Use this command when a program rather than a person calls the compiler,
+for instance an editor that checks a script while the user is typing.
+The service listens on port 8080, or on the port in the environment variable `AMPERSAND_SERVE_PORT`.
+See [Running the compiler as a service](the-tools-we-use/ampersand-as-a-service.md) for the questions it answers.
+
 ### documentation
 
 Generates documentation from your specification.
@@ -216,6 +277,7 @@ The generated document typically includes the following chapters:
 
 The document includes **visuals** (diagrams) in multiple chapters and on various topics.
 
+Three of them draw your model as a whole, each at its own level of detail: the object model shows the entity types and their relations, the logical data model adds every concept with its attributes, and the technical data model shows the tables of the database. What each one contains, and which to use when, is described under [data-model pictures](./reference-material/data-model-pictures.md).
 
 By default, visuals are generated just before the document itself is created. This ensures that the graphics are always up-to-date with the most recent state of the model. However, sometimes it is practical to generate the document and the visuals separately. Depending on your specific needs, the following options might help you in your specific case:
 

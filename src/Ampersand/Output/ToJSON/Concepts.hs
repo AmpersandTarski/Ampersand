@@ -7,6 +7,7 @@ module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
 import Ampersand.ADL1
 import qualified Ampersand.Basics.Name as Name
 import Ampersand.Core.AbstractSyntaxTree (largerConcepts, smallerConcepts)
+import Ampersand.Core.ParseTree (foreignContexts, labelsOnOwnDatabase)
 import Ampersand.FSpec
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
@@ -25,9 +26,22 @@ data Concept = Concept
     cptJSONaffectedConjuncts :: [Text],
     cptJSONinterfaces :: [Text],
     cptJSONdefaultViewName :: Maybe Text,
-    -- | Nothing for a concept that has no concept table of its own: ONE, and
-    --   any concept whose atoms no generated query enumerates (issue #1672).
+    -- | Nothing for a concept that has no concept table of its own: ONE, a
+    --   MULTITABLE union concept, and a concept of a typology of values that
+    --   stores no relation and that no generated query enumerates (issue #1672).
     cptJSONconceptTable :: Maybe TableCols,
+    -- | Every table that holds a row for an atom of this concept, with the
+    --   columns of that row that name the atom (issue #1716). In a typology
+    --   with a MULTITABLE concept an atom has a row in the table of its own
+    --   concept and in the table of each generalisation that is stored apart;
+    --   a runtime that adds or deletes an atom must touch every one of these.
+    --   For an unmarked typology this is the one table of `conceptTable`.
+    cptJSONconceptTables :: [TableCols],
+    -- | For a concept without a table of its own that is the union of its
+    --   members (`CLASSIFY C IS A \/ B` with `REPRESENT C TYPE MULTITABLE`,
+    --   issue #1716): the query that lists its atoms, one column `atomId`,
+    --   as the union of the tables of its members. Nothing otherwise.
+    cptJSONallAtomsQuery :: Maybe Text,
     cptJSONlargestConcept :: Text
   }
   deriving (Generic, Show)
@@ -81,7 +95,7 @@ instance JSON FSpec Concepts where
       isUsed cpt = cpt `Set.member` (concs (instanceList fSpec :: [Relation]) `Set.union` concs (instanceList fSpec :: [AClassify]))
 
 instance JSON A_Concept Concept where
-  fromAmpersand env fSpec cpt =
+  fromAmpersand _env fSpec cpt =
     Concept
       { cptJSONname = fullName cpt,
         cptJSONlabel = case conceptLabel fSpec cpt of
@@ -95,7 +109,16 @@ instance JSON A_Concept Concept where
         cptJSONaffectedConjuncts = maybe [] (map (text1ToText . rc_id)) . lookup cpt . allConjsPerConcept $ fSpec,
         cptJSONinterfaces = fmap fullName . filter hasAsSourceCpt . interfaceS $ fSpec,
         cptJSONdefaultViewName = fmap fullName . getDefaultViewForConcept fSpec $ cpt,
-        cptJSONconceptTable = fromAmpersand env fSpec cpt,
+        -- The table of a generalisation is not the table of the concept: a runtime
+        -- that took it for one would count every atom of the generalisation as an
+        -- atom of this concept (issue #1727).
+        cptJSONconceptTable = case (lookupCpt fSpec cpt, conceptTablesOf fSpec cpt) of
+          (_ : _, own : _) -> Just own
+          _ -> Nothing, -- this concept has no concept table of its own; see issue #1672
+        cptJSONconceptTables = conceptTablesOf fSpec cpt,
+        cptJSONallAtomsQuery = case unionMembersIn (conceptUnions fSpec) cpt of
+          Nothing -> Nothing
+          Just _ -> Just (allAtomsQueryOf fSpec cpt),
         cptJSONlargestConcept = text1ToText . idWithoutType' . largestConcept fSpec $ cpt
       }
     where
@@ -103,24 +126,41 @@ instance JSON A_Concept Concept where
       hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
       cpts = cpt : largerConcepts cpt
 
-instance JSON A_Concept (Maybe TableCols) where
-  fromAmpersand _ fSpec cpt = case lookupCpt fSpec cpt of
-    [] -> Nothing -- this concept has no concept table; see issue #1672
-    [(cptTable, _)] ->
-      Just
-        TableCols
-          { tclJSONname = tshow (sqlname cptTable),
-            tclJSONcols = case L.nub . map fst $ cols of
-              [t] ->
-                if t == cptTable
-                  then map (text1ToText . sqlColumNameToText1 . attSQLColName . snd) cols
-                  else fatal $ "Table names should match: " <> tshow (sqlname t) <> " " <> tshow (sqlname cptTable) <> "."
-              _ -> fatal "All concepts in a typology should be in exactly one table."
-          }
-      where
-        -- A generalization without a table of its own contributes no column.
-        cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts cpt
-    _ -> fatal ("Concept `" <> fullName cpt <> "` found in multiple tables.")
+-- | The query that lists the atoms of a concept without a table of its own
+--   (issue #1716), in one column `atomId`, as the runtime's `getAllAtoms`
+--   expects it.
+allAtomsQueryOf :: FSpec -> A_Concept -> Text
+allAtomsQueryOf fSpec cpt =
+  "SELECT DISTINCT \"src\" AS \"atomId\" FROM (" <> sqlQuery fSpec (EDcI cpt) <> ") AS \"members\""
+
+-- | The tables that hold a row for an atom of the concept, the concept's own
+--   table first, each with the columns of that row that name the atom: the
+--   column of the concept itself and of every generalisation that shares the
+--   table. A generalisation without a table of its own contributes no column
+--   (issue #1672); a generalisation stored apart in this context (issue #1716)
+--   contributes a table of its own; a generalisation that another context owns
+--   contributes nothing, because its table lives in the database of that
+--   context.
+conceptTablesOf :: FSpec -> A_Concept -> [TableCols]
+conceptTablesOf fSpec cpt =
+  [ TableCols
+      { tclJSONname = tshow (sqlname t),
+        tclJSONcols = [text1ToText . sqlColumNameToText1 . attSQLColName $ att | (t', att) <- cols, t' == t]
+      }
+    | t <- ownFirst (L.nub (map fst cols))
+  ]
+  where
+    cols = concatMap (lookupCpt fSpec) $ cpt : filter (not . ownedElsewhere) (largerConcepts cpt)
+    ownFirst ts = case lookupCpt fSpec cpt of
+      (own, _) : _ -> own : filter (/= own) ts
+      [] -> ts
+    -- A concept of another context is stored elsewhere if that context lands on another database.
+    -- On the same database its table is in this database, and it may be the table of this concept.
+    foreignLabels = filter (`notElem` labelsOnOwnDatabase (metas fSpec)) (map fst (foreignContexts (metas fSpec)))
+    ownedElsewhere :: A_Concept -> Bool
+    ownedElsewhere c = case nameSpaceOf (name c) of
+      h : _ -> namePartToText h `elem` foreignLabels
+      [] -> False
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =

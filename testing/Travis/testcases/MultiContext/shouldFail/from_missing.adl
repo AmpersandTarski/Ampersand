@@ -1,0 +1,5 @@
+CONTEXT Fail INCLUDES Registry
+CONTEXT Fail IN ENGLISH
+-- The context Registry is not in this file, and the statement does not say where it is.
+RELATION applicant[Permit*Registry.Person]
+ENDCONTEXT

@@ -43,6 +43,10 @@ module Ampersand.Input.ADL1.ParsingLib
     pDoubleQuotedString1,
     pName,
     pSingleWord,
+    pUpperCaseID,
+    pLowerCaseID,
+    pEndOfFile,
+    pUnrestrictedID,
 
     -- * special parsers
     pAtomValInPopulation,
@@ -306,6 +310,7 @@ pName typ =
         <*> case typ of
           ConceptName -> pUpperCaseID <?> "concept name (must start with uppercase letter)"
           ContextName -> pUpperCaseID <?> "context name (must start with uppercase letter)"
+          EnforceName -> pUnrestrictedID
           IdentName -> pUnrestrictedID
           InterfaceName -> pUnrestrictedID
           PatternName -> pUpperCaseID <?> "pattern name (must start with uppercase letter)"
@@ -538,3 +543,7 @@ runParser parser filename input =
       addWarnings
         (map lexerWarning2Warning lexerWarnings)
         (ampParse parser filename tokens')
+
+-- | Succeeds at the end of the input only.
+pEndOfFile :: AmpParser ()
+pEndOfFile = P.eof

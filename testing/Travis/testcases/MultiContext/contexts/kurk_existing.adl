@@ -1,0 +1,15 @@
+CONTEXT Kurk IN ENGLISH
+PURPOSE CONTEXT Kurk
+{+ The existing system of the proof of concept in
+"Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024).
+It has one relation, `r[A*B]`, and no constraint.
+Atoms a2 and a3 occur in no pair of `r`. +}
+
+RELATION r[A*B] [UNI]
+REPRESENT B TYPE ALPHANUMERIC
+
+POPULATION A CONTAINS [ "a1", "a2", "a3" ]
+POPULATION B CONTAINS [ "b1", "b2", "b3" ]
+POPULATION r[A*B] CONTAINS [ ("a1", "b1") ]
+
+ENDCONTEXT

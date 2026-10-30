@@ -357,6 +357,8 @@ instance ConceptStructure ExplObj where
   concs (ExplPattern _) = Set.empty {-beware of loops...-}
   concs (ExplInterface _) = Set.empty {-beware of loops...-}
   concs (ExplContext _) = Set.empty {-beware of loops...-}
+  concs (ExplEnforce _) = Set.empty {-beware of loops...-}
+  concs (ExplRole _) = Set.empty {-beware of loops...-}
 
   expressionsIn _ = Set.empty
 

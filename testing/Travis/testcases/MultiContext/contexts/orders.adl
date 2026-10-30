@@ -1,0 +1,15 @@
+CONTEXT Orders IN ENGLISH
+PURPOSE CONTEXT Orders
+{+ A context with two invariants, for the cases in which an including context relaxes them. +}
+
+RELATION customer[Order*Customer] [UNI]
+RELATION delivered[Order*Address] [UNI]
+RELATION address[Customer*Address]
+
+RULE hasCustomer : I[Order] |- customer;customer~
+MEANING "Every order has a customer."
+
+RULE deliveredAtCustomer : delivered |- customer;address
+MEANING "An order is delivered at an address of its customer."
+
+ENDCONTEXT

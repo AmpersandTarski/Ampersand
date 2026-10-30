@@ -1,0 +1,16 @@
+CONTEXT Kurk IN ENGLISH
+PURPOSE CONTEXT Kurk
+{+ The desired system of the proof of concept in
+"Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024).
+It differs from the existing system by one blocking invariant: `r` is total.
+The system starts with an empty database. +}
+
+RELATION r[A*B] [UNI]
+REPRESENT B TYPE ALPHANUMERIC
+
+RULE totalR : I[A] |- r;r~
+MEANING "Every A is paired with a B."
+MESSAGE "Relation r must be total."
+VIOLATION (TXT "Pair ", SRC I, TXT " with an (any) atom from B.")
+
+ENDCONTEXT

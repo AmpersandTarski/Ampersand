@@ -516,6 +516,8 @@ instance ShowHS PRef2Obj where
       PRef2Pattern str -> "PRef2Pattern " <> tshow str
       PRef2Interface str -> "PRef2Interface " <> tshow str
       PRef2Context str -> "PRef2Context " <> tshow str
+      PRef2Enforce str -> "PRef2Enforce " <> tshow str
+      PRef2Role str -> "PRef2Role " <> tshow str
 
 instance ShowHS Purpose where
   showHS env _ expla =
@@ -541,6 +543,8 @@ instance ShowHS ExplObj where
     ExplPattern str -> "ExplPattern " <> tshow str
     ExplInterface str -> "ExplInterface " <> tshow str
     ExplContext str -> "ExplContext " <> tshow str
+    ExplEnforce str -> "ExplEnforce " <> tshow str
+    ExplRole str -> "ExplRole " <> tshow str
 
 instance ShowHS P_Markup where
   showHS _ indent m =

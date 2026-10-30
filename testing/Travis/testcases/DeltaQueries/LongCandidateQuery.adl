@@ -1,0 +1,17 @@
+CONTEXT LongCandidateQuery IN ENGLISH
+-- The script of issue #1728. See README.md in this directory.
+RELATION same[Req*Req]
+RELATION busy[Req*Req] [PROP]
+RELATION sector[Req*Sector]
+RELATION except[Req*Organism]
+RELATION begin[Req*Date] [UNI]
+RELATION end[Req*Date] [UNI]
+RELATION equal[Req*Req]
+ENFORCE equal :=
+   (((( same
+   - (same /\ sector;((sector~;same) - sector~)))
+   - (same /\ sector;((sector~;same) - sector~))~)
+   - (same /\ except;((except~;same) - except~)))
+   - (same /\ except;((except~;same) - except~))~)
+   - (((I[Req] /\ begin;begin~);same) - (same /\ begin;begin~))
+ENDCONTEXT

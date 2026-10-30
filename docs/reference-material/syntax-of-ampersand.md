@@ -18,6 +18,7 @@ Structuring an Ampersand specification effectively is crucial for readability, m
 
 1. `Include` statements enable you to use multiple files. This can help to separate your statements by concerns.
 2. `Pattern`s can help to devide your rules etc. by theme. The generated documentation takes this into account.
+3. A specification can consist of several contexts, each with a database of its own, in which one context includes another. See [Systems of contexts](#systems-of-contexts).
 
 Not all statements can be used inside a Pattern. This table shows what elements are available inside a Pattern and inside a Context:
 
@@ -96,8 +97,9 @@ The data contained in a business system represents a view of \(a very small part
 
 #### Semantics
 
-Any Ampersand model has one context.  
-The model is true within its context and there is no knowledge in a model about other contexts.
+A context describes one information system, with one database.
+What a context states is true within that context.
+A context knows of another context only if it includes it; see [Systems of contexts](#systems-of-contexts).
 
 #### Syntax
 
@@ -112,7 +114,7 @@ INCLUDE*
 ENDCONTEXT
 ```
 
-Other models included with the INCLUDE statement become part of the context they are included in.
+A file that is included with the [`INCLUDE` statement](#the-include-statement) becomes part of the context in which the statement stands.
 
 ###### Optional parts
 
@@ -170,6 +172,9 @@ INCLUDE "bar.xlsx"
 INCLUDE <filename>
 ```
 
+`INCLUDE` brings in the text of a file.
+To let one context use the declarations and the data of another context, see [Systems of contexts](#systems-of-contexts).
+
 This statement specifies files that need to be included before compiling. The filename is given in double quotes, including a path that is relative to the position of the main adl-file. The main adl-file is the file that is called with the command Ampersand.
 
 Possible files to include are:
@@ -184,6 +189,203 @@ Make sure to include the adl-files before including xlsx-files.
 Included files may contain `INCLUDE`statements themselves. The files mentioned there are treated as though they were included in the main file. So their code is also part of the same context. Nested adl-files can have their own xlsx-files included.
 
 For formatting your excel-file see the text on [the Excel Importer](../the-excel-importer.md).
+
+## Systems of contexts
+
+#### Purpose
+
+One script describes one information system: a context with one database.
+Some systems consist of several information systems, each with a database and rules of its own, in which one system uses what another one defines and stores.
+A system for permits uses the persons of a population register that another organisation keeps.
+A migration needs the existing system and the desired system at the same time.
+For that purpose a context can include another context.
+
+This section is the reference.
+The guide [Several information systems that use each other](../guides/systems-of-contexts.md) introduces the mechanism step by step, with an example that you can run.
+
+#### Syntax and meaning
+
+```text
+CONTEXT <context> INCLUDES <context>
+CONTEXT <context>, <context> INCLUDES <context> FROM <filename> AS <alias>, <context>
+CONTEXT <context> NAMED <database> INCLUDES <context> NAMED <database>
+```
+
+The statement stands outside every `CONTEXT ... ENDCONTEXT` block, because it relates contexts.
+`CONTEXT A, B INCLUDES C, D` says that `A` and `B` each include `C` and `D`.
+The part with `FROM` tells in which file the included context is to be found; you leave it out if that context is in the same file.
+The part with `AS` gives the included context a second name, an alias, for use in the including context.
+The part with `NAMED` names the database on which a context lands; it can follow a context on either side of `INCLUDES`.
+Without it, the database carries the name of the context.
+Contexts with the same database name land on one database, as [Databases](#databases) describes.
+
+If `A` includes `B`, everything that `B` declares is available in `A`, and so is the population of `B`.
+The script of `A` refers to a thing of `B` by putting the name of `B`, or the alias, in front of it.
+
+Consider a register of persons, in a file `registry.adl`:
+
+```text
+CONTEXT Registry
+  RELATION name[Person*Name] [UNI,TOT]
+  RELATION address[Person*Address] [UNI]
+ENDCONTEXT
+```
+
+A system for permits uses the persons of that register, and it has an address of its own: the site to which a permit applies.
+
+```text
+CONTEXT Permits INCLUDES Registry FROM "registry.adl"
+
+CONTEXT Permits
+  RELATION applicant[Permit*Registry.Person] [UNI,TOT]
+  RELATION address[Permit*Address] [UNI]
+
+  RULE located : applicant |- applicant;Registry.address;Registry.address~
+  ROLE Clerk MAINTAINS located
+ENDCONTEXT
+```
+
+The name `Registry.Person` denotes the concept `Person` of the register, and `Registry.address` denotes the relation that pairs a person with a home address.
+The name `address` without a prefix denotes the relation that `Permits` declares itself.
+So, the two relations called `address` and the two concepts called `Address` stay apart, whatever names the two scripts choose.
+
+#### Databases
+
+Every context lands on one database.
+By default that database carries the name of the context, so `Permits` and `Registry` land on the databases `Permits` and `Registry`.
+Each fact is stored once: a pair in the database of the context that declares the relation, and an atom in the database of the context that declares the concept.
+A context reads the databases of the contexts it includes, directly or indirectly.
+A term can therefore read several databases: in `applicant;Registry.address` the pairs of `applicant` come from the database of the permits and the pairs of `address` from the database of the register.
+
+A context that is included by two contexts remains one context with one database.
+If the register and a register of shops both include a context `Towns`, the town of a shop and the town in which a person lives are atoms of one concept, `Towns.Town`.
+
+A database of its own suits a context that another organisation keeps, such as the register.
+Two contexts that belong together, such as a system and a module of it, are better off on one database:
+every term then reads one database, and a relation between the two becomes a column in the table of the concept it belongs to.
+The word `NAMED` names the database of a context, and contexts with the same database name land on one database.
+
+```text
+CONTEXT Permits INCLUDES Registry FROM "registry.adl" NAMED Permits
+CONTEXT Permits NAMED Registry INCLUDES Registry FROM "registry.adl"
+CONTEXT Permits NAMED Kaart INCLUDES Registry FROM "registry.adl" NAMED Kaart
+```
+
+The first line puts the register on the database `Permits`, where the permits already are.
+The second line puts the permits on the database `Registry`, where the register already is.
+The third line puts both on a database called `Kaart`.
+In all three cases the two contexts land on one database.
+
+A database has one application: that of the context on it which includes the other contexts on it.
+That context installs the database, with the tables of every context on it, and guards the rules of those contexts.
+The other contexts on the database have no application of their own, so their interfaces are not generated; the compiler says so in a warning.
+Give a context a database of its own if it needs an application of its own.
+
+Within one database the tables are laid out as in a single context: a univalent relation to a concept on the same database is a column in the table of that concept, and concepts that a classification relates share a table.
+A relation to a concept on another database gets a table of its own, and a classification across two databases does not make the concepts share a table.
+The layout of a database follows from the declarations of the contexts on it, so every context in the system that reads the database computes the same layout.
+
+The compiler refuses three things, because it has to generate SQL that names each table in the right database.
+
+- A context that is given two database names.
+  Every inclusion statement in the system that names the database of a context has to name the same one.
+- Two contexts on one database without a context on it that includes all the others.
+  No application would install that database.
+- Two databases that read each other.
+  A database is installed after the databases it reads, because it has views on their tables.
+- A context that reads a shared database without including the context that installs it.
+  That context gives the tables their names, so a context that reads them includes it as well; that adds no database.
+
+Two versions of one context, as in a migration, carry the same context name.
+Without `NAMED` the compiler numbers their databases in the order in which the inclusion statements mention them: `Kurk_1` and `Kurk_2`.
+With `NAMED` you choose the names yourself.
+
+The name of a database is an identifier of MariaDB: letters and digits.
+The deployment can give a database another name than the script does; see [Compiling and deploying](#compiling-and-deploying).
+
+#### Names
+
+- The name of a context identifies the context. Everything between `CONTEXT Foo` and `ENDCONTEXT` belongs to the context `Foo`, and a file can contain several contexts and several fragments of one context.
+- A name of an included context carries a prefix. `Person` in the script of `Permits` would be a new concept of `Permits`.
+- Without an alias, the prefix is the name of the included context. With an alias, both the alias and the name can be used.
+- A prefix names a context that is included directly. If `Registry` includes `Towns`, then `Permits` sees the towns: they are the target of a relation of the register. To refer to `Towns.Town` itself, `Permits` states that it includes `Towns`. That adds no database.
+- If a context includes two contexts with the same name, the compiler demands an alias for each. A migration is the usual case: the existing and the desired system are two versions of one context.
+
+```text
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+```
+
+- Inclusion has no cycles: a context cannot include itself, directly or by way of another context. That is what lets a context be deployed without the contexts that include it.
+- The roles keep their names in every context, and so do the concept `SESSION` and the name space `PrototypeContext`, which belong to Ampersand itself.
+- The interfaces of a context are the user interface of its own application. Another context cannot refer to them.
+- Preprocessor variables follow the file name: `Registry FROM "registry.adl" [ "Developing" ] AS Reg`.
+
+#### Rules, classifications and writing
+
+A rule is guarded by the application of the context that declares it.
+An including context sees the rule and can rely on it.
+
+A rule of your context can depend on data of another context, as `located` does.
+The other application can then change that data without knowing of your rule, and your application cannot refuse the change.
+That is why `located` is assigned to a role: a clerk restores it.
+
+A context writes in the database of a context it includes in two cases.
+
+- An `ENFORCE` rule of your context on a relation of the other context adds pairs to that relation.
+- A `CLASSIFY` statement whose generic concept belongs to the other context.
+  `CLASSIFY old.Person ISA new.Person` says that every person of the existing system is a person of the desired system.
+  The two concepts keep a table each, and your application stores every atom of `old.Person` in the table of `new.Person` as well.
+
+A `REPRESENT` statement belongs in the context that declares the concept.
+
+Whether a rule is an invariant or a business constraint is decided per context.
+In the context that declares it, a rule that no role maintains is an invariant: the application refuses a transaction that violates it.
+An including context can assign that rule to one of its roles, and in that context it is then a business constraint, which signals its violations.
+A data migration uses this.
+Suppose that the desired system has a rule `totalR` that the existing system does not have, so that data of the existing system violates it.
+
+```text
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+CONTEXT Migration
+  ROLE User MAINTAINS new.totalR
+  ...
+ENDCONTEXT
+```
+
+The migration system shows the violations of `new.totalR` to its users as work to do, while the desired system keeps the rule as its invariant.
+We say that the migration context relaxes the invariant.
+
+A relaxed invariant hardens as the work proceeds.
+For the rule `totalR : I[A] |- r;r~` the compiler adds three things to the migration context:
+
+- a relation `fixedTotalR`, which registers every atom that satisfies the rule;
+- an enforced rule `fixTotalR`, which fills that relation;
+- a blocking invariant `blockTotalR`, which refuses a transaction in which a registered atom violates the rule again.
+
+So a violation that a user has repaired cannot return.
+The violations that are left stay visible as work to do, and what satisfies the rule is held to it at once.
+When the last violation is repaired, the rule holds for all data it applied to, as an invariant does,
+and the desired system can be taken into use as it is.
+The script of the desired system contains nothing that serves the migration.
+
+This is the method of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024, section 4.1).
+You can show the registered atoms in an interface of the migration context by referring to `fixedTotalR`.
+The names are made from the name of the rule, so a relaxed invariant needs a name: state it as a `RULE`, where a property such as `[TOT]` has none.
+
+#### `INCLUDE` and `INCLUDES`
+
+`INCLUDE "file"` relates files: it brings in the text of a file, which becomes part of the context in which the statement stands.
+`CONTEXT A INCLUDES B` relates contexts: `B` stays a context of its own, with its own database.
+
+#### Compiling and deploying
+
+`ampersand check`, `proto` and the other commands compile the first context in the file you give them, together with the contexts it reaches.
+The option `--context` compiles another context of the system, by its name or alias in that file.
+A context that shares its database with a context that includes it cannot be compiled by itself, because it has no application of its own: compile the context that includes it.
+The command [`ampersand deploy`](../the-command-line-tool.md#deploy) generates a compose file and a Dockerfile for every database.
+The compose file takes the name of every database from the environment, with the name in the script as the default.
 
 ## The PATTERN statement
 
@@ -329,6 +531,17 @@ CLASSIFY Monkey ISA Mammal
 CLASSIFY Cow ISA Mammal
 CLASSIFY Human ISA Mammal
 ```
+
+#### A concept that is the union of others
+
+```
+CLASSIFY <upper case identifier> IS <upper case identifier> \/ <upper case identifier> ( \/ <upper case identifier> )*
+```
+
+`CLASSIFY LegalActor IS Individual \/ Business` says that every `Individual` and every `Business` is a `LegalActor`, and that every `LegalActor` is one of the two.
+The first half is the same as `CLASSIFY Individual, Business ISA LegalActor`; the second half is a rule that Ampersand generates, `I[LegalActor] |- I[Individual] \/ I[Business]`, so a `LegalActor` that is neither is reported as a violation.
+Combined with `REPRESENT LegalActor TYPE MULTITABLE`, such a concept gets no table of its own: its atoms live in the tables of its members, and a relation declared on it gets a column in each of those tables.
+See [Concept hierarchies and database mapping](./concept-hierarchies-and-database-mapping.md#storing-specialisations-in-tables-of-their-own-multitable).
 
 #### Best practice
 
@@ -592,12 +805,15 @@ The purpose of this statement is to automatically modify the population of a rel
 Since ampersand 4.4.0 the syntax of this statement is:
 
 ```
-ENFORCE <RelationRef> <type>?
+ENFORCE (<name> <label>? :)?
+        <RelationRef> <type>?
         <operator>
         <Term>
 ```
 
 The `<operator>` can be one of **`:=`**, `:<`, or `>:` .
+
+The `<name>` is optional. Give an ENFORCE statement a name when you want to document why it exists, because a [PURPOSE statement](#the-purpose-statement) refers to it by that name. The optional `<label>` works as it does for a [rule](#the-rule-statement).
 
 This statement may occur anywhere within a context, either inside or outside a pattern.
 
@@ -631,6 +847,26 @@ ENFORCE canDrive :< hasCar /\ hasDriverLicence
    (only by depopulating `canDrive` whenever necessary).
 -}
 ```
+
+```
+ENFORCE mayDrive LABEL "Only licensed car owners drive" : canDrive :< hasCar /\ hasDriverLicence
+PURPOSE ENFORCE mayDrive
+{+ Driving without a car or without a driver licence is not allowed,
+   so the system withdraws the permission to drive as soon as either one is missing.
++}
+```
+
+#### Derived relations as views {#derived-relations-as-views}
+
+A relation that an `ENFORCE r := term` statement defines is a derived relation: its population is a function of other relations. The prototype realises such a statement in one of two ways.
+
+By default the relation is a stored table, and the ExecEngine keeps it equal to the term: after every transaction it computes which pairs are missing and which are superfluous, and inserts or deletes them. The table is a copy that lags behind until the ExecEngine has run, and keeping it costs time in every transaction that touches a relation of the term.
+
+With the compiler option `--derived-views` the relation is a database view on the SQL of the term. A view is computed by the database when a query reads it, so it can never lag behind, nothing maintains it, and the ExecEngine has nothing to do for it. Every rule and interface reads the view as it read the table. A view cannot be written: an interface field on such a relation is read-only, a `POPULATION` of it is not possible, and an `{EX} InsPair` or `DelPair` on it fails. The compiler warns where a script asks for such a write.
+
+A derived relation stays a stored table, with a warning that says why, when a rule reads it and the database would compute its view in full, when an interface field reads it and its definition holds a closure, when another `ENFORCE` statement writes the same relation (a view takes no extra pairs), when a `POPULATION` statement gives it pairs of its own, when its definition refers to itself directly or through other derived relations (SQL has no such view), when it belongs to a context on another database, or when it is named in the option `--materialize`. That last option is the way to keep a relation stored on purpose, and `--view` names a relation that is a view in spite of what reads it. The cost of a view is behind the first two reasons. A view whose SQL is one `SELECT` is merged by the database into every query that reads it, so it costs what the term costs at that place; read for one atom, it costs about 0.03 ms more than a stored table, at every size. A view whose SQL holds a set operation (a union) or a recursion (a closure, `*` or `+`) cannot be merged: inside a join the database computes it in full, as a temporary table without an index, every time, and a rule that joins such a view makes every transaction that touches it 3 to 10 times slower than the same rule on the stored table. So the compiler keeps such a relation stored when a rule reads it, directly or through another view; a union that only an interface field reads stays a view, because the database filters it per atom, and a closure that an interface field reads stays stored, because the database recomputes the whole closure for every atom. The decision is taken for all derived relations together, until it is stable: a relation that stays stored can make a view that reads it mergeable. The compiler reports for every derived relation whether it is a view or a stored table, whether the database merges the view, and how many rules read it; the measurements are in the design-choice register of the compiler (`memorybank/derived-views/`, DC-2 and DC-4, and the experiment next to them).
+
+A prototype framework that does not know views installs and reads such a prototype, but cannot delete an atom that occurs in a derived relation, because it writes to every relation of the atom's concept; a framework that reads the field `storage` of `relations.json` skips the views. The option is off until such a framework is the common one.
 
 #### Miscellaneous
 
@@ -1370,7 +1606,11 @@ The built-in VIEW template for a property. It renders a `[PROP]` relation as a b
 
 #### Semantics
 
-Most things in your model are in it for a reason. To document these, you should use the PURPOSE statement.
+Every thing in your model is there for a reason. A PURPOSE statement writes down that reason, so a reader of your model or of the generated documentation knows why the thing exists.
+
+The things that can have a purpose are the context, patterns, concepts, relations, rules, identities, views, interfaces, enforcement rules, and roles. Each of them is something you define on its own, with a name. The PURPOSE statement refers to the thing by that name, so a thing needs a name before you can give it a purpose. A `RULE` or `ENFORCE` statement without a name therefore cannot have a purpose.
+
+Other statements are part of such a thing. The `MEANING`, `MESSAGE`, and `VIOLATION` of a rule belong to that rule, the properties and the population of a relation belong to that relation, and the fields of an interface belong to that interface. A part serves the purpose of the thing it belongs to, so it needs no purpose of its own. When you feel a part needs its own reason, that often signals it deserves to be a thing of its own, with its own name.
 
 #### Syntax
 
@@ -1378,9 +1618,9 @@ Most things in your model are in it for a reason. To document these, you should 
 
 `{+` `<anything>` `+}`
 
-Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`
+Where `<type of thing>` and `<name>` are the type and name of the thing that is refered to. This could be one of: `CONCEPT`, `RELATION`, `RULE`, `IDENT`, `VIEW`, `PATTERN`, `INTERFACE`, `CONTEXT`, `ENFORCE`, `ROLE`
 
-The optional and can be used to override the settings for language and markup. If omitted, these are inherited from the pattern of context where the PURPOSE statement is specified in.
+The optional `<language>` and `<markup>` can be used to override the settings for language and markup. If omitted, these are inherited from the pattern or context where the PURPOSE statement is specified in.
 
 #### Examples
 
@@ -1394,6 +1634,13 @@ PURPOSE RELATION accountOwner
    so accounts with the same owner are linked in this way.
 +}
 ```
+
+```text
+PURPOSE ROLE Contentmanager
+{+ Somebody must see to it that only approved articles are published. +}
+```
+
+A role exists in your script when it maintains a rule (`ROLE Contentmanager MAINTAINS ...`) or when an interface is meant for it (`INTERFACE ... FOR Contentmanager`).
 
 When defining the purpose of a relation, make sure that Ampersand can identify the relation unambiguously. If you have multiple relations `accountOwner`, add the signature to disambiguate it. For instance:
 

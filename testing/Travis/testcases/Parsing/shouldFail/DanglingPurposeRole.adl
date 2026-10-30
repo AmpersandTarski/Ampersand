@@ -1,0 +1,11 @@
+CONTEXT DanglingPurposeRole IN ENGLISH
+-- A PURPOSE ROLE must refer to a role that maintains a rule or that an interface is meant for.
+
+RELATION r[A*B]
+RULE rTotal : I[A] |- r;r~
+ROLE Admin MAINTAINS rTotal
+
+PURPOSE ROLE Contentmanager
+{+ This purpose refers to a role that does not occur in the script. +}
+
+ENDCONTEXT

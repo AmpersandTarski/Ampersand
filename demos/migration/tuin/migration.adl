@@ -1,0 +1,49 @@
+CONTEXT Migratie INCLUDES Tuin FROM "existing.adl" AS old,
+                          Tuin FROM "desired.adl" AS new
+CONTEXT Migratie IN DUTCH
+PURPOSE CONTEXT Migratie
+{+ De migratie van het beddenregister van de gemeenschapstuin naar zijn nieuwe versie.
+Het register in gebruik is opgenomen als `old`, de nieuwe versie als `new`.
+De tuinders werken door terwijl de gegevens verhuizen, en zij zoeken een beheerder voor de bedden die er geen hebben. +}
+
+-- Elk bed, elke naam en elke tuinder van het register in gebruik hoort ook bij de nieuwe versie.
+CLASSIFY old.Bed ISA new.Bed
+CLASSIFY old.Bednaam ISA new.Bednaam
+CLASSIFY old.Tuinder ISA new.Tuinder
+
+-- Kopieer de namen en de beheerders. De relaties kopieNaam en kopieBeheerder onthouden wat gekopieerd is,
+-- zodat het kopiëren een wijziging van een gebruiker in de nieuwe versie niet ongedaan maakt.
+RELATION kopieNaam[old.Bed*old.Bednaam]
+ENFORCE naamGekopieerd : kopieNaam >: new.naam /\ old.naam
+ENFORCE kopieerNaam : new.naam >: old.naam - kopieNaam
+RELATION kopieBeheerder[old.Bed*old.Tuinder]
+ENFORCE beheerderGekopieerd : kopieBeheerder >: new.beheerder /\ old.beheerder
+ENFORCE kopieerBeheerder : new.beheerder >: old.beheerder - kopieBeheerder
+
+-- De nieuwe regel van het bestuur: elk bed heeft een beheerder. Bedden zonder beheerder komen mee uit het register in gebruik,
+-- dus het migratiesysteem versoepelt de regel, met stap 3 tot 5 van de migratiemethode.
+-- Stap 3: de relatie fixedElkBedHeeftBeheerder bevat de bedden die een beheerder hebben,
+-- en de blokkerende invariant blockElkBedHeeftBeheerder voorkomt dat zo'n bed die weer kwijtraakt.
+RELATION fixedElkBedHeeftBeheerder[new.Bed*new.Bed]
+RULE blockElkBedHeeftBeheerder : fixedElkBedHeeftBeheerder |- new.beheerder;new.beheerder~
+MESSAGE "Een bed dat een beheerder heeft, houdt er een."
+VIOLATION (TXT "Geef ", SRC new.naam, TXT " weer een beheerder.")
+-- Stap 4: een transactionele invariant registreert elk bed dat een beheerder heeft.
+ENFORCE fixElkBedHeeftBeheerder : fixedElkBedHeeftBeheerder >: I[new.Bed] /\ new.beheerder;new.beheerder~
+-- Stap 5: de regel zelf signaleert de bedden zonder beheerder, als werk voor de vrijwilligers.
+-- In de nieuwe versie, waar geen rol hem bewaakt, is dezelfde regel een blokkerende invariant.
+ROLE Vrijwilliger MAINTAINS new.elkBedHeeftBeheerder
+
+-- De schermen van de nieuwe versie, zodat een gebruiker van het migratiesysteem werkt als in de nieuwe versie:
+-- een lijst die niet te bewerken is, en een scherm voor één bed dat een wijziging als één transactie opslaat.
+INTERFACE Bedden FOR Vrijwilliger : "_SESSION";V[SESSION*new.Bed] cRud BOX<TABLE showNavMenu>
+  [ "bed" : new.naam cRud
+  , "beheerder" : new.beheerder cRud
+  ]
+
+TRANSACTIONAL INTERFACE Bed FOR Vrijwilliger : I[new.Bed] CRuD BOX<FORM>
+  [ "bed" : new.naam CRUD
+  , "beheerder" : new.beheerder CRUD
+  ]
+
+ENDCONTEXT

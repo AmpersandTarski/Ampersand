@@ -1,0 +1,20 @@
+CONTEXT Registry IN ENGLISH
+PURPOSE CONTEXT Registry
+{+ The population register of the example in the article on multi-context information systems.
+It is a context of its own: it knows nothing of the contexts that include it. +}
+
+RELATION name[Person*Name] [UNI,TOT]
+RELATION address[Person*Address] [UNI]
+
+POPULATION name[Person*Name] CONTAINS
+  [ ("p1", "Peter")
+  ; ("p2", "Melissa")
+  ]
+POPULATION address[Person*Address] CONTAINS
+  [ ("p1", "Main Street 1")
+  ]
+
+RULE named : I[Person] |- name;name~
+MEANING "Every person has a name."
+
+ENDCONTEXT

@@ -1,0 +1,47 @@
+CONTEXT FormalAmpersand IN ENGLISH
+-- The migration: context Migration includes two contexts that are both called Kurk, as `old` and as `new`.
+--   CONTEXT Migration INCLUDES Kurk FROM "kurk_existing.adl" AS old
+--   CONTEXT Migration INCLUDES Kurk FROM "kurk_desired.adl" AS new
+-- Each Kurk declares a concept A. The migration states CLASSIFY old.A ISA new.A, so it writes the desired system.
+INCLUDE "../../../AmpersandData/FormalAmpersand/MultiContext.adl"
+
+POPULATION FormalAmpersand.name[FormalAmpersand.Context*FormalAmpersand.ContextName] CONTAINS
+  [ ("ctxM", "Migration") ; ("ctxOld", "Kurk") ; ("ctxNew", "Kurk") ]
+POPULATION FormalAmpersand.version[FormalAmpersand.Context*FormalAmpersand.Version] CONTAINS
+  [ ("ctxM", "1") ; ("ctxOld", "1") ; ("ctxNew", "2") ]
+POPULATION FormalAmpersand.database[FormalAmpersand.Context*FormalAmpersand.Database] CONTAINS
+  [ ("ctxM", "Migration1") ; ("ctxOld", "Kurk1") ; ("ctxNew", "Kurk2") ]
+
+POPULATION FormalAmpersand.includer[FormalAmpersand.Inclusion*FormalAmpersand.Context] CONTAINS [ ("i1", "ctxM") ; ("i2", "ctxM") ]
+POPULATION FormalAmpersand.included[FormalAmpersand.Inclusion*FormalAmpersand.Context] CONTAINS [ ("i1", "ctxOld") ; ("i2", "ctxNew") ]
+POPULATION FormalAmpersand.alias[FormalAmpersand.Inclusion*FormalAmpersand.Alias] CONTAINS [ ("i1", "old") ; ("i2", "new") ]
+POPULATION FormalAmpersand.prefix[FormalAmpersand.Inclusion*FormalAmpersand.Name] CONTAINS
+  [ ("i1", "old") ; ("i1", "Kurk") ; ("i2", "new") ; ("i2", "Kurk") ]
+POPULATION FormalAmpersand.includes[FormalAmpersand.Context*FormalAmpersand.Context] CONTAINS [ ("ctxM", "ctxOld") ; ("ctxM", "ctxNew") ]
+
+POPULATION FormalAmpersand.owner[FormalAmpersand.Declaration*FormalAmpersand.Context] CONTAINS [ ("oldA", "ctxOld") ; ("newA", "ctxNew") ]
+POPULATION FormalAmpersand.context[FormalAmpersand.Concept*FormalAmpersand.Context] CONTAINS [ ("oldA", "ctxOld") ; ("newA", "ctxNew") ]
+POPULATION FormalAmpersand.localName[FormalAmpersand.Declaration*FormalAmpersand.Name] CONTAINS [ ("oldA", "A") ; ("newA", "A") ]
+POPULATION FormalAmpersand.name[FormalAmpersand.Concept*FormalAmpersand.ConceptName] CONTAINS [ ("oldA", "A") ; ("newA", "A") ]
+POPULATION FormalAmpersand.visible[FormalAmpersand.Declaration*FormalAmpersand.Context] CONTAINS
+  [ ("oldA", "ctxOld") ; ("oldA", "ctxM") ; ("newA", "ctxNew") ; ("newA", "ctxM") ]
+POPULATION FormalAmpersand.valid[FormalAmpersand.Concept*FormalAmpersand.Context] CONTAINS
+  [ ("oldA", "ctxOld") ; ("oldA", "ctxM") ; ("newA", "ctxNew") ; ("newA", "ctxM") ]
+
+-- The references old.A and new.A, written in Migration.
+POPULATION FormalAmpersand.writtenIn[FormalAmpersand.Reference*FormalAmpersand.Context] CONTAINS [ ("refOldA", "ctxM") ; ("refNewA", "ctxM") ]
+POPULATION FormalAmpersand.prefix[FormalAmpersand.Reference*FormalAmpersand.Name] CONTAINS [ ("refOldA", "old") ; ("refNewA", "new") ]
+POPULATION FormalAmpersand.localName[FormalAmpersand.Reference*FormalAmpersand.Name] CONTAINS [ ("refOldA", "A") ; ("refNewA", "A") ]
+POPULATION FormalAmpersand.denotes[FormalAmpersand.Reference*FormalAmpersand.Context] CONTAINS [ ("refOldA", "ctxOld") ; ("refNewA", "ctxNew") ]
+POPULATION FormalAmpersand.refersTo[FormalAmpersand.Reference*FormalAmpersand.Declaration] CONTAINS [ ("refOldA", "oldA") ; ("refNewA", "newA") ]
+
+-- CLASSIFY old.A ISA new.A, stated in Migration.
+POPULATION FormalAmpersand.genspc[FormalAmpersand.Isa*FormalAmpersand.Concept] CONTAINS [ ("isa1", "oldA") ]
+POPULATION FormalAmpersand.gengen[FormalAmpersand.Isa*FormalAmpersand.Concept] CONTAINS [ ("isa1", "newA") ]
+POPULATION FormalAmpersand.context[FormalAmpersand.Isa*FormalAmpersand.Context] CONTAINS [ ("isa1", "ctxM") ]
+
+POPULATION FormalAmpersand.reads[FormalAmpersand.Context*FormalAmpersand.Database] CONTAINS
+  [ ("ctxM", "Migration1") ; ("ctxM", "Kurk1") ; ("ctxM", "Kurk2") ; ("ctxOld", "Kurk1") ; ("ctxNew", "Kurk2") ]
+POPULATION FormalAmpersand.writes[FormalAmpersand.Context*FormalAmpersand.Context] CONTAINS
+  [ ("ctxM", "ctxM") ; ("ctxOld", "ctxOld") ; ("ctxNew", "ctxNew") ; ("ctxM", "ctxNew") ]
+ENDCONTEXT

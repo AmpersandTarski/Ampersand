@@ -1,0 +1,5 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS
+CONTEXT Fail IN ENGLISH
+-- AS must be followed by an alias.
+RELATION applicant[Permit*Registry.Person]
+ENDCONTEXT

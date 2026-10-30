@@ -1,0 +1,6 @@
+CONTEXT Permits INCLUDES Registry FROM "../contexts/registry_with_towns.adl" AS Reg
+CONTEXT Permits IN ENGLISH
+-- A prefix names a context that is included directly. It does not follow a path of inclusions.
+-- To refer to the concept of towns, Permits has to include Towns itself.
+RELATION site[Permit*Reg.Geo.Town]
+ENDCONTEXT

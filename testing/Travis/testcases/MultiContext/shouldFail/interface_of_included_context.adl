@@ -1,0 +1,8 @@
+CONTEXT Campus INCLUDES Library FROM "../contexts/rich.adl" AS Lib
+CONTEXT Campus IN ENGLISH
+-- The interfaces of an included context are the user interface of its own application.
+-- Another context cannot refer to them.
+RELATION student[Lib.Member*Student] [UNI]
+INTERFACE Students FOR Librarian : "_SESSION";V[SESSION*Student] BOX
+  [ "card" : student~ INTERFACE Lib.Members ]
+ENDCONTEXT

@@ -14,20 +14,40 @@ import Ampersand.Test.Express.ExpressParserTest (expressParserTest)
 import Ampersand.Test.IFC.IFCBinderTest (ifcBinderTest)
 import Ampersand.Test.IFC.IFCRegressionTest (ifcRegressionTest)
 import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
+import Ampersand.Test.Incremental.CandidateProperties (doAllCandidatePropertyTests)
+import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
+import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
+import Ampersand.Test.MultiContext.QualifyProperties (doAllQualifyPropertyTests)
+import Ampersand.Test.Multitable.StorageLayoutTests (doAllStorageLayoutTests)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
+import Ampersand.Test.Serve.ServeTest (serveTest)
 import Ampersand.Test.Step.StepParserTest (stepParserTest)
 import Ampersand.Types.Config (HasRunner)
 
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
 test = do
+  storageLayoutTest
   parserRoundtripTest
+  incrementalPropertyTest
+  candidatePropertyTest
+  costProfileTest
+  qualifyPropertyTest
   stepReaderTest
   expressTest
   ifcBinderTest'
   ifcWiringTest'
   ifcRegressionTest'
+  serveTest'
   regressionTest
+
+-- | The HTTP/JSON service @ampersand serve@: every endpoint answered through
+--   the real application, without a network socket.
+serveTest' :: (HasRunner env) => RIO env ()
+serveTest' = do
+  success <- serveTest
+  unless success
+    $ exitWith (SomeTestsFailed ["Test of the HTTP/JSON service (ampersand serve) failed!"])
 
 ifcRegressionTest' :: (HasRunner env) => RIO env ()
 ifcRegressionTest' = do
@@ -58,6 +78,69 @@ expressTest = do
   success <- expressParserTest
   unless success
     $ exitWith (SomeTestsFailed ["EXPRESS schema reader test failed!"])
+
+-- | The code-to-model bridge of the incremental evaluator (issue #1683):
+--   QuickCheck properties binding the ZSet functions and the engine to the
+--   lemmas of proofs/incremental/.
+incrementalPropertyTest :: (HasRunner env) => RIO env ()
+incrementalPropertyTest = do
+  logInfo "Starting incremental-evaluator property tests."
+  success <- doAllIncrementalPropertyTests
+  if success
+    then logInfo "✅ Passed."
+    else do
+      logError "❗❗❗ Failed. Incremental-evaluator property tests."
+      exitWith (SomeTestsFailed ["Incremental-evaluator property test failed!"])
+
+-- | The code-to-model bridge of the candidate calculus (issue #1684):
+--   QuickCheck properties binding widen\/narrow\/candidateTerms to the
+--   K-lemmas of proofs\/incremental\/Candidates.thy (claim PRF-7).
+candidatePropertyTest :: (HasRunner env) => RIO env ()
+candidatePropertyTest = do
+  logInfo "Starting candidate-calculus property tests."
+  success <- doAllCandidatePropertyTests
+  if success
+    then logInfo "✅ Passed."
+    else do
+      logError "❗❗❗ Failed. Candidate-calculus property tests."
+      exitWith (SomeTestsFailed ["Candidate-calculus property test failed!"])
+
+-- | The route classification of the cost gate (issue #1692): every DC-17
+--   route class on a miniature context, plus the structural counterexample.
+costProfileTest :: (HasRunner env) => RIO env ()
+costProfileTest = do
+  logInfo "Starting cost-profile classification tests."
+  success <- doAllCostProfileTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Cost-profile classification tests."
+      exitWith (SomeTestsFailed ["Cost-profile classification test failed!"])
+
+-- | Joining the contexts of a system: an included context contributes its names with a prefix,
+--   and a context that is reached along two paths contributes them once.
+qualifyPropertyTest :: (HasRunner env) => RIO env ()
+qualifyPropertyTest = do
+  logInfo "Starting property tests of systems of contexts (CONTEXT ... INCLUDES ...)."
+  success <- doAllQualifyPropertyTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Property tests of systems of contexts."
+      exitWith (SomeTestsFailed ["Property test of systems of contexts failed!"])
+
+-- | Which concepts get a table (issues #1672, #1716 and #1727): a typology is
+--   stored as a whole or not at all, and a specialisation that is stored apart
+--   has a table whether or not a term names it (claim PRF-13).
+storageLayoutTest :: (HasRunner env) => RIO env ()
+storageLayoutTest = do
+  logInfo "Starting tests of the storage layout (which concepts get a table)."
+  success <- doAllStorageLayoutTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Tests of the storage layout."
+      exitWith (SomeTestsFailed ["Test of the storage layout failed!"])
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do

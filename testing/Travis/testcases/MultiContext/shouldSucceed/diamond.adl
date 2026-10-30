@@ -1,0 +1,16 @@
+CONTEXT City INCLUDES Registry FROM "../contexts/registry_with_towns.adl",
+                      Shops FROM "../contexts/shops.adl"
+CONTEXT City IN ENGLISH
+PURPOSE CONTEXT City
+{+ A diamond: the register of persons and the register of shops both include the context Towns.
+Towns is one context with one database, so the town of a shop and the town in which a person lives
+are atoms of one concept, and a rule can compose the two relations. +}
+
+RELATION customer[Shops.Shop*Registry.Person]
+POPULATION customer[Shops.Shop*Registry.Person] CONTAINS [ ("s1", "p1") ]
+
+RULE local : customer |- Shops.located;Registry.residence~
+MEANING "A customer lives in the town of the shop."
+ROLE Clerk MAINTAINS local
+
+ENDCONTEXT

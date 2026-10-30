@@ -5,7 +5,7 @@ cabal-version: 2.0
 -- see: https://github.com/sol/hpack
 
 name:           ampersand
-version:        5.9.6
+version:        5.13.0
 synopsis:       Toolsuite for automated design of enterprise information systems.
 description:    You can define your business processes by means of rules, written in Relation Algebra.
 category:       Database Design
@@ -35,6 +35,7 @@ extra-source-files:
     AmpersandData/FormalAmpersand/Interfaces.adl
     AmpersandData/FormalAmpersand/Interfaces.docadl
     AmpersandData/FormalAmpersand/MinimalAST.xlsx
+    AmpersandData/FormalAmpersand/MultiContext.adl
     AmpersandData/FormalAmpersand/Patterns.adl
     AmpersandData/FormalAmpersand/Patterns.docadl
     AmpersandData/FormalAmpersand/README.txt
@@ -117,6 +118,7 @@ library
   exposed-modules:
       Ampersand
       Ampersand.ADL1
+      Ampersand.ADL1.DerivedViews
       Ampersand.ADL1.Expression
       Ampersand.ADL1.Lattices
       Ampersand.ADL1.P2A_Converters
@@ -179,6 +181,7 @@ library
       Ampersand.Input.IFC.IFCAnalyze
       Ampersand.Input.Parsing
       Ampersand.Input.PreProcessor
+      Ampersand.Input.Qualify
       Ampersand.Input.Step.Parser
       Ampersand.Input.Step.Types
       Ampersand.Input.Xslx.XLSX
@@ -225,10 +228,16 @@ library
       Ampersand.Test.IFC.IFCBinderTest
       Ampersand.Test.IFC.IFCRegressionTest
       Ampersand.Test.IFC.IFCWiringTest
+      Ampersand.Test.Incremental.CandidateProperties
+      Ampersand.Test.Incremental.CostProfileTests
+      Ampersand.Test.MultiContext.QualifyProperties
+      Ampersand.Test.Multitable.StorageLayoutTests
+      Ampersand.Test.Incremental.Properties
       Ampersand.Test.Parser.ArbitraryTree
       Ampersand.Test.Parser.ParserTest
       Ampersand.Test.Parser.QuickChecks
       Ampersand.Test.Regression
+      Ampersand.Test.Serve.ServeTest
       Ampersand.Test.Step.StepParserTest
       MainApps
       Options.Applicative.Builder.Extra
@@ -238,13 +247,16 @@ library
       Ampersand.Basics.Hashing
       Ampersand.Basics.Name
       Ampersand.Commands.Daemon
+      Ampersand.Commands.Deploy
       Ampersand.Commands.Devoutput
       Ampersand.Commands.Documentation
       Ampersand.Commands.ExportAsADL
+      Ampersand.Commands.IncrementalBench
       Ampersand.Commands.Init
       Ampersand.Commands.Population
       Ampersand.Commands.Proof
       Ampersand.Commands.Proto
+      Ampersand.Commands.Serve
       Ampersand.Commands.Test
       Ampersand.Commands.Validate
       Ampersand.Daemon.Daemon
@@ -255,6 +267,11 @@ library
       Ampersand.Daemon.Util
       Ampersand.Daemon.Wait
       Ampersand.FSpec.FPA
+      Ampersand.FSpec.Incremental
+      Ampersand.FSpec.Incremental.CostProfile
+      Ampersand.FSpec.Incremental.DeltaTerms
+      Ampersand.FSpec.Incremental.Synthetic
+      Ampersand.FSpec.Incremental.ZSet
       Ampersand.FSpec.Instances
       Ampersand.Input.Archi.ArchiAnalyze
       Ampersand.Input.AtlasImport
@@ -264,6 +281,7 @@ library
       Ampersand.Options.DevoutputOptsParser
       Ampersand.Options.DocOptsParser
       Ampersand.Options.FSpecGenOptsParser
+      Ampersand.Options.IncrementalBenchOptsParser
       Ampersand.Options.InputOutputOpts
       Ampersand.Options.PopulationOptsParser
       Ampersand.Options.ProofOptsParser
@@ -272,6 +290,7 @@ library
       Ampersand.Options.ValidateOptsParser
       Ampersand.Output.FSpec2Turtle
       Ampersand.Output.PredLogic
+      Ampersand.Prototype.DeltaSQLHarness
       Ampersand.Types.Config
       Paths_ampersand
   autogen-modules:
@@ -305,6 +324,7 @@ library
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -324,6 +344,8 @@ library
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
@@ -370,6 +392,7 @@ executable ampPreProc
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -389,6 +412,8 @@ executable ampPreProc
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
@@ -438,6 +463,7 @@ executable ampersand
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -457,6 +483,8 @@ executable ampersand
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml
@@ -504,6 +532,7 @@ test-suite ampersand-test
     , generic-deriving
     , graphviz
     , hashable
+    , http-types
     , hxt
     , lens
     , mtl
@@ -523,6 +552,8 @@ test-suite ampersand-test
     , time
     , transformers
     , uri-encode
+    , wai
+    , warp
     , wl-pprint
     , xlsx
     , yaml

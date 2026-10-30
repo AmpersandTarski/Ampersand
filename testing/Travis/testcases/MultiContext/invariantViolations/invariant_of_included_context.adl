@@ -1,0 +1,6 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
+CONTEXT Fail IN ENGLISH
+-- The included context requires that every person has a name.
+-- This context adds a person without a name, which violates that invariant.
+POPULATION Reg.Person CONTAINS [ "p9" ]
+ENDCONTEXT

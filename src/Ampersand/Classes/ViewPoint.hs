@@ -4,10 +4,11 @@ module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
-import Ampersand.Classes.Relational (HasProps (properties))
+import Ampersand.Classes.Relational (HasProps (properties), guaranteedProperties)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
+import qualified RIO.Text as T
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
@@ -32,13 +33,26 @@ class Language a where
     Rules
   proprules x =
     Set.fromList
-      $ [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d)]
+      $ [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d), not (guaranteedByView d p)]
+    where
+      -- A derived relation that is a database view (issue #1744) has the population of its
+      -- definition, so a property that the definition guarantees needs no rule: the rule would
+      -- recompute the view to find nothing. A property the shape of the definition does not
+      -- guarantee keeps its rule.
+      derivedDefs = [(enfRel e, enfExpr e) | e <- enforces x, enfStorage e == DerivedView]
+      guaranteedByView d p = case lookup d derivedDefs of
+        Just definition -> p `elem` guaranteedProperties definition
+        Nothing -> False
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforcement rules that are maintained within this viewpoint.
   enforceRules = Set.fromList . concatMap enfRules . enforces
+  unionRules :: a -> Rules -- the rules that follow from `CLASSIFY C IS A \/ B` statements (issue #1716)
+  unionRules = Set.fromList . map ruleFromUnion . conceptUnions
   allRules :: a -> Rules
-  allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x `Set.union` enforceRules x
+  allRules x = udefrules x `Set.union` proprules x `Set.union` identityRules x `Set.union` enforceRules x `Set.union` unionRules x
+  conceptUnions :: a -> [AUnion] -- all `CLASSIFY C IS A \/ B` statements that are defined in a (issue #1716)
+  conceptUnions _ = []
   identities ::
     a ->
     -- | all keys that are defined in a
@@ -63,6 +77,41 @@ class Language a where
   allRoleRules :: a -> RoleRules
 
 -- allRoleRules x = udefRoleRules x `Set.union` foldMapM roleRuleFromEnforceRule (enforces x)
+
+-- | The rule that `CLASSIFY C IS A \/ B` states (issue #1716): every C is an A
+--   or a B. The other direction, that every A and every B is a C, is in the
+--   concept graph. The method is that of the 2015 paper on the type system,
+--   which reads `CLASSIFY A ISA B` as the rule `I[A] = I[B] /\ I[A]`.
+ruleFromUnion :: AUnion -> Rule
+ruleFromUnion un =
+  Rule
+    { rrnm =
+        withNameSpace
+          (nameSpaceOf (ungen un))
+          $ case try2Name RuleName ("union" <> (tshow . abs . hash . tshow $ un)) of
+            Left err -> fatal $ "Not a proper Name: " <> err
+            Right (nm, _) -> nm,
+      rrlbl = Just . Label $ "Union rule for " <> fullName (ungen un),
+      formalExpression = term,
+      rrfps = origin un,
+      rrmean = map toMeaning [minBound ..],
+      rrmsg = [],
+      rrviol = Nothing,
+      rrpat = Nothing,
+      rrkind = UnionDef (ungen un),
+      rrOriginalTerm = tshow term
+    }
+  where
+    term = EDcI (ungen un) .|-. unionOfMembers (fmap EDcI (unmembers un))
+    unionOfMembers (x NE.:| xs) = foldr (.\/.) x xs
+    toMeaning lang =
+      Meaning
+        . Markup lang
+        . string2Blocks ReST
+        $ case lang of
+          English -> "Every " <> fullName (ungen un) <> " is one of " <> members
+          Dutch -> "Elke " <> fullName (ungen un) <> " is een van " <> members
+    members = T.intercalate ", " (map fullName (NE.toList (unmembers un)))
 
 ruleFromIdentity :: IdentityRule -> Rule
 ruleFromIdentity identity =
@@ -150,6 +199,7 @@ instance Language A_Context where
   viewDefs context = concatMap viewDefs (ctxpats context) <> ctxvs context
   enforces context = concatMap enforces (ctxpats context) <> ctxEnforces context
   gens context = L.nub $ concatMap gens (ctxpats context) <> ctxgs context
+  conceptUnions = ctxunions
   patterns = ctxpats
   udefRoleRules context = udefRoleRules (ctxpats context) `Set.union` ctxrrules context
   allRoleRules context =

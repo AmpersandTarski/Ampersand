@@ -16,6 +16,7 @@ module Ampersand.Input.ADL1.CtxError
     lexerWarning2Warning,
     mkBoxRowsnhWarning,
     mkCartesianProductWarning,
+    mkUnavoidableCartesianProductWarning,
     mkOscillationWarning,
     mkCaseProblemWarning,
     mkCrudForRefInterfaceError,
@@ -57,6 +58,11 @@ module Ampersand.Input.ADL1.CtxError
     mkTurtleWarning,
     mkUndeclaredError,
     mkUnusedCptDefWarning,
+    mkDerivedRelationStoredWarning,
+    mkDerivedViewClosureWarning,
+    mkDerivedViewWriteWarning,
+    mkUnusedInclusionWarning,
+    mkNoApplicationWarning,
     mkOrphanedRepresentWarning,
     mustBeBound,
     mustBeOrdered,
@@ -749,12 +755,65 @@ mkNoBoxItemsWarning orig =
       [ "This list of BOX-items is empty."
       ]
 
+mkUnusedInclusionWarning :: Origin -> Text -> Text -> Warning
+mkUnusedInclusionWarning orig includer included =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ "The context " <> includer <> " includes the context " <> included <> " and refers to nothing in it.",
+        "You can leave the inclusion out."
+      ]
+
+-- | A context that shares its database with the context that installs it has no application of its own,
+--   so its interfaces are not generated.
+mkNoApplicationWarning :: Origin -> Text -> Text -> Text -> [Text] -> Warning
+mkNoApplicationWarning orig ctx db root ifcs =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ "The context " <> ctx <> " lands on the database " <> db <> " together with " <> root <> ", which includes it, so it has no application of its own.",
+        "Its interfaces are not generated: " <> T.intercalate ", " ifcs <> ".",
+        "Give " <> ctx <> " a database of its own with NAMED if it needs an application."
+      ]
+
 mkTurtleWarning :: Origin -> [Text] -> Warning
 mkTurtleWarning orig msg =
   Warning orig (T.unlines msg)
 
 mkCrudWarning :: P_Cruds -> [Text] -> Warning
 mkCrudWarning (P_Cruds o _) msg = Warning o (T.unlines msg)
+
+-- | Under @--derived-views@ a derived relation stays a stored table for a reason (issue #1744).
+mkDerivedRelationStoredWarning :: Origin -> Text -> Text -> Warning
+mkDerivedRelationStoredWarning orig rel reason =
+  Warning orig
+    $ "The derived relation "
+    <> rel
+    <> " stays a stored table, maintained by the ExecEngine, because "
+    <> reason
+    <> "."
+
+-- | A view whose definition holds a Kleene closure recomputes the whole closure at every use (issue #1744).
+mkDerivedViewClosureWarning :: Origin -> Text -> Warning
+mkDerivedViewClosureWarning orig rel =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ "The derived relation " <> rel <> " is a view whose definition holds a closure (* or +).",
+        "The database recomputes the whole closure every time a query reads the view.",
+        "Name the relation in --materialize to keep it stored, if that costs less."
+      ]
+
+-- | Something in the script writes to a derived relation that is a view (issue #1744).
+mkDerivedViewWriteWarning :: Origin -> Text -> Text -> Warning
+mkDerivedViewWriteWarning orig rel what =
+  Warning orig
+    $ T.intercalate
+      "\n  "
+      [ what <> " writes to the derived relation " <> rel <> ", which is a view under --derived-views.",
+        "A view cannot be written: the prototype refuses the write, or the database does.",
+        "Name the relation in --materialize to keep it a stored table, or take the write away."
+      ]
 
 mkUnusedCptDefWarning :: AConceptDef -> Warning
 mkUnusedCptDefWarning cptDef =
@@ -859,6 +918,37 @@ mkCartesianProductWarning orig context originalTerm fullExpr offending verboseEx
     endsInV (EBrk e) = endsInV e
     endsInV (EDcV _) = True
     endsInV _ = False
+
+-- | Warn about a conjunct whose violation query must compute a Cartesian
+--   product of two concept tables: its violation term contains a complement
+--   that has no complement-free sibling ("anchor") in the same intersection,
+--   so the anchored rewrite (issue #562) cannot turn it into an anti-join.
+--   Evaluating such a rule enumerates all source*target candidate pairs on
+--   every affected transaction.
+mkUnavoidableCartesianProductWarning ::
+  -- | Origin of (the first of) the rule(s) this conjunct maintains
+  Origin ->
+  -- | Names of the rules this conjunct maintains
+  NE.NonEmpty Text ->
+  -- | The violation term as offered to the SQL generator, pretty printed
+  Text ->
+  Warning
+mkUnavoidableCartesianProductWarning orig ruleNames term =
+  Warning orig
+    $ T.intercalate
+      "\n    "
+      [ "The violations of " <> rules <> " are computed with a Cartesian product of two",
+        "concept tables: a complement (-) in the violation term has no complement-free",
+        "term in the same intersection to bound it, so every evaluation enumerates all",
+        "source*target candidate pairs.",
+        "Violation term: " <> term,
+        "A bounding (positive) term in the rule keeps the query proportional to the",
+        "population of that term."
+      ]
+  where
+    rules = case ruleNames of
+      nm NE.:| [] -> "RULE " <> nm
+      nms -> "RULES " <> T.intercalate ", " (NE.toList nms)
 
 mkCaseProblemWarning :: (Typeable a, Named a) => a -> a -> Warning
 mkCaseProblemWarning x y =

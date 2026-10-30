@@ -1,0 +1,6 @@
+CONTEXT Fail INCLUDES Registry FROM "../contexts/registry.adl" AS Reg
+CONTEXT Fail IN ENGLISH
+-- Only the context that declares a concept states how it is represented.
+REPRESENT Reg.Name TYPE BIGALPHANUMERIC
+RELATION applicant[Permit*Reg.Person]
+ENDCONTEXT

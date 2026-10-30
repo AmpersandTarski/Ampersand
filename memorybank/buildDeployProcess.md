@@ -243,8 +243,8 @@ grep -A 50 "allStaticFiles" src/Ampersand/Prototype/StaticFiles_Generated.hs
 **Multi-Stage Build:**
 
 **Stage 1 (buildstage):**
-- Base: `haskell:9.6.6`
-- Install system dependencies (GraphViz, build tools, etc.)
+- Base: `debian:bookworm-slim` (Debian 12, glibc 2.36; `haskell:9.6.6` was Debian 11, whose security source broke after its end of life on 31 August 2026)
+- Install the C toolchain and libraries, then Stack at a pinned version; Stack installs GHC in the dependency layer
 - Copy Stack configuration first (for layer caching)
 - Build dependencies with `stack build --dependencies-only`
 - Copy source code and build with `stack install`

@@ -1,0 +1,21 @@
+CONTEXT EnforceWithName IN ENGLISH
+-- An ENFORCE statement may carry a name (and a label), so a PURPOSE can refer to it.
+
+RELATION hasCar[Person*Car]
+RELATION hasDriverLicence[Person*Person] [PROP]
+RELATION canDrive[Person*Person] [PROP]
+RELATION owns[Person*Car]
+
+ENFORCE mayDrive LABEL "Who may drive" : canDrive :< hasDriverLicence
+PURPOSE ENFORCE mayDrive
+{+ Only a person with a driver licence may drive. +}
+
+PATTERN Ownership
+  ENFORCE ownsWhatHeHas : owns >: hasCar
+  PURPOSE ENFORCE ownsWhatHeHas
+  {+ Whoever has a car owns it. +}
+  -- An ENFORCE without a name remains valid.
+  ENFORCE hasCar :< owns
+ENDPATTERN
+
+ENDCONTEXT

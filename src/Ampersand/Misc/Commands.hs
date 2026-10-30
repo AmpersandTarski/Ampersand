@@ -10,19 +10,25 @@ module Ampersand.Misc.Commands
   )
 where
 
+{-getProgName,-}
+import Ampersand.ADL1 (AEnforce (..), EnforceOperator (..), EnforceStorage (..))
+import Ampersand.ADL1.DerivedViews (inlineViews, materialises)
 import Ampersand.Basics
 import Ampersand.Commands.Daemon
+import Ampersand.Commands.Deploy
 import Ampersand.Commands.Devoutput
 import Ampersand.Commands.Documentation
 import Ampersand.Commands.ExportAsADL
+import Ampersand.Commands.IncrementalBench
 import Ampersand.Commands.Population
 import Ampersand.Commands.Proof
 import Ampersand.Commands.Proto
+import Ampersand.Commands.Serve
 import Ampersand.Commands.Test
 import Ampersand.Commands.Validate
-{-getProgName,-}
-import Ampersand.FSpec (FSpec)
+import Ampersand.FSpec (FSpec (..))
 import Ampersand.FSpec.Oscillation (oscillationWarnings)
+import Ampersand.FSpec.SQL (derivedViewIsMergeable)
 import Ampersand.FSpec.ToFSpec.CreateFspec
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Misc.HasClasses
@@ -31,6 +37,7 @@ import Ampersand.Options.DevoutputOptsParser
 import Ampersand.Options.DocOptsParser
 import Ampersand.Options.FSpecGenOptsParser
 import Ampersand.Options.GlobalParser
+import Ampersand.Options.IncrementalBenchOptsParser
 import Ampersand.Options.InputOutputOpts
 import Ampersand.Options.PopulationOptsParser
 import Ampersand.Options.ProofOptsParser
@@ -100,6 +107,15 @@ commandLineHandler currentDir _progName args =
         daemonCmd
         daemonOptsParser
       addCommand''
+        Serve
+        ( "Run Ampersand as an HTTP/JSON service for editors and RAP. "
+            <> "Exposes /health, /check, /translate, /fspec, /import and "
+            <> "/population, with JSON in and out. Port via "
+            <> "AMPERSAND_SERVE_PORT (default 8080)."
+        )
+        serveCmd
+        daemonOptsParser
+      addCommand''
         Dataanalysis
         ( "Create an ADL model based on the content of a spreadsheet. The spreadsheet "
             <> "must comply to the specific format. "
@@ -107,6 +123,14 @@ commandLineHandler currentDir _progName args =
         )
         (mkAction exportAsAdl)
         (outputFileOptsParser "MetaModel.adl")
+      addCommand''
+        Deploy
+        ( "Generate what is needed to run a system of contexts: a compose file, "
+            <> "and a Dockerfile for the application of every context. "
+            <> "Every context gets a database of its own."
+        )
+        (mkAction deploy)
+        (outputFileOptsParser "compose.yaml")
       addCommand''
         Devoutput
         "Generate some diagnostic files, intended for developers of ampersand."
@@ -127,6 +151,15 @@ commandLineHandler currentDir _progName args =
       --                  ""
       --                  (mkAction init)
       --                  initOptsParser
+      addCommand''
+        IncrementalBench
+        ( "Benchmark incremental evaluation of rule violations against full "
+            <> "re-evaluation, on synthetic populations of increasing size. "
+            <> "With --verify, every transaction is checked against the "
+            <> "in-memory oracle. This is for measuring the Ampersand compiler only."
+        )
+        (mkAction incrementalBench)
+        incrementalBenchOptsParser
       addCommand''
         Population
         "Generate a file that contains the population of your script."
@@ -366,6 +399,10 @@ daemonCmd :: DaemonOpts -> RIO Runner ()
 daemonCmd daemonOpts =
   extendWith daemonOpts runDaemon
 
+serveCmd :: DaemonOpts -> RIO Runner ()
+serveCmd daemonOpts =
+  extendWith daemonOpts runServe
+
 documentationCmd :: DocOpts -> RIO Runner ()
 documentationCmd docOpts = do
   (extendWith docOpts . forceAllowInvariants . doOrDie) doGenDocument
@@ -400,11 +437,49 @@ doOrDie theAction = do
   case mFSpec of
     Checked a ws -> do
       mapM_ (logWarn . displayShow) ws
+      derivedOn <- view derivedViewsL
+      let readers e = maybe 0 length (lookup (enfRel e) (allConjsPerDecl a))
+      when derivedOn
+        $ forM_ [e | e <- allEnforces a, IsSameSet {} <- [enfOp e]]
+        $ \e ->
+          logInfo
+            . display
+            $ "Derived relation "
+            <> fullName (enfRel e)
+            <> ": "
+            <> ( if enfStorage e == DerivedView
+                   then
+                     "a view in the database, read by "
+                       <> tshow (readers e)
+                       <> " conjunct"
+                       <> (if readers e == 1 then "" else "s")
+                       <> ( if derivedViewIsMergeable a (enfExpr e)
+                              then ", merged into every query that reads it."
+                              else ", computed in full at every use (its SQL has a set operation, a recursion or a DISTINCT); --materialize keeps it stored."
+                          )
+                   else "a stored table, maintained by the ExecEngine."
+               )
+      -- The shape test that decided the storage ('materialises') against the SQL of the view:
+      -- the two are written apart, and the experiment of issue #1744 found them apart once.
+      when derivedOn
+        $ forM_ [e | e <- allEnforces a, enfStorage e == DerivedView, derivedViewIsMergeable a (enfExpr e) == materialises (inlineViews (fDerivedViews a) (enfExpr e))]
+        $ \e ->
+          logWarn
+            . display
+            $ "The shape test of the compiler and the SQL of the view of "
+            <> fullName (enfRel e)
+            <> " disagree on whether the database merges the view; the view may cost more than reported. Please report this at issue #1744."
       failOnOsc <- view failOnOscillationL
-      case oscillationWarnings a of
-        oscWs
+      failOnCart <- view failOnCartesianProductL
+      env <- ask
+      let oscWs = oscillationWarnings a
+          cartWs = if failOnCart then cartesianProductWarnings env a else []
+      case () of
+        ()
           | failOnOsc && not (null oscWs) ->
               exitWith . OscillationRiskDetected $ concatMap (T.lines . tshow) oscWs
+          | not (null cartWs) ->
+              exitWith . CartesianProductDetected $ concatMap (T.lines . tshow) cartWs
           | otherwise -> theAction a
     Errors err ->
       exitWith
@@ -420,12 +495,15 @@ data Command
   | Check
   | Daemon
   | Dataanalysis
+  | Deploy
   | Devoutput
   | Documentation
   | Export
+  | IncrementalBench
   | Population
   | Proofs
   | Proto
+  | Serve
   | Test
   | Validate
 
@@ -437,8 +515,11 @@ instance Show Command where
   show Devoutput = "dev-output"
   show Documentation = "documentation"
   show Export = "export"
+  show Deploy = "deploy"
+  show IncrementalBench = "incremental-bench"
   show Population = "population"
   show Proofs = "proofs"
   show Proto = "proto"
+  show Serve = "serve"
   show Test = "test"
   show Validate = "validate"

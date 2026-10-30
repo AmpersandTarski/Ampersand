@@ -16,6 +16,8 @@ fSpecGenOptsParser isForDaemon =
   FSpecGenOpts
     <$> rootsP
     <*> sqlBinTablesP
+    <*> allConceptTablesP
+    <*> compiledContextP
     <*> genInterfacesP
     <*> namespaceP
     <*> crudP
@@ -23,6 +25,13 @@ fSpecGenOptsParser isForDaemon =
     <*> knownRecipeP
     <*> allowInvariantViolationsP
     <*> failOnOscillationP
+    <*> failOnCartesianProductP
+    <*> pure False
+    <*> derivedViewsP
+    <*> materializeP
+    <*> forceViewP
+    <*> foreignKeysP
+    <*> schemaViewsP
   where
     rootsP :: Parser Roots
     rootsP =
@@ -46,6 +55,29 @@ fSpecGenOptsParser isForDaemon =
             <> "database, for testing purposes."
         )
         mempty
+
+    allConceptTablesP :: Parser Bool
+    allConceptTablesP =
+      boolFlags
+        False
+        "all-concept-tables"
+        ( "Give every concept a table, also if no query of this context reads it. "
+            <> "Use this for a context that other contexts include."
+        )
+        mempty
+
+    compiledContextP :: Parser Text
+    compiledContextP =
+      strOption
+        ( long "context"
+            <> metavar "CONTEXT"
+            <> value ""
+            <> help
+              ( "The context to compile, if the script is a system of contexts: "
+                  <> "the name of a context that the first context in the root file reaches, or its alias. "
+                  <> "By default the first context in the root file is compiled."
+              )
+        )
 
     genInterfacesP :: Parser Bool
     genInterfacesP =
@@ -165,16 +197,107 @@ fSpecGenOptsParser isForDaemon =
         )
         mempty
 
+    failOnCartesianProductP :: Parser Bool
+    failOnCartesianProductP =
+      boolFlags
+        False
+        "fail-on-cartesian-product"
+        ( "fail (exit code 46) when the SQL of a rule's violation query "
+            <> "computes a Cartesian product of two concept tables. Off by "
+            <> "default (the product is reported as a warning). Intended for "
+            <> "regression tests that assert via the exit code that all "
+            <> "complements in violation queries are anchored."
+        )
+        mempty
+
+    derivedViewsP :: Parser Bool
+    derivedViewsP =
+      boolFlags
+        False
+        "derived-views"
+        ( "generate a derived relation (ENFORCE r := term) as a database view "
+            <> "instead of a table that the ExecEngine maintains (issue #1744). "
+            <> "Off by default. Needs a prototype framework that knows the "
+            <> "field `storage` of relations.json for deleting atoms."
+        )
+        mempty
+
+    materializeP :: Parser [Text]
+    materializeP =
+      concatMap (T.split (== ',') . T.strip . T.pack)
+        <$> many
+          ( strOption
+              ( long "materialize"
+                  <> metavar "RELATION"
+                  <> help
+                    ( "with --derived-views: keep this derived relation stored and "
+                        <> "maintained by the ExecEngine, as before. Name the relation "
+                        <> "as it is declared (`r` or `r[A*B]`). Repeat the option or "
+                        <> "separate names with commas."
+                    )
+              )
+          )
+
+    forceViewP :: Parser [Text]
+    forceViewP =
+      concatMap (T.split (== ',') . T.strip . T.pack)
+        <$> many
+          ( strOption
+              ( long "view"
+                  <> metavar "RELATION"
+                  <> help
+                    ( "with --derived-views: make this derived relation a view although "
+                        <> "a rule or an interface field reads it and the database would "
+                        <> "compute the view in full (a union or a closure), which the "
+                        <> "compiler otherwise keeps stored. Name the relation as it is "
+                        <> "declared. Repeat the option or separate names with commas."
+                    )
+              )
+          )
+
+    foreignKeysP :: Parser Bool
+    foreignKeysP =
+      boolFlags
+        False
+        "foreign-keys"
+        ( "generate a FOREIGN KEY from every relation column to the concept "
+            <> "table it refers to (issue #1744). Off by default; the prototype "
+            <> "framework must have design choice OK-31 (v2.21.0). A bulk load must "
+            <> "switch FOREIGN_KEY_CHECKS off while it loads."
+        )
+        mempty
+
+    schemaViewsP :: Parser Bool
+    schemaViewsP =
+      boolFlags
+        False
+        "schema-views"
+        ( "generate a named view per conjunct (conj_<id>) and per interface "
+            <> "field (ifc_<interface>_<field>) in database.sql, next to the "
+            <> "queries in conjuncts.json and interfaces.json (issue #1744). "
+            <> "Off by default."
+        )
+        mempty
+
 defFSpecGenOpts :: NonEmpty FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl =
   FSpecGenOpts
     { xrootFile = Roots rootAdl,
       xsqlBinTables = False,
+      xallConceptTables = False,
+      xcompiledContext = "",
       xgenInterfaces = False,
       xnamespace = "",
       xdefaultCrud = (True, True, True, True),
       xtrimXLSXCells = True,
       xrecipe = Standard,
       xallowInvariantViolations = False,
-      xfailOnOscillation = False
+      xfailOnOscillation = False,
+      xfailOnCartesianProduct = False,
+      xconfineIncludes = False,
+      xderivedViews = False,
+      xmaterialize = [],
+      xforceView = [],
+      xforeignKeys = False,
+      xschemaViews = False
     }

@@ -1,0 +1,8 @@
+CONTEXT T4
+CLASSIFY Document ISA Artefact
+CLASSIFY Claim ISA Artefact
+RELATION r[Document*Tekst] [UNI]
+RELATION s[Claim*Tekst] [UNI]
+RULE Ver : r \/ s |- V[Artefact*Tekst]
+RULE Verschil : r - s |- r
+ENDCONTEXT

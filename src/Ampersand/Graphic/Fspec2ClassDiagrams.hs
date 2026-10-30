@@ -507,7 +507,8 @@ tdAnalysis fSpec =
               assSrcPort = sqlAttToName att,
               asslhm = (mults . flp) expr,
               asslhr = Just . unlabeled $ sqlAttToName att,
-              assTgt = name . mainItem . getConceptTableFor fSpec . target $ expr,
+              -- A target without a table of its own (a MULTITABLE union, issue #1716) keeps its own name.
+              assTgt = maybe (name (target expr)) (name . mainItem . fst) . lookupConceptTable fSpec . target $ expr,
               assrhm = mults expr,
               assrhr = case toList . toList $ bindedRelationsIn expr of
                 h : _ -> Just (unlabeled (name h))

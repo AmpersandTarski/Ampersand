@@ -1,0 +1,5 @@
+CONTEXT Registry IN ENGLISH
+-- A second file of the context Registry, to be merged with the first one by a plain INCLUDE.
+RELATION birthdate[Person*Date] [UNI]
+POPULATION birthdate[Person*Date] CONTAINS [ ("p1", "1970-01-01") ]
+ENDCONTEXT

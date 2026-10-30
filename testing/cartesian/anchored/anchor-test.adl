@@ -1,0 +1,13 @@
+CONTEXT AnchorTest
+-- Reproducer from https://github.com/AmpersandTarski/Ampersand/issues/562:
+-- the violation term of the |--direction of this ENFORCE is
+--   x /\ (-a \/ -(f;st~)) /\ -((I-f;f~);a)
+-- in which x is a complement-free member ("anchor"). The anchored rewrite
+-- must compile every complement as an anti-join bounded by x; without it,
+-- the generated SQL enumerates the Cartesian product V[S*E] twice.
+RELATION x[S*E]
+RELATION a[S*E]
+RELATION f[S*T] [UNI]
+RELATION st[E*T] [UNI]
+ENFORCE x := (a /\ f;st~) \/ (I[S] - f;f~);a
+ENDCONTEXT

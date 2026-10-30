@@ -124,7 +124,8 @@ graph2P_Context graph = do
         [ PClassify
             { specific = PCpt sName,
               generics = PCpt gName NE.:| [],
-              pos = someTurtle
+              pos = someTurtle,
+              pc_isUnion = False
             }
           | Triple sNode _ gNode <- select graph Nothing (is RDFS.subClassOf) Nothing,
             sLbl <- labelsOf graph sNode,

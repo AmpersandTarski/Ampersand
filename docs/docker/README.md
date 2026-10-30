@@ -7,9 +7,9 @@ description: >-
 
 # Ampersand and [Docker](https://docs.docker.com/get-started/overview/#images)
 Ampersand uses the following container images:
-1. **haskell:9.6.4(https://hub.docker.com/r/haskell:9.6.4)**  
-   This image features the Haskell compiler, which is used to compile the Ampersand compiler.
-   It is used by ~/git/Ampersand/Dockerfile.
+1. **[debian:bookworm-slim](https://hub.docker.com/_/debian)**  
+   This image is the base of the stage that compiles the Ampersand compiler. Stack installs the Haskell compiler (GHC) in it.
+   It is used by ~/git/Ampersand/Dockerfile, whose comments explain why this Debian release was chosen.
 2. **[debian:bullseye](https://hub.docker.com/_/debian)**  
    This image is the base image for the devcontainer in which you work on the Ampersand compiler.
    It is used as base image by the [Dockerfile](https://github.com/AmpersandTarski/Ampersand/blob/main/.devcontainer/Dockerfile) of the devcontainer.

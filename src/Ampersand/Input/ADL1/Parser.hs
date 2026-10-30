@@ -5,8 +5,11 @@ module Ampersand.Input.ADL1.Parser
   ( AmpParser,
     ParserState,
     Include (..),
+    Inclusion (..),
+    InclusionItem (..),
     initialParserState,
     pContext,
+    pFile,
     pContent,
     pPopulations,
     pTerm,
@@ -196,6 +199,7 @@ suggestNamePart typ = toText1Unsafe . casing . T.map crapToSpace . text1ToText
     casing = case typ of
       ConceptName -> upper
       ContextName -> upper
+      EnforceName -> dontcare
       IdentName -> dontcare
       InterfaceName -> dontcare
       PatternName -> upper
@@ -227,9 +231,11 @@ data ContextElement
   | CIncl Include -- an INCLUDE statement
   | CEnf (P_Enforce TermPrim)
 
+-- | An INCLUDE statement: its position, the file and the preprocessor variables.
+--   The included file contributes its text to the including context (a union).
 data Include = Include Origin FilePath [Text]
 
---- IncludeStatement ::= 'INCLUDE' Text
+---- IncludeStatement ::= 'INCLUDE' Text ('[' Text (',' Text)* ']')?
 pIncludeStatement :: AmpParser Include
 pIncludeStatement =
   Include
@@ -237,6 +243,78 @@ pIncludeStatement =
     <* (pKey . toText1Unsafe) "INCLUDE"
     <*> (T.unpack <$> pDoubleQuotedString)
     <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])
+
+-- | The statement that contexts include other contexts.
+--   It stands outside every CONTEXT block, because it relates contexts.
+--   @CONTEXT A, B INCLUDES C FROM "c.adl" AS X, D@ says that A and B each include C and D.
+--   @CONTEXT A NAMED Kaart INCLUDES B NAMED Kaart@ says, in addition, that A and B land on one database, called Kaart.
+data Inclusion = Inclusion
+  { incOrigin :: !Origin,
+    -- | the contexts before the word INCLUDES, each with the name of its database if the statement gives one
+    incIncluders :: !(NonEmpty (Name, Maybe Text)),
+    -- | the contexts after the word INCLUDES
+    incItems :: !(NonEmpty InclusionItem)
+  }
+
+-- | One included context in an inclusion statement.
+data InclusionItem = InclusionItem
+  { -- | the name of the included context
+    itName :: !Name,
+    -- | the file in which the included context is to be found, if it is another file
+    itFrom :: !(Maybe FilePath),
+    -- | the preprocessor variables with which that file is read
+    itDefs :: ![Text],
+    -- | a second name for the included context, for use in the including context
+    itAlias :: !(Maybe NamePart),
+    -- | the name of the database on which the included context lands, if the statement gives one
+    itDatabase :: !(Maybe Text)
+  }
+
+--- File ::= (InclusionStatement | Context)+
+
+-- | Parses a file: inclusion statements and the contexts (or fragments of contexts) it contains.
+pFile :: AmpParser ([Inclusion], [(P_Context, [Include])])
+pFile = partitionEithers <$> many1 (Left <$> pInclusion <|> Right <$> pContext) <* atEnd
+  where
+    -- What follows the last context has to be a context or an inclusion statement as well.
+    -- Without this check, a statement with a mistake in it would be ignored in silence.
+    atEnd = pEndOfFile <|> void pContext
+
+--- InclusionStatement ::= 'CONTEXT' Includer (',' Includer)* 'INCLUDES' InclusionItem (',' InclusionItem)*
+--- Includer ::= Name ('NAMED' DatabaseName)?
+--- InclusionItem ::= Name ('FROM' Text ('[' Text (',' Text)* ']')?)? ('AS' Name)? ('NAMED' DatabaseName)?
+pInclusion :: AmpParser Inclusion
+pInclusion = do
+  -- The words INCLUDES, FROM, AS and NAMED are no keywords, so that scripts that use them as
+  -- identifiers keep compiling. They are recognised by their position.
+  (orig, includers) <- try $ do
+    orig <- currPos
+    _ <- (pKey . toText1Unsafe) "CONTEXT"
+    includers <- ((,) <$> pNameWithoutLabel ContextName <*> pDatabase) `sepBy1` pComma
+    pWord "INCLUDES"
+    pure (orig, includers)
+  items <- pItem `sepBy1` pComma
+  pure (Inclusion orig includers items)
+  where
+    pItem :: AmpParser InclusionItem
+    pItem =
+      build
+        <$> pNameWithoutLabel ContextName
+        <*> pMaybe (pWord "FROM" *> ((,) . T.unpack <$> pDoubleQuotedString <*> (pBrackets (pDoubleQuotedString `sepBy` pComma) <|> return [])))
+        <*> pMaybe (pWord "AS" *> (((pUpperCaseID <|> pLowerCaseID) <?> "an alias") >>= toNamePart))
+        <*> pDatabase
+    build nm mFrom = InclusionItem nm (fst <$> mFrom) (maybe [] snd mFrom)
+    -- The name of a database is an identifier of MariaDB: letters, digits and underscores.
+    pDatabase :: AmpParser (Maybe Text)
+    pDatabase = pMaybe (pWord "NAMED" *> ((text1ToText <$> (pUpperCaseID <|> pLowerCaseID)) <?> "the name of a database"))
+    pWord :: Text -> AmpParser ()
+    pWord w = try (pUpperCaseID >>= isWord) <?> T.unpack w
+      where
+        isWord t = if text1ToText t == w then pure () else fail (T.unpack w <> " expected")
+    toNamePart :: Text1 -> AmpParser NamePart
+    toNamePart t = case try2Namepart (text1ToText t) of
+      Right np -> pure np
+      _ -> fail ("The alias " <> T.unpack (text1ToText t) <> " is not a valid name.")
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
@@ -337,17 +415,19 @@ data PatElem
   | Pp P_Population
   | Penf (P_Enforce TermPrim)
 
--- <Enforce> ::= 'ENFORCE' <Relation> ['~'] (':=' | ':<' | '>:' ) <Expression>
+-- <Enforce> ::= 'ENFORCE' [Name Label? ':'] <Relation> ['~'] (':=' | ':<' | '>:' ) <Expression>
 pEnforce :: AmpParser (P_Enforce TermPrim)
 pEnforce =
-  P_Enforce
+  build
     <$> currPos
     <* (pKey . toText1Unsafe) "ENFORCE"
+    <*> pMaybe (try (pNameWithOptionalLabelAndColon EnforceName)) -- `try`, because the name and the relation both start with an identifier.
     <*> (PNamedR <$> pNamedRel)
     <*> pIsThere ((pOperator . toText1Unsafe) "~")
     <*> pEnforceOperator
     <*> pTerm
   where
+    build orig mNmLbl = P_Enforce orig (fst <$> mNmLbl) (mNmLbl >>= snd)
     pEnforceOperator :: AmpParser EnforceOperator
     pEnforceOperator =
       fun
@@ -366,7 +446,7 @@ pEnforce =
           )
             orig
 
---- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'ISA' ConceptRef)
+--- Classify ::= 'CLASSIFY' ConceptRef ('IS' Cterm | 'IS' ConceptRef ('\/' ConceptRef)+ | 'ISA' ConceptRef)
 pClassify :: AmpParser [PClassify] -- Example: CLASSIFY A IS B /\ C /\ D
 pClassify =
   fun
@@ -374,34 +454,44 @@ pClassify =
     <* (pKey . toText1Unsafe) "CLASSIFY"
     <*> pConceptRef
     `sepBy1` pComma
-    <*> ( is
-            <$ (pKey . toText1Unsafe) "IS"
-            <*> pCterm
+    <*> ( (pKey . toText1Unsafe) "IS"
+            *> (try (union <$> pUnionTerm) <|> is <$> pCterm)
             <|> isa
             <$ (pKey . toText1Unsafe) "ISA"
             <*> pConceptRef
         )
   where
-    fun :: Origin -> NE.NonEmpty P_Concept -> (Bool, [P_Concept]) -> [PClassify]
-    fun p lhs (isISA, rhs) = NE.toList $ fmap f lhs
+    fun :: Origin -> NE.NonEmpty P_Concept -> (ClassifyShape, [P_Concept]) -> [PClassify]
+    fun p lhs (shape, rhs) = NE.toList $ fmap f lhs
       where
         f s =
           PClassify
             { pos = p,
               specific = s,
-              generics = if isISA then s NE.:| rhs else PARTIAL.fromList rhs
+              generics = case shape of
+                ClassifyIsa -> s NE.:| rhs
+                _ -> PARTIAL.fromList rhs,
+              pc_isUnion = shape == ClassifyUnion
             }
     --- Cterm ::= Cterm1 ('/\' Cterm1)*
     --- Cterm1 ::= ConceptRef | ('('? Cterm ')'?)
     pCterm = concat <$> pCterm1 `sepBy1` (pOperator . toText1Unsafe) "/\\"
+    --- UnionTerm ::= ConceptRef ('\/' ConceptRef)+     (issue #1716: CLASSIFY C IS A \/ B)
+    pUnionTerm :: AmpParser [P_Concept]
+    pUnionTerm = (:) <$> pConceptRef <*> many1 ((pOperator . toText1Unsafe) "\\/" *> pConceptRef)
     pCterm1 =
       pure
         <$> pConceptRef
         <|> pParens pCterm -- brackets are allowed for educational reasons.
-    is :: [P_Concept] -> (Bool, [P_Concept])
-    is gens = (False, gens)
-    isa :: P_Concept -> (Bool, [P_Concept])
-    isa gen = (True, [gen])
+    is :: [P_Concept] -> (ClassifyShape, [P_Concept])
+    is gens = (ClassifyIs, gens)
+    isa :: P_Concept -> (ClassifyShape, [P_Concept])
+    isa gen = (ClassifyIsa, [gen])
+    union :: [P_Concept] -> (ClassifyShape, [P_Concept])
+    union members = (ClassifyUnion, members)
+
+-- | The three shapes of a CLASSIFY statement.
+data ClassifyShape = ClassifyIsa | ClassifyIs | ClassifyUnion deriving (Eq)
 
 --- RuleDef ::= 'RULE' Label? Rule Meaning* Message* Violation?
 pRuleDef :: AmpParser (P_Rule TermPrim)
@@ -681,6 +771,7 @@ pAdlTType =
     <|> k Integer "INTEGER"
     <|> k Float "FLOAT"
     <|> k Object "OBJECT"
+    <|> k MultiTable "MULTITABLE"
   where
     k tt str = f <$> (pKey . toText1Unsafe) str where f _ = tt
 
@@ -981,6 +1072,12 @@ pPurpose =
         <|> PRef2Context
         <$ (pKey . toText1Unsafe) "CONTEXT"
         <*> pNameWithoutLabel ContextName
+        <|> PRef2Enforce
+        <$ (pKey . toText1Unsafe) "ENFORCE"
+        <*> pNameWithoutLabel EnforceName
+        <|> PRef2Role
+        <$ (pKey . toText1Unsafe) "ROLE"
+        <*> pNameWithoutLabel RoleName
 
 pInterfaceKey :: AmpParser Text1
 pInterfaceKey = pKey (toText1Unsafe "INTERFACE") <|> pKey (toText1Unsafe "API") -- On special request of Rieks, the keyword "API" is allowed everywhere where the keyword "INTERFACE" is used. https://github.com/AmpersandTarski/Ampersand/issues/789

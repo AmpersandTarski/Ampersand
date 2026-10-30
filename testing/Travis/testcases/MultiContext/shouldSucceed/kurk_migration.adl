@@ -1,0 +1,41 @@
+CONTEXT Migration INCLUDES Kurk FROM "../contexts/kurk_existing.adl" AS old,
+                           Kurk FROM "../contexts/kurk_desired.adl" AS new
+CONTEXT Migration IN ENGLISH
+PURPOSE CONTEXT Migration
+{+ The migration system of the proof of concept in
+"Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024), written as a context
+that includes the existing system as `old` and the desired system as `new`.
+In 2024 the prefixes `old_` and `new_` were typed in by hand, in one script.
+Here the two systems are the scripts they are in production, and the aliases supply the prefixes.
+
+The numbers of the steps refer to section 4.1 of that paper. +}
+
+
+-- Step 1. The data sets of both systems are both present, kept apart by the aliases.
+-- The concepts of the two systems are different concepts. The migration states which ones correspond:
+-- every atom of the existing system is an atom of the desired system.
+CLASSIFY old.A ISA new.A
+CLASSIFY old.B ISA new.B
+
+-- Step 2. Copy the population of r. The relation copyR registers what has been copied,
+-- so that a user can remove a copied pair from new.r without it being copied again.
+RELATION copyR[old.A*old.B]
+ENFORCE copyDone : copyR >: new.r /\ old.r
+ENFORCE copy : new.r >: old.r - copyR
+
+-- Steps 3 to 5. The desired system has a new blocking invariant: r is total.
+-- The migration context assigns that rule to a role. So here it is a business constraint,
+-- which signals what users have to repair, while it remains a blocking invariant in the desired system.
+-- The compiler adds the rest of the method: a relation fixedTotalR that registers the atoms that satisfy the rule,
+-- and a blocking invariant blockTotalR that keeps a repaired violation from recurring.
+ROLE User MAINTAINS new.totalR
+
+-- Every atom of old.A is an atom of new.A, so new.r and fixedTotalR apply to it as well.
+INTERFACE Migration FOR User : "_SESSION";V[SESSION*old.A] cRud BOX
+  [ "A" : I cRud
+  , "old r" : old.r cRud
+  , "new r" : new.r CRUd
+  , "fixed" : fixedTotalR cRud
+  ]
+
+ENDCONTEXT

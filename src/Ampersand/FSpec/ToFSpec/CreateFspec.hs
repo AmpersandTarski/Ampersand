@@ -8,6 +8,7 @@ module Ampersand.FSpec.ToFSpec.CreateFspec
     --  , MetaModel(..)
     createFspec,
     pCtx2Fspec,
+    cartesianProductWarnings,
     --  , script
     --  , merge
     --  , andThen
@@ -18,18 +19,21 @@ import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import Ampersand.Basics
 import Ampersand.Core.A2P_Converters (aRelation2pRelation)
-import Ampersand.Core.ParseTree (mkPConcept)
+import Ampersand.Core.ParseTree (mkPConcept, relaxedRules)
+import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
 import Ampersand.FSpec.Oscillation (warnOscillationRisk)
 import Ampersand.FSpec.SQL (SqlQuery (..), prettySQLQuery)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
+import Ampersand.FSpec.ToFSpec.ConceptTables (termsThatEnumerate)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
 import Ampersand.Misc.HasClasses
 import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config (HasRunner, runnerL)
+import RIO.Char (toUpper)
 import RIO.List (sortOn)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -79,7 +83,8 @@ createFspec =
     let recipe = view recipeL env
     userScript <- do
       rootFiles <- view rootFileL
-      snd <$> parseFilesTransitive rootFiles -- the P_Context of the user's sourceFile
+      -- the P_Context of the user's sourceFile, with what the compiler adds for relaxed invariants
+      (>>= hardenRelaxedInvariants env) . snd <$> parseFilesTransitive rootFiles
     pContext <-
       case recipe of
         Standard -> pure userScript
@@ -257,11 +262,134 @@ grindInto metamodel specification = do
             }
   return pCtx
 
+-- | A context relaxes an invariant of a context it includes by assigning the rule to a role
+--   (@ROLE User MAINTAINS new.totalR@). The rule is then a business constraint in that context:
+--   its violations are signalled to users. This is how a migration treats the invariants that the
+--   desired system has and the existing system lacks.
+--
+--   For every relaxed invariant @u@ the compiler adds what the method of
+--   "Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024, section 4.1, steps 3 and 4) prescribes:
+--   a relation @fixed_u@ that registers what satisfies @u@, a rule that is enforced to fill it,
+--   and a blocking invariant that keeps what is registered from violating @u@ again.
+--   So a violation that a user has repaired cannot return, and once the last violation is repaired
+--   everything that the rule applied to is held to it.
+--
+--   The additions are made as script text, from the rule as the type checker understands it,
+--   because the signature of the relation is the signature of the rule.
+hardenRelaxedInvariants :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded P_Context
+hardenRelaxedInvariants env pCtx = case relaxedRules (ctx_metas pCtx) of
+  [] -> pure pCtx
+  relaxed -> do
+    aCtx <- pCtx2aCtx env skeleton
+    let rules = Set.toList (udefrules aCtx)
+        additions =
+          [ addition ns rule
+            | (ns, ruleName) <- relaxed,
+              rule <- take 1 (filter ((== ruleName) . fullName) rules),
+              -- A script that states the blocking rule itself keeps its own version.
+              -- That is also the case for a script that the compiler exported.
+              blockName ns rule `notElem` map fullName (ctx_rs pCtx <> concatMap pt_rls (ctx_pats pCtx))
+          ]
+    if null additions
+      then pure pCtx
+      else do
+        (generated, _) <- parseCtx "the hardening of relaxed invariants" (T.unlines (["CONTEXT Hardening"] <> concat additions <> ["ENDCONTEXT"]))
+        pure (pCtx `mergeContexts` generated)
+  where
+    -- The script may refer to what is added here, for instance to show the registered pairs in an interface.
+    -- So the signature of a relaxed rule is taken from the declarations and the relaxed rules alone.
+    skeleton :: P_Context
+    skeleton =
+      pCtx
+        { ctx_pats = map bare (ctx_pats pCtx),
+          ctx_rs = filter isRelaxed (ctx_rs pCtx),
+          ctx_ks = [],
+          ctx_rrules = [],
+          ctx_vs = [],
+          ctx_ifcs = [],
+          ctx_ps = [],
+          ctx_pops = [],
+          ctx_enfs = []
+        }
+    bare pat =
+      pat
+        { pt_rls = filter isRelaxed (pt_rls pat),
+          pt_RRuls = [],
+          pt_ids = [],
+          pt_vds = [],
+          pt_xps = [],
+          pt_pop = [],
+          pt_enfs = []
+        }
+    isRelaxed :: P_Rule TermPrim -> Bool
+    isRelaxed r = fullName r `elem` map snd (relaxedRules (ctx_metas pCtx))
+    blockName :: Text -> Rule -> Text
+    blockName ns rule = (if T.null ns then "" else ns <> ".") <> "block" <> capitalise (localNameOf rule)
+    capitalise :: Text -> Text
+    capitalise t = case T.uncons t of
+      Just (c, rest) -> T.cons (toUpper c) rest
+      Nothing -> ""
+    addition :: Text -> Rule -> [Text]
+    addition ns rule =
+      [ "RELATION " <> fixed <> signature,
+        "MEANING " <> quoted ("This pair satisfies the rule " <> fullName rule <> ", and has to keep satisfying it."),
+        "ENFORCE " <> qualified "fix" <> " : " <> fixed <> signature <> " >: " <> satisfied,
+        "RULE " <> qualified "block" <> " : " <> blocked,
+        "MEANING " <> quoted ("What satisfies the rule " <> fullName rule <> " keeps satisfying it."),
+        "MESSAGE " <> quoted ("A violation of " <> fullName rule <> " that has been repaired cannot return.")
+      ]
+      where
+        expr = formalExpression rule
+        signature = "[" <> fullName (source expr) <> "*" <> fullName (target expr) <> "]"
+        capitalised = capitalise (localNameOf rule)
+        qualified prefix = (if T.null ns then "" else ns <> ".") <> prefix <> capitalised
+        fixed = qualified "fixed"
+        par e = "(" <> showA e <> ")"
+        -- What satisfies the rule, and the rule restricted to what is registered.
+        (satisfied, blocked) = case expr of
+          EInc (l, r) -> (par l <> " /\\ " <> par r, fixed <> signature <> " /\\ " <> par l <> " |- " <> par r)
+          EEqu (l, r) -> (par l <> " /\\ " <> par r, fixed <> signature <> " /\\ (" <> par l <> " \\/ " <> par r <> ") |- " <> par l <> " /\\ " <> par r)
+          _ -> (par expr, fixed <> signature <> " |- " <> par expr)
+        quoted t = "\"" <> T.filter (/= '"') t <> "\""
+
+-- | A term may not ask for all atoms of a concept whose atoms cannot be listed,
+--   such as a concept of type INTEGER: every integer exists, and no table holds
+--   them (issue #1727).
+checkEnumerations :: env -> FSpec -> Guarded ()
+checkEnumerations env fSpec =
+  case originalContext fSpec of
+    Nothing -> pure ()
+    Just context ->
+      case termsThatEnumerate env context (allConjuncts fSpec) of
+        [] -> pure ()
+        e : es -> Errors (fmap complaint (e :| es))
+      where
+        complaint ((orig, what), cpt) =
+          CTXE orig
+            $ "A term in "
+            <> what
+            <> " needs all atoms of the concept "
+            <> fullName cpt
+            <> ", which has the type "
+            <> tshow (ctxReprType context cpt)
+            <> ".\n  The atoms of a concept of that type cannot be listed: every one of them exists, whether or not it is in use."
+            <> "\n  A term asks for all of them with I["
+            <> fullName cpt
+            <> "], with V, or with a complement over "
+            <> fullName cpt
+            <> "."
+            <> "\n  Bound the term by a relation, for example r~;r in place of I["
+            <> fullName cpt
+            <> "]."
+
 pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
+  checkEnumerations env fSpec
+  checkRowSizes fSpec
   warnCartesianProducts env fSpec
   warnOscillationRisk fSpec
+  addWarnings (cartesianProductWarnings env fSpec) $ pure ()
   checkInvariants fSpec
   where
     checkInvariants :: FSpec -> Guarded FSpec
@@ -271,6 +399,59 @@ pCtx2Fspec env c = do
         else case violationsOfInvariants fSpec of
           [] -> pure fSpec
           h : tl -> Errors (fmap (mkInvariantViolationsError (applyViolText fSpec)) (h NE.:| tl))
+
+-- | MySQL and MariaDB refuse a table whose row definition exceeds 65535
+--   bytes. A wide table of a large typology reaches that limit (issues #838,
+--   #1694), and until now the failure surfaced only when the prototype was
+--   installed. This check estimates the row size of every generated table the
+--   way the database counts it and reports a table that will not fit, with the
+--   remedy: mark the root of its hierarchy `MULTITABLE` (issue #1716).
+checkRowSizes :: FSpec -> Guarded ()
+checkRowSizes fSpec =
+  case mapMaybe tooWide [plug | InternalPlug plug <- plugInfos fSpec] of
+    [] -> pure ()
+    e : es -> Errors (e NE.:| es)
+  where
+    rowLimit :: Int
+    rowLimit = 65535
+    tooWide :: PlugSQL -> Maybe CtxError
+    tooWide plug
+      | bytes > rowLimit =
+          Just
+            . CTXE (Origin ("the generated table " <> tableName))
+            . T.unlines
+            $ [ "The table `" <> tableName <> "` would have " <> tshow (length atts) <> " columns and a row definition of about " <> tshow bytes <> " bytes,",
+                "  more than the " <> tshow rowLimit <> " bytes that MySQL and MariaDB allow for one table.",
+                "  A wide table stores a whole concept hierarchy: one column per concept and one per univalent relation declared on it.",
+                "  To store the direct specialisations of a concept in tables of their own, mark it with",
+                "    REPRESENT <concept> TYPE MULTITABLE",
+                "  or declare fewer univalent relations on the concepts of this hierarchy."
+              ]
+      | otherwise = Nothing
+      where
+        tableName = text1ToText (showUnique plug)
+        atts = NE.toList (plugAttributes plug)
+        -- VARCHAR(255) in utf8mb4 takes 1020 bytes plus 2 length bytes; a TEXT or
+        -- BLOB column counts 9 to 12 bytes; plus the timestamp column and a null
+        -- bit per nullable column.
+        bytes = sum (map (bytesOf . attType) atts) + 4 + (length atts + 7) `div` 8
+    bytesOf :: TType -> Int
+    bytesOf tt = case tt of
+      Alphanumeric -> 1022
+      Password -> 1022
+      Object -> 1022
+      MultiTable -> 1022
+      BigAlphanumeric -> 12
+      HugeAlphanumeric -> 12
+      Binary -> 12
+      BigBinary -> 12
+      HugeBinary -> 12
+      Date -> 3
+      DateTime -> 8
+      Boolean -> 1
+      Integer -> 8
+      Float -> 4
+      TypeOfOne -> 0
 
 -- | Detect all subexpressions in an Expression that will cause the SQL
 --   generator to compute a Cartesian product (i.e. a cross join without an
@@ -368,10 +549,11 @@ warnCartesianProducts env fSpec
           (Just (normExpr, prettySQL normExpr))
         | rule <- Set.toList (vrules fSpec),
           let origExpr = formalExpression rule,
-          let normExpr = conjNF env origExpr,
-          -- Search the *normalized* expression, so that rewrites in normStep
-          -- (e.g. eliminating the cross join in  x |- I[A]#r  when r is a PROP
-          -- relation) actually silence the warning.
+          -- Search the expression as the SQL generator receives it: normalized
+          -- AND anchored, so that rewrites in normStep (e.g. eliminating the
+          -- cross join in  x |- I[A]#r  when r is a PROP relation) and the
+          -- anchored-complement rewrite actually silence the warning.
+          let normExpr = anchorComplements (conjNF env origExpr),
           sub <- findCartesianSubexprs normExpr
       ]
 
@@ -382,3 +564,26 @@ warnCartesianProducts env fSpec
       SqlQueryPlain t -> t
       SqlQueryPretty ls -> T.intercalate "\n" ls
       SqlQuerySimple t -> t
+
+-- | One warning per conjunct whose violation query computes a Cartesian
+--   product of two concept tables to evaluate a complement. The violation
+--   term is inspected as the SQL generator receives it — normalized and
+--   anchored — so after 'anchorComplements' (issue #562) a warning remains
+--   only when the term has no complement-free member to anchor on, i.e.
+--   when the product is semantically necessary.
+--
+--   These warnings are always on (unlike 'warnCartesianProducts'): the cost
+--   of such a rule grows with the product of two concept populations, which
+--   the modeler wants to know before the rule slows down every transaction.
+--   With --fail-on-cartesian-product they also make the run fail (exit 46),
+--   so a test suite can assert their absence.
+cartesianProductWarnings :: env -> FSpec -> [Warning]
+cartesianProductWarnings env fSpec =
+  [ mkUnavoidableCartesianProductWarning
+      (rrfps . NE.head . rc_orgRules $ conj)
+      (fullName <$> rc_orgRules conj)
+      ((showA . insParentheses) violationTerm)
+    | conj <- allConjuncts fSpec,
+      let violationTerm = anchorComplements . conjNF env . notCpl . rcConjunct $ conj,
+      hasUnanchoredComplement violationTerm
+  ]

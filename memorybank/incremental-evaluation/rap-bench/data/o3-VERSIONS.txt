@@ -1,0 +1,7 @@
+O3 measurement (prototype issue #443), 2026-08-15.
+Ampersand-v5.9.7 [delta-sql:b34463986] (generics reused from the #1687 run)
+framework: bench-o3 dd9d6cc8 = feat-delta-conjunct-maintenance 23449c1f + cherry-pick da0cfaf9
+  (da0cfaf9 = "Skip close's re-evaluation of clean conjuncts (opt-in)", branch feat-skip-clean-conjuncts)
+rap: 8b252d4 build: RAP on published compiler v5.9.7 + framework v2.6.0 (issue #1687 step 1)
+Instances: :8191 = deltaConjunctMaintenance off + skipCleanConjuncts false ("off")
+           :8192 = deltaConjunctMaintenance off + skipCleanConjuncts true  ("off+skip")

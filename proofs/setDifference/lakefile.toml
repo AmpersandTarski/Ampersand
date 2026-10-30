@@ -1,0 +1,5 @@
+name = "setDifference"
+defaultTargets = ["SetDifference"]
+
+[[lean_lib]]
+name = "SetDifference"

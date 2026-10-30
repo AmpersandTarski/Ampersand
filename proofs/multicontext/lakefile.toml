@@ -1,0 +1,5 @@
+name = "multicontext"
+defaultTargets = ["MultiContext"]
+
+[[lean_lib]]
+name = "MultiContext"

@@ -6,6 +6,7 @@ module Ampersand.FSpec.ToFSpec.ADL2FSpec
 where
 
 import Ampersand.ADL1
+import Ampersand.ADL1.DerivedViews (inlineViews, viewDefinitions, viewDefinitionsInOrder)
 import Ampersand.Basics hiding (Identity)
 import Ampersand.Classes
 import Ampersand.Core.AbstractSyntaxTree (geq, largerConcepts, sessionConcept, smallerConcepts)
@@ -97,7 +98,7 @@ makeFSpec env context =
           . map (handleType cpt)
           . smallerConcepts
           $ cpt,
-      tableContents = tblcontents contextinfo initialpopsDefinedInScript,
+      tableContents = tblcontents contextinfo popsWithViews (map fst orderedViewDefs),
       pairsInExpr = pairsinexpr,
       applyViolText = apply_viol_text,
       allViolations =
@@ -113,6 +114,9 @@ makeFSpec env context =
       specializationsOf = smallerConcepts,
       generalizationsOf = largerConcepts,
       allEnforces = fSpecAllEnforces,
+      fDerivedViews = orderedViewDefs,
+      fForeignKeys = view foreignKeysL env,
+      fSchemaViews = view schemaViewsL env,
       isSignal = fIsSignal,
       conceptLabel = AST.conceptLabel context
     }
@@ -155,7 +159,26 @@ makeFSpec env context =
       where
         f rule = role' `elem` maintainersOf rule
     pairsinexpr :: Expression -> AAtomPairs
-    pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
+    pairsinexpr = fullContents contextinfo popsWithViews
+    -- The derived relations that are views (issue #1744), in creation order.
+    orderedViewDefs :: [(Relation, Expression)]
+    orderedViewDefs = viewDefinitionsInOrder (viewDefinitions fSpecAllEnforces)
+    -- A view has the population of its defining term. The evaluator of the compiler gets
+    -- that population as if it were declared, so that every term that reads the view, in a
+    -- rule, an interface or `ampersand validate`, means the same here as in the database.
+    -- A definition may read a view defined before it, hence the fold.
+    popsWithViews :: [Population]
+    popsWithViews = foldl' addView initialpopsDefinedInScript orderedViewDefs
+      where
+        addView pops (rel, definition) =
+          pops
+            <> [ ARelPopu
+                   { popsrc = source rel,
+                     poptgt = target rel,
+                     popdcl = rel,
+                     popps = fullContents contextinfo pops definition
+                   }
+               ]
 
     -- Purpose: to write a rule violation in Text as specified in the user's script,
     -- to be used in error messages too.
@@ -225,16 +248,21 @@ makeFSpec env context =
     allConjs = makeAllConjs env (allRules context)
     fSpecAllConjsPerRule :: [(Rule, NE.NonEmpty Conjunct)]
     fSpecAllConjsPerRule = converseNE [(conj, rc_orgRules conj) | conj <- allConjs]
-    fSpecAllConjsPerDecl = converse [(conj, toList . bindedRelationsIn $ rcConjunct conj) | conj <- allConjs]
+    -- A conjunct that reads a view is affected by every relation the view reads, transitively
+    -- (issue #1744): the conjunct is listed with those relations and their concepts as well,
+    -- so that a transaction on them re-evaluates it.
+    fSpecAllConjsPerDecl = converse [(conj, L.nub (toList (bindedRelationsIn (rcConjunct conj)) <> toList (bindedRelationsIn (inlined conj)))) | conj <- allConjs]
     fSpecAllConjsPerConcept =
       converse
         [ (conj, L.nub $ smaller (source e) <> smaller (target e))
           | conj <- allConjs,
-            e <- toList . modifyablesByInsOrDel . rcConjunct $ conj
+            e <- L.nub (toList (modifyablesByInsOrDel (rcConjunct conj)) <> toList (modifyablesByInsOrDel (inlined conj)))
         ]
       where
         smaller :: A_Concept -> [A_Concept]
         smaller cpt = L.nub $ cpt : smallerConcepts cpt
+    inlined :: Conjunct -> Expression
+    inlined = inlineViews orderedViewDefs . rcConjunct
     allQuads = quadsOfRules env (allRules context)
     relsDefdInContext :: Relations
     relsDefdInContext = relsDefdIn context
@@ -248,6 +276,7 @@ makeFSpec env context =
           | prp == Inj && isInj (EDcD dcl) -> [] -- Enforced by the database
           | otherwise -> rolesFromScript
         Identity _ -> []
+        UnionDef _ -> []
         Enforce ->
           [ Role
               { pos = origin r,
@@ -266,6 +295,7 @@ makeFSpec env context =
         Propty _ _ -> False
         Identity _ -> False
         Enforce -> False
+        UnionDef _ -> False
     -- Lookup view by id in fSpec.
     lookupView' :: Name -> Maybe ViewDef
     lookupView' viewId =
@@ -539,9 +569,12 @@ makeFSpec env context =
 -- END: making interfaces
 ----------------------
 
-tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
-tblcontents ci ps plug =
+tblcontents :: ContextInfo -> [Population] -> [Relation] -> PlugSQL -> [[Maybe AAtomValue]]
+tblcontents ci ps viewRels plug =
   case plug of
+    BinSQL {}
+      -- The view of a derived relation holds no rows of its own (issue #1744).
+      | any ((`elem` viewRels) . rsDcl) (dLkpTbl plug) -> []
     BinSQL {} ->
       let expr = case dLkpTbl plug of
             [store] ->

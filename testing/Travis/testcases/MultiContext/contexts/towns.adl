@@ -1,0 +1,11 @@
+CONTEXT Towns IN ENGLISH
+PURPOSE CONTEXT Towns
+{+ A context that is included by the register of persons, to test a chain of three contexts. +}
+
+RELATION province[Town*Province] [UNI]
+POPULATION province[Town*Province] CONTAINS
+  [ ("Enschede", "Overijssel")
+  ; ("Heerlen", "Limburg")
+  ]
+
+ENDCONTEXT
