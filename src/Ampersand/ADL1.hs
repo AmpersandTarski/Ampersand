@@ -64,6 +64,7 @@ import Ampersand.Core.AbstractSyntaxTree
     Cruds (..),
     Default (..),
     DnfClause (..),
+    EnforceStorage (..),
     ExplObj (..),
     Expression (..),
     Flippable (..),

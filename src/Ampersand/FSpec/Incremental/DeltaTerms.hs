@@ -34,7 +34,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux (getRelationTableInfo)
+import Ampersand.FSpec.FSpecAux (getRelationTableInfo, isViewRelation)
 import Data.Char (isAlphaNum)
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -105,7 +105,8 @@ deltaPlugFor fSpec r =
 deltaPlugs :: FSpec -> [PlugSQL]
 deltaPlugs fSpec =
   [ deltaPlugFor fSpec r
-    | r <- Set.toList . Set.unions . map (bindedRelationsIn . rcConjunct) . allConjuncts $ fSpec
+    | r <- Set.toList . Set.unions . map (bindedRelationsIn . rcConjunct) . allConjuncts $ fSpec,
+      not (isViewRelation fSpec r) -- a view is not written, so it has no delta table (issue #1744)
   ]
 
 -- | An fSpec whose plug administration also resolves the delta relations, for
