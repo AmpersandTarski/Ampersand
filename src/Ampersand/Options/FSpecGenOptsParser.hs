@@ -29,6 +29,7 @@ fSpecGenOptsParser isForDaemon =
     <*> pure False
     <*> derivedViewsP
     <*> materializeP
+    <*> forceViewP
     <*> foreignKeysP
     <*> schemaViewsP
   where
@@ -237,6 +238,23 @@ fSpecGenOptsParser isForDaemon =
               )
           )
 
+    forceViewP :: Parser [Text]
+    forceViewP =
+      concatMap (T.split (== ',') . T.strip . T.pack)
+        <$> many
+          ( strOption
+              ( long "view"
+                  <> metavar "RELATION"
+                  <> help
+                    ( "with --derived-views: make this derived relation a view although "
+                        <> "a rule or an interface field reads it and the database would "
+                        <> "compute the view in full (a union or a closure), which the "
+                        <> "compiler otherwise keeps stored. Name the relation as it is "
+                        <> "declared. Repeat the option or separate names with commas."
+                    )
+              )
+          )
+
     foreignKeysP :: Parser Bool
     foreignKeysP =
       boolFlags
@@ -279,6 +297,7 @@ defFSpecGenOpts rootAdl =
       xconfineIncludes = False,
       xderivedViews = False,
       xmaterialize = [],
+      xforceView = [],
       xforeignKeys = False,
       xschemaViews = False
     }

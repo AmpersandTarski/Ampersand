@@ -76,6 +76,8 @@ class HasFSpecGenOpts a where
   derivedViewsL = fSpecGenOptsL . lens xderivedViews (\x y -> x {xderivedViews = y})
   materializeL :: Lens' a [Text]
   materializeL = fSpecGenOptsL . lens xmaterialize (\x y -> x {xmaterialize = y})
+  forceViewL :: Lens' a [Text]
+  forceViewL = fSpecGenOptsL . lens xforceView (\x y -> x {xforceView = y})
   foreignKeysL :: Lens' a Bool
   foreignKeysL = fSpecGenOptsL . lens xforeignKeys (\x y -> x {xforeignKeys = y})
   schemaViewsL :: Lens' a Bool
@@ -339,6 +341,9 @@ data FSpecGenOpts = FSpecGenOpts
     -- | The derived relations that stay stored and maintained as before, by name, when
     --   @--derived-views@ is on (issue #1744).
     xmaterialize :: ![Text],
+    -- | The derived relations that are views although a rule or a field reads a view the
+    --   database computes in full, by name, when @--derived-views@ is on (issue #1744).
+    xforceView :: ![Text],
     -- | Generate FOREIGN KEY constraints in the database structure (issue #1744).
     xforeignKeys :: !Bool,
     -- | Generate a named view per conjunct and per interface field (issue #1744).
@@ -367,6 +372,7 @@ instance HasOptions FSpecGenOpts where
       ("--fail-on-cartesian-product", tshow $ xfailOnCartesianProduct opts),
       ("--derived-views", tshow $ xderivedViews opts),
       ("--materialize", T.intercalate "," $ xmaterialize opts),
+      ("--view", T.intercalate "," $ xforceView opts),
       ("--foreign-keys", tshow $ xforeignKeys opts),
       ("--schema-views", tshow $ xschemaViews opts)
     ]

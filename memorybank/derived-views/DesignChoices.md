@@ -82,9 +82,11 @@ reads `r` from the view as it read it from the table.
    until it is stable: a relation that stays stored takes its closure or union
    out of the views that read it, which can make those mergeable. A relation
    whose own definition holds the union or the closure goes first.
-9. `--materialize` stays the way to store more; there is no option to force a
-   view against the decision, because every measured case of such a view cost
-   more than the table. The alternative set aside is materialisation on an
+9. `--materialize` stays the way to store more, and `--view` names a relation that
+   is a view in spite of its readers, for a model whose rule runs seldom, and for
+   the regression test that checks the SQL of a closure view against the
+   evaluator; the compiler's own decision is the default because every measured
+   case of such a view cost more than the table. The alternative set aside is materialisation on an
    explicit indication only, as requirement R2 asked: the measurement on FC5
    shows what it costs when the indication is forgotten (`evaluate/all` from
    4 434 to 12 732 ms), and the decision is mechanical.

@@ -42,7 +42,7 @@ data StorageDecision
 
 -- | Decide, for every @ENFORCE r := term@ statement, whether @r@ becomes a view.
 --   The arguments: whether @--derived-views@ is on, the names given to
---   @--materialize@, whether a relation belongs to a context on another database,
+--   @--materialize@, the names given to @--view@, whether a relation belongs to a context on another database,
 --   the populations of the script, the rules of the context other than the
 --   @Compute@ rules of the @:=@ statements, the interface fields (each with a
 --   description for the warning), and all ENFORCE statements of the context.
@@ -62,10 +62,12 @@ data StorageDecision
 --   come from the falsification experiment of issue #1744 (tests H2 and H4) and
 --   are decided together, until stable: a relation that stays stored can make a
 --   view that reads it mergeable, so after each relation that is kept stored the
---   others are judged again. Every reason is a warning and not an error, so the
+--   others are judged again; a relation named in @--view@ is a view in spite of its
+--   readers. Every reason is a warning and not an error, so the
 --   flag never refuses a script that compiles without it.
 decideDerivedViews ::
   Bool ->
+  [Text] ->
   [Text] ->
   (Relation -> Bool) ->
   [Population] ->
@@ -73,7 +75,7 @@ decideDerivedViews ::
   [(Text, Expression)] ->
   [AEnforce] ->
   [(AEnforce, StorageDecision)]
-decideDerivedViews flagOn materialized isForeign pops rules ifcFields enfs
+decideDerivedViews flagOn materialized forced isForeign pops rules ifcFields enfs
   | not flagOn = [(e, Stored "the option --derived-views is off") | e <- defining]
   | otherwise = [(e, decide e) | e <- defining]
   where
@@ -90,7 +92,9 @@ decideDerivedViews flagOn materialized isForeign pops rules ifcFields enfs
       | populated (enfRel e) = Just "a POPULATION statement gives it pairs of its own"
       | isForeign (enfRel e) = Just "it belongs to a context on another database"
       | otherwise = Nothing
-    named rel = any (`elem` materialized) [fullName rel, fullName rel <> tshow (sign rel), tshow rel]
+    named rel = any (`elem` materialized) (namesOf rel)
+    forcedView rel = any (`elem` forced) (namesOf rel)
+    namesOf rel = [fullName rel, fullName rel <> tshow (sign rel), tshow rel]
     writers rel = length [() | e <- enfs, enfRel e == rel]
     populated rel = not (null [() | p@ARelPopu {} <- pops, popdcl p == rel, not (Set.null (popps p))])
     -- The candidates that passed the local tests; a cycle among them keeps them all stored.
@@ -107,6 +111,7 @@ decideDerivedViews flagOn materialized isForeign pops rules ifcFields enfs
         [] -> stored
         (e, r) : _ -> settle ((enfRel e, r) : stored) (filter (/= e) views)
     reasonFor views e
+      | forcedView (enfRel e) = Nothing
       | materialises definition,
         (nm : _) <- readers =
           Just ("rule " <> nm <> " reads it, and the database would compute its view in full, because its definition holds a union or a closure")

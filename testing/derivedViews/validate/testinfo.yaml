@@ -1,7 +1,9 @@
 testCmds:
-  - command: ampersand validate --derived-views
+  # `onder` (a closure), `productDekt` (which reads it) and `zzOfBasis` (a union) are read by rules, so the compiler would keep
+  # them stored; --view makes them views here, so that validate checks their SQL as views.
+  - command: ampersand validate --derived-views --view onder,productDekt,zzOfBasis
     exitcode: 0
-  - command: ampersand proto --no-frontend --derived-views
+  - command: ampersand proto --no-frontend --derived-views --view onder,productDekt,zzOfBasis
     exitcode: 0
   # Without the flag the derived relations are stored tables, empty until an ExecEngine fills
   # them, so the rules that read them are violated in the population of the script; that is the

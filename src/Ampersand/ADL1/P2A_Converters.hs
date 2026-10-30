@@ -508,7 +508,7 @@ pCtx2aCtx
           flagOn = view derivedViewsL env
           allEnfs = ctxEnforces actx <> concatMap ptenfs (ctxpats actx)
           allPops = ctxpopus actx <> concatMap ptups (ctxpats actx)
-          decisions = decideDerivedViews flagOn (view materializeL env) (isJust . ownerLabel . name) allPops otherRules fieldTerms allEnfs
+          decisions = decideDerivedViews flagOn (view materializeL env) (view forceViewL env) (isJust . ownerLabel . name) allPops otherRules fieldTerms allEnfs
           -- The rules that are not the Compute rules of a `:=` statement; those depend on the decision.
           otherRules =
             Set.toList (udefrules actx `Set.union` proprules actx `Set.union` identityRules actx `Set.union` unionRules actx)
