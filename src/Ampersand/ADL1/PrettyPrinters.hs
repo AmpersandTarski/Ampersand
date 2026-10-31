@@ -117,6 +117,37 @@ perlineRelations ds =
   where
     src = pSrc . dec_sign
 
+-- | An inclusion statement, as a script writes it outside every CONTEXT block.
+instance Pretty Inclusion where
+  pretty (Inclusion _ includers items) =
+    text "CONTEXT"
+      <+> commas (map includer (NE.toList includers))
+      <+> pretty INCLUDES
+      <+> listOf1 items
+    where
+      includer (nm, db) = pretty nm <> named db
+
+instance Pretty InclusionItem where
+  pretty (InclusionItem nm mFrom defs alias db) =
+    pretty nm
+      <> maybe empty from mFrom
+      <> maybe empty (\a -> space <> pretty AS <+> (text . T.unpack . namePartToText) a) alias
+      <> named db
+    where
+      from f =
+        space
+          <> pretty FROM
+          <+> quote (T.pack f)
+          <> (if null defs then empty else space <> brackets (commas (map quote defs)))
+
+-- | The part of an inclusion statement that names a database.
+named :: Maybe Text -> Doc
+named = maybe empty (\d -> space <> pretty NAMED <+> (text . T.unpack) d)
+
+-- | A word of an inclusion statement, as a script spells it.
+instance Pretty InclusionWord where
+  pretty = text . show
+
 instance Pretty MetaData where
   pretty (MetaData _ nm val) =
     text "META" <+> quote (text1ToText nm) <+> quote val

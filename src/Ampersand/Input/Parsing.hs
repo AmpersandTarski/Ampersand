@@ -11,6 +11,7 @@ module Ampersand.Input.Parsing
     parseRule,
     parseTerm,
     parseCtx,
+    parseScriptFile,
     ParseCandidate (..), -- exported for use with --daemon
   )
 where

@@ -8,6 +8,10 @@ module Ampersand.Core.ParseTree
     Flippable (..),
     mergeContexts,
     MetaData (..),
+    Inclusion (..),
+    InclusionItem (..),
+    InclusionWord (..),
+    inclusionWords,
     foreignMetaName,
     mkForeignMeta,
     foreignContexts,
@@ -146,6 +150,45 @@ instance Named P_Context where
 
 instance Labeled P_Context where
   mLabel = ctx_lbl
+
+-- | The statement that contexts include other contexts.
+--   It stands outside every CONTEXT block, because it relates contexts.
+--   @CONTEXT A, B INCLUDES C FROM "c.adl" AS X, D@ says that A and B each include C and D.
+--   @CONTEXT A NAMED Kaart INCLUDES B NAMED Kaart@ says, in addition, that A and B land on one database, called Kaart.
+data Inclusion = Inclusion
+  { incOrigin :: !Origin,
+    -- | the contexts before the word INCLUDES, each with the name of its database if the statement gives one
+    incIncluders :: !(NonEmpty (Name, Maybe Text)),
+    -- | the contexts after the word INCLUDES
+    incItems :: !(NonEmpty InclusionItem)
+  }
+  deriving (Show)
+
+-- | One included context in an inclusion statement.
+data InclusionItem = InclusionItem
+  { -- | the name of the included context
+    itName :: !Name,
+    -- | the file in which the included context is to be found, if it is another file
+    itFrom :: !(Maybe FilePath),
+    -- | the preprocessor variables with which that file is read
+    itDefs :: ![Text],
+    -- | a second name for the included context, for use in the including context
+    itAlias :: !(Maybe NamePart),
+    -- | the name of the database on which the included context lands, if the statement gives one
+    itDatabase :: !(Maybe Text)
+  }
+  deriving (Show)
+
+-- | The words of an inclusion statement. They are no keywords, so that a script that uses them
+--   as identifiers keeps compiling: the parser recognises them by their position, the pretty
+--   printer writes them, and the generator of test scripts keeps them out of a generated name.
+--   'show' yields the spelling of a word in a script.
+data InclusionWord = INCLUDES | FROM | AS | NAMED
+  deriving (Show, Eq, Enum, Bounded)
+
+-- | The spelling of every word of an inclusion statement, derived from 'InclusionWord'.
+inclusionWords :: [Text]
+inclusionWords = map tshow [minBound .. maxBound :: InclusionWord]
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data MetaData = MetaData
