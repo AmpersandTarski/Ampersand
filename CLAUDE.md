@@ -65,6 +65,15 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
 
 - The **`documentation`** branch is merged **directly** (fast-forward / direct
   merge) — **no pull request**. Other branches (notably `main`) go through a PR.
+- `main` requires no review (since 30 October 2026) and the repository has
+  auto-merge on. After `gh pr create`, run `gh pr merge <nr> --auto --merge`;
+  GitHub merges when the six required checks are green and every review
+  conversation is resolved. `--admin` is never used.
+- The required build jobs (`ci2.yml`, `codeQuality.yml`) sit behind the job
+  `changes`, which runs them only when a build input changed since the
+  merge-base with `main`; a skipped job counts as passed. A PR whose head
+  commit predates that job (before PR #1752) and changed only text has no
+  checks on its head and needs a new push, such as a merge of `main`.
 - A push to `main` or `documentation` that changes `docs/**` automatically
   rebuilds the site: `.github/workflows/triggerDocsUpdate.yml` dispatches the
   `DeployToPages` workflow in the `AmpersandTarski.github.io` repo. No manual

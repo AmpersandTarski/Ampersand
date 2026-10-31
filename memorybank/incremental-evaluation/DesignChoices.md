@@ -241,7 +241,7 @@ evaluated in full when a transaction touches a relation without a candidate
 query.
 
 **The compiler writes a candidate term with one union per node, and computes every repeated subterm of a candidate query once, as a view in a WITH clause.**
-*DC-21 · valid · 2026-10-16 · origin: issue #1728, claims PRF-16 to PRF-18*
+*DC-21 · valid · 2026-10-30 · origin: issues #1728, #1739 and #1748, claims PRF-16 to PRF-18*
 
 `candidateTerm` in `DeltaTerms.hs` follows the equations of the candidate
 calculus (`candg` in `Candidates.thy`) and leaves out a branch in which the
@@ -275,9 +275,31 @@ them in a WITH clause.
    starts with a letter, so no relation or table of the model can have that
    name, and a view never hides a table that the query reads; the proof of
    PRF-17 assumes exactly this separation of views from relations.
-7. The violation queries are not shared yet. They have repeated subterms as
-   well, but MariaDB may inline or materialize a view referenced more than
-   once, so the effect on their running time is to be measured first.
+7. Sharing guarantees the size of a candidate query, not its running time.
+   Measured on the data of the Landeneisenregister (issue #1739), 358
+   candidate queries took 27.4 s unshared and 22.0 s shared on MariaDB 10.6,
+   and 4.2 s in both forms on 10.4; the gain on 10.6 comes from one query,
+   and sharing made another one 3,000 times slower. Two mechanisms cause the
+   losses: MariaDB computes a view with DISTINCT once per reference, as a
+   table without an index, and a view hides the shape of a term from the
+   choice between EXCEPT and an anti-join (issue #1708). The unshared form is
+   no alternative, because it grows quadratically (PRF-18). Sharing stays,
+   because the runtime reads candidate queries only when
+   `transactions.deltaConjunctMaintenance` is switched on, which is off by
+   default; a rule that shares a subterm only where it does no harm is the
+   question for when incremental evaluation is taken up again.
+8. Violation queries are not shared. In the same measurement 15 of 608
+   violation queries had a repeated subterm; sharing them made the total
+   3.5 times slower with DISTINCT views (26.9 s against 7.6 s on 10.6) and
+   left it unchanged without DISTINCT, while one query became 15 times
+   slower in both forms. The mechanism behind both numbers was measured on
+   30 October 2026 on MariaDB 10.6.27 and 12.3.3, with one definition
+   referenced six times (issue #1748): a WITH definition without DISTINCT is
+   merged into every reference, like a view, and a definition with DISTINCT
+   is materialised anew at every reference, six temporary tables in one
+   plan. A WITH clause shortens the text of a query and shares none of its
+   computation. So a derived relation that one query reads many times is
+   cheaper as a stored table than as a view or a WITH definition.
 
 *Impact on the specification:* none.
 
@@ -287,7 +309,8 @@ candidate query of the Landeneisenregister (963) is written, where 30 were
 left out before. Compiling that model takes 14.5 instead of 41.3 seconds of
 processor time, and its `conjuncts.json` is 11.0 instead of 14.0 MB.
 MariaDB 10.4 accepts the WITH clause inside the subqueries in which the
-runtime embeds a candidate query.
+runtime embeds a candidate query. With `transactions.deltaConjunctMaintenance`
+on `off`, the default, the running time of the prototype does not change.
 
 **The engine's transaction domain is the full set of declared relations and concepts; all wiring is fixed at construction.**
 *DC-10 · valid · 2026-08-13 · origin: issue #1683, engine oracle property*

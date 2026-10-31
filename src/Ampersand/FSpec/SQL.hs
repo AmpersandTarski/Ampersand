@@ -447,6 +447,23 @@ maybeSpecialCase fSpec expr =
     EDif (EDcI a, ECps (EDcD r, EFlp (EDcD r'))) -- I[A] - r;r~
       | r == r' -> maybeSpecialCase fSpec $ EIsc (EDcI a, ECpl (ECps (EDcD r, EFlp (EDcD r'))))
       | otherwise -> Nothing
+    -- I[A] /\ e;e~ is the domain of e, on the atoms of A: the pairs (x,x) with x in A and a
+    -- partner of x in e. The general translation computes e;e~ first, which holds one row
+    -- per pair of rows of e that share a target, and keeps the diagonal afterwards; a target
+    -- that n rows share costs n^2 rows (issue #1748, claim PRF-21).
+    EIsc (EDcI a, ECps (e, EFlp e'))
+      | e == e' -> Just (domainCase a e False)
+      | otherwise -> Nothing
+    EIsc (ECps (e, EFlp e'), EDcI a)
+      | e == e' -> Just (domainCase a e False)
+      | otherwise -> Nothing
+    -- I[A] /\ e~;e is the range of e, on the atoms of A.
+    EIsc (EDcI a, ECps (EFlp e, e'))
+      | e == e' -> Just (domainCase a e True)
+      | otherwise -> Nothing
+    EIsc (ECps (EFlp e, e'), EDcI a)
+      | e == e' -> Just (domainCase a e True)
+      | otherwise -> Nothing
     EIsc (expr1, ECpl expr2) ->
       go False expr1 expr2
     EIsc (ECpl expr1, expr2) ->
@@ -458,6 +475,34 @@ maybeSpecialCase fSpec expr =
     _ -> Nothing
   where
     traceComment = traceExprComment expr
+    -- The atoms of A that have a partner in e: its domain, or its range when isRange.
+    domainCase :: A_Concept -> Expression -> Bool -> BinQueryExpr
+    domainCase a e isRange =
+      traceComment
+        [ "case: " <> (if isRange then "EIsc (EDcI a, ECps (EFlp e, e))" else "EIsc (EDcI a, ECps (e, EFlp e))"),
+          "  this is an optimized case for: I[" <> tshow a <> "] /\\ " <> (if isRange then "e~;e" else "e;e~") <> " (claim PRF-21)."
+        ]
+        $ let col =
+                Col
+                  { cTable = [uName "ins"],
+                    cCol = [sqlAttConcept fSpec a],
+                    cAlias = [],
+                    cSpecial = Nothing
+                  }
+              aAtt = col2ScalarExpr col
+              partners = selectSorT (if isRange then targetAlias else sourceAlias) (selectExpr fSpec e)
+              whereClause =
+                conjunctSQL
+                  [ aAtt `isIn` partners,
+                    notNull aAtt
+                  ]
+           in BinSelect
+                { bseSetQuantifier = SQDefault,
+                  bseSrc = col,
+                  bseTrg = col,
+                  bseTbl = [sqlConceptTable fSpec a `as` uName "ins"],
+                  bseWhr = Just whereClause
+                }
     -- A difference is translated in one of two ways, depending on its right-hand side (issue #1708).
     -- The default is a left join that keeps the rows of <expr1> without a partner in <expr2>.
     -- That is fast as long as the database can merge the query of <expr2> into the join,
@@ -1706,6 +1751,9 @@ selectRelation fSpec dcl =
 
 isNotIn :: ScalarExpr -> QueryExpr -> ScalarExpr
 isNotIn value = In False value . InQueryExpr
+
+isIn :: ScalarExpr -> QueryExpr -> ScalarExpr
+isIn value = In True value . InQueryExpr
 
 -- | select only the source of a binary expression
 selectSource :: BinQueryExpr -> QueryExpr
