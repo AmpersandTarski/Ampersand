@@ -112,6 +112,8 @@ jobs:
           stack-build-arguments: "--copy-bins --flag ampersand:buildAll"
           upgrade-stack: false
           cache-save-always: true
+      - name: Check what PrototypeContext says about interfaces 🧪
+        run: python3 scripts/check-interface-rights.py "$(stack path --local-install-root)/bin/ampersand"
 
   build-and-test-windows:
     name: Build and test on Windows 🏗 🧪

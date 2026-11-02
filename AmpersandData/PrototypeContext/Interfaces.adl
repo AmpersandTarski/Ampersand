@@ -28,4 +28,21 @@ CONTEXT PrototypeContext IN ENGLISH
     RELATION PrototypeContext.isAPI[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
         MEANING "This property states that an interface is meant as API (machine-2-machine)"
 
+    -- What a script can require of its own interfaces. A signal rule on the relations below can report, for instance,
+    -- that an atom has to be editable while no interface on its concept allows that. An invariant cannot: the compiler
+    -- checks invariants before the metapopulation exists (docs/reference-material/metamodel-and-meatgrinder.md).
+    REPRESENT PrototypeContext.ConceptName TYPE ALPHANUMERIC
+
+    RELATION PrototypeContext.ifcConcept[PrototypeContext.Interface*PrototypeContext.ConceptName] [UNI,TOT]
+        MEANING "This relation contains the full name of the concept of the atom an interface opens on: the source of its term."
+
+    RELATION PrototypeContext.ifcCanCreate[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
+        MEANING "This property states that the interface, or a box inside it, has C in its CRUD annotation."
+
+    RELATION PrototypeContext.ifcCanUpdate[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
+        MEANING "This property states that the interface, or a box inside it, has U in its CRUD annotation."
+
+    RELATION PrototypeContext.ifcCanDelete[PrototypeContext.Interface*PrototypeContext.Interface] [PROP]
+        MEANING "This property states that the interface, or a box inside it, has D in its CRUD annotation."
+
 ENDCONTEXT

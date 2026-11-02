@@ -934,6 +934,28 @@ transformersPrototypeContext fSpec =
             ifcIsAPI ifc
         ]
       ),
+      ( "PrototypeContext.ifcConcept",
+        "PrototypeContext.Interface",
+        "PrototypeContext.ConceptName",
+        [ (dirtyIdWithoutType' ifc, PopAlphaNumeric . fullName . source . objExpression . ifcObj $ ifc)
+          | ifc :: Interface <- instanceList fSpec
+        ]
+      ),
+      ( "PrototypeContext.ifcCanCreate",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Interface",
+        interfacesWith crudC
+      ),
+      ( "PrototypeContext.ifcCanUpdate",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Interface",
+        interfacesWith crudU
+      ),
+      ( "PrototypeContext.ifcCanDelete",
+        "PrototypeContext.Interface",
+        "PrototypeContext.Interface",
+        interfacesWith crudD
+      ),
       -- the following transformer can be calculated by the Exec Engine.
       -- it is also contained in FormalAmpersand.
       ( "PrototypeContext.isPublic",
@@ -1048,6 +1070,17 @@ transformersPrototypeContext fSpec =
         [] -- TODO
       )
     ]
+  where
+    -- The interfaces in which the object at the root, or an object in a box inside it, has this right.
+    interfacesWith right =
+      [ (dirtyIdWithoutType' ifc, dirtyIdWithoutType' ifc)
+        | ifc :: Interface <- instanceList fSpec,
+          any (right . objcrud) (objectsIn (ifcObj ifc))
+      ]
+    objectsIn obj =
+      obj : case objmsub obj of
+        Just Box {siObjs = items} -> concat [objectsIn (objE item) | item@BxExpr {} <- items]
+        _ -> []
 
 class (Instances a) => HasPurpose a where
   purposes :: FSpec -> a -> [Purpose]

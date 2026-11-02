@@ -5,6 +5,10 @@ CONTEXT PrototypeContext IN ENGLISH
         , "Label"           : PrototypeContext.label[PrototypeContext.Interface*PrototypeContext.Label]      cRud
         , "Is public"       : PrototypeContext.isPublic   cRud
         , "Is API"          : PrototypeContext.isAPI      cRud
+        , "Opens on"        : PrototypeContext.ifcConcept   cRud
+        , "Can create"      : PrototypeContext.ifcCanCreate cRud
+        , "Can update"      : PrototypeContext.ifcCanUpdate cRud
+        , "Can delete"      : PrototypeContext.ifcCanDelete cRud
         , "Nav items"       : PrototypeContext.ifc~       cRud
         , "For roles"       : PrototypeContext.ifcRoles   cRud
         ]
