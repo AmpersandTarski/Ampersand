@@ -2,7 +2,9 @@
 --
 --   The statement @CONTEXT A INCLUDES B@ makes everything that context @B@ declares
 --   available in context @A@, under the name of @B@ (or an alias) as a prefix.
---   Every context has one database. So, a context that is reached along two paths is one context.
+--   Every context lands on one database. So, a context that is reached along two paths is one context.
+--   By default the database of a context carries the name of the context; the statement can give it
+--   another name with @NAMED@, and contexts with the same database name land on one database.
 --
 --   The compiler compiles one context at a time, which we call the viewer.
 --   It joins the declarations of the viewer and of every context that the viewer reaches
@@ -23,6 +25,7 @@ module Ampersand.Input.Qualify
     System (..),
     flattenSystem,
     systemLabels,
+    systemDatabases,
   )
 where
 
@@ -95,8 +98,94 @@ data System = System
   { -- | the context that is being compiled
     sysViewer :: !ContextKey,
     sysNodes :: !(Map.Map ContextKey SystemNode),
-    sysEdges :: !(Map.Map ContextKey [SystemEdge])
+    sysEdges :: !(Map.Map ContextKey [SystemEdge]),
+    -- | the databases that the inclusion statements name with NAMED: the context, the name and the statement
+    sysNamed :: ![(ContextKey, Text, Origin)]
   }
+
+-- | The database of every context of the system.
+--
+--   A context lands on the database that an inclusion statement names for it with @NAMED@,
+--   or else on a database with the name of the context.
+--   Two contexts with the same database name land on one database.
+--   A database is installed by one application, that of the context on the database that includes
+--   the other contexts on it; so one of them has to include all the others.
+--   A database is installed after the databases it reads, so two databases cannot read each other.
+--   The result is an error if a context is given two names, if contexts share a database without
+--   one of them including the others, or if two databases read each other.
+systemDatabases :: System -> Guarded (Map.Map ContextKey Text)
+systemDatabases sys = do
+  traverse_ oneName (Map.toList namedBy)
+  let dbs = Map.fromList [(k, databaseOf k) | k <- Map.keys (sysNodes sys)]
+  traverse_ (hasRoot dbs) (L.nub (Map.elems dbs))
+  acyclic dbs
+  pure dbs
+  where
+    namedBy :: Map.Map ContextKey [(Text, Origin)]
+    namedBy = Map.fromListWith (flip (<>)) [(k, [(d, o)]) | (k, d, o) <- sysNamed sys]
+    oneName (k, names) =
+      case L.nub (map fst names) of
+        _ : _ : _ ->
+          mkSystemError
+            (map snd names)
+            [ "The context " <> snd k <> " lands on two databases: " <> T.intercalate " and " (L.nub (map fst names)) <> ".",
+              "  A context lands on one database. Give it one name with NAMED, or leave NAMED out so that its database is called " <> snd k <> "."
+            ]
+        _ -> pure ()
+    -- Without NAMED, the database carries the name of the context.
+    -- Two versions of one context carry the same name; they are numbered in the order in which
+    -- the inclusion statements of the system mention them, which does not depend on the compiled context.
+    databaseOf :: ContextKey -> Text
+    databaseOf k = case Map.lookup k namedBy of
+      Just ((d, _) : _) -> d
+      _ -> case [k' | k' <- mentioned, snd k' == snd k, k' `Map.notMember` namedBy] of
+        [_] -> snd k
+        same -> snd k <> "_" <> tshow (1 + length (takeWhile (/= k) same))
+    mentioned :: [ContextKey]
+    mentioned = L.nub ([edgeTarget e | es <- Map.elems (sysEdges sys), e <- es] <> L.sort (Map.keys (sysNodes sys)))
+    -- The contexts on one database are installed by one of them, which has to include all the others.
+    hasRoot dbs d =
+      case [k | (k, d') <- Map.toList dbs, d' == d] of
+        members@(_ : _ : _) -> do
+          rs <- traverse (\m -> (,) m <$> reached sys {sysViewer = m}) members
+          when (null [m | (m, r) <- rs, all (`elem` (m : r)) members])
+            $ mkSystemError
+              [o | (k, d', o) <- sysNamed sys, k `elem` members, d' == d]
+              [ "The contexts " <> T.intercalate ", " (map snd members) <> " land on one database, " <> d <> ", and none of them includes all the others.",
+                "  One application installs a database, so the context that includes the others has to be on it as well.",
+                "  Include them from one context on that database, or give them databases of their own with NAMED."
+              ]
+        _ -> pure ()
+    -- A database reads another one if a context on it includes a context on the other one.
+    acyclic dbs = traverse_ (dfs []) (L.nub (Map.elems dbs))
+      where
+        readsFrom d = L.nub [d' | (k, es) <- Map.toList (sysEdges sys), Map.lookup k dbs == Just d, e <- es, Just d' <- [Map.lookup (edgeTarget e) dbs], d' /= d]
+        -- The path holds the databases on the way to d, the nearest first. A cycle is reported once: from its first database.
+        dfs :: [Text] -> Text -> Guarded ()
+        dfs path d
+          | d `elem` path =
+              let cycle' = d : reverse (takeWhile (/= d) path) <> [d]
+               in when (Just d == L.minimumMaybe cycle')
+                    $ mkSystemError
+                      [origin e | (k, es) <- Map.toList (sysEdges sys), Map.lookup k dbs == Just d, e <- es, Map.lookup (edgeTarget e) dbs `elem` map Just path]
+                      [ "The databases " <> T.intercalate " and " (L.nub cycle') <> " read each other:",
+                        "  " <> T.intercalate " reads " cycle' <> ".",
+                        "  A database is installed after the databases it reads, so two databases cannot read each other. Put the contexts that include each other on one database."
+                      ]
+          | otherwise = traverse_ (dfs (d : path)) (readsFrom d)
+
+-- | The context that installs the database of the given context: the context on that database
+--   that includes all the others on it. A context alone on its database is that context.
+databaseRoot :: System -> Map.Map ContextKey Text -> ContextKey -> ContextKey
+databaseRoot sys dbs k =
+  case [m | m <- members, all (\x -> x == m || x `elem` reaches m) members] of
+    m : _ -> m
+    [] -> fatal ("The database " <> fromMaybe "" (Map.lookup k dbs) <> " has no context that includes the others on it.")
+  where
+    members = [m | (m, d) <- Map.toList dbs, Just d == Map.lookup k dbs]
+    reaches m = case reached sys {sysViewer = m} of
+      Checked r _ -> r
+      Errors _ -> []
 
 -- | The prefixes by which the script of a context can call the contexts it includes.
 prefixesOf :: System -> ContextKey -> [(NamePart, ContextKey)]
@@ -194,29 +283,79 @@ systemLabels sys = do
 flattenSystem :: System -> Guarded P_Context
 flattenSystem sys = do
   labels <- systemLabels sys
+  dbs <- systemDatabases sys
   let labelOf k = [l | Just l <- [L.lookup k labels]]
       node k = case Map.lookup k (sysNodes sys) of
         Just n -> n
         Nothing -> fatal ("The context " <> snd k <> " has not been read.")
       renamed k = relabel sys labelOf k (nodeCtx (node k))
+      rootOf = databaseRoot sys dbs
+      dbOf k = fromMaybe (snd k) (Map.lookup k dbs)
+  isRoot dbs rootOf
+  traverse_ (knowsInstaller labels dbOf rootOf) labels
   viewer <- renamed (sysViewer sys)
   others <- traverse (fmap withoutInterfaces . renamed . fst) labels
   let joined = foldl' mergeContexts viewer others
   views <- traverse (\(k, l) -> (,) l <$> systemLabels sys {sysViewer = k}) labels
-  pure
-    joined
-      { ctx_metas =
-          ctx_metas joined
-            <> [mkForeignMeta (posOf k) l (snd k) | (k, l) <- labels]
-            <> [mkFileMeta (posOf k) l (fst k) | (k, l) <- labels]
-            <> [ mkLabelViewMeta (posOf g) owner here there
-                 | (owner, theirs) <- views,
-                   (g, there) <- theirs,
-                   Just here <- [L.lookup g labels]
-               ]
-            <> concatMap relaxed (sysViewer sys : map fst labels)
-      }
+  -- The table of a context that shares its database with the context that installs it
+  -- carries the label that the installing context has for it.
+  let prefixOf k
+        | rootOf k == k = pure Nothing
+        | otherwise = L.lookup k <$> systemLabels sys {sysViewer = rootOf k}
+  prefixes <- traverse (\(k, _) -> (,) k <$> prefixOf k) labels
+  addWarnings (concatMap (noApplication dbOf rootOf) labels)
+    $ pure
+      joined
+        { ctx_metas =
+            ctx_metas joined
+              <> [mkForeignMeta (posOf k) l (snd k) | (k, l) <- labels]
+              <> [mkFileMeta (posOf k) l (fst k) | (k, l) <- labels]
+              <> [ mkLabelViewMeta (posOf g) owner here there
+                   | (owner, theirs) <- views,
+                     (g, there) <- theirs,
+                     Just here <- [L.lookup g labels]
+                 ]
+              <> [mkDatabaseMeta (posOf (sysViewer sys)) Nothing (dbOf (sysViewer sys)) Nothing | not (null labels)]
+              <> [mkDatabaseMeta (posOf k) (Just l) (dbOf k) (join (L.lookup k prefixes)) | (k, l) <- labels]
+              <> concatMap relaxed (sysViewer sys : map fst labels)
+        }
   where
+    -- The application of a database is the application of the context that includes the other contexts on it.
+    isRoot dbs rootOf =
+      let k = sysViewer sys
+          r = rootOf k
+       in when (r /= k)
+            $ mkSystemError
+              [o | (k', _, o) <- sysNamed sys, k' == k]
+              [ "The context " <> snd k <> " lands on the database " <> fromMaybe "" (Map.lookup k dbs) <> " together with " <> snd r <> ", which includes it.",
+                "  One application installs a database, so the application of " <> fromMaybe "" (Map.lookup k dbs) <> " is the application of " <> snd r <> ".",
+                "  Compile " <> snd r <> ", or give " <> snd k <> " a database of its own with NAMED."
+              ]
+    -- A context that reads a database has to know the context that installs it, because that context
+    -- gives the tables their names. So it includes that context, directly or indirectly.
+    knowsInstaller labels dbOf rootOf (k, _) =
+      let r = rootOf k
+       in when (r /= k && r /= sysViewer sys && isNothing (L.lookup r labels))
+            $ mkSystemError
+              [edgeOrigin e | e <- Map.findWithDefault [] (sysViewer sys) (sysEdges sys), edgeTarget e == k]
+              [ "The context " <> snd (sysViewer sys) <> " reads the database " <> dbOf k <> " of " <> snd k <> ", which " <> snd r <> " installs, and it does not include " <> snd r <> ".",
+                "  The tables of that database carry the names that " <> snd r <> " gives them.",
+                "  Include " <> snd r <> " as well, which adds no database, or give " <> snd k <> " a database of its own with NAMED."
+              ]
+    -- A context that shares its database with the context that installs it has no application of its own.
+    noApplication dbOf rootOf (k, _)
+      | rootOf k == k = []
+      | otherwise =
+          [ mkNoApplicationWarning
+              (posOf k)
+              (snd k)
+              (dbOf k)
+              (snd (rootOf k))
+              (map fullName (interfacesOf (nodeCtx n)))
+            | Just n <- [Map.lookup k (sysNodes sys)],
+              not (null (interfacesOf (nodeCtx n)))
+          ]
+    interfacesOf ctx = ctx_ifcs ctx
     labelOf' labels k = [l | Just l <- [L.lookup k labels]]
     -- A context relaxes an invariant of a context it includes by assigning the rule to a role.
     -- The rule is an invariant there if the script of that context assigns it to no role.

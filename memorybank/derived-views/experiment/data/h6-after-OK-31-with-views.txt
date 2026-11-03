@@ -1,0 +1,16 @@
+reinstall with population	200	committed=n/a	dbrefused=no
+create a new atom of A	200	committed=n/a	dbrefused=no
+add r(a3,b1); a3 is new, b1 exists	200	committed=true	dbrefused=no
+add r(a3,b9), b9 is new	200	committed=true	dbrefused=no
+add t(a3,b9)	200	committed=true	dbrefused=no
+set nummer(a3,n3), n3 is new	200	committed=true	dbrefused=no
+add s(b9,c9), c9 is new	200	committed=true	dbrefused=no
+add parent(c9,c3)	200	committed=true	dbrefused=no
+remove r(a3,b1)	200	committed=true	dbrefused=no
+remove parent(c9,c3)	200	committed=true	dbrefused=no
+delete atom C c2 (parent, s, closure)	200	committed=true	dbrefused=no
+delete atom B b2 (r, s)	200	committed=true	dbrefused=no
+delete atom A a1 (r, t, nummer, derived)	200	committed=true	dbrefused=no
+delete atom A a3	200	committed=true	dbrefused=no
+reinstall again	200	committed=n/a	dbrefused=no
+log lines with err1451/1452: 0

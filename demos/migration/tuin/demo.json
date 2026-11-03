@@ -1,0 +1,36 @@
+{
+  "title": "Gemeenschapstuin",
+  "lang": "nl",
+  "home": "/bedden",
+  "existing": "old",
+  "migration": "migratie",
+  "desired": "new",
+  "relaxed": [
+    "new.elkBedHeeftBeheerder"
+  ],
+  "story": {
+    "nl": [
+      "Een gemeenschapstuin houdt een register bij van zijn bedden en de vrijwilligers die ze beheren.",
+      "Vorige zomer raakten twee bedden zonder beheerder overwoekerd. Het bestuur besloot: elk bed heeft een beheerder.",
+      "De nieuwe versie van het register heeft die regel als invariant. Het register dat in gebruik is, bevat twee bedden die de regel overtreden, dus de nieuwe versie kan de gegevens niet zomaar overnemen.",
+      "Tijdens de migratie werken de tuinders door. De vrijwilligers zoeken een beheerder voor de Bonenrijen en de Bessenhoek. Een bed dat zijn beheerder heeft, kan die niet meer kwijtraken, en een nieuw bed heeft vanaf het begin een beheerder nodig."
+    ],
+    "en": [
+      "A community garden keeps a register of its plots and the volunteers who keep them.",
+      "Last summer two plots without a keeper were overgrown. The board decided: every plot has a keeper.",
+      "The new release of the register has that rule as an invariant. The register in use holds two plots that violate it, so the new release cannot simply take the data over.",
+      "During the migration the gardeners keep working. The volunteers find a keeper for the Bonenrijen and the Bessenhoek. A plot that has its keeper cannot lose it again, and a new plot needs a keeper from the start."
+    ]
+  },
+  "test": {
+    "interface": "Bedden",
+    "field": "beheerder",
+    "value": "Dora",
+    "single": {
+      "concept": "Bed",
+      "interface": "Bed",
+      "name": "bed",
+      "migrationConcept": "new.Bed"
+    }
+  }
+}

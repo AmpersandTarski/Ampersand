@@ -55,7 +55,7 @@ aCtx2pCtx ctx =
     }
 
 aEnforce2pEnforce :: AEnforce -> P_Enforce TermPrim
-aEnforce2pEnforce enf@(AEnforce orig _ _ rel op expr _ _) =
+aEnforce2pEnforce enf@(AEnforce orig _ _ rel op expr _ _ _) =
   P_Enforce
     { pos = orig,
       penfNm = enfName enf,

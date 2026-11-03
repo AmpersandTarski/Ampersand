@@ -1,0 +1,38 @@
+CONTEXT Experiment
+-- The synthetic model of the falsification experiment of issue #1744 (experiment.md next to it).
+-- Four base relations and five derived relations, one of each shape whose cost the
+-- research note makes a claim about: a composition, a union, a difference, an intersection
+-- and a transitive closure. The rules read the derived relations, so that a write to a base
+-- relation affects conjuncts that read a view. The population comes from populatie.py.
+
+RELATION r[A*B]
+RELATION t[A*B]
+RELATION s[B*C]
+RELATION parent[C*C]
+RELATION nummer[A*Nummer] [UNI,INJ]
+REPRESENT Nummer TYPE ALPHANUMERIC
+RELATION rs[A*C]
+RELATION ru[A*B]
+RELATION rd[A*B]
+RELATION ri[A*B]
+RELATION voorouder[C*C]
+
+ENFORCE rs[A*C] := r;s
+ENFORCE ru[A*B] := r \/ t
+ENFORCE rd[A*B] := r - t
+ENFORCE ri[A*B] := r /\ t
+ENFORCE voorouder[C*C] := parent+
+
+RULE VerschilInVereniging : rd |- ru
+RULE DoorsnedeInR : ri;s |- rs
+RULE VoorouderTransitief : voorouder;voorouder |- voorouder
+RULE BereikViaVoorouder : rs;voorouder |- r;s;voorouder
+
+INTERFACE Lees : I[A] cRud BOX
+  [ rs : rs cRud
+  , ru : ru cRud
+  , rd : rd cRud
+  , ri : ri cRud
+  , voorouders : rs;voorouder cRud
+  ]
+ENDCONTEXT

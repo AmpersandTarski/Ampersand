@@ -4,7 +4,7 @@ module Ampersand.Classes.ViewPoint (Language (..), ruleFromIdentity) where
 
 import Ampersand.ADL1
 import Ampersand.Basics hiding (Identity, Ord (..))
-import Ampersand.Classes.Relational (HasProps (properties))
+import Ampersand.Classes.Relational (HasProps (properties), guaranteedProperties)
 import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
@@ -33,7 +33,16 @@ class Language a where
     Rules
   proprules x =
     Set.fromList
-      $ [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d)]
+      $ [rulefromProp p d | d <- toList $ relsDefdIn x, p <- toList (properties d), not (guaranteedByView d p)]
+    where
+      -- A derived relation that is a database view (issue #1744) has the population of its
+      -- definition, so a property that the definition guarantees needs no rule: the rule would
+      -- recompute the view to find nothing. A property the shape of the definition does not
+      -- guarantee keeps its rule.
+      derivedDefs = [(enfRel e, enfExpr e) | e <- enforces x, enfStorage e == DerivedView]
+      guaranteedByView d p = case lookup d derivedDefs of
+        Just definition -> p `elem` guaranteedProperties definition
+        Nothing -> False
   identityRules :: a -> Rules -- all identity rules that are maintained within this viewpoint.
   identityRules x = Set.fromList . map ruleFromIdentity $ identities x
   enforceRules :: a -> Rules -- all enforcement rules that are maintained within this viewpoint.

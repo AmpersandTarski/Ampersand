@@ -179,6 +179,54 @@ The runtime learns the layout from `concepts.json` and `relations.json`: `concep
 
 *Proof track: [PRF-13 — an atom of a concept has a row in the table of every component that contains that concept or a generalisation of it](../proofs/README.md#prf-13).*
 
+## Which hierarchies get tables
+
+The compiler leaves out a table that would only list atoms that nothing reads.
+To decide that, it looks at a hierarchy as a whole: all concepts that are connected by `CLASSIFY` statements, with a concept that has no such statement as a hierarchy of one.
+A hierarchy is stored when at least one of the following holds.
+
+- It stores a relation: a univalent or injective relation is a column in the table of one of its concepts.
+- A term asks for the atoms of one of its concepts.
+  That is the case for `I[A]`, for `V` with `A` as its source or target, for a complement over `A`, and for an atom of `A` that a term names.
+- It holds objects: one of its concepts has the type `OBJECT`, because of a `REPRESENT` statement, an interface, a view or an identity,
+  or one of its concepts is marked `REPRESENT ... TYPE MULTITABLE`.
+  That an object exists is a fact by itself, so it is stored even when no term asks for it.
+
+A hierarchy that meets none of these gets no table at all.
+In practice that is a concept of values, such as `Text` in `RELATION naam[Artefact*Text]`:
+the texts in use are found in the column of `naam`, and no table lists them a second time.
+For such a concept `concepts.json` says `"conceptTable": null`.
+
+A hierarchy is stored completely or not at all.
+When it is stored in several tables, every concept of it has a column in one of them, whether or not a term names that concept.
+The table of a specialisation that is stored apart is the only place that records which atoms belong to it.
+
+The option `--all-concept-tables` stores every hierarchy.
+A context that is part of a system of contexts is compiled that way, because another context may read its concepts.
+
+### Concepts whose atoms cannot be listed
+
+Every integer exists, whether or not a model uses it, and the same holds for every number and every moment in time.
+So a concept of type `INTEGER`, `FLOAT`, `DATE` or `DATETIME` never has a table, with or without `--all-concept-tables`.
+A relation with such a concept as its source or target is stored in the table of the concept at its other side, or in a table of its own.
+
+For the same reason a term cannot ask for all atoms of such a concept, and the compiler reports an error when one does.
+With `REPRESENT Age TYPE INTEGER` and `RELATION age[Person*Age] [UNI]`:
+
+| Term | Accepted | Why |
+| --- | --- | --- |
+| `parentOf |- age;>;age~` | yes | a comparison between two relations compares the ages in use |
+| `age;41[Age]` | yes | the age 41 exists without being stored |
+| `I[Age] |- age~;age` | no | `I[Age]` is the set of all integers |
+| `age;-olderThan;age~` | no | the complement of `olderThan[Age*Age]` holds all pairs of integers that are not in it |
+| `I[Person] |- age;V` | no | `V` with `Age` as its source holds every integer; write `age;age~` |
+
+`SRC I` and `TGT I` in a violation message are not such terms.
+They name the violating atom itself, and the prototype puts it in the message without a query.
+
+A text type, such as `ALPHANUMERIC`, is not treated this way.
+It is the type of every concept without a `REPRESENT` statement, so a concept of that type may hold things that somebody entered, and its atoms in use can be listed.
+
 ## Algorithm Summary
 
 Ampersand's concept-to-table mapping follows these steps:

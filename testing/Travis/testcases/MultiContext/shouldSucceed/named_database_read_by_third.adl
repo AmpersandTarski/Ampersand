@@ -1,0 +1,17 @@
+CONTEXT Town INCLUDES School FROM "named_database_of_includer.adl", Library FROM "../contexts/library.adl"
+
+CONTEXT Town IN ENGLISH
+
+PURPOSE CONTEXT Town
+{+ The town has a database of its own and reads the database School, on which the school and the library land.
+Its views name the tables as they are in that database: the tables of the library carry the prefix that the
+school gives it. +}
+
+RELATION resident[Resident*Library.Member] [UNI]
+RELATION attends[Resident*School.Pupil] [UNI]
+POPULATION resident[Resident*Library.Member] CONTAINS [ ("r1", "m1") ]
+POPULATION attends[Resident*School.Pupil] CONTAINS [ ("r1", "pupil1") ]
+
+RULE pupilIsResident : attends;School.pupil |- resident
+MEANING "A resident who attends the school is the member that the school knows."
+ENDCONTEXT

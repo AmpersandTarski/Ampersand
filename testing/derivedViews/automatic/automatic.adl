@@ -1,0 +1,41 @@
+CONTEXT Automatic
+-- Regression test for issue #1744: with --derived-views on, the compiler keeps a derived
+-- relation stored, with a warning that names the reader, when a rule reads it and the database
+-- would compute its view in full (a union or a closure in the definition), and when an
+-- interface field reads it and the definition holds a closure. A composition that a rule
+-- reads, and a union that nothing reads, are views. The stored relations are empty until the
+-- ExecEngine of a prototype fills them, so the rules below hold with them empty.
+
+RELATION r[A*B]
+RELATION t[A*B]
+RELATION s[B*C]
+RELATION parent[C*C]
+RELATION rs[A*C]
+RELATION ru[A*B]
+RELATION rt[A*B]
+RELATION voorouder[C*C]
+RELATION bereik[A*C]
+
+POPULATION r CONTAINS [ ("a1","b1"), ("a2","b2") ]
+POPULATION t CONTAINS [ ("a1","b1"), ("a2","b3") ]
+POPULATION s CONTAINS [ ("b1","c1"), ("b2","c2"), ("b3","c3") ]
+POPULATION parent CONTAINS [ ("c2","c1"), ("c3","c2") ]
+
+ENFORCE rs := r;s                -- a view: one SELECT, merged into the rule that reads it
+ENFORCE ru := r \/ t             -- stored: a union that a rule reads
+ENFORCE rt := r /\ t             -- a view: nothing but an interface reads it, and it is one SELECT
+ENFORCE voorouder := parent+     -- stored: a closure that an interface field reads
+ENFORCE bereik := rs;voorouder   -- a view once voorouder is stored: its definition then holds no closure
+
+RULE ViewGelezen : rs |- r;s
+RULE UnieGelezen : ru |- r \/ t
+
+INTERFACE Lees : I[A] cRud BOX
+  [ rs : rs cRud
+  , rt : rt cRud
+  , bereik : bereik cRud
+  ]
+INTERFACE Voorouders : I[C] cRud BOX
+  [ voorouders : voorouder cRud
+  ]
+ENDCONTEXT

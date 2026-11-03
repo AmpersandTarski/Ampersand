@@ -1,0 +1,15 @@
+CONTEXT InfiniteAtom IN ENGLISH
+PURPOSE CONTEXT InfiniteAtom
+{+ An age that the script names exists without being stored. +}
+REPRESENT Age TYPE INTEGER
+RELATION age[Person*Age] [UNI]
+RELATION olderThan[Age*Age]
+RELATION parentOf[Person*Person]
+POPULATION age CONTAINS [ ("Ann", 41), ("Bob", 12) ]
+POPULATION olderThan CONTAINS [ (41, 12) ]
+POPULATION parentOf CONTAINS [ ("Ann", "Bob") ]
+RELATION adult[Person*Person] [PROP]
+RULE annIsFortyOne : "Ann"[Person];age |- age;41[Age]
+{- To compile this script with validate, the prototype context needs: -}
+RELATION label[NavMenuItem*Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
+ENDCONTEXT

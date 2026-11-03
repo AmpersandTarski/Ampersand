@@ -110,7 +110,12 @@ instance JSON (Int, PairViewSegment Expression) JsonPairViewSegment where
           PairViewExp _ _ e -> Just . tshow . target $ e,
         pvsJSONexpSQL = case pvs of
           PairViewText {} -> Nothing
-          PairViewExp _ _ e -> Just . sqlQuery fSpec $ e,
+          -- SRC I and TGT I need no query: the prototype puts the violating atom
+          -- in the message itself (expIsIdent). A query for I[C] would read the
+          -- table of C, which a concept of integers or dates does not have (issue #1727).
+          PairViewExp _ _ e
+            | isIdent e -> Nothing
+            | otherwise -> Just . sqlQuery fSpec $ e,
         pvsJSONexpIsIdent = case pvs of
           PairViewText {} -> Nothing
           PairViewExp _ _ e -> Just . isIdent $ e -- show $ e

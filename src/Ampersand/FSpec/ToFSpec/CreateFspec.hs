@@ -26,6 +26,7 @@ import Ampersand.FSpec.Instances
 import Ampersand.FSpec.Oscillation (warnOscillationRisk)
 import Ampersand.FSpec.SQL (SqlQuery (..), prettySQLQuery)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec (makeFSpec)
+import Ampersand.FSpec.ToFSpec.ConceptTables (termsThatEnumerate)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.FSpec.Transformers
 import Ampersand.Input
@@ -351,9 +352,40 @@ hardenRelaxedInvariants env pCtx = case relaxedRules (ctx_metas pCtx) of
           _ -> (par expr, fixed <> signature <> " |- " <> par expr)
         quoted t = "\"" <> T.filter (/= '"') t <> "\""
 
+-- | A term may not ask for all atoms of a concept whose atoms cannot be listed,
+--   such as a concept of type INTEGER: every integer exists, and no table holds
+--   them (issue #1727).
+checkEnumerations :: env -> FSpec -> Guarded ()
+checkEnumerations env fSpec =
+  case originalContext fSpec of
+    Nothing -> pure ()
+    Just context ->
+      case termsThatEnumerate env context (allConjuncts fSpec) of
+        [] -> pure ()
+        e : es -> Errors (fmap complaint (e :| es))
+      where
+        complaint ((orig, what), cpt) =
+          CTXE orig
+            $ "A term in "
+            <> what
+            <> " needs all atoms of the concept "
+            <> fullName cpt
+            <> ", which has the type "
+            <> tshow (ctxReprType context cpt)
+            <> ".\n  The atoms of a concept of that type cannot be listed: every one of them exists, whether or not it is in use."
+            <> "\n  A term asks for all of them with I["
+            <> fullName cpt
+            <> "], with V, or with a complement over "
+            <> fullName cpt
+            <> "."
+            <> "\n  Bound the term by a relation, for example r~;r in place of I["
+            <> fullName cpt
+            <> "]."
+
 pCtx2Fspec :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded FSpec
 pCtx2Fspec env c = do
   fSpec <- makeFSpec env <$> pCtx2aCtx env c
+  checkEnumerations env fSpec
   checkRowSizes fSpec
   warnCartesianProducts env fSpec
   warnOscillationRisk fSpec

@@ -1,0 +1,12 @@
+H7	link table refers to an A that does not exist	expected 1452	got 1452	as predicted	ERROR 1452 (23000) at line 2: Cannot add or update a child row: a foreign key constraint fails ("h7h8"."r", CONSTRAINT "fk_r_A" FOREIGN KEY ("A") REFERENCES "A" ("A"))
+H7	delete an A that a link table refers to	expected 1451	got 1451	as predicted	ERROR 1451 (23000) at line 2: Cannot delete or update a parent row: a foreign key constraint fails ("h7h8"."r", CONSTRAINT "fk_r_A" FOREIGN KEY ("A") REFERENCES "A" ("A"))
+H7	rename an A that a link table refers to	expected 1451	got 1451	as predicted	ERROR 1451 (23000) at line 2: Cannot delete or update a parent row: a foreign key constraint fails ("h7h8"."r", CONSTRAINT "fk_r_A" FOREIGN KEY ("A") REFERENCES "A" ("A"))
+H7	second A with the nummer of a1 (INJ)	expected 1062	got 1062	as predicted	ERROR 1062 (23000) at line 2: Duplicate entry 'n1' for key 'uq_A_nummer'
+H7	wide column refers to a Stad that does not exist	expected 1452	got 1452	as predicted	ERROR 1452 (23000) at line 2: Cannot add or update a child row: a foreign key constraint fails ("h7h8"."Persoon", CONSTRAINT "fk_Persoon_woontIn" FOREIGN KEY ("woontIn") REFERENCES "Stad" ("Stad"))
+H7	delete a Stad that a person lives in	expected 1451	got 1451	as predicted	ERROR 1451 (23000) at line 2: Cannot delete or update a parent row: a foreign key constraint fails ("h7h8"."Persoon", CONSTRAINT "fk_Persoon_woontIn" FOREIGN KEY ("woontIn") REFERENCES "Stad" ("Stad"))
+H7	link table refers to a Persoon that does not exist	expected 1452	got 1452	as predicted	ERROR 1452 (23000) at line 2: Cannot add or update a child row: a foreign key constraint fails ("h7h8"."kent", CONSTRAINT "fk_kent_TgtPersoon" FOREIGN KEY ("TgtPersoon") REFERENCES "Persoon" ("Persoon"))
+H7	second Persoon with passport NL1 (INJ)	expected 1062	got 1062	as predicted	ERROR 1062 (23000) at line 2: Duplicate entry 'NL1' for key 'uq_Persoon_paspoort'
+boundary	link table refers to a B; B has no concept table, so no foreign key	expected 0	got 0	as predicted	
+boundary	nummer that no Nummer row has; a scalar concept table has no primary key	expected 0	got 0	as predicted	
+H8	two A atoms exchange their nummer in one transaction, written as addLink writes	expected 0	got 1062	REFUTES	ERROR 1062 (23000) at line 3: Duplicate entry 'n2' for key 'uq_A_nummer'
+H8	two persons exchange their passport in one transaction, written as addLink writes	expected 0	got 1062	REFUTES	ERROR 1062 (23000) at line 3: Duplicate entry 'NL2' for key 'uq_Persoon_paspoort'

@@ -3,6 +3,7 @@ module Ampersand.Classes.Relational
     Relational (..),
     Flippable (..),
     hasAttributes,
+    guaranteedProperties,
     isSESSION,
   )
 where
@@ -13,6 +14,38 @@ import qualified RIO.Set as Set
 
 class HasProps r where
   properties :: r -> AProps
+
+-- | The properties that a term has in every population, by its shape: the properties that
+--   'properties' infers, and the properties that a subset of the identity has. A term is a
+--   subset of the identity when it is @I@, a named atom on an endo signature, an intersection
+--   with such a term, a difference whose left side is one, or a composition of two. Such a
+--   term is univalent, injective, symmetric, antisymmetric and transitive. Univalence,
+--   injectivity and antisymmetry also pass from a term to every subset of it, so an
+--   intersection has them when either side has, and a difference when its left side has.
+--   Used to leave out the property rules of a derived relation whose definition guarantees
+--   them (issue #1744); the inference is conservative, so a property it cannot see is
+--   checked by a rule as before.
+guaranteedProperties :: Expression -> AProps
+guaranteedProperties expr
+  | isDiagonal expr = inferred `Set.union` Set.fromList [Uni, Inj, Sym, Asy, Trn]
+  | otherwise = inferred
+  where
+    inferred = properties expr `Set.union` inherited
+    downward = Set.fromList [Uni, Inj, Asy]
+    inherited = case expr of
+      EIsc (l, r) -> (guaranteedProperties l `Set.union` guaranteedProperties r) `Set.intersection` downward
+      EDif (l, _) -> guaranteedProperties l `Set.intersection` downward
+      EBrk e -> guaranteedProperties e
+      _ -> Set.empty
+    isDiagonal e = case e of
+      EDcI {} -> True
+      EMp1 {} -> True
+      EIsc (l, r) -> isDiagonal l || isDiagonal r
+      EDif (l, _) -> isDiagonal l
+      ECps (l, r) -> isDiagonal l && isDiagonal r
+      EFlp a -> isDiagonal a
+      EBrk a -> isDiagonal a
+      _ -> False
 
 class Relational r where
   isIdent :: r -> Bool -- > If True, then the argument is equivalent to I. Otherwise we don't know.

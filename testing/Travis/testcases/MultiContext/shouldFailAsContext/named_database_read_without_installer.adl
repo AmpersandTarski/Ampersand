@@ -1,0 +1,18 @@
+CONTEXT Region INCLUDES School FROM "../shouldSucceed/named_database_of_includer.adl", Town
+
+CONTEXT Town INCLUDES Library FROM "../contexts/library.adl"
+
+CONTEXT Region IN ENGLISH
+
+PURPOSE CONTEXT Region
+{+ The region includes the school, on whose database the library lands, and the town.
+The town includes the library and not the school. Compiled by itself, the town would read the database School
+without knowing the school, which gives the tables their names; the compiler refuses that.
+The region compiles, because it reaches the school. +}
+
+RELATION seat[Region*Town.Resident] [UNI]
+ENDCONTEXT
+
+CONTEXT Town IN ENGLISH
+RELATION resident[Resident*Library.Member] [UNI]
+ENDCONTEXT

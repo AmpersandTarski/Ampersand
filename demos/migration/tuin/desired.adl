@@ -1,0 +1,30 @@
+CONTEXT Tuin IN DUTCH
+PURPOSE CONTEXT Tuin
+{+ De nieuwe versie van het beddenregister van de gemeenschapstuin.
+Bedden zonder beheerder raakten vorige zomer overwoekerd, dus het bestuur besloot dat elk bed een beheerder heeft.
+Deze versie verschilt van het register in gebruik door die ene regel. Zij begint met een lege database. +}
+
+RELATION naam[Bed*Bednaam] [UNI]
+MEANING "Een bed heeft een naam."
+RELATION beheerder[Bed*Tuinder] [UNI]
+MEANING "Een tuinder beheert een bed."
+REPRESENT Bednaam, Tuinder TYPE ALPHANUMERIC
+
+RULE elkBedHeeftBeheerder : I[Bed] |- beheerder;beheerder~
+MEANING "Elk bed heeft een beheerder."
+MESSAGE "Elk bed heeft een beheerder nodig."
+VIOLATION (TXT "Zoek een beheerder voor ", SRC naam, TXT ".")
+
+-- De lijst met bedden is niet te bewerken. Een bed bewerk je, en een nieuw bed maak je, in een eigen scherm.
+-- Dat scherm slaat de wijzigingen van de gebruiker op als één transactie, zodat een nieuw bed zijn naam en zijn beheerder samen krijgt.
+INTERFACE Bedden : "_SESSION";V[SESSION*Bed] cRud BOX<TABLE showNavMenu>
+  [ "bed" : naam cRud
+  , "beheerder" : beheerder cRud
+  ]
+
+TRANSACTIONAL INTERFACE Bed : I[Bed] CRuD BOX<FORM>
+  [ "bed" : naam CRUD
+  , "beheerder" : beheerder CRUD
+  ]
+
+ENDCONTEXT

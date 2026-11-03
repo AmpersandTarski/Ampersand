@@ -1,0 +1,30 @@
+CONTEXT Tuin IN DUTCH
+PURPOSE CONTEXT Tuin
+{+ Het beddenregister van een gemeenschapstuin, zoals het al jaren in gebruik is.
+Vrijwilligers beheren de bedden. Een bed mag zonder beheerder zijn, en twee bedden zijn dat. +}
+
+RELATION naam[Bed*Bednaam] [UNI]
+MEANING "Een bed heeft een naam."
+RELATION beheerder[Bed*Tuinder] [UNI]
+MEANING "Een tuinder beheert een bed."
+REPRESENT Bednaam, Tuinder TYPE ALPHANUMERIC
+
+POPULATION naam[Bed*Bednaam] CONTAINS
+  [ ("b1", "Kruidenspiraal")
+  ; ("b2", "Bonenrijen")
+  ; ("b3", "Pompoenveld")
+  ; ("b4", "Bessenhoek")
+  ; ("b5", "Kas")
+  ]
+POPULATION beheerder[Bed*Tuinder] CONTAINS
+  [ ("b1", "Anna")
+  ; ("b3", "Bas")
+  ; ("b5", "Chidi")
+  ]
+
+INTERFACE Bedden : "_SESSION";V[SESSION*Bed] CRuD BOX<TABLE>
+  [ "bed" : naam CRUD
+  , "beheerder" : beheerder CRUD
+  ]
+
+ENDCONTEXT

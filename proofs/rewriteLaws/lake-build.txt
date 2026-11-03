@@ -1,0 +1,10 @@
+Observed on 2026-10-12
+$ lake build
+Build completed successfully (3 jobs).
+$ lake env lean Axioms.lean
+'RewriteLaws.absorb1' depends on axioms: [propext, Quot.sound]
+'RewriteLaws.absorb2' depends on axioms: [propext, Quot.sound]
+'RewriteLaws.absorb2_old_refuted' does not depend on any axioms
+'RewriteLaws.absorb3' depends on axioms: [propext, Quot.sound]
+'RewriteLaws.absorb4' depends on axioms: [propext, Classical.choice, Quot.sound]
+'RewriteLaws.absorb5' depends on axioms: [propext, Classical.choice, Quot.sound]

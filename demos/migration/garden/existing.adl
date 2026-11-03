@@ -1,0 +1,30 @@
+CONTEXT Garden IN ENGLISH
+PURPOSE CONTEXT Garden
+{+ The plot register of a community garden, as it has been in use for years.
+Volunteers keep the plots. A plot may be without a keeper, and two of them are. +}
+
+RELATION name[Plot*PlotName] [UNI]
+MEANING "A plot has a name."
+RELATION keeper[Plot*Gardener] [UNI]
+MEANING "A gardener keeps a plot."
+REPRESENT PlotName, Gardener TYPE ALPHANUMERIC
+
+POPULATION name[Plot*PlotName] CONTAINS
+  [ ("p1", "Herb spiral")
+  ; ("p2", "Bean rows")
+  ; ("p3", "Pumpkin patch")
+  ; ("p4", "Berry corner")
+  ; ("p5", "Greenhouse")
+  ]
+POPULATION keeper[Plot*Gardener] CONTAINS
+  [ ("p1", "Anna")
+  ; ("p3", "Bas")
+  ; ("p5", "Chidi")
+  ]
+
+INTERFACE Plots : "_SESSION";V[SESSION*Plot] CRuD BOX<TABLE>
+  [ "plot" : name CRUD
+  , "keeper" : keeper CRUD
+  ]
+
+ENDCONTEXT

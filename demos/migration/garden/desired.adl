@@ -1,0 +1,30 @@
+CONTEXT Garden IN ENGLISH
+PURPOSE CONTEXT Garden
+{+ The new release of the plot register of the community garden.
+Plots without a keeper were overgrown last summer, so the board decided that every plot has a keeper.
+This release differs from the register in use by that one rule. It starts with an empty database. +}
+
+RELATION name[Plot*PlotName] [UNI]
+MEANING "A plot has a name."
+RELATION keeper[Plot*Gardener] [UNI]
+MEANING "A gardener keeps a plot."
+REPRESENT PlotName, Gardener TYPE ALPHANUMERIC
+
+RULE everyPlotHasKeeper : I[Plot] |- keeper;keeper~
+MEANING "Every plot has a keeper."
+MESSAGE "Every plot needs a keeper."
+VIOLATION (TXT "Find a keeper for ", SRC name, TXT ".")
+
+-- The list of plots cannot be edited. A plot is edited, and a new plot is made, in a screen of its own.
+-- That screen saves what the user changed as one transaction, so a new plot gets its name and its keeper together.
+INTERFACE Plots : "_SESSION";V[SESSION*Plot] cRud BOX<TABLE showNavMenu>
+  [ "plot" : name cRud
+  , "keeper" : keeper cRud
+  ]
+
+TRANSACTIONAL INTERFACE Plot : I[Plot] CRuD BOX<FORM>
+  [ "plot" : name CRUD
+  , "keeper" : keeper CRUD
+  ]
+
+ENDCONTEXT

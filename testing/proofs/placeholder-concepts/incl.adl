@@ -1,0 +1,8 @@
+CONTEXT Minimal
+-- A script that declares no concept named A, B, C or D. The law set of the normaliser uses
+-- those four names as placeholders; `ampersand proofs` must not look them up in this script
+-- (issue #1725).
+RELATION lives[Person*Address]
+RELATION works[Person*Address]
+RULE incl : lives |- works
+ENDCONTEXT

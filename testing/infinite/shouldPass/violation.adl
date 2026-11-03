@@ -1,0 +1,13 @@
+CONTEXT InfiniteViolation IN ENGLISH
+PURPOSE CONTEXT InfiniteViolation
+{+ TGT I in a violation message names the violating age itself; the prototype puts it in the message without a query. +}
+REPRESENT Age TYPE INTEGER
+RELATION age[Person*Age] [UNI]
+RELATION agreedAge[Person*Age] [UNI]
+POPULATION age CONTAINS [ ("Ann", 41), ("Bob", 12) ]
+ROLE ExecEngine MAINTAINS copyAge
+RULE copyAge : age |- agreedAge
+VIOLATION ( TXT "{EX} InsPair;agreedAge;Person;", SRC I, TXT ";Age;", TGT I )
+{- To compile this script with validate, the prototype context needs: -}
+RELATION label[NavMenuItem*Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
+ENDCONTEXT

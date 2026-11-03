@@ -12,6 +12,7 @@ under the name of the included context or its alias as a prefix.
 | `shouldSucceed/` | Scripts that are correct. | `ampersand check` (exit 0) and `ampersand validate` (exit 0), which compares the generated SQL with the compiler's own evaluation in a real database. |
 | `shouldFail/` | Scripts with a mistake in an inclusion or in the use of a prefix. | `ampersand check` has to refuse each of them (exit 10). |
 | `invariantViolations/` | Scripts whose population violates an invariant of an included context. | `ampersand check` has to refuse each of them (exit 10). |
+| `shouldFailAsContext/` | A system in which one context other than the first cannot be compiled. | `ampersand check --context Town` has to refuse it (exit 10). |
 
 ## What each case guards
 
@@ -29,6 +30,11 @@ under the name of the included context or its alias as a prefix.
 | `shouldSucceed/every_kind_of_name.adl` | Every kind of name gets the prefix: pattern, rule, enforcement, identity, view, classification, representation, purpose. |
 | `shouldSucceed/as_is_no_keyword.adl` | `INCLUDES`, `FROM` and `AS` remain ordinary identifiers outside the statement. |
 | `shouldSucceed/alias_with_variables.adl` | Preprocessor variables after the file name, for the included file `contexts/with_variable.adl`. |
+| `shouldSucceed/named_database_of_includer.adl` | `NAMED` after the included context puts the library on the database of the school; a univalent relation of the school from a concept of the library becomes a column in the table of that concept. |
+| `shouldSucceed/named_database_of_included.adl` | `NAMED` after the including context puts the school on the database of the library. |
+| `shouldSucceed/named_database_for_both.adl` | Both contexts are given one database name; a classification across the two puts their concepts in one table. |
+| `shouldSucceed/named_database_read_by_third.adl` | A context on a database of its own reads a shared database; its views name the tables as the installing context names them. |
+| `shouldSucceed/named_is_no_keyword.adl` | `NAMED` remains an ordinary identifier outside the statement. |
 | `shouldSucceed/kurk_desired_alone.adl` | The desired system of the migration case compiles by itself, with its blocking invariant. |
 | `shouldSucceed/kurk_migration.adl` | The migration system of the RAMiCS 2024 paper as a context that includes two versions of the context Kurk, as `old` and `new`. |
 | `shouldSucceed/relaxed_invariants.adl` | A context relaxes two invariants of an included context: one over the identity and one between two relations. It shows the relations that the compiler adds in an interface. |
@@ -37,6 +43,10 @@ under the name of the included context or its alias as a prefix.
 | `invariantViolations/kurk_too_early.adl` | The same inclusion before the violations are repaired is refused. |
 | `invariantViolations/invariant_of_included_context.adl` | A rule of an included context holds in the including context. |
 | `shouldFail/same_name_needs_alias.adl` | Two included contexts with the same name need an alias each. |
+| `shouldFail/named_two_databases.adl` | One context is given two database names. |
+| `shouldFail/named_database_without_includer.adl` | Two contexts share a database and neither includes the other, so no application installs it. |
+| `shouldFail/named_databases_read_each_other.adl` | A context on one database includes a context on another database that includes a context on the first one; the databases would read each other. |
+| `shouldFailAsContext/named_database_read_without_installer.adl` | The town includes the library, which shares the database of the school, and not the school itself; compiled as `Town` it is refused, because the school gives the tables their names. |
 | `shouldFail/ambiguous_prefix.adl` | With aliases, the shared name is still ambiguous where a script uses it. |
 | `shouldFail/alias_for_two_files.adl` | One alias for two contexts. |
 | `shouldFail/alias_is_reserved.adl` | An alias that is a name space of Ampersand itself. |

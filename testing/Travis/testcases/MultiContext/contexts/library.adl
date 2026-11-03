@@ -1,0 +1,18 @@
+CONTEXT Library IN ENGLISH
+
+PURPOSE CONTEXT Library
+{+ A library that the cases on NAMED include: it has an interface and a concept that a classification can point at. +}
+
+RELATION title[Book*Title] [UNI,TOT]
+RELATION borrower[Book*Member] [UNI]
+RELATION memberName[Member*Name] [UNI,TOT]
+
+POPULATION title[Book*Title] CONTAINS [ ("b1", "Relation Algebra"); ("b2", "Logic") ]
+POPULATION borrower[Book*Member] CONTAINS [ ("b1", "m1") ]
+POPULATION memberName[Member*Name] CONTAINS [ ("m1", "Ada") ]
+
+INTERFACE Books : "_SESSION";V[SESSION*Book] cRud BOX
+  [ "title" : title cRUd
+  , "borrower" : borrower;memberName cRud
+  ]
+ENDCONTEXT

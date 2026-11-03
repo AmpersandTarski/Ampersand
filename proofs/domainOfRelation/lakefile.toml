@@ -1,0 +1,5 @@
+name = "domainOfRelation"
+defaultTargets = ["DomainOfRelation"]
+
+[[lean_lib]]
+name = "DomainOfRelation"

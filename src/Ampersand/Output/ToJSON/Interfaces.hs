@@ -5,6 +5,7 @@
 module Ampersand.Output.ToJSON.Interfaces (Interfaces) where
 
 import Ampersand.ADL1
+import Ampersand.FSpec.FSpecAux (effectiveCrud, isViewRelation)
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Output.ToJSON.JSONutils
@@ -183,7 +184,7 @@ instance JSON BoxItem JSONObjectDef where
             ifcobjJSONNormalizationSteps = Just $ showPrf showA . cfProof . objExpression $ object,
             ifcobjJSONrelation = tshow . fst <$> mEditableDecl,
             ifcobjJSONrelationIsFlipped = fmap snd mEditableDecl,
-            ifcobjJSONcrud = Just $ fromAmpersand env fSpec (objcrud object),
+            ifcobjJSONcrud = Just $ fromAmpersand env fSpec (effectiveCrud fSpec object),
             ifcobjJSONexpr = Just $ fromAmpersand env fSpec object,
             ifcobjJSONsubinterfaces = fmap (fromAmpersand env fSpec) (objmsub object),
             ifcobjJSONtxt = Nothing
@@ -193,8 +194,10 @@ instance JSON BoxItem JSONObjectDef where
           normalizedInterfaceExp = conjNF env $ objExpression object
           (tgtConcept, mEditableDecl) =
             case getExpressionRelation normalizedInterfaceExp of
-              Just (_, decl, tgt, isFlipped') ->
-                (tgt, Just (decl, isFlipped'))
+              Just (_, decl, tgt, isFlipped')
+                -- a derived relation that is a view cannot be edited (issue #1744)
+                | isViewRelation fSpec decl -> (tgt, Nothing)
+                | otherwise -> (tgt, Just (decl, isFlipped'))
               Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
           object = substituteReferenceObjectDef fSpec object'
       BxText {} ->

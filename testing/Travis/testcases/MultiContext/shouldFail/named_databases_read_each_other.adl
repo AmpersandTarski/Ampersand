@@ -1,0 +1,7 @@
+CONTEXT School NAMED School INCLUDES Archive FROM "../contexts/archive_on_school.adl"
+
+CONTEXT School IN ENGLISH
+-- The school (database School) includes the archive (database Archive), and the archive includes the
+-- library, which is on the database School. The two databases would read each other.
+RELATION kept[Pupil*Archive.Year] [UNI]
+ENDCONTEXT

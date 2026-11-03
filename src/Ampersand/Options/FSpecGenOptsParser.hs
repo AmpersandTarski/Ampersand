@@ -27,6 +27,11 @@ fSpecGenOptsParser isForDaemon =
     <*> failOnOscillationP
     <*> failOnCartesianProductP
     <*> pure False
+    <*> derivedViewsP
+    <*> materializeP
+    <*> forceViewP
+    <*> foreignKeysP
+    <*> schemaViewsP
   where
     rootsP :: Parser Roots
     rootsP =
@@ -205,6 +210,75 @@ fSpecGenOptsParser isForDaemon =
         )
         mempty
 
+    derivedViewsP :: Parser Bool
+    derivedViewsP =
+      boolFlags
+        False
+        "derived-views"
+        ( "generate a derived relation (ENFORCE r := term) as a database view "
+            <> "instead of a table that the ExecEngine maintains (issue #1744). "
+            <> "Off by default. Needs a prototype framework that knows the "
+            <> "field `storage` of relations.json for deleting atoms."
+        )
+        mempty
+
+    materializeP :: Parser [Text]
+    materializeP =
+      concatMap (T.split (== ',') . T.strip . T.pack)
+        <$> many
+          ( strOption
+              ( long "materialize"
+                  <> metavar "RELATION"
+                  <> help
+                    ( "with --derived-views: keep this derived relation stored and "
+                        <> "maintained by the ExecEngine, as before. Name the relation "
+                        <> "as it is declared (`r` or `r[A*B]`). Repeat the option or "
+                        <> "separate names with commas."
+                    )
+              )
+          )
+
+    forceViewP :: Parser [Text]
+    forceViewP =
+      concatMap (T.split (== ',') . T.strip . T.pack)
+        <$> many
+          ( strOption
+              ( long "view"
+                  <> metavar "RELATION"
+                  <> help
+                    ( "with --derived-views: make this derived relation a view although "
+                        <> "a rule or an interface field reads it and the database would "
+                        <> "compute the view in full (a union or a closure), which the "
+                        <> "compiler otherwise keeps stored. Name the relation as it is "
+                        <> "declared. Repeat the option or separate names with commas."
+                    )
+              )
+          )
+
+    foreignKeysP :: Parser Bool
+    foreignKeysP =
+      boolFlags
+        False
+        "foreign-keys"
+        ( "generate a FOREIGN KEY from every relation column to the concept "
+            <> "table it refers to (issue #1744). Off by default; the prototype "
+            <> "framework must have design choice OK-31 (v2.21.0). A bulk load must "
+            <> "switch FOREIGN_KEY_CHECKS off while it loads."
+        )
+        mempty
+
+    schemaViewsP :: Parser Bool
+    schemaViewsP =
+      boolFlags
+        False
+        "schema-views"
+        ( "generate a named view per conjunct (conj_<id>) and per interface "
+            <> "field (ifc_<interface>_<field>) in database.sql, next to the "
+            <> "queries in conjuncts.json and interfaces.json (issue #1744). "
+            <> "Off by default."
+        )
+        mempty
+
 defFSpecGenOpts :: NonEmpty FilePath -> FSpecGenOpts
 defFSpecGenOpts rootAdl =
   FSpecGenOpts
@@ -220,5 +294,10 @@ defFSpecGenOpts rootAdl =
       xallowInvariantViolations = False,
       xfailOnOscillation = False,
       xfailOnCartesianProduct = False,
-      xconfineIncludes = False
+      xconfineIncludes = False,
+      xderivedViews = False,
+      xmaterialize = [],
+      xforceView = [],
+      xforeignKeys = False,
+      xschemaViews = False
     }

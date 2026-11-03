@@ -1,0 +1,5 @@
+CONTEXT Archive INCLUDES Library FROM "library.adl" NAMED School
+
+CONTEXT Archive IN ENGLISH
+RELATION archived[Library.Book*Year] [UNI]
+ENDCONTEXT

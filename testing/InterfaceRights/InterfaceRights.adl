@@ -1,0 +1,31 @@
+CONTEXT InterfaceRights IN ENGLISH
+-- The interfaces that scripts/check-interface-rights.py compares with what the compiler says about them in
+-- PrototypeContext. The signal rule shows that a script can read those relations: a rule of this form compiles, and
+-- is evaluated at runtime, after the metapopulation is installed.
+
+REPRESENT Name TYPE ALPHANUMERIC
+RELATION name[Project*Name] [UNI]
+POPULATION name[Project*Name] CONTAINS [ ("p1", "One") ]
+
+INTERFACE ReadOnly : I[Project] cRud BOX <FORM>
+    [ "name" : name cRud ]
+
+-- The right sits in a box inside the interface, and the root is read-only.
+INTERFACE EditableInABox : I[Project] cRud BOX <FORM>
+    [ "block" : I cRud BOX <FORM>
+        [ "name" : name cRUd ]
+    ]
+
+INTERFACE CreatesAndDeletes : I[Project] CRuD BOX <FORM>
+    [ "name" : name cRud ]
+
+API AnApi : I[Project] cRud BOX
+    [ "name" : name cRud ]
+
+INTERFACE OnASession : "_SESSION";V[SESSION*Project] cRud BOX <TABLE>
+    [ "name" : name cRud ]
+
+ROLE Maintainer MAINTAINS ProjectHasAnEditableScreen
+RULE ProjectHasAnEditableScreen : I[Project] |- V[Project*PrototypeContext.Interface];(PrototypeContext.ifcCanUpdate - PrototypeContext.isAPI);PrototypeContext.ifcConcept;"Project"[PrototypeContext.ConceptName];V[PrototypeContext.ConceptName*Project]
+
+ENDCONTEXT

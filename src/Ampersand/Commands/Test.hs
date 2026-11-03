@@ -18,6 +18,7 @@ import Ampersand.Test.Incremental.CandidateProperties (doAllCandidatePropertyTes
 import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
 import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
 import Ampersand.Test.MultiContext.QualifyProperties (doAllQualifyPropertyTests)
+import Ampersand.Test.Multitable.StorageLayoutTests (doAllStorageLayoutTests)
 import Ampersand.Test.Parser.QuickChecks
 import Ampersand.Test.Regression (regressionTest)
 import Ampersand.Test.Serve.ServeTest (serveTest)
@@ -26,6 +27,7 @@ import Ampersand.Types.Config (HasRunner)
 
 test :: (HasTestOpts env, HasRunner env) => RIO env ()
 test = do
+  storageLayoutTest
   parserRoundtripTest
   incrementalPropertyTest
   candidatePropertyTest
@@ -126,6 +128,19 @@ qualifyPropertyTest = do
     else do
       logError "\x2757\x2757\x2757 Failed. Property tests of systems of contexts."
       exitWith (SomeTestsFailed ["Property test of systems of contexts failed!"])
+
+-- | Which concepts get a table (issues #1672, #1716 and #1727): a typology is
+--   stored as a whole or not at all, and a specialisation that is stored apart
+--   has a table whether or not a term names it (claim PRF-13).
+storageLayoutTest :: (HasRunner env) => RIO env ()
+storageLayoutTest = do
+  logInfo "Starting tests of the storage layout (which concepts get a table)."
+  success <- doAllStorageLayoutTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Tests of the storage layout."
+      exitWith (SomeTestsFailed ["Test of the storage layout failed!"])
 
 parserRoundtripTest :: (HasRunner env) => RIO env ()
 parserRoundtripTest = do

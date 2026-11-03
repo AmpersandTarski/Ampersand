@@ -1,0 +1,14 @@
+CONTEXT InfiniteIdentity IN ENGLISH
+PURPOSE CONTEXT InfiniteIdentity
+{+ A rule that asks for every age: I[Age] is the set of all integers, and they cannot be listed. +}
+REPRESENT Age TYPE INTEGER
+RELATION age[Person*Age] [UNI]
+RELATION olderThan[Age*Age]
+RELATION parentOf[Person*Person]
+POPULATION age CONTAINS [ ("Ann", 41), ("Bob", 12) ]
+POPULATION olderThan CONTAINS [ (41, 12) ]
+POPULATION parentOf CONTAINS [ ("Ann", "Bob") ]
+RULE everyAgeIsUsed : I[Age] |- age~;age
+{- To compile this script with validate, the prototype context needs: -}
+RELATION label[NavMenuItem*Label] = [("Anonymous","Anonymous"),("ExecEngine","ExecEngine"),("Administrator","Administrator"),("SYSTEM","SYSTEM")]
+ENDCONTEXT

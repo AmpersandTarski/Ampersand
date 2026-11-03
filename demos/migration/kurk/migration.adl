@@ -1,0 +1,48 @@
+CONTEXT Migration INCLUDES Kurk FROM "existing.adl" AS old,
+                           Kurk FROM "desired.adl" AS new
+CONTEXT Migration IN ENGLISH
+PURPOSE CONTEXT Migration
+{+ The migration system of the proof of concept in
+"Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024), written as a context
+that includes the existing system as `old` and the desired system as `new`.
+The numbers of the steps refer to section 4.1 of that paper. +}
+
+-- Step 1. The data sets of both systems are present, kept apart by the aliases.
+-- Every atom of the existing system is an atom of the desired system.
+CLASSIFY old.A ISA new.A
+CLASSIFY old.B ISA new.B
+
+-- Step 2. Copy the population of r. The relation copyR registers what has been copied,
+-- so that a user can change a copied pair in new.r without it being copied again.
+RELATION copyR[old.A*old.B]
+ENFORCE copyDone : copyR >: new.r /\ old.r
+ENFORCE copy : new.r >: old.r - copyR
+
+-- Steps 3 to 5. The desired system has a new blocking invariant: r is total.
+-- The data of the existing system violates it, so the migration system relaxes it.
+-- Step 3: the relation fixedTotalR holds the atoms that satisfy the rule,
+-- and the blocking invariant blockTotalR keeps a violation that has been fixed from recurring.
+RELATION fixedTotalR[new.A*new.A]
+RULE blockTotalR : fixedTotalR |- new.r;new.r~
+MESSAGE "Relation r[A*B] must remain total."
+VIOLATION (TXT "Atom ", SRC I, TXT " must remain paired with an atom from B.")
+-- Step 4: a transactional invariant registers every atom that satisfies the rule.
+ENFORCE fixTotalR : fixedTotalR >: I[new.A] /\ new.r;new.r~
+-- Step 5: the rule itself is a business constraint here, which signals what users have to repair.
+-- In the desired system, where no role maintains it, the same rule is a blocking invariant.
+ROLE User MAINTAINS new.totalR
+
+-- The screen of the desired system, so that a user of the migration system works as in the desired system.
+INTERFACE Kurk FOR User : "_SESSION";V[SESSION*new.A] CRuD BOX<TABLE>
+  [ "A" : I cRud
+  , "B" : new.r CRUD
+  ]
+
+-- The two systems side by side, as in figure 4 of the paper.
+INTERFACE Migration FOR User : "_SESSION";V[SESSION*old.A] cRud BOX<TABLE>
+  [ "A" : I cRud
+  , "old r" : old.r cRud
+  , "new r" : new.r CRUD
+  ]
+
+ENDCONTEXT

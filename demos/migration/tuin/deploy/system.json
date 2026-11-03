@@ -1,0 +1,45 @@
+{
+    "contexts": [
+        {
+            "context": "Migratie",
+            "databaseVariable": "MIGRATIE_DBNAME",
+            "defaultDatabase": "migratie_1",
+            "label": "",
+            "port": 8080,
+            "reaches": [
+                {
+                    "label": "old",
+                    "service": "old"
+                },
+                {
+                    "label": "new",
+                    "service": "new"
+                }
+            ],
+            "service": "migratie"
+        },
+        {
+            "context": "Tuin",
+            "databaseVariable": "OLD_DBNAME",
+            "defaultDatabase": "tuin_1",
+            "label": "old",
+            "port": 8081,
+            "reaches": [],
+            "service": "old"
+        },
+        {
+            "context": "Tuin",
+            "databaseVariable": "NEW_DBNAME",
+            "defaultDatabase": "tuin_2",
+            "label": "new",
+            "port": 8082,
+            "reaches": [],
+            "service": "new"
+        }
+    ],
+    "installOrder": [
+        "old",
+        "new",
+        "migratie"
+    ]
+}

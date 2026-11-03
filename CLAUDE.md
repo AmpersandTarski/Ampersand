@@ -65,6 +65,15 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
 
 - The **`documentation`** branch is merged **directly** (fast-forward / direct
   merge) — **no pull request**. Other branches (notably `main`) go through a PR.
+- `main` requires no review (since 30 October 2026) and the repository has
+  auto-merge on. After `gh pr create`, run `gh pr merge <nr> --auto --merge`;
+  GitHub merges when the six required checks are green and every review
+  conversation is resolved. `--admin` is never used.
+- The required build jobs (`ci2.yml`, `codeQuality.yml`) sit behind the job
+  `changes`, which runs them only when a build input changed since the
+  merge-base with `main`; a skipped job counts as passed. A PR whose head
+  commit predates that job (before PR #1752) and changed only text has no
+  checks on its head and needs a new push, such as a merge of `main`.
 - A push to `main` or `documentation` that changes `docs/**` automatically
   rebuilds the site: `.github/workflows/triggerDocsUpdate.yml` dispatches the
   `DeployToPages` workflow in the `AmpersandTarski.github.io` repo. No manual
@@ -122,11 +131,16 @@ Machine-checked proofs are part of the deliverable, not an afterthought.
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
   **new** workflow file requires `git add -f`.
-- `ampersand validate` writes its PHP helper to a **fixed** temp path
-  (`$TMPDIR/tmpPhpQueryOfAmpersand.php`, see `executePHPStr` in
-  `src/Ampersand/Prototype/PHP.hs`). Two concurrent validate runs (e.g. an
-  interactive `ampersand validate` next to a running `stack test`) clobber each
-  other's script and fail spuriously with exit 60 or a "Parse error on php
-  result" fatal (exit 2). Serialize them: never run validate while the
-  regression suite is running; `scripts/test-local.sh` serializes suite runs
-  between terminals with a lock.
+- The `.gitignore` pattern `*.py` ignores every Python script, also a measurement
+  script under `memorybank/` that a note refers to; add such a script with `git add -f`.
+- `ampersand validate` and `ampersand incremental-bench --sql` write their PHP
+  helper to a **fixed** temp path (`$TMPDIR/tmpPhpQueryOfAmpersand.php`, see
+  `executePHPStr` in `src/Ampersand/Prototype/PHP.hs`) and use a temp database
+  named after the context. Two concurrent runs (e.g. an interactive
+  `ampersand validate` next to a running `stack test`) clobber each other's
+  script and fail spuriously with exit 60 or a "Parse error on php result"
+  fatal (exit 2). Serialize them: never run either while the regression suite
+  is running; `scripts/test-local.sh` serializes suite runs between terminals
+  with the lock directory `/tmp/ampersand-regression-db.lock`, and a manual
+  run should take that lock too (`mkdir` it, run, `rmdir` it). An interrupted
+  harness leaves its temp database behind; drop it before the next run.

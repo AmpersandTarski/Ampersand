@@ -21,6 +21,7 @@
 module Ampersand.Output.ToJSON.OpenAPI (openAPIToJSON) where
 
 import Ampersand.ADL1
+import Ampersand.FSpec.FSpecAux (effectiveCrud)
 import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Ampersand.Output.ToJSON.JSONutils
 import Data.Aeson (Value, object, (.=))
@@ -215,7 +216,7 @@ openApiDoc env fSpec =
     treeRights :: ObjectDef -> (Bool, Bool, Bool)
     treeRights od = foldr orT (crudC c, crudU c, crudD c) (map treeRights (kids od))
       where
-        c = objcrud od
+        c = effectiveCrud fSpec od -- a field on a derived relation that is a view is read-only (issue #1744)
         orT (a, b, d) (x, y, z) = (a || x, b || y, d || z)
 
     fieldSchema :: ObjectDef -> Value
@@ -228,7 +229,7 @@ openApiDoc env fSpec =
         (tgtC, mDecl) = case getExpressionRelation nExpr of
           Just (_, decl, t, _) -> (t, Just decl)
           Nothing -> (target nExpr, Nothing)
-        crd = objcrud c
+        crd = effectiveCrud fSpec c -- a field on a derived relation that is a view is read-only (issue #1744)
         ext =
           ("x-crud" .= crudObj crd)
             : ["x-ampersand-relation" .= tshow d | Just d <- [mDecl]]

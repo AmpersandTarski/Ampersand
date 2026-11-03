@@ -1,8 +1,19 @@
-module Ampersand.FSpec.FSpecAux (getRelationTableInfo, relationTableInfos, getConceptTableInfo, lookupConceptTable) where
+module Ampersand.FSpec.FSpecAux
+  ( getRelationTableInfo,
+    relationTableInfos,
+    getConceptTableInfo,
+    lookupConceptTable,
+    isViewRelation,
+    isViewPlug,
+    derivedViewPlugs,
+    effectiveCrud,
+  )
+where
 
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import RIO.List (repeat)
 
 -- return table name and source and target column names for relation dcl
@@ -40,6 +51,31 @@ lookupConceptTable fSpec cpt =
     [] -> Nothing
     [x] -> Just x -- Any of the resulting plugs should do.
     xs -> fatal ("Only one result expected:" <> tshow xs)
+
+-- | Whether a relation is generated as a database view (issue #1744).
+isViewRelation :: FSpec -> Relation -> Bool
+isViewRelation fSpec rel = rel `elem` map fst (fDerivedViews fSpec)
+
+-- | Whether a plug is the view of a derived relation, rather than a table (issue #1744).
+--   Such a plug holds one relation, its own, and no concept.
+isViewPlug :: FSpec -> PlugSQL -> Bool
+isViewPlug fSpec plug = case (mainItem plug, dLkpTbl plug) of
+  (Right rel, [store]) -> rsDcl store == rel && isViewRelation fSpec rel && null (cLkpTbl plug)
+  _ -> False
+
+-- | The views of the derived relations, each with its relation and defining term, in an
+--   order in which the views can be created (issue #1744).
+derivedViewPlugs :: FSpec -> [(PlugSQL, Relation, Expression)]
+derivedViewPlugs fSpec = [(fst (getRelationTableInfo fSpec rel), rel, definition) | (rel, definition) <- fDerivedViews fSpec]
+
+-- | The CRUD rights of an interface object as the prototype gets them: what the script asks
+--   for, except on a field whose term is a derived relation that is a view, or its converse,
+--   which can only be read (issue #1744). Both @interfaces.json@ and @openapi.json@ use this,
+--   so the API description advertises no write that the prototype refuses.
+effectiveCrud :: FSpec -> ObjectDef -> Cruds
+effectiveCrud fSpec od = case getExpressionRelation (conjNF () (objExpression od)) of
+  Just (_, decl, _, _) | isViewRelation fSpec decl -> (objcrud od) {crudC = False, crudU = False, crudD = False}
+  _ -> objcrud od
 
 -- return table name and source and target column names for relation rel.
 --   Use `lookupConceptTable` instead where a concept without a table is a

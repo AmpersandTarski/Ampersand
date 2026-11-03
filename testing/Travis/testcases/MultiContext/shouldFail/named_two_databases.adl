@@ -1,0 +1,7 @@
+CONTEXT School INCLUDES Library FROM "../contexts/library.adl" NAMED Campus
+CONTEXT School INCLUDES Library FROM "../contexts/library.adl" NAMED Archive
+
+CONTEXT School IN ENGLISH
+-- The library is given two database names, Campus and Archive. A context lands on one database.
+RELATION pupil[Pupil*Library.Member] [UNI,TOT]
+ENDCONTEXT

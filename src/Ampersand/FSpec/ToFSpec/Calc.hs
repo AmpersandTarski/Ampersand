@@ -26,7 +26,7 @@ testConfluence context =
   let tcss =
         [ (expr, tcs)
           | expr <- toList $ expressionsIn context,
-            let tcs = dfProofs (conceptMap . ctxInfo $ context) expr,
+            let tcs = dfProofs expr,
             length tcs > 1
         ]
       sumt = sum (map (length . snd) tcss)

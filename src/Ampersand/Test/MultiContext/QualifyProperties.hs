@@ -189,7 +189,8 @@ systemOf nodes edges =
       sysEdges =
         Map.fromListWith
           (flip (<>))
-          [(key from, [SystemEdge OriginUnknown (key target) alias (Just alias)]) | (from, target, alias) <- edges]
+          [(key from, [SystemEdge OriginUnknown (key target) alias (Just alias)]) | (from, target, alias) <- edges],
+      sysNamed = []
     }
   where
     key nm = (T.unpack nm <> ".adl", nm)

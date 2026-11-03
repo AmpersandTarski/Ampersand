@@ -31,7 +31,7 @@ The `INCLUDE` statement causes all definitions of `bar.adl` to be included in th
 The two files together form one context, with one database.
 
 ## Example: Several contexts
-A specification can also consist of several contexts, each with a database of its own.
+A specification can also consist of several contexts, each with a database of its own, or with several contexts on one database.
 One context then includes another with the statement `CONTEXT A INCLUDES B`, and refers to its relations and concepts with a prefix, as in `Registry.Person`.
 The guide [Several information systems that use each other](./guides/systems-of-contexts.md) works out an example of a permit system that uses a population register, and an example of a data migration.
 
