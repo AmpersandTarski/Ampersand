@@ -26,6 +26,19 @@ The Prototype recipe loads the PrototypeContext metamodel, grinds the combined s
 
 The RAP recipe combines FormalAmpersand, PrototypeContext, and the user script, then grinds everything together. This recipe is used for the RAP application and running scripts in a shared repository environment.
 
+## Rules about the interfaces of your own script
+
+Under the Prototype recipe, a script can read what PrototypeContext says about its interfaces, and so make requirements on them. Of each interface, `PrototypeContext.ifcConcept` gives the full name of the concept it opens on. The properties `PrototypeContext.ifcCanCreate`, `PrototypeContext.ifcCanUpdate` and `PrototypeContext.ifcCanDelete` say whether the interface, or a box inside it, has C, U or D in its CRUD annotation; `PrototypeContext.isAPI` tells an API from a screen. For instance, this rule signals every project without a screen that can update it:
+
+```ampersand
+ROLE Maintainer MAINTAINS ProjectHasAnEditableScreen
+RULE ProjectHasAnEditableScreen : I[Project] |- V[Project*PrototypeContext.Interface];(PrototypeContext.ifcCanUpdate - PrototypeContext.isAPI);PrototypeContext.ifcConcept;"Project"[PrototypeContext.ConceptName];V[PrototypeContext.ConceptName*Project]
+```
+
+Write such a rule as a signal rule, as above. The compiler checks an invariant on the population of the script, before the metapopulation exists, so an invariant on these relations is violated at compile time whatever the interfaces say. A signal rule is evaluated at runtime, after the metapopulation is installed.
+
+The properties are about the interface as a whole: an interface with one editable field has `ifcCanUpdate`. They do not say that a particular atom can be edited, because a box can restrict the atoms it shows.
+
 ## The Metamodel-Transformer Correspondence
 
 Each relation declared in the metamodel ADL files must have a corresponding transformer in the Haskell code. The transformers generate the population data for these relations. For example, `FormalAmpersand/Relations.adl` declares `RELATION name[Relation*RelationName]` and `Transformers.hs` contains code that populates this relation from the FSpec.
