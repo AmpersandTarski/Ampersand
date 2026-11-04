@@ -38,12 +38,7 @@ Standard cycle:
 
 ## Test infrastructure
 
-- The original test set is in `testing/`.
-- An improved test set with populations is in `testing_with_populations/`.
-- To run the new set, temporarily rename the directories so
-  `testing_with_populations` takes the name `testing`, then run `stack test`.
-- ~14 known files trigger pre-existing compiler bugs (see
-  `COMPILATION_STATUS_REPORT.md`).
+- The regression test set is in `testing/`.
 
 ## Debugging & development
 
