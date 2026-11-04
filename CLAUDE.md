@@ -26,6 +26,12 @@ Standard cycle:
 3. `stack exec ampersand -- check <file.adl>`
 4. Iterate
 
+`stack test` builds the compiler before it runs the suite, so while a suite runs,
+the compiler of that worktree is already built and another session can `check`
+with it instead of waiting; `validate` waits (see Gotcha).
+Stef on 7 October 2026: "Omdat de regressiesuite draait is de compiler daar al
+beschikbaar. Dan hoef je niet te wachten tot de hele regressie klaar is."
+
 ## Common commands
 
 - **Fast build:** `stack build --fast`
