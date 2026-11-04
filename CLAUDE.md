@@ -151,6 +151,18 @@ both specialise `Artefact`: "Een ontwerpprincipe van de Ampersand-taal is: allee
 dingen verbieden als het moet. Een nutteloos verbod heffen we op en daarom wil
 ik weten wat het nut van dit verbod is." (issue #1716).
 
+## Performance claims
+
+A change whose motive is performance is measured before it is built, and the
+measurement tries to refute the claim: the claims are registered first, then an
+experiment at several sizes looks for the case where they fail.
+`memorybank/derived-views/experiment/` (`preregistration.md`, `results.md`) is an example.
+Stef on 21 October 2026: "Doe dat wel met proeven vooraf. Ik wil zeker weten dat
+het de performancewinst oplevert die het belooft." On 29 October: "De kwantitatieve
+metingen zijn ad-hoc en zeggen dus niet zoveel. Ik zou graag een experiment zien
+waarin we met kwantitatieve metingen proberen de kwalitatieve claims tegen te
+spreken. Als dat mislukt, is dat veel overtuigender."
+
 ## Proof track
 
 Machine-checked proofs are part of the deliverable, not an afterthought.
