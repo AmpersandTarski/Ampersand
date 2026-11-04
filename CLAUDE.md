@@ -151,6 +151,15 @@ both specialise `Artefact`: "Een ontwerpprincipe van de Ampersand-taal is: allee
 dingen verbieden als het moet. Een nutteloos verbod heffen we op en daarom wil
 ik weten wat het nut van dit verbod is." (issue #1716).
 
+A script uses what the language and the framework offer before it imitates it.
+Changes that belong together, such as a new atom and the pairs a rule demands of it,
+go through a `TRANSACTIONAL INTERFACE`
+(`docs/reference-material/interfaces.md#transactional-interfaces`),
+whose standard screen has Save and Cancel.
+Stef on 10 October 2026, about an extra "add" button in a demonstration:
+"Je hebt geprobeerd een transactie te 'faken' door met die 'add'-knop te werken.
+Maar je hebt in Ampersand gewoon een TRANSACTIONAL INTERFACE. Gebruik die".
+
 ## Performance claims
 
 A change whose motive is performance is measured before it is built, and the
