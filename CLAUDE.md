@@ -39,6 +39,15 @@ Standard cycle:
 ## Test infrastructure
 
 - The regression test set is in `testing/`.
+- `stack test` also runs a QuickCheck roundtrip: it generates parse trees
+  (`src/Ampersand/Test/Parser/ArbitraryTree.hs`), prints them
+  (`src/Ampersand/ADL1/PrettyPrinters.hs`) and parses them again
+  (`src/Ampersand/Test/Parser/QuickChecks.hs`).
+  A change of the syntax therefore changes the parser, the prettyprinter and the
+  generator together, or the new syntax stays untested.
+  On 20 October 2026 Stef wrote, after `NAMED` had been added to the parser only:
+  "Je bent vergeten de quickcheck op de syntax in de regressietest aan te passen.
+  Zie het nieuwe issue van Han." (issue #1736).
 
 ## Debugging & development
 
