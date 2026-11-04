@@ -150,6 +150,33 @@ Machine-checked proofs are part of the deliverable, not an afterthought.
   plan the proof. The claim precedes the proof; the proof precedes the
   confidence.
 
+## Data migration
+
+The method of *Data Migration under a Changing Schema in Ampersand*
+(Joosten and Joosten, RAMiCS 2024) is the specification of every migration:
+the guide `docs/guides/systems-of-contexts.md`, the demonstration in
+`demos/migration/` and the compiler follow it.
+The migration context includes the existing and the desired system, so every
+invariant of the desired system holds in the migration system.
+A new rule that the existing data violates is relaxed in the migration script
+with steps 3 to 5 of the article: a role maintains the rule, a relation registers
+every atom that satisfies it, and a blocking invariant keeps such an atom to the
+rule, so a repaired violation cannot return.
+The script of the desired system and the prototype framework contain nothing
+that serves the migration.
+A design that the article does not contain, such as a preprocessor flag, a
+plain process rule, or knowledge of the migration in the framework, is the signal
+to read the article again before building.
+Stef corrected this six times in three sessions in October 2026:
+on the 7th "Ik begrijp niet waarom de preprocessorvariabele Migrating nodig is.
+Die komt in het artikel niet voor", "De nieuwe invariant van het gewenste systeem
+geldt tijdens de migratie nog niet. Dat moet wel het geval zijn", and "Het markeren
+van een invariant met een compiler directive (--#IFNOT Migrating) vind ik niet goed";
+on the 13th "ik wil niet dat het prototype framework te veel weet van de semantiek
+van de back-end"; on the 16th "Als je het artikel goed leest, zie je dat het niet
+zomaar een procesregel is" and "Oei, dan zijn de demo-scripts niet gebouwd zoals
+het artikel voorschrijft."
+
 ## Gotcha
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
