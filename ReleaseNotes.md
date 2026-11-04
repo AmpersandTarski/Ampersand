@@ -1,4 +1,6 @@
 ﻿# Release notes of Ampersand
+## Unreleased
+- **The regression test of issue #1728 also checks the pairs that the violation queries return** ([issue #1728](https://github.com/AmpersandTarski/Ampersand/issues/1728)). The test `testing/Travis/testcases/DeltaQueries` compiled the script of the issue and checked only the exit code. The script now holds a population of six requirements, and the test also runs `ampersand validate`, which compares the SQL of every term with the pairs that the compiler computes from its meaning. On that population the chain of differences keeps 8 of the 15 pairs of `same`.
 ## v5.15.0 (2 November 2026)
 - **A script can make requirements on the CRUD rights of its own interfaces.** The context `PrototypeContext` now says of each interface on which concept it opens (`ifcConcept`) and whether it, or a box inside it, can create, update or delete (`ifcCanCreate`, `ifcCanUpdate`, `ifcCanDelete`). Until now only `label`, `ifcRoles`, `isPublic` and `isAPI` were there, so a rule such as "every atom of this kind is editable in some interface" had nothing to read. Write such a rule as a signal rule, because the compiler checks invariants before the metapopulation exists. A model that keeps a database between two compiler versions gets four new columns or tables, and needs its metapopulation installed again.
 ## v5.14.0 (30 October 2026)
