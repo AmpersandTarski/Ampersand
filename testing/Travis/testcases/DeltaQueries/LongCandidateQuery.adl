@@ -14,4 +14,20 @@ ENFORCE equal :=
    - (same /\ except;((except~;same) - except~)))
    - (same /\ except;((except~;same) - except~))~)
    - (((I[Req] /\ begin;begin~);same) - (same /\ begin;begin~))
+
+-- A population, so that `ampersand validate` compares the SQL of every term with its meaning.
+POPULATION same[Req*Req] CONTAINS
+  [ ("r1","r1"), ("r1","r2"), ("r2","r1"), ("r2","r2"), ("r1","r3"), ("r3","r1")
+  , ("r3","r3"), ("r4","r5"), ("r5","r4"), ("r4","r4"), ("r5","r5"), ("r2","r6")
+  , ("r6","r2"), ("r6","r6"), ("r3","r4") ]
+POPULATION sector[Req*Sector] CONTAINS
+  [ ("r1","meat"), ("r2","meat"), ("r3","meat"), ("r3","fish"), ("r4","fish")
+  , ("r5","fish"), ("r6","dairy") ]
+POPULATION except[Req*Organism] CONTAINS
+  [ ("r1","salmonella"), ("r2","salmonella"), ("r4","listeria"), ("r6","listeria") ]
+POPULATION begin[Req*Date] CONTAINS
+  [ ("r1","2026-01-01"), ("r2","2026-01-01"), ("r3","2026-02-01"), ("r4","2026-03-01")
+  , ("r5","2026-03-01") ]
+POPULATION end[Req*Date] CONTAINS
+  [ ("r1","2026-12-31"), ("r4","2026-12-31") ]
 ENDCONTEXT
