@@ -69,6 +69,16 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   merge-base with `main`; a skipped job counts as passed. A PR whose head
   commit predates that job (before PR #1752) and changed only text has no
   checks on its head and needs a new push, such as a merge of `main`.
+- The branch **`incremental-evaluation`** does not go to `main` for now.
+  A branch for its work starts from `incremental-evaluation`, not from `main`,
+  and is merged into it and pushed without a pull request.
+  A request to merge or release something that sits on that branch concerns
+  only the part outside the incremental evaluation.
+  Stef corrected this three times: on 6 October 2026 PR #1703 had brought it
+  into `main` "per ongeluk ... terwijl incremental-evaluation daar nog niet klaar
+  voor is" (reverted with #1713); the same day "op incremental-evaluation doen we
+  niet aan PR's. Daar mergen en pushen we gewoon. Weet je nog?"; and on
+  8 October "ik bedoel alleen de EXCEPT wijziging, NIET de incrementele evaluatie!".
 - A push to `main` or `documentation` that changes `docs/**` automatically
   rebuilds the site: `.github/workflows/triggerDocsUpdate.yml` dispatches the
   `DeployToPages` workflow in the `AmpersandTarski.github.io` repo. No manual
