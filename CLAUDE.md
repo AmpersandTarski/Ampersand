@@ -119,6 +119,11 @@ het prototype-framework raken moet die repo daar doen", and later that day
 
 ## Documentation
 
+- Text that is published from this repository (documentation, issues, release
+  notes) names no register or agency of a client; a project name such as FC5 may stay.
+  Stef on 28 October 2026, about issue #1744: "Noem het maar 'een landelijk geldend
+  register van de Rijksoverheid'. Je mag het project en de context gerust FC5
+  blijven noemen, want die naam zegt een buitenstaander niets."
 - The documentation site (Docusaurus) is assembled from the `docs/` folders of
   several repositories. Ampersand's docs are published from the **`documentation`**
   branch, not `main`.
