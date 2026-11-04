@@ -69,6 +69,15 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   merge-base with `main`; a skipped job counts as passed. A PR whose head
   commit predates that job (before PR #1752) and changed only text has no
   checks on its head and needs a new push, such as a merge of `main`.
+- A job chooses its runner with `runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}`
+  (or `vars.WINDOWS_RUNNER`), and the name of a required check holds no runner
+  version ("Build and test on Linux", "Build and test on Windows").
+  A new runner version is then a change of the repository variable, and the
+  protection rule of `main` keeps naming checks that run.
+  Stef asked for this on 21 October 2026, after a required check named after
+  `ubuntu-22.04` blocked the pipeline while nothing ran on that version any more:
+  "Kan je zoiets niet met een variabele regelen, zodat het altijd en overal
+  correct blijft draaien?" (PR #1740).
 - The branch **`incremental-evaluation`** does not go to `main` for now.
   A branch for its work starts from `incremental-evaluation`, not from `main`,
   and is merged into it and pushed without a pull request.
