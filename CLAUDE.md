@@ -140,6 +140,17 @@ het prototype-framework raken moet die repo daar doen", and later that day
   positives, so a green run never blocks a good PR. Link cross-repo and README targets
   with the `.md` extension so Docusaurus resolves them to the right route.
 
+## Language design
+
+The language forbids only what must be forbidden.
+A restriction in the typechecker or the parser has a reason that a comment,
+the documentation or a design choice records; a restriction whose reason has
+gone is lifted rather than worked around.
+Stef on 10 October 2026, finding that `Document /\ Claim` was refused while
+both specialise `Artefact`: "Een ontwerpprincipe van de Ampersand-taal is: alleen
+dingen verbieden als het moet. Een nutteloos verbod heffen we op en daarom wil
+ik weten wat het nut van dit verbod is." (issue #1716).
+
 ## Proof track
 
 Machine-checked proofs are part of the deliverable, not an afterthought.
