@@ -105,6 +105,18 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   Linux, so a link whose casing differs from the target file (fine on macOS)
   breaks the build. Keep doc filenames and links lowercase.
 
+## Which repository does the work
+
+A change lands in the repository it changes, made by a session in that repository:
+the compiler here, the prototype framework in its own repository, and a project
+that uses Ampersand, such as FC5, in the project.
+A finding here that asks for work elsewhere goes there as an issue or as a
+task file for the session of that repository.
+Stef on 30 October 2026: "Dingen die de Ampersand-compiler veranderen moet de
+Ampersand-repo doen. Dingen die FC5 wijzigen moet een agent daar doen. Dingen die
+het prototype-framework raken moet die repo daar doen", and later that day
+"Nee, het FC5-werk doen we bij FC5."
+
 ## Documentation
 
 - The documentation site (Docusaurus) is assembled from the `docs/` folders of
