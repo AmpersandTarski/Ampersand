@@ -17,4 +17,11 @@ The relation `same` occurs eleven times in the term of its `ENFORCE` statement.
 The violation query of that term is about 36,000 characters long,
 and the candidate query for `same` about 60,000; it used to be more than 1,000,000.
 
-The test runs `ampersand proto --no-frontend` and expects exit code 0.
+The test runs two commands and expects exit code 0 from both.
+`ampersand proto --no-frontend` shows that the script compiles.
+`ampersand validate` runs the SQL of every term of the script on a database
+and compares the pairs it returns with the pairs that the compiler computes from the meaning of the term.
+The script holds a small population for that purpose, of six requirements,
+in which the chain of differences removes some pairs of `same` and keeps others.
+This command checks the violation queries; it does not run the candidate queries,
+whose correctness rests on claims PRF-16 to PRF-18 and on the QuickCheck properties of the test suite.

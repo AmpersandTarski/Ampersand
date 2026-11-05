@@ -26,6 +26,12 @@ Standard cycle:
 3. `stack exec ampersand -- check <file.adl>`
 4. Iterate
 
+`stack test` builds the compiler before it runs the suite, so while a suite runs,
+the compiler of that worktree is already built and another session can `check`
+with it instead of waiting; `validate` waits (see Gotcha).
+Stef on 7 October 2026: "Omdat de regressiesuite draait is de compiler daar al
+beschikbaar. Dan hoef je niet te wachten tot de hele regressie klaar is."
+
 ## Common commands
 
 - **Fast build:** `stack build --fast`
@@ -38,12 +44,16 @@ Standard cycle:
 
 ## Test infrastructure
 
-- The original test set is in `testing/`.
-- An improved test set with populations is in `testing_with_populations/`.
-- To run the new set, temporarily rename the directories so
-  `testing_with_populations` takes the name `testing`, then run `stack test`.
-- ~14 known files trigger pre-existing compiler bugs (see
-  `COMPILATION_STATUS_REPORT.md`).
+- The regression test set is in `testing/`.
+- `stack test` also runs a QuickCheck roundtrip: it generates parse trees
+  (`src/Ampersand/Test/Parser/ArbitraryTree.hs`), prints them
+  (`src/Ampersand/ADL1/PrettyPrinters.hs`) and parses them again
+  (`src/Ampersand/Test/Parser/QuickChecks.hs`).
+  A change of the syntax therefore changes the parser, the prettyprinter and the
+  generator together, or the new syntax stays untested.
+  On 20 October 2026 Stef wrote, after `NAMED` had been added to the parser only:
+  "Je bent vergeten de quickcheck op de syntax in de regressietest aan te passen.
+  Zie het nieuwe issue van Han." (issue #1736).
 
 ## Debugging & development
 
@@ -74,6 +84,25 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   merge-base with `main`; a skipped job counts as passed. A PR whose head
   commit predates that job (before PR #1752) and changed only text has no
   checks on its head and needs a new push, such as a merge of `main`.
+- A job chooses its runner with `runs-on: ${{ vars.UBUNTU_RUNNER || 'ubuntu-latest' }}`
+  (or `vars.WINDOWS_RUNNER`), and the name of a required check holds no runner
+  version ("Build and test on Linux", "Build and test on Windows").
+  A new runner version is then a change of the repository variable, and the
+  protection rule of `main` keeps naming checks that run.
+  Stef asked for this on 21 October 2026, after a required check named after
+  `ubuntu-22.04` blocked the pipeline while nothing ran on that version any more:
+  "Kan je zoiets niet met een variabele regelen, zodat het altijd en overal
+  correct blijft draaien?" (PR #1740).
+- The branch **`incremental-evaluation`** does not go to `main` for now.
+  A branch for its work starts from `incremental-evaluation`, not from `main`,
+  and is merged into it and pushed without a pull request.
+  A request to merge or release something that sits on that branch concerns
+  only the part outside the incremental evaluation.
+  Stef corrected this three times: on 6 October 2026 PR #1703 had brought it
+  into `main` "per ongeluk ... terwijl incremental-evaluation daar nog niet klaar
+  voor is" (reverted with #1713); the same day "op incremental-evaluation doen we
+  niet aan PR's. Daar mergen en pushen we gewoon. Weet je nog?"; and on
+  8 October "ik bedoel alleen de EXCEPT wijziging, NIET de incrementele evaluatie!".
 - A push to `main` or `documentation` that changes `docs/**` automatically
   rebuilds the site: `.github/workflows/triggerDocsUpdate.yml` dispatches the
   `DeployToPages` workflow in the `AmpersandTarski.github.io` repo. No manual
@@ -82,8 +111,25 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   Linux, so a link whose casing differs from the target file (fine on macOS)
   breaks the build. Keep doc filenames and links lowercase.
 
+## Which repository does the work
+
+A change lands in the repository it changes, made by a session in that repository:
+the compiler here, the prototype framework in its own repository, and a project
+that uses Ampersand, such as FC5, in the project.
+A finding here that asks for work elsewhere goes there as an issue or as a
+task file for the session of that repository.
+Stef on 30 October 2026: "Dingen die de Ampersand-compiler veranderen moet de
+Ampersand-repo doen. Dingen die FC5 wijzigen moet een agent daar doen. Dingen die
+het prototype-framework raken moet die repo daar doen", and later that day
+"Nee, het FC5-werk doen we bij FC5."
+
 ## Documentation
 
+- Text that is published from this repository (documentation, issues, release
+  notes) names no register or agency of a client; a project name such as FC5 may stay.
+  Stef on 28 October 2026, about issue #1744: "Noem het maar 'een landelijk geldend
+  register van de Rijksoverheid'. Je mag het project en de context gerust FC5
+  blijven noemen, want die naam zegt een buitenstaander niets."
 - The documentation site (Docusaurus) is assembled from the `docs/` folders of
   several repositories. Ampersand's docs are published from the **`documentation`**
   branch, not `main`.
@@ -99,6 +145,38 @@ Pull requests that touch **only** `docs/**` are exempt — that workflow sets
   (`../../prototype/...`, `../../../rap/...`) and external links to avoid false
   positives, so a green run never blocks a good PR. Link cross-repo and README targets
   with the `.md` extension so Docusaurus resolves them to the right route.
+
+## Language design
+
+The language forbids only what must be forbidden.
+A restriction in the typechecker or the parser has a reason that a comment,
+the documentation or a design choice records; a restriction whose reason has
+gone is lifted rather than worked around.
+Stef on 10 October 2026, finding that `Document /\ Claim` was refused while
+both specialise `Artefact`: "Een ontwerpprincipe van de Ampersand-taal is: alleen
+dingen verbieden als het moet. Een nutteloos verbod heffen we op en daarom wil
+ik weten wat het nut van dit verbod is." (issue #1716).
+
+A script uses what the language and the framework offer before it imitates it.
+Changes that belong together, such as a new atom and the pairs a rule demands of it,
+go through a `TRANSACTIONAL INTERFACE`
+(`docs/reference-material/interfaces.md#transactional-interfaces`),
+whose standard screen has Save and Cancel.
+Stef on 10 October 2026, about an extra "add" button in a demonstration:
+"Je hebt geprobeerd een transactie te 'faken' door met die 'add'-knop te werken.
+Maar je hebt in Ampersand gewoon een TRANSACTIONAL INTERFACE. Gebruik die".
+
+## Performance claims
+
+A change whose motive is performance is measured before it is built, and the
+measurement tries to refute the claim: the claims are registered first, then an
+experiment at several sizes looks for the case where they fail.
+`memorybank/derived-views/experiment/` (`preregistration.md`, `results.md`) is an example.
+Stef on 21 October 2026: "Doe dat wel met proeven vooraf. Ik wil zeker weten dat
+het de performancewinst oplevert die het belooft." On 29 October: "De kwantitatieve
+metingen zijn ad-hoc en zeggen dus niet zoveel. Ik zou graag een experiment zien
+waarin we met kwantitatieve metingen proberen de kwalitatieve claims tegen te
+spreken. Als dat mislukt, is dat veel overtuigender."
 
 ## Proof track
 
@@ -126,6 +204,33 @@ Machine-checked proofs are part of the deliverable, not an afterthought.
   state the claim in the register (status `stated`) as part of the task, and
   plan the proof. The claim precedes the proof; the proof precedes the
   confidence.
+
+## Data migration
+
+The method of *Data Migration under a Changing Schema in Ampersand*
+(Joosten and Joosten, RAMiCS 2024) is the specification of every migration:
+the guide `docs/guides/systems-of-contexts.md`, the demonstration in
+`demos/migration/` and the compiler follow it.
+The migration context includes the existing and the desired system, so every
+invariant of the desired system holds in the migration system.
+A new rule that the existing data violates is relaxed in the migration script
+with steps 3 to 5 of the article: a role maintains the rule, a relation registers
+every atom that satisfies it, and a blocking invariant keeps such an atom to the
+rule, so a repaired violation cannot return.
+The script of the desired system and the prototype framework contain nothing
+that serves the migration.
+A design that the article does not contain, such as a preprocessor flag, a
+plain process rule, or knowledge of the migration in the framework, is the signal
+to read the article again before building.
+Stef corrected this six times in three sessions in October 2026:
+on the 7th "Ik begrijp niet waarom de preprocessorvariabele Migrating nodig is.
+Die komt in het artikel niet voor", "De nieuwe invariant van het gewenste systeem
+geldt tijdens de migratie nog niet. Dat moet wel het geval zijn", and "Het markeren
+van een invariant met een compiler directive (--#IFNOT Migrating) vind ik niet goed";
+on the 13th "ik wil niet dat het prototype framework te veel weet van de semantiek
+van de back-end"; on the 16th "Als je het artikel goed leest, zie je dat het niet
+zomaar een procesregel is" and "Oei, dan zijn de demo-scripts niet gebouwd zoals
+het artikel voorschrijft."
 
 ## Gotcha
 
