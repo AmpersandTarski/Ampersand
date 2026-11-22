@@ -21,6 +21,7 @@ and lists fifteen requirements, DP-1 to DP-15, for the generator and the diagnos
 A sixteenth, DP-16, gives each of them a test in `testing/`.
 
 Two choices in this plan belong to the owner.
+On 22 November 2026 the owner chose option A in both.
 
 The first choice is the default markup of a text such as a `PURPOSE`.
 The default is reStructuredText.
@@ -41,8 +42,8 @@ and 115 contain a character that the two markups read differently
 (`*`, `_`, a backquote, `::`, or a line that starts with `-` or `#`).
 The count is an upper bound, because a character such as `_` in a name renders the same in both.
 All 250 texts of the Artefactenkaart are in contexts that declare `MARKDOWN`, so option B changes nothing there.
-This plan recommends A for the generator of stage 2,
-and leaves B to a release that announces a breaking change.
+The owner chose A for the generator of stage 2;
+B remains open for a release that announces a breaking change.
 
 The second choice is what describes a field of an interface.
 A field has no `PURPOSE` of its own, because it is part of its interface.
@@ -57,7 +58,7 @@ Option B gives a field a text of its own.
 That changes the language, and the rule of the syntax reference that a part of a thing needs no purpose.
 A third way, in which the compiler composes a description from the meanings in a composed term,
 is the composition of intent that requirement 2 of the issue rules out.
-This plan recommends A.
+The owner chose A.
 
 ## Why a plan
 
@@ -282,7 +283,7 @@ A requirement on a text that the modeller can write also gets a measure in the d
 
 | Gap reported in the issue | Requirement |
 | --- | --- |
-| A multi-line `PURPOSE` becomes a block quote with a definition list | DP-12, with the owner's choice on the default |
+| A multi-line `PURPOSE` becomes a block quote with a definition list | DP-12, with a warning of the diagnosis (option A) |
 | A context without patterns puts all its relations under one section "Other" | DP-5 |
 | The section for relations outside patterns has the English heading "Relation" where the Dutch reads "Overige relaties" (`ChapterConceptualAnalysis.hs:236`, found while writing this plan) | DP-5 |
 | 25 references `eq:ConceptualAnalysisrelation-…` stay undefined in the markdown output | DP-6 |
@@ -320,8 +321,9 @@ the purpose of `r` becomes a block quote with a definition list in it,
 and the purpose of `s` a block quote followed by a paragraph.
 With `MARKDOWN` on the context or on the purpose, both become one paragraph:
 "Eerste regel van de uitleg, met een ingesprongen vervolgregel."
-The owner chooses between options A and B of the [summary](#summary-and-decisions-for-the-owner);
-the test of DP-12 contains this script in both markups.
+The owner chose option A of the [summary](#summary-and-decisions-for-the-owner):
+reStructuredText stays the default, and the diagnosis warns about the purpose of `r`.
+The test of DP-12 contains this script in both markups.
 
 ## What stays hand-written
 
