@@ -126,10 +126,13 @@ het prototype-framework raken moet die repo daar doen", and later that day
 ## Documentation
 
 - Text that is published from this repository (documentation, issues, release
-  notes) names no register or agency of a client; a project name such as FC5 may stay.
+  notes) describes a client's register instead of naming it; a project name such as FC5 may stay.
   Stef on 28 October 2026, about issue #1744: "Noem het maar 'een landelijk geldend
   register van de Rijksoverheid'. Je mag het project en de context gerust FC5
   blijven noemen, want die naam zegt een buitenstaander niets."
+  The client's agency may be named: on 4 November 2026 Stef wrote
+  "de NVWA mag in het artikel bij naam genoemd worden",
+  and `docs/landingpage/1-interested-visitor.md` has named it since August 2026.
 - The documentation site (Docusaurus) is assembled from the `docs/` folders of
   several repositories. Ampersand's docs are published from the **`documentation`**
   branch, not `main`.
