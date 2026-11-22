@@ -246,6 +246,7 @@ module.exports = {
             type: 'category',
             items: [
                 'ampersand/ongoing-research/making-oscillation-risk-visible',
+                'ampersand/ongoing-research/documentation-plan',
             ]
         },
         {
