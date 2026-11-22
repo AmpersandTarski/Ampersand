@@ -17,8 +17,8 @@ This plan states what complete documentation of a context contains,
 so that the generator has a definition of done.
 It distinguishes four readers,
 names per element of the model what the modeller writes and what the compiler derives,
-and lists sixteen requirements, DP-1 to DP-16,
-each of which gets a measure in the diagnosis and a test in `testing/`.
+and lists fifteen requirements, DP-1 to DP-15, for the generator and the diagnosis.
+A sixteenth, DP-16, gives each of them a test in `testing/`.
 
 Two choices in this plan belong to the owner.
 
@@ -33,17 +33,31 @@ Option B makes Markdown the default;
 a context or a text that relies on reStructuredText then needs the word `REST`.
 Option A changes no existing script.
 Option B matches what modellers write elsewhere (the documentation site, GitHub, the CommonMark of OpenAPI),
-but it changes the rendering of every existing script that uses reStructuredText without saying so.
+but it changes the rendering of existing texts without saying so.
+A count on 22 November 2026 gives the size of that change.
+Of the 370 free texts (`{+ … +}`) in the 460 scripts under `testing/`, 251 use the default markup.
+Of those, 13 have an indented continuation line,
+and 115 contain a character that the two markups read differently
+(`*`, `_`, a backquote, `::`, or a line that starts with `-` or `#`).
+The count is an upper bound, because a character such as `_` in a name renders the same in both.
+All 250 texts of the Artefactenkaart are in contexts that declare `MARKDOWN`, so option B changes nothing there.
 This plan recommends A for the generator of stage 2,
 and leaves B to a release that announces a breaking change.
 
-The second choice is when a field of an interface inherits the `MEANING` of a relation.
-This plan proposes that a field inherits the meaning when its term, after normalisation,
-is one relation or its flip, which is the case in
-which the OpenAPI already emits `x-ampersand-relation` ([DP-7](#requirements)).
-Any other field gets its term and its CRUD rights, and no description; the diagnosis lists it.
-The alternative is to let the compiler compose a description from the meanings of the relations in a composed term.
-That is the composition of intent that requirement 2 of the issue rules out.
+The second choice is what describes a field of an interface.
+A field has no `PURPOSE` of its own, because it is part of its interface.
+This plan proposes that a field takes the `MEANING` and the `PURPOSE` of a relation
+when its term, after normalisation, is that relation, its flip, or either of them composed with an identity.
+These are the terms for which the OpenAPI description already emits `x-ampersand-relation` (`getExpressionRelation`).
+Every other field, such as one with the term `r;s` or `I`, gets its term and its CRUD rights, and no description.
+The diagnosis lists those fields as information,
+and does not count them as missing documentation, because the modeller has no place to write their text ([DP-7](#requirements)).
+Option A is this proposal.
+Option B gives a field a text of its own.
+That changes the language, and the rule of the syntax reference that a part of a thing needs no purpose.
+A third way, in which the compiler composes a description from the meanings in a composed term,
+is the composition of intent that requirement 2 of the issue rules out.
+This plan recommends A.
 
 ## Why a plan
 
@@ -185,7 +199,11 @@ A field of an interface has no `PURPOSE` of its own, because it is part of the i
 the [syntax reference](../reference-material/syntax-of-ampersand.md#the-purpose-statement) explains why.
 Its description therefore comes from the relation it shows, by the rule in DP-7.
 
-Two observations in the code follow from this table.
+Three observations in the code follow from this table.
+The function `purposesOf` (`src/Ampersand/FSpec/Motivations.hs`) finds the purposes of an element of a kind
+that has an instance of the class `Motivated`.
+`ViewDef` and `AEnforce` have no such instance,
+so no output can find a `PURPOSE VIEW` or a `PURPOSE ENFORCE`, although the parser accepts both.
 `Interface` has a field `ifcPurpose :: Text` next to `PURPOSE INTERFACE`.
 The parser fills that field with an empty text,
 and for an interface that Ampersand generates, `src/Ampersand/FSpec/ToFSpec/ADL2FSpec.hs:512`
@@ -238,8 +256,8 @@ It extends to every element in the table above, and lists per element what is mi
 
 Each requirement has a permanent identifier.
 Identifiers are never renumbered and never reused.
-Each requirement gets a test in `testing/` (stage 3),
-and each requirement that concerns the script gets a measure in the diagnosis.
+Each requirement gets a test in `testing/` (stage 3).
+A requirement on a text that the modeller can write also gets a measure in the diagnosis (DP-13).
 
 | Id | Requirement |
 | --- | --- |
@@ -249,15 +267,15 @@ and each requirement that concerns the script gets a measure in the diagnosis.
 | DP-4 | The functional design has a section on the interfaces: per interface its `PURPOSE`, roles, `API` and `TRANSACTIONAL` flags, root concept, and the tree of fields with label, term, relation, CRUD rights and the description of DP-7. |
 | DP-5 | The structure of the functional design mirrors the model: a section per pattern, and for elements outside patterns a section per kind of element, with a heading in the output language. |
 | DP-6 | Every cross-reference in the functional design resolves, in every output format. |
-| DP-7 | A field whose term normalises to one relation or its flip has the `MEANING` and `PURPOSE` of that relation as its description, with the direction stated when the relation is flipped. Any other field has no description, and the diagnosis lists it. |
+| DP-7 | A field whose term normalises to one relation, its flip, or either of them composed with an identity has the `MEANING` and `PURPOSE` of that relation as its description, with the direction stated when the relation is flipped. Any other field has no description; the diagnosis lists it as information and not as missing documentation. |
 | DP-8 | `openapi.json` carries the `PURPOSE CONTEXT` in `info.description`, the `PURPOSE INTERFACE` in the description of each operation of that interface, the description of DP-7 in the schema of each field, and the concept definition in the schema of each concept, all as CommonMark. |
 | DP-9 | The generics carry the texts of the section [The generics](#the-generics). |
 | DP-10 | Each text has one place in the FSpec, and every output takes it from there; for the same element, the functional design, `openapi.json` and the generics show the same text. |
 | DP-11 | The compiler composes no intent: every sentence it writes itself states a fact that follows from the script. |
 | DP-12 | A text of more than one line renders as the modeller meant it, by the markup choice in [Markup](#markup), in both markups. |
-| DP-13 | The diagnosis reports, per element of the table above, which required text is missing, including the fields without a description (DP-7) and the `ENFORCE` statements that cannot have a purpose because they have no name. |
+| DP-13 | The diagnosis reports, per element of the table above, which text that the modeller can write is missing, and the `ENFORCE` statements that cannot have a purpose because they have no name. It lists the fields without a description (DP-7) separately, as information. |
 | DP-14 | The diagnosis reports an element whose text exists only in a language other than the output language, because such a text is filtered out today without a warning. |
-| DP-15 | A project can let its build fail on missing documentation without parsing a document; the mechanism is chosen in stage 3. |
+| DP-15 | A project can let its build fail on missing documentation in the sense of DP-13, without parsing a document; the information about fields never fails a build. The mechanism is chosen in stage 3. |
 | DP-16 | Each requirement DP-1 to DP-15 has a test in `testing/` that fails when the requirement is not met. |
 
 ## How the plan covers the gaps of issue #1760
@@ -265,7 +283,8 @@ and each requirement that concerns the script gets a measure in the diagnosis.
 | Gap reported in the issue | Requirement |
 | --- | --- |
 | A multi-line `PURPOSE` becomes a block quote with a definition list | DP-12, with the owner's choice on the default |
-| A context without patterns puts all its relations in one section, whose English heading reads "Relation" (`ChapterConceptualAnalysis.hs:236`) | DP-5 |
+| A context without patterns puts all its relations under one section "Other" | DP-5 |
+| The section for relations outside patterns has the English heading "Relation" where the Dutch reads "Overige relaties" (`ChapterConceptualAnalysis.hs:236`, found while writing this plan) | DP-5 |
 | 25 references `eq:ConceptualAnalysisrelation-…` stay undefined in the markdown output | DP-6 |
 | `ENFORCE` statements and roles are absent, with their purposes | DP-2, DP-3 |
 | Interfaces and APIs are absent except for a table of concept against interface | DP-4 |
@@ -316,16 +335,11 @@ The compiler adds no links of its own.
 
 ## References
 
-- Daniele Procida, *Diátaxis*,
-  <https://diataxis.fr/start-here/> and <https://diataxis.fr/reference/>.
-- Write the Docs, *Documentation principles*,
-  <https://www.writethedocs.org/guide/writing/docs-principles/>.
-- Google, *Documentation best practices*,
-  <https://google.github.io/styleguide/docguide/best_practices>.
+- Daniele Procida, *Diátaxis*, [Start here](https://diataxis.fr/start-here/) and [Reference](https://diataxis.fr/reference/).
+- Write the Docs, [*Documentation principles*](https://www.writethedocs.org/guide/writing/docs-principles/).
+- Google, [*Documentation best practices*](https://google.github.io/styleguide/docguide/best_practices).
 - Titus Winters, Tom Manshreck and Hyrum Wright (eds.), *Software Engineering at Google*,
-  chapter 10, *Documentation*, <https://abseil.io/resources/swe-book/html/ch10.html>.
-- arc42, *The arc42 template*, <https://docs.arc42.org/home/>.
-- ISO/IEC/IEEE 26514:2022, *Systems and software engineering — Design
-  and development of information for users*, <https://www.iso.org/standard/77451.html>.
-- OpenAPI Initiative, *Providing documentation and examples*,
-  <https://learn.openapis.org/specification/docs>.
+  [chapter 10, *Documentation*](https://abseil.io/resources/swe-book/html/ch10.html).
+- arc42, [*The arc42 template*](https://docs.arc42.org/home/).
+- ISO/IEC/IEEE 26514:2022, [*Systems and software engineering — Design and development of information for users*](https://www.iso.org/standard/77451.html).
+- OpenAPI Initiative, [*Providing documentation and examples*](https://learn.openapis.org/specification/docs).
