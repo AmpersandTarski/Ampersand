@@ -157,8 +157,7 @@ The trial is an experiment that tries to refute the claim.
 The claim, registered first: for every relation of the script in production,
 the migration context reads the same pairs as the export of the production application gives.
 The experiment runs on a copy of the production database of the pilot (see phase 5).
-So the choice of the pilot comes before this phase,
-and the copy is made by the session of that project, under the rules that project has for its data.
+The copy is made by the session of that project, under the rules that project has for its data.
 The phase is done when the claim survives on that copy and the check reports no difference.
 It touches the table layout (`ADL2Plug`),
 the generation of views (`FSpec2SQL`, `TableSpec`) and a new command.
@@ -272,8 +271,8 @@ Choice 11 proposes generated files and the deployment street of the project inst
 
 ### 5. A trial migration, and the second one
 
-The pilot is Stef's choice, and it is open.
-I propose an application that runs in production with data that volunteers entered by hand,
+Stef chose the pilot on 26 November 2026.
+It is an application that runs in production with data that volunteers entered by hand,
 and whose model changes every few weeks.
 It keeps its data today by exporting the population, reinstalling and importing.
 That gives a comparison, and a way back if the trial disappoints.
