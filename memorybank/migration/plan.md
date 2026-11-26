@@ -128,24 +128,43 @@ and v5.12.0 lays tables out per database.
 So the migration context needs the layout that the production database has,
 not the layout of today's compiler for the same script.
 
-The application in production records its own layout:
-its generated file `relations.json` names the table and the columns of every relation,
-and `concepts.json` those of every concept.
+Stef decided on 26 November 2026 where that layout comes from.
+The schema of a system is its Ampersand source,
+and the layout is what the compiler of that deployment makes of that source.
+So every running container holds the source it was built from,
+together with the version of the compiler and the options of the build,
+and phase 2 gets the layout by compiling that source again with that compiler.
 
-Four directions are open.
+Part of this exists.
+The generated file `settings.json` records the version of the compiler, its options and a hash of the model.
+The generated file `relations.json` names the table and the columns of every relation,
+and `concepts.json` those of every concept.
+The image of the pilot holds its source, because its Dockerfile copies the project into it.
+A Dockerfile decides that today, so another project may not have it.
+I propose that the compiler writes the source files it read next to the files it generates,
+so that every deployment has them whatever its Dockerfile does.
+The hash of the model then tells whether a source and a compiler reproduce a deployment.
+
+What stays open is how the reconstructed layout reaches the compilation of the migration context,
+because today's compiler compiles that context and an older compiler may have built the deployment.
+The pilot runs on framework v2.18.1, and today's release is v2.25.0.
+Directions A and D below are the two ways; B and C change the system in production.
 
 | Direction | What it asks | What it costs |
 | --- | --- | --- |
 | A. The compiler computes for the included context the layout that a compilation by itself gives. Where a concept has no table, the view reads its atoms from the columns that hold them. | A change in `ADL2Plug` and in the generation of views. Nothing in production changes before the migration. | The compiler computes two layouts in one compilation; unknown until tried. It gives the layout of today's compiler, so it serves only a database that today's compiler would lay out the same way, and the check below has to refuse the others. |
-| D. The compiler takes the layout of the included context from the generated files of the application in production. | A way to hand those files to the compilation of the migration context, and views that follow them. Nothing in production changes before the migration. | A new input of the compiler; unknown until tried. It serves a database that an older compiler laid out, as long as its files are at hand. Issue #1401 and prototype issue #111 ask the same for the schema. |
+| D. The compiler takes the layout of the included context from the files that the compiler of the deployment generates from the stored source. | A way to hand those files to the compilation of the migration context, and views that follow them. Nothing in production changes before the migration. | A new input of the compiler; unknown until tried. It serves a database that an older compiler laid out. Issue #1401 and prototype issue #111 ask the same for the schema. |
 | B. The production database gets the tables it lacks, once, and its application is rebuilt with `--all-concept-tables`. | A script per project, and a rebuild whose model hash differs from the one the database records. | A change in production before the first migration, which is what the method avoids. |
 | C. Every concept gets a table in every prototype. | Reverting the choice of issue #1672. | More tables in every system, and the systems that are in production already still need B. |
 
 A and D both leave the existing system as it is, which the article assumes,
 and which the guide promises: being included changes nothing for the included context.
-I propose D, because it is the only direction that reads the layout the database has.
-A is the smaller change if D turns out to cost more than a trial of both on the two demonstrations suggests.
-Stef chooses after that trial, and the choice changes design choice DC-15.
+A suffices as long as the compiler of the deployment lays a script out as today's compiler does;
+D is needed when it does not.
+The first measurement of this phase therefore compiles the source of the pilot twice,
+with the compiler of its deployment and with today's, and compares the generated files.
+I propose D if they differ, because it is the direction that reads the layout the database has.
+Stef chooses after that measurement, and the choice changes design choice DC-15.
 
 The second part is a check, which issue #1405 asked for in 2023:
 a command that compares the tables
