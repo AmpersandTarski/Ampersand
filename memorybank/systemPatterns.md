@@ -16,7 +16,7 @@
 
 ### Container Architecture
 - **prototype**: Ampersand web application (port 80)
-- **prototype-db**: MariaDB 10.4 database
+- **prototype-db**: MariaDB 12.3 database
 - **phpmyadmin**: Database management interface (port 8080)
 
 ## Technische Sleutelbeslissingen

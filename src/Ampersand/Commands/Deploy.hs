@@ -214,18 +214,20 @@ compose members buildDir outDir =
       ]
     <> concatMap service members
     <> [ "  db:",
-         "    image: mariadb:10.6",
+         "    image: mariadb:12.3",
          "    restart: unless-stopped",
          "    command: [\"--lower-case-table-names=1\", \"--sql-mode=ANSI,TRADITIONAL\"]",
          "    environment:",
          "      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-ampersand}",
          "      - MYSQL_USER=ampersand",
          "      - MYSQL_PASSWORD=${MYSQL_AMPERSAND_PASSWORD:-ampersand}",
+         "      # Upgrades the system tables of a database volume made by an older MariaDB at startup.",
+         "      - MARIADB_AUTO_UPGRADE=1",
          "    volumes:",
          "      - db-data:/var/lib/mysql",
          "      - ./db-init:/docker-entrypoint-initdb.d",
          "    healthcheck:",
-         "      test: [\"CMD\", \"mysqladmin\", \"ping\", \"-h\", \"127.0.0.1\", \"-uampersand\", \"-p${MYSQL_AMPERSAND_PASSWORD:-ampersand}\", \"--silent\"]",
+         "      test: [\"CMD\", \"mariadb-admin\", \"ping\", \"-h\", \"127.0.0.1\", \"-uampersand\", \"-p${MYSQL_AMPERSAND_PASSWORD:-ampersand}\", \"--silent\"]",
          "      interval: 2s",
          "      timeout: 5s",
          "      retries: 45"

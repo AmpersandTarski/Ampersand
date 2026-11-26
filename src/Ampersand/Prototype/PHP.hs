@@ -184,7 +184,7 @@ executePHP phpPath = do
             "This is a database-connection failure, not a PHP defect.",
             "Ampersand reads MYSQL_HOST, MYSQL_USER and MYSQL_PASSWORD (defaults: 127.0.0.1, root, empty password).",
             "Point MYSQL_HOST at a reachable MariaDB, for example:",
-            "  docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:10.4",
+            "  docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:12.3",
             "  MYSQL_HOST=127.0.0.1:3310 ampersand validate <script.adl>"
           ]
       | otherwise = []

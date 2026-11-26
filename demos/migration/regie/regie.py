@@ -85,7 +85,7 @@ def docker(*args, stdin=None, check=True):
 
 
 def sql(query, db=None):
-    args = ["exec", "-i", DB, "mysql", "-uroot", "-pampersand", "-N", "-B"] + ([db] if db else [])
+    args = ["exec", "-i", DB, "mariadb", "-uroot", "-pampersand", "-N", "-B"] + ([db] if db else [])
     return docker(*args, stdin=query).strip()
 
 
@@ -118,9 +118,9 @@ def start_database():
     docker("run", "-d", "--name", DB, "--label", LABEL, "--network", NETWORK, "--network-alias", "db",
            "-v", f"{VOLUME}:/var/lib/mysql",
            "-e", "MYSQL_ROOT_PASSWORD=ampersand", "-e", "MYSQL_USER=ampersand", "-e", "MYSQL_PASSWORD=ampersand",
-           "mariadb:10.6", "--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL")
+           "mariadb:12.3", "--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL")
     wait_until("the database server", lambda: docker(
-        "exec", DB, "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pampersand", "--silent") is not None, 120)
+        "exec", DB, "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-pampersand", "--silent") is not None, 120)
     sql(GRANTS)
 
 

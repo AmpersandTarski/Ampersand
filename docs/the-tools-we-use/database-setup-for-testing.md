@@ -52,7 +52,7 @@ stack exec ampersand -- validate --verbose testing/Travis/testcases/prototype/sh
 
 ## Docker Configuration
 
-The `docker-compose.yml` file defines the database service with MariaDB 11.5. This matches the version used in GitHub Actions CI (see `.github/workflows/ci2.yml`).
+The `docker-compose.yml` file defines the database service with MariaDB 12.3. This matches the version used in GitHub Actions CI (see `.github/workflows/ci2.yml`).
 
 The database container restarts automatically when Docker starts, unless you stop it manually with `./db-stop.sh`.
 
@@ -100,4 +100,4 @@ The `.gitignore` file excludes the `mariadb_data/` directory from version contro
 
 ## Comparison with CI
 
-The GitHub Actions workflow in `.github/workflows/ci2.yml` uses the `shogo82148/actions-setup-mysql@v1` action to install MariaDB 11.5 directly on the runner. The local setup replicates this environment using Docker.
+The GitHub Actions workflow in `.github/workflows/ci2.yml` uses the `shogo82148/actions-setup-mysql@v1` action to install MariaDB 12.3 directly on the runner. The local setup replicates this environment using Docker.

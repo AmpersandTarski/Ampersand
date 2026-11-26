@@ -18,47 +18,47 @@ Zoek naar je database container (bijvoorbeeld `prototype-db` met MariaDB/MySQL).
 
 ### 2. Bekijk beschikbare databases
 ```bash
-docker exec -it <database-container-name> mysql -u <username> -p'<password>' -e "SHOW DATABASES;"
+docker exec -it <database-container-name> mariadb -u <username> -p'<password>' -e "SHOW DATABASES;"
 ```
 
 Voorbeeld:
 ```bash
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' -e "SHOW DATABASES;"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' -e "SHOW DATABASES;"
 ```
 
 ### 3. Bekijk tabellen in een database
 ```bash
-docker exec -it <database-container-name> mysql -u <username> -p'<password>' <database-name> -e "SHOW TABLES;"
+docker exec -it <database-container-name> mariadb -u <username> -p'<password>' <database-name> -e "SHOW TABLES;"
 ```
 
 Voorbeeld:
 ```bash
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc -e "SHOW TABLES;"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc -e "SHOW TABLES;"
 ```
 
 ### 4. Bekijk tabel structuur
 ```bash
-docker exec -it <database-container-name> mysql -u <username> -p'<password>' <database-name> -e "DESCRIBE <table-name>;"
+docker exec -it <database-container-name> mariadb -u <username> -p'<password>' <database-name> -e "DESCRIBE <table-name>;"
 ```
 
 Voorbeeld:
 ```bash
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc -e "DESCRIBE landcode;"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc -e "DESCRIBE landcode;"
 ```
 
 ### 5. Query specifieke data
 ```bash
-docker exec -it <database-container-name> mysql -u <username> -p'<password>' <database-name> -e "SELECT * FROM <table-name> WHERE <condition>;"
+docker exec -it <database-container-name> mariadb -u <username> -p'<password>' <database-name> -e "SELECT * FROM <table-name> WHERE <condition>;"
 ```
 
 Voorbeeld:
 ```bash
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc -e "SELECT * FROM landcode WHERE LandCode = 'BE';"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc -e "SELECT * FROM landcode WHERE LandCode = 'BE';"
 ```
 
 ### 6. Tel records in een tabel
 ```bash
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc -e "SELECT COUNT(*) FROM <table-name>;"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc -e "SELECT COUNT(*) FROM <table-name>;"
 ```
 
 ## Veelvoorkomende Ampersand tabellen
@@ -93,7 +93,7 @@ Als `mysql` niet beschikbaar is op je systeem, gebruik dan altijd `docker exec` 
 
 Voor complexere queries kun je een interactieve sessie starten:
 ```bash
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc
 ```
 
 Dan kun je interactief SQL queries uitvoeren.
@@ -115,8 +115,8 @@ Bij infinite loops in ExecEngine:
 
 ```bash
 # Voorbeeld: debugging defaultTaal infinite loop
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc -e "SELECT * FROM landcode WHERE defaultTaal IS NULL;"
-docker exec -it prototype-db mysql -u ampersand -p'ampersand' fc -e "SELECT * FROM officieletaal WHERE LandCode = 'BE';"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc -e "SELECT * FROM landcode WHERE defaultTaal IS NULL;"
+docker exec -it prototype-db mariadb -u ampersand -p'ampersand' fc -e "SELECT * FROM officieletaal WHERE LandCode = 'BE';"
 ```
 
 ## Beveiliging

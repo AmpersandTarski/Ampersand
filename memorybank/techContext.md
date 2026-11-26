@@ -71,7 +71,7 @@
 - **SCSS**: Styling framework for responsive design
 
 ### Database & Data
-- **MariaDB 10.4**: Primary database with generated schema
+- **MariaDB 12.3**: Primary database with generated schema
 - **Excel Import**: Runtime data loading via population scripts
 - **CSV Processing**: Alternative data import format
 
@@ -134,7 +134,7 @@ stack test                  # Run test suite
 - **Build Dependencies**: Complex Haskell library ecosystem
 
 ### Generated Framework Constraints
-- **Database**: MariaDB 10.4 for compatibility
+- **Database**: MariaDB 12.3 for compatibility
 - **PHP Runtime**: Generated applications use specific PHP/Apache stack
 - **Schema Generation**: Database schema auto-generated, no manual optimization
 - **Memory Usage**: Large Excel imports can be memory-intensive

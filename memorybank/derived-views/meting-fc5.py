@@ -31,7 +31,7 @@ BATCH = 90  # SHOW PROFILES keeps at most 100 entries
 
 def mysql(db, sql, raw=False):
     """Run a SQL script in the container; return stdout."""
-    args = ['docker', 'exec', '-i', CONTAINER, 'mysql', f'-u{USER}', f'-p{PW}', '-c', '--batch', '--raw', '--skip-column-names']
+    args = ['docker', 'exec', '-i', CONTAINER, 'mariadb', f'-u{USER}', f'-p{PW}', '-c', '--batch', '--raw', '--skip-column-names']
     if db:
         args.append(db)
     r = subprocess.run(args, input=sql.encode('utf-8'), capture_output=True)

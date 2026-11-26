@@ -22,7 +22,7 @@
 ### WARNING: When These Changes Occur
 
 **BEFORE proceeding with framework changes:**
-1. **Backup current database**: `docker exec prototype-db mysqldump -u ampersand -p[password] [database] > backup.sql`
+1. **Backup current database**: `docker exec prototype-db mariadb-dump -u ampersand -p[password] [database] > backup.sql`
 2. **Document current setup**: Note current framework version, Ampersand version, schema version
 3. **Test in isolation**: Use fresh database volume for testing new framework
 4. **Plan volume reset**: Be prepared to delete `db-data` volume if incompatibility occurs

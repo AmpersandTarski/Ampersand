@@ -19,7 +19,7 @@ scripts/test-local.sh
 The manual route is the same thing spelled out:
 
 ```sh
-docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:10.4
+docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:12.3
 MYSQL_HOST=127.0.0.1:3310 stack test
 ```
 

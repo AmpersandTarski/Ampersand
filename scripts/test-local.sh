@@ -17,6 +17,7 @@
 set -euo pipefail
 
 CONTAINER=ampersand-regression-db
+IMAGE=mariadb:12.3
 PORT=3310
 LOCK=/tmp/ampersand-regression-db.lock
 
@@ -28,13 +29,19 @@ fi
 
 if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
   if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+    HAS=$(docker inspect -f '{{.Config.Image}}' "$CONTAINER")
+    if [ "$HAS" != "$IMAGE" ]; then
+      echo "Container $CONTAINER runs $HAS; the regression suite expects $IMAGE." >&2
+      echo "It holds only temporary databases. Remove it with: docker rm -f $CONTAINER" >&2
+      exit 1
+    fi
     echo "Starting existing container $CONTAINER ..."
     docker start "$CONTAINER" >/dev/null
   else
-    echo "Creating container $CONTAINER (MariaDB 10.4 on 127.0.0.1:$PORT) ..."
+    echo "Creating container $CONTAINER (MariaDB 12.3 on 127.0.0.1:$PORT) ..."
     docker run -d --name "$CONTAINER" \
       -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
-      -p 127.0.0.1:$PORT:3306 mariadb:10.4 >/dev/null
+      -p 127.0.0.1:$PORT:3306 "$IMAGE" >/dev/null
   fi
 fi
 

@@ -79,7 +79,7 @@ services:
       - AMPERSAND_SERVER_URL=http://localhost:${NEW_PORT:-8082}
 
   db:
-    image: mariadb:10.6
+    image: mariadb:12.3
     restart: unless-stopped
     command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL"]
     environment:
@@ -90,7 +90,7 @@ services:
       - db-data:/var/lib/mysql
       - ./db-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uampersand", "-p${MYSQL_AMPERSAND_PASSWORD:-ampersand}", "--silent"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uampersand", "-p${MYSQL_AMPERSAND_PASSWORD:-ampersand}", "--silent"]
       interval: 2s
       timeout: 5s
       retries: 45

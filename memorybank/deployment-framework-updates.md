@@ -23,7 +23,7 @@ services:
       - AMPERSAND_DEBUG_MODE=true
 
   prototype-db:
-    image: mariadb:10.4
+    image: mariadb:12.3
     command: ["--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL"]
     volumes:
       - db-data:/var/lib/mysql
@@ -106,7 +106,7 @@ COPY --from=ampersandtarski/ampersand:development /bin/ampersand /usr/local/bin
 ### **Mitigatie Strategie**
 ```bash
 # 1. Backup voor update
-docker-compose exec prototype-db mysqldump --all-databases > backup.sql
+docker-compose exec prototype-db mariadb-dump --all-databases > backup.sql
 
 # 2. Staged rollout
 docker-compose stop prototype
@@ -150,7 +150,7 @@ RUN cd /var/www \
 
 ### **Pre-Update**
 - [ ] Check nieuwe release notes op GitHub
-- [ ] Backup database: `docker-compose exec prototype-db mysqldump...`
+- [ ] Backup database: `docker-compose exec prototype-db mariadb-dump...`
 - [ ] Backup huidige config bestanden
 - [ ] Test current state werkt correct
 
@@ -227,7 +227,7 @@ docker-compose build prototype
 docker-compose up -d
 
 # Database rollback indien nodig
-docker-compose exec prototype-db mysql < backup.sql
+docker-compose exec prototype-db mariadb < backup.sql
 ```
 
 ---
