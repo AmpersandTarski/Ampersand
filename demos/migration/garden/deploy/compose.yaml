@@ -86,6 +86,8 @@ services:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-ampersand}
       - MYSQL_USER=ampersand
       - MYSQL_PASSWORD=${MYSQL_AMPERSAND_PASSWORD:-ampersand}
+      # Upgrades the system tables of a database volume made by an older MariaDB at startup.
+      - MARIADB_AUTO_UPGRADE=1
     volumes:
       - db-data:/var/lib/mysql
       - ./db-init:/docker-entrypoint-initdb.d

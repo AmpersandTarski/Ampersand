@@ -118,6 +118,7 @@ def start_database():
     docker("run", "-d", "--name", DB, "--label", LABEL, "--network", NETWORK, "--network-alias", "db",
            "-v", f"{VOLUME}:/var/lib/mysql",
            "-e", "MYSQL_ROOT_PASSWORD=ampersand", "-e", "MYSQL_USER=ampersand", "-e", "MYSQL_PASSWORD=ampersand",
+           "-e", "MARIADB_AUTO_UPGRADE=1",
            "mariadb:12.3", "--lower-case-table-names=1", "--sql-mode=ANSI,TRADITIONAL")
     wait_until("the database server", lambda: docker(
         "exec", DB, "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-pampersand", "--silent") is not None, 120)
