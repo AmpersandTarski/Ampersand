@@ -1,0 +1,22 @@
+CONTEXT Library IN ENGLISH
+PURPOSE CONTEXT Library
+{+ The existing system of the migration cases, in production with this population.
+Each declaration stands for one kind of item in section 4.1 of
+"Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024):
+`title` is a relation that the desired system keeps, `shelf` one that it drops,
+and `loan` one whose name it keeps with another signature.
+The property [UNI] of `title` is a blocking invariant of both systems,
+and `titled` one that only this system has. +}
+
+RELATION title[Book*Title] [UNI]
+RELATION shelf[Book*Shelf] [UNI]
+RELATION loan[Book*Person]
+
+RULE titled : I[Book] |- title;title~
+MEANING "Every book has a title."
+
+POPULATION title[Book*Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION shelf[Book*Shelf] CONTAINS [ ("b1", "S1") ]
+POPULATION loan[Book*Person] CONTAINS [ ("b1", "Pete") ]
+
+ENDCONTEXT

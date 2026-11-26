@@ -2,9 +2,9 @@
   "title": "Community garden",
   "lang": "en",
   "home": "/plots",
-  "existing": "old",
+  "existing": "garden1",
   "migration": "migration",
-  "desired": "new",
+  "desired": "garden2",
   "relaxed": [
     "new.everyPlotHasKeeper"
   ],

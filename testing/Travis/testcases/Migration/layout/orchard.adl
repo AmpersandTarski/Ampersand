@@ -1,0 +1,13 @@
+CONTEXT Orchard IN ENGLISH
+-- An existing system with a typology in one wide table. A lemon is a citrus and a fruit,
+-- so its row names it in the columns of all three concepts.
+
+CLASSIFY Lemon, Orange ISA Citrus
+CLASSIFY Citrus ISA Fruit
+RELATION weight[Fruit*Gram] [UNI]
+RELATION picker[Fruit*Picker]
+
+POPULATION Lemon CONTAINS [ "l1" ]
+POPULATION weight CONTAINS [ ("l1", "90") ]
+
+ENDCONTEXT

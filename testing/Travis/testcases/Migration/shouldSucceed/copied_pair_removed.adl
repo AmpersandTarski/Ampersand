@@ -1,0 +1,15 @@
+CONTEXT Migration IN ENGLISH
+-- Step 2, a copied pair that a user removed.
+-- A user removed ("b2", "Ivanhoe") from new.title after it was copied, so copyTitle still has it.
+-- Both transactional invariants of step 2 remain satisfied, so the system does not copy the pair again,
+-- and the copying has terminated (eqn:copyingTerminates).
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+
+RULE copiedIntoNew : old.title - copyTitle |- new.title
+RULE copyRegistered : new.title /\ old.title |- copyTitle
+RULE copyingTerminates : old.title = copyTitle
+
+ENDCONTEXT

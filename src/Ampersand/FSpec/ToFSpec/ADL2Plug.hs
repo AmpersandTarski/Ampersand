@@ -14,7 +14,7 @@ import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.Core.AbstractSyntaxTree (Guarded (..), makeTypologies, sortGeneric2Specific, storageComponents)
-import Ampersand.Core.ParseTree (contextDatabases, foreignContexts, foreignLabelViews, ownDatabase)
+import Ampersand.Core.ParseTree (conceptTablesOfLabel, contextDatabases, foreignContexts, foreignLabelViews, ownDatabase)
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc.HasClasses
 import qualified RIO.List as L
@@ -144,6 +144,10 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 scView = id,
                 scTypologies = multiKernels (ctxInfo context),
                 scPrune = True,
+                scExact = False,
+                scBorrowed = const False,
+                scNeeded = (`elem` neededConcepts),
+                scReservedKeys = [],
                 scLocalise = id
               }
           ]
@@ -173,14 +177,46 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
     -- so that every context that reads the database computes the same names. In this context, the tables
     -- of another database carry the label of that context as a prefix.
     scopeOf :: (Maybe Text, [Maybe Text]) -> Scope
+    -- A database that an included context installs is laid out as that context lays it out when it is
+    -- compiled by itself, if the joined context records which concepts have a table there (phase 2 of
+    -- the migration plan): the context that includes it reads a database that is already in production.
+    -- Otherwise every concept gets a table (DC-15).
     scopeOf (root, onIt) =
       Scope
         { scMine = (`elem` onIt) . ownerOf,
           scView = maybe id viewOf root,
-          scTypologies = concatMap (split onIt) (multiKernels (ctxInfo context)),
-          scPrune = False,
+          scTypologies =
+            concatMap (split onIt) (multiKernels (ctxInfo context))
+              <> [ t
+                   | t <- multiKernels (ctxInfo context),
+                     any (any borrowedName . toList) (tyCpts t),
+                     all (all isReservedName . toList) (tyCpts t)
+                 ],
+          scPrune = isJust standAlone,
+          scExact = isJust standAlone,
+          scBorrowed = borrowed,
+          scNeeded = case standAlone of
+            Just cpts -> \c -> fullName (maybe id viewOf root (name c)) `elem` cpts
+            Nothing -> (`elem` neededConcepts),
+          -- Compiled by itself, the context has the tables of SESSION and ONE in its database as well,
+          -- and the name of a table of its own is disambiguated against them (a concept Session gets
+          -- the table Session_f7f1997). The names of its tables here have to be the same.
+          scReservedKeys = [c | isJust standAlone, c <- toList (concs context), name c `elem` [nameOfSESSION, nameOfONE]],
           scLocalise = maybe id localise root
         }
+      where
+        standAlone :: Maybe [Text]
+        standAlone = root >>= conceptTablesOfLabel (ctxmetas context)
+        -- A concept of Ampersand itself, such as SESSION or PrototypeContext.Role, is in every application.
+        -- Compiled by itself, the included context stores its own relations on such a concept as columns
+        -- in the table of that concept in its own database. So that table belongs to the layout of its database,
+        -- while the concept itself stays a concept of the compiled context.
+        borrowed :: A_Concept -> Bool
+        borrowed = borrowedName . name
+        borrowedName :: Name -> Bool
+        borrowedName nm = case standAlone of
+          Just cpts -> isReservedName nm && fullName nm `elem` cpts
+          Nothing -> False
     -- The part of a typology that the contexts on one database own.
     split :: [Maybe Text] -> Typology -> [Typology]
     split onIt typol =
@@ -220,8 +256,20 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
     allViewRelations = [enfRel e | e <- enforces context, enfStorage e == DerivedView]
 
     tablesOf :: Scope -> [PlugSQL]
-    tablesOf sc = map (scLocalise sc . makeTable) components <> map (scLocalise sc . makeViewPlug) viewRelations
+    tablesOf sc =
+      map (scLocalise sc) (filter (not . idle) (map (unborrow . makeTable) components))
+        <> map (scLocalise sc . makeViewPlug) viewRelations
       where
+        -- A borrowed table that holds no relation of this context is read by nothing here.
+        idle :: PlugSQL -> Bool
+        idle plug = case plug of
+          TblSQL {} -> null (cLkpTbl plug) && null (dLkpTbl plug)
+          BinSQL {} -> False
+        -- The compiled context looks up the atoms of a borrowed concept in its own table, never in this one.
+        unborrow :: PlugSQL -> PlugSQL
+        unborrow plug = case plug of
+          TblSQL {} -> plug {cLkpTbl = [(c, att) | (c, att) <- cLkpTbl plug, not (scBorrowed sc c)]}
+          BinSQL {} -> plug
         viewRelations :: [Relation]
         viewRelations = filter (scMine sc . name) allViewRelations
         components :: [(Maybe StorageComponent, [Relation])]
@@ -255,13 +303,18 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 -- that nothing reads. (issues #1672 and #1727)
                 -- A typology of a type whose atoms cannot be listed, such as
                 -- INTEGER, never gets a table: every integer exists beforehand.
-                typologyIsWorthStoring =
-                  all listable cpts
-                    && ( not (scPrune sc)
-                           || not (all (null . snd) candidates)
-                           || any isNeeded cpts
-                           || any holdsObjects cpts
-                       )
+                -- In a database that an included context installs, the compilation of that context by itself
+                -- decides alone: an interface of the compiled context can make a concept of it an object,
+                -- while the database in production has no table for it.
+                typologyIsWorthStoring
+                  | scExact sc = all listable cpts && any isNeeded cpts
+                  | otherwise =
+                      all listable cpts
+                        && ( not (scPrune sc)
+                               || not (all (null . snd) candidates)
+                               || any isNeeded cpts
+                               || any holdsObjects cpts
+                           )
             -- A MULTITABLE union concept has no table of its own (issue #1716). It
             -- is cut loose from its members by the mark, so it is a component by
             -- itself, and that component gets no table.
@@ -270,7 +323,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
             -- Eq on A_Concept is alias intersection, so compare with `elem` rather
             -- than through a Set (whose Ord instance compares whole alias sets).
             isNeeded :: A_Concept -> Bool
-            isNeeded cpt = cpt `elem` neededConcepts
+            isNeeded = scNeeded sc
             -- ONE is an object by type, and it never has a table.
             holdsObjects :: A_Concept -> Bool
             holdsObjects cpt = cpt /= ONE && ctxReprType context cpt `elem` [Object, MultiTable]
@@ -306,7 +359,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
           (Nothing, _) -> fatal "Cannot build a link table with more than one relation."
           (Just comp, _) -> makeConceptTable comp rels
         allKeyConcepts :: [A_Concept]
-        allKeyConcepts = map scRoot allStorageComponents
+        allKeyConcepts = L.nub (map scRoot allStorageComponents <> scReservedKeys sc)
         allLinkTableRelations :: [Relation]
         allLinkTableRelations = concatMap snd . filter (isNothing . fst) $ components
         makeConceptTable :: StorageComponent -> [Relation] -> PlugSQL
@@ -585,7 +638,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
         -- A relation is a column in the table of a concept of this context, if that concept has a table at all:
         -- a concept whose atoms cannot be listed, such as an INTEGER, has none, so its relations get a table of their own.
         mayHoldRelations :: A_Concept -> Bool
-        mayHoldRelations c = scMine sc (name c) && canBeEnumerated (ctxReprType context c)
+        mayHoldRelations c = (scMine sc (name c) || scBorrowed sc c) && canBeEnumerated (ctxReprType context c)
 
 -- | this function tells how a given relation is to be stored. If stored
 --   in a concept table, it returns that concept. It returns a boolean
@@ -614,6 +667,15 @@ data Scope = Scope
     scTypologies :: [Typology],
     -- | whether a concept table that no query reads is left out (issue #1672)
     scPrune :: Bool,
+    -- | whether a concept needs a table of its own, when concept tables are left out
+    scNeeded :: A_Concept -> Bool,
+    -- | whether scNeeded alone decides which typologies are stored (the layout of a compilation by itself)
+    scExact :: Bool,
+    -- | a concept of another context whose table in this database holds relations of this context;
+    --   the table is not a concept table of that concept in the compiled context
+    scBorrowed :: A_Concept -> Bool,
+    -- | concepts of other contexts against whose tables the names of the tables of this context are disambiguated
+    scReservedKeys :: [A_Concept],
     -- | the name by which the compiled context knows a table of the context
     scLocalise :: PlugSQL -> PlugSQL
   }
@@ -627,8 +689,16 @@ foreignTable roots plug =
   case nameSpaceOf (either name name (mainItem plug)) of
     h : _
       | Just root <- L.lookup (namePartToText h) roots ->
-          Just (namePartToText h, T.drop (T.length root + 1) (text1ToText (sqlColumNameToText1 (sqlname plug))))
-    _ -> Nothing
+          Just (namePartToText h, T.drop (T.length root + 1) plugName)
+    _
+      -- The table of a concept of Ampersand itself, such as SESSION, in the database of another context
+      -- holds relations of that context (see scBorrowed); its name carries the label of the installing context.
+      | isReservedName (either name name (mainItem plug)),
+        root : _ <- [r | (_, r) <- roots, (r <> ".") `T.isPrefixOf` plugName] ->
+          Just (root, T.drop (T.length root + 1) plugName)
+      | otherwise -> Nothing
+  where
+    plugName = text1ToText (sqlColumNameToText1 (sqlname plug))
 
 suitableAsKey :: TType -> Bool
 suitableAsKey st =

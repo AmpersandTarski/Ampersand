@@ -1,0 +1,12 @@
+CONTEXT Migration IN ENGLISH
+-- The counterpart of copied_pair_removed: ("b2", "Ivanhoe") is missing from new.title
+-- and copyTitle does not register it. Then the transactional invariant of step 2 that fills new.title
+-- is violated, so the system would copy the pair again. copyTitle is what prevents that.
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ]
+
+RULE copiedIntoNew : old.title - copyTitle |- new.title
+
+ENDCONTEXT

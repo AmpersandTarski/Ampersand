@@ -1,0 +1,10 @@
+CONTEXT Migration INCLUDES Garden FROM "../layout/garden.adl" AS old
+CONTEXT Migration IN ENGLISH
+-- The existing system Garden, compiled by itself, has no table for Gardener:
+-- no query of its own reads the atoms of that concept, so they are only in the column of keeper.
+-- The migration context reads them from that column (claim PRF-27, phase 2 of the migration plan).
+-- ampersand validate compares the SQL that does so with the evaluator of the compiler.
+
+RULE gardenersAreKeepers : I[old.Gardener] = old.keeper~;old.keeper
+
+ENDCONTEXT

@@ -1,0 +1,11 @@
+CONTEXT Migration IN ENGLISH
+-- The counterpart of violation_repaired: b1 is registered in fixedAuthored but has no author (any more).
+-- The blocking invariant of step 3 refuses that (eqn:blockRule): its violations are the violations
+-- of authored that fixedAuthored registers. So a repaired violation cannot return.
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION fixedAuthored[new.Book*new.Book] CONTAINS [ ("b1", "b1") ]
+
+ENDCONTEXT

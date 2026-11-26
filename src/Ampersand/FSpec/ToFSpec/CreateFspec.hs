@@ -19,7 +19,7 @@ import Ampersand.ADL1
 import Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import Ampersand.Basics
 import Ampersand.Core.A2P_Converters (aRelation2pRelation)
-import Ampersand.Core.ParseTree (mkPConcept, relaxedRules)
+import Ampersand.Core.ParseTree (contextDatabases, mkConceptTablesMeta, mkPConcept, relaxedRules, rootLabelOf)
 import Ampersand.Core.ShowAStruct (showA)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
@@ -35,6 +35,7 @@ import Ampersand.Runners (logLevel)
 import Ampersand.Types.Config (HasRunner, runnerL)
 import RIO.Char (toUpper)
 import RIO.List (sortOn)
+import qualified RIO.List as L
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -84,7 +85,8 @@ createFspec =
     userScript <- do
       rootFiles <- view rootFileL
       -- the P_Context of the user's sourceFile, with what the compiler adds for relaxed invariants
-      (>>= hardenRelaxedInvariants env) . snd <$> parseFilesTransitive rootFiles
+      parsed <- (>>= hardenRelaxedInvariants env) . snd <$> parseFilesTransitive rootFiles
+      withStandAloneLayouts parsed
     pContext <-
       case recipe of
         Standard -> pure userScript
@@ -128,6 +130,40 @@ createFspec =
             checkPrototypeContextTransformers env pcScript
             pure (one `mergeContexts` two `mergeContexts` pcScript)
     pure (pCtx2Fspec env =<< pContext)
+
+-- | A context that includes a context on another database reads a database that the included context installs.
+--   In production that database was laid out by the included context compiled by itself.
+--   So the compiler compiles every included context that installs a database by itself as well,
+--   with the same options and the same recipe (the option --context),
+--   and records which concepts have a table of their own there (phase 2 of the migration plan).
+--   'Ampersand.FSpec.ToFSpec.ADL2Plug' lays out the tables of that database accordingly.
+withStandAloneLayouts ::
+  (HasDirOutput env, HasTrimXLSXOpts env, HasFSpecGenOpts env, HasRunner env) =>
+  Guarded P_Context ->
+  RIO env (Guarded P_Context)
+withStandAloneLayouts gCtx = case gCtx of
+  Errors _ -> pure gCtx
+  Checked ctx ws -> do
+    let installers = L.nub [l | (l, _, "") <- contextDatabases (ctx_metas ctx), l /= ""]
+    layouts <- traverse layoutOf installers
+    pure $ do
+      recorded <- sequenceA layouts
+      addWarnings ws (pure ctx {ctx_metas = ctx_metas ctx <> recorded})
+  where
+    layoutOf :: (HasDirOutput env, HasTrimXLSXOpts env, HasFSpecGenOpts env, HasRunner env) => Text -> RIO env (Guarded MetaData)
+    layoutOf l = do
+      -- the option --context names the context by the label that the root file has for it
+      let inRoot = fromMaybe l (rootLabelOf (ctx_metas ctx') l)
+          ctx' = case gCtx of
+            Checked c _ -> c
+            Errors _ -> fatal "withStandAloneLayouts lays out a context that does not compile."
+      gFSpec <- local (set compiledContextL inRoot) createFspec
+      pure $ do
+        fSpec <- gFSpec
+        pure
+          . mkConceptTablesMeta OriginUnknown l
+          . L.nub
+          $ [fullName c | InternalPlug plug <- plugInfos fSpec, (c, _) <- cLkpTbl plug]
 
 -- | make sure that the relations defined in formalampersand.adl are in sync with the transformers of formal ampersand.
 checkFormalAmpersandTransformers :: (HasFSpecGenOpts env, HasRunner env) => env -> P_Context -> Guarded ()

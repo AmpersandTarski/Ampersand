@@ -2,9 +2,9 @@
   "title": "Gemeenschapstuin",
   "lang": "nl",
   "home": "/bedden",
-  "existing": "old",
+  "existing": "tuin1",
   "migration": "migratie",
-  "desired": "new",
+  "desired": "tuin2",
   "relaxed": [
     "new.elkBedHeeftBeheerder"
   ],

@@ -1,0 +1,15 @@
+CONTEXT Migration INCLUDES Garden FROM "../layout/garden.adl" AS old
+CONTEXT Migration IN ENGLISH
+-- An atom of a relation is an atom of its concepts. The migration context has a relation of its own
+-- on old.Gardener, such as a register of copying, and Bob is only in that relation.
+-- The existing system has no table for Gardener, so the atoms of old.Gardener are read from the columns
+-- of every relation that holds them: Ann from old.keeper, Bob from mentor (claim PRF-27).
+-- The interface makes old.Gardener a concept of objects, which must not give it a table in the
+-- database of the existing system. ampersand validate compares the SQL of I[old.Gardener] with the evaluator.
+
+RELATION mentor[old.Gardener*old.Gardener]
+POPULATION mentor CONTAINS [ ("Bob", "Bob") ]
+
+INTERFACE Gardeners : I[old.Gardener] cRud BOX [ mentor : mentor cRud ]
+
+ENDCONTEXT

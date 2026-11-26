@@ -230,6 +230,7 @@ library
       Ampersand.Test.IFC.IFCWiringTest
       Ampersand.Test.Incremental.CandidateProperties
       Ampersand.Test.Incremental.CostProfileTests
+      Ampersand.Test.MultiContext.IncludedLayoutTests
       Ampersand.Test.MultiContext.QualifyProperties
       Ampersand.Test.Multitable.StorageLayoutTests
       Ampersand.Test.Incremental.Properties

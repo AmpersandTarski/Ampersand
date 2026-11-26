@@ -1,0 +1,15 @@
+CONTEXT Migration IN ENGLISH
+-- Steps 3 and 4, a repaired violation.
+-- A user gave b1 an author, and fixedAuthored registers b1 (eqn:enforceForRules):
+-- fixedAuthored contains every book that satisfies authored.
+-- b2 still violates authored; that is a signal to the librarian (B_fix) and no reason to refuse.
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION new.author[new.Book*new.Writer] CONTAINS [ ("b1", "Austen") ]
+POPULATION fixedAuthored[new.Book*new.Book] CONTAINS [ ("b1", "b1") ]
+
+RULE fixedRegistersRepairs : I[new.Book] /\ new.author;new.author~ |- fixedAuthored
+
+ENDCONTEXT

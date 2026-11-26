@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Install the applications of the system, each on its own database.
-# A context is installed after every context it reaches, because it reads their tables.
+# Install the applications of the system, one per database.
+# A database is installed after every database it reads, because it has views on their tables.
 # Installing an application replaces its database, and no other.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -15,6 +15,6 @@ install() {
   curl -sS -f "http://localhost:$2/api/v1/admin/installer${INSTALLER_OPTIONS:-}" >/dev/null
 }
 
-install old "${OLD_PORT:-8081}"
-install new "${NEW_PORT:-8082}"
+install garden1 "${GARDEN1_PORT:-8081}"
+install garden2 "${GARDEN2_PORT:-8082}"
 install migration "${MIGRATION_PORT:-8080}"

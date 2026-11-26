@@ -1,0 +1,13 @@
+CONTEXT Migration INCLUDES Garden FROM "garden.adl" AS old,
+                           Orchard FROM "orchard.adl" AS orchard,
+                           Visits FROM "visits.adl" AS visits
+CONTEXT Migration IN ENGLISH
+-- A migration context includes systems that run in production, each on a database of its own.
+-- The test of the storage layout (Ampersand.Test.MultiContext.IncludedLayoutTests) compiles each
+-- included context by itself as well, and requires that this context reads its database
+-- in the tables and columns that the compilation by itself creates (claim PRF-27).
+
+RELATION copyName[old.Plot*old.PlotName]
+ENFORCE copyNameDone : copyName >: old.name
+
+ENDCONTEXT

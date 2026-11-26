@@ -1,0 +1,12 @@
+CONTEXT Completed INCLUDES Library FROM "../contexts/library_existing.adl" AS old,
+                           Library FROM "../contexts/library_desired.adl" AS new
+CONTEXT Completed IN ENGLISH
+-- The counterpart of completed: the desired system takes over while b2 has no author.
+-- Its blocking invariant authored refuses that. This is why the migration needs a system in between.
+CLASSIFY old.Book ISA new.Book
+CLASSIFY old.Title ISA new.Title
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION new.author[new.Book*new.Writer] CONTAINS [ ("b1", "Austen") ]
+
+ENDCONTEXT

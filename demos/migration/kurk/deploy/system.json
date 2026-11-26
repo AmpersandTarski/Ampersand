@@ -2,44 +2,55 @@
     "contexts": [
         {
             "context": "Migration",
+            "contexts": [
+                "Migration"
+            ],
             "databaseVariable": "MIGRATION_DBNAME",
-            "defaultDatabase": "migration_1",
+            "defaultDatabase": "Migration",
             "label": "",
             "port": 8080,
             "reaches": [
                 {
-                    "label": "old",
-                    "service": "old"
+                    "database": "Kurk_1",
+                    "label": "Kurk_1",
+                    "service": "kurk1"
                 },
                 {
-                    "label": "new",
-                    "service": "new"
+                    "database": "Kurk_2",
+                    "label": "Kurk_2",
+                    "service": "kurk2"
                 }
             ],
             "service": "migration"
         },
         {
             "context": "Kurk",
-            "databaseVariable": "OLD_DBNAME",
-            "defaultDatabase": "kurk_1",
+            "contexts": [
+                "Kurk"
+            ],
+            "databaseVariable": "KURK1_DBNAME",
+            "defaultDatabase": "Kurk_1",
             "label": "old",
             "port": 8081,
             "reaches": [],
-            "service": "old"
+            "service": "kurk1"
         },
         {
             "context": "Kurk",
-            "databaseVariable": "NEW_DBNAME",
-            "defaultDatabase": "kurk_2",
+            "contexts": [
+                "Kurk"
+            ],
+            "databaseVariable": "KURK2_DBNAME",
+            "defaultDatabase": "Kurk_2",
             "label": "new",
             "port": 8082,
             "reaches": [],
-            "service": "new"
+            "service": "kurk2"
         }
     ],
     "installOrder": [
-        "old",
-        "new",
+        "kurk1",
+        "kurk2",
         "migration"
     ]
 }

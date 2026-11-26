@@ -1,0 +1,12 @@
+CONTEXT Migration IN ENGLISH
+-- A blocking invariant of the existing system that the desired system drops.
+-- The migration system keeps only the invariants of both systems and the new ones (eqn:schema migrsys).
+-- A user adds book b3 without a title, which the rule titled of the existing system would refuse.
+-- The migration system accepts it: titled concerns old.Book, and b3 is a book of the desired system only.
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION new.Book CONTAINS [ "b3" ]
+
+ENDCONTEXT

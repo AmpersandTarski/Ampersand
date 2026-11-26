@@ -16,17 +16,19 @@ module Ampersand.Input.Parsing
 where
 
 import Ampersand.ADL1
-  ( Origin (Origin),
+  ( Origin (Origin, OriginUnknown),
     P_Context,
     Term,
     TermPrim,
     ctx_ds,
     ctx_ifcs,
+    ctx_metas,
     ctx_nm,
     ctx_pops,
     mergeContexts,
   )
 import Ampersand.Basics
+import Ampersand.Core.ParseTree (mkRootLabelMeta)
 import Ampersand.Core.ShowPStruct (showP)
 import Ampersand.Input.ADL1.CtxError
   ( Guarded (..),
@@ -184,7 +186,21 @@ parseThings wanted roots = do
                   sysNamed = named
                 }
         viewer <- choose sys
-        flattenSystem sys {sysViewer = viewer}
+        flat <- flattenSystem sys {sysViewer = viewer}
+        -- The option --context names a context by its label in the root file. A label of the compiled
+        -- context can differ from that, so the compiler records both, to compile an included context
+        -- by itself (see withStandAloneLayouts in Ampersand.FSpec.ToFSpec.CreateFspec).
+        own <- systemLabels sys {sysViewer = viewer}
+        fromRoot <- systemLabels sys
+        let inRoot k
+              | k == sysViewer sys = Just ""
+              | otherwise = namePartToText <$> L.lookup k fromRoot
+        pure
+          flat
+            { ctx_metas =
+                ctx_metas flat
+                  <> [mkRootLabelMeta OriginUnknown (namePartToText l) r | (k, l) <- own, Just r <- [inRoot k]]
+            }
   where
     choose :: System -> Guarded ContextKey
     choose sys
