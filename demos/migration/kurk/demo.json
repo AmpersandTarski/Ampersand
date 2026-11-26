@@ -1,9 +1,9 @@
 {
   "title": "Kurk",
   "home": "/kurk",
-  "existing": "old",
+  "existing": "kurk1",
   "migration": "migration",
-  "desired": "new",
+  "desired": "kurk2",
   "relaxed": [
     "new.totalR"
   ],

@@ -13,7 +13,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 action="${1:-}"; demo="${2:-kurk}"
-export FRAMEWORK_IMAGE="${FRAMEWORK_IMAGE:-ampersandtarski/prototype-framework:v2.18.0}"
+export FRAMEWORK_IMAGE="${FRAMEWORK_IMAGE:-ampersandtarski/prototype-framework:v2.25.0}"
 REGIE_PORT="${REGIE_PORT:-8200}"; APP_PORT="${APP_PORT:-8201}"
 label="migration-demo=$demo"
 [ -f "$demo/demo.json" ] || { echo "unknown demonstration: $demo"; exit 64; }

@@ -46,6 +46,10 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | [PRF-22](#prf-22) | The five absorption laws of the normaliser hold in the set semantics, two of them under the typing premise, and the former second law is refuted | machine-checked | [`proofs/rewriteLaws/RewriteLaws.lean`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/rewriteLaws/RewriteLaws.lean), Lean 4 | — |
 | [PRF-19](#prf-19) | The view generated for `ENFORCE r := term` selects, in every database state, the set of pairs that the ExecEngine would store in `r` at its fixpoint, and a conjunct that reads such a view is re-evaluated by every transaction that can change it | stated | obligation stated with the option `--derived-views` of issue #1744; carried in code by `derivedViewBinQuery` in `Ampersand.FSpec.SQL`, `decideDerivedViews` and `inlineViews` in `Ampersand.ADL1.DerivedViews`; the regression tests `testing/derivedViews` compare the generated SQL with the compiler's evaluator | TRAIL-1 |
 | [PRF-21](#prf-21) | The selection on the concept table that the generator writes for `I[A] /\ e;e~` selects the same pairs as the general translation through the self-join `e;e~`, and the range form `I[A] /\ e~;e` likewise | machine-checked | [`proofs/domainOfRelation/DomainOfRelation.lean`](https://github.com/AmpersandTarski/Ampersand/blob/main/proofs/domainOfRelation/DomainOfRelation.lean), theorems `same_pairs` and `same_pairs_range` | TRAIL-1 |
+| [PRF-23](#prf-23) | When the copying of a migration has ended and no user deleted a pair in the desired system, every pair of a relation that the existing and the desired system share is in the desired system | stated | obligation stated with the migration plan of issue #1393 (`memorybank/migration/plan.md`) | — |
+| [PRF-24](#prf-24) | At the moment of transition the migration system violates none of its blocking invariants, given that the existing system satisfies its own | stated | obligation stated with the migration plan of issue #1393; the second point of the validation in the RAMiCS 2024 article | — |
+| [PRF-25](#prf-25) | At the moment of completion a relation that only the migration system has holds nothing that the desired system needs, so the migration system can be removed | stated | obligation stated with the migration plan of issue #1393 | — |
+| [PRF-26](#prf-26) | The script that the generator of migration scripts writes is the schema of the migration system that the RAMiCS 2024 article defines | stated | obligation stated with the migration plan of issue #1393; to be bound to the code by property tests | — |
 
 ### PRF-1 {#prf-1}
 
@@ -171,6 +175,30 @@ Two habits keep these statuses honest. A status is recorded only after the build
 **The selection on the concept table that the generator writes for `I[A] /\ e;e~` selects the same pairs as the general translation through the self-join `e;e~`, and the range form `I[A] /\ e~;e` likewise.** The term `I[A] /\ e;e~` denotes the domain of `e` on the atoms of `A`: the pairs (x,x) with x in `A` and a partner of x in `e`. The general translation of an intersection computes `e;e~` as a self-join of `e` and keeps the rows on the diagonal whose source is an atom of `A`; `domainCase` in `Ampersand.FSpec.SQL` (issue #1748) writes instead a selection on the concept table of `A` with `IN` over the source column of `e`, and over the target column for `I[A] /\ e~;e`. The claim is that the two queries select the same set of pairs in every database state.
 
 *Artifact:* `proofs/domainOfRelation/DomainOfRelation.lean`, Lean 4.34.1 with the core library only, no mathlib; build observed on 30 October 2026 with `lake build`. A table is a list of rows, so duplicates count as in SQL, and a concept table is a list of atoms. `mem_compose_converse` characterises `e;e~`, `mem_selfJoinQuery` and `mem_domainQuery` characterise the two queries by the same proposition in `calc` chains, `same_pairs` is the claim, and `same_pairs_range` instantiates it on the converse of `e`. *Boundary:* the claim assumes, like PRF-12, that the query of `e` yields no `NULL` in its source or target column, and it is about the set of pairs: the general translation can return a diagonal row more than once, and every generated query that reads either translation applies `select distinct`. That the Haskell function produces the SQL the file models is guarded by the regression test `testing/Travis/testcases/DomainOfRelation`, which `ampersand validate` runs against the compiler's evaluator. The special case fires where the term is a sub-term of a rule; when a rule is `I[A] /\ e;e~ |- s` as a whole, the normalisation of the rule spreads the intersection over its conjuncts and the general translation applies, which the claim does not concern.
+
+### PRF-23 {#prf-23}
+
+**When the copying of a migration has ended and no user deleted a pair in the desired system, every pair of a relation that the existing and the desired system share is in the desired system.** Step 2 of *Data Migration under a Changing Schema in Ampersand* (Joosten and Joosten, RAMiCS 2024) gives every shared relation `r` a relation `copy_r` and two transactional invariants: one inserts into `new.r` the pairs of `old.r` that are not in `copy_r`, the other inserts into `copy_r` the pairs in both `new.r` and `old.r`. The article says that the copying terminates when `old.r = copy_r` for every shared relation. The claim is that at that point `old.r ⊆ new.r`, under the premise that no pair left `new.r` after it was copied.
+
+*Status:* stated — registered with phase 1 of the migration plan, before the generator of phase 3 is built. *Boundary:* a pair that a user deletes from `new.r` stays deleted, which is the purpose of `copy_r`; a pair deleted in the existing system after it was copied is choice 8 of the plan.
+
+### PRF-24 {#prf-24}
+
+**At the moment of transition the migration system violates none of its blocking invariants, given that the existing system satisfies its own.** The migration system holds the invariants of the desired system that the existing data satisfies, the blocking invariants that steps 3 and 4 of the article add, and the transactional invariants of step 2. The users move to the migration system at the moment of transition. The claim is that no transaction of a user is then refused for a violation that the users did not cause. This is the second point of the validation in the article.
+
+*Status:* stated. *Boundary:* the claim depends on which invariants count as new (choice 3 of the plan); an invariant that the existing data violates and that the generator does not relax makes the migration context fail to install, which the report of the generator is meant to prevent.
+
+### PRF-25 {#prf-25}
+
+**At the moment of completion a relation that only the migration system has holds nothing that the desired system needs, so the migration system can be removed.** The migration system has relations of its own: `copy_r` of step 2, `fixed_u` of steps 3 and 4, and a relation that stands in for a column of the desired system while a new `[UNI]` or `[INJ]` is violated (choice 2 of the plan). The claim is that once the copying has ended and no violation of a relaxed invariant is left, the population of the desired system is the population that the users mean, and removing the migration system and its database loses no pair of the desired system.
+
+*Status:* stated.
+
+### PRF-26 {#prf-26}
+
+**The script that the generator of migration scripts writes is the schema of the migration system that the RAMiCS 2024 article defines.** The article defines the migration schema as a function of the schema of the existing and of the desired system (section 4.1, steps 1 to 6). The generator of phase 3 of the migration plan writes that schema as an Ampersand script, which the compiler joins with the two included contexts. The claim is that the joined context has the relations, the rules and the transactional invariants of the article's migration schema, relabelled as the inclusion relabels them.
+
+*Status:* stated. Property tests in `stack test` are to bind the claim to the code.
 
 ## Trails
 

@@ -338,8 +338,9 @@ def watch():
                 containers[part] = "absent" if status is None else "running" if status == "running" else "starting"
             containers["database"] = "running" if running.get(DB) == "running" else "absent"
             containers["flipper"] = "running" if running.get(FLIPPER) == "running" else "absent"
+            # The server lowercases the names of databases (--lower-case-table-names=1), and a name in system.json need not be lowercase.
             existing = sql("SHOW DATABASES").split() if containers["database"] == "running" else []
-            databases = {part: database(part) for part in SERVICE if database(part) in existing}
+            databases = {part: database(part) for part in SERVICE if database(part).lower() in existing}
             with lock:
                 phase, busy = state["phase"], state["busy"]
             ready, violations = False, []

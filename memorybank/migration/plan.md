@@ -120,6 +120,25 @@ What the compilation of the pilot brings is unknown; a failure there is a findin
 The phase is done when the three counts are recorded with the versions,
 the installation and the compilation of the pilot are reported, and #1393 links to this plan.
 
+The phase ran on 26 November 2026, with compiler v5.15.0 and framework v2.25.0;
+`main` has changed no code of the compiler since that release.
+
+- The demonstrations did not install their migration system at first.
+  Since v5.12.0 the compiler names the database of an included context after the context (`Kurk_1`),
+  and the directories `deploy` still named it after the alias (`old`).
+  They are generated again with v5.15.0, and the director compares names of databases in lowercase,
+  as the database server stores them.
+  After that `test.sh` gave 45 of 45 for `kurk`, 51 of 51 for `garden` and 51 of 51 for `tuin`, as in October.
+- The measurement of the tables gave the same result on v5.15.0, for all three demonstrations.
+- A migration system installed against the database of an existing system compiled by itself fails:
+  "Table 'garden_1.gardener' doesn't exist".
+  The same installation with the existing system compiled as the migration context expects it succeeds.
+  This is the observation that phase 2 starts from.
+- The script of the pilot does not compile with v5.15.0 (see phase 2).
+  Seven of its thirteen errors are properties such as `[UNI]` on a relation to a concept of integers or dates,
+  which every compiler since v5.13.0 refuses; that is issue #1765.
+- PRF-23 to PRF-26 state the proof obligations below, and issue #1714 is closed.
+
 ### 2. Reading a production database as it is
 
 The measurement above is the observation.
@@ -141,9 +160,10 @@ The generated file `settings.json` records the version of the compiler, its opti
 The generated file `relations.json` names the table and the columns of every relation,
 and `concepts.json` those of every concept.
 The image of the pilot holds its source, because its Dockerfile copies the project into it.
-A Dockerfile decides that today, so another project may not have it.
-I propose that the compiler writes the source files it read next to the files it generates,
-so that every deployment has them whatever its Dockerfile does.
+The Dockerfile of a project stores the source, as Stef decided on 26 November 2026:
+the compiler knows as little as possible of deployment,
+except the Docker infrastructure that `ampersand deploy` generates for a system of contexts.
+The Dockerfiles that `ampersand deploy` generates copy the source into the image already.
 
 The article does not consider two compilers, and neither does this plan.
 Today's compiler compiles the migration context, on the assumption
@@ -265,9 +285,9 @@ a mutation of the generator makes it fail.
 The guide `docs/guides/systems-of-contexts.md`,
 the command reference and the release notes describe the command.
 
-No change of the syntax is foreseen.
-If a choice below brings one, the parser,
-the printer and the generator of parse trees change together (issue #1736).
+Choice 4 brings one change of the syntax, `ALIAS ROLE new.Co AS Co`.
+The parser, the printer and the generator of parse trees change together (issue #1736),
+and the role names with a prefix change design choice DC-7.
 
 A compiler that builds the migration system without a script is rejected.
 The engineer could then not tailor it, and the three demonstrations show that tailoring happens,
@@ -343,16 +363,16 @@ The choices are recorded in `memorybank/multi-context/DesignChoices.md`.
 | # | What the article leaves open | Choice | Phase |
 | --- | --- | --- | --- |
 | 1 | A new invariant that is a property of a relation, such as `[TOT]`, has no name that `ROLE … MAINTAINS` can use (#1720). | The generator treats it as a new invariant. The script names the rule of a property by prefixing the property to the relation name and making it unique. | 3 |
-| 2 | A new `[UNI]` or `[INJ]`. The desired system stores such a relation as a column, which holds one value, so the pairs that violate it cannot be stored there. The article does not address this situation. | The desired system has a data model with the one column, but the migration system must allow for multiple atoms as long as violations of the new rule exist. So, the migration system has relation of its own to stand in for the (too narrow) attribute in the desired system. Every time a violation is mended, the attribute of the desired system is used to store the remaining atom, so the migration system can safely be deleted after all violations are gone. The others are work in the migration system, shown from `old.r`, and a user chooses. | 3 |
+| 2 | A new `[UNI]` or `[INJ]`. The desired system stores such a relation as a column, which holds one value, so the pairs that violate it cannot be stored there. The article does not address this situation. | The desired system has a data model with the one column, but the migration system must allow for multiple atoms as long as violations of the new rule exist. So, the migration system has relation of its own to stand in for the (too narrow) attribute in the desired system. Every time a violation is mended, the attribute of the desired system is used to store the remaining atom, so the migration system can safely be deleted after all violations are gone. The others are work in the migration system, shown from `old.r`, and a user chooses. Proposal of the agent, 26 November: the stand-in is `old.r` itself, which the migration system reads and which holds every partner. The copy rule of step 2 copies only the pairs `old.r - old.r;(old.r~;old.r - I)`, whose source has one partner. A business constraint asks a user to choose a partner in `new.r` for every other source, from the partners in `old.r`, and steps 3 and 4 keep the choice. At completion `old.r` goes with the existing system, so the migration system needs no relation of its own for this. | 3 |
 | 3 | When a rule of the desired system is "the same" as one of the existing system. | The same name and the same term after renaming. Anything else is new. | 3 |
-| 4 | The screens during the migration come along with the inclusion: Stef decided on 1 November 2026 this in issue#1755. This would imply that the interfaces of the old and the new system are both given to the user. This is wrong however, because the Migration article wants to see the interfaces of the new system, so the migration system mimics the new system as much as possible.  |This is resolved by renaming the roles of the new system (e.g. ROLE "new.Manager AS Manager) and exposing the renamed roles during the migration phase. This way, the user doesn't notice changed role names when the new system takes over. | 3 |
-| 5 | The role that maintains the relaxed rules. | See 4. | 3 |
+| 4 | The screens during the migration come along with the inclusion: Stef decided on 1 November 2026 this in issue#1755. This would imply that the interfaces of the old and the new system are both given to the user. This is wrong however, because the Migration article wants to see the interfaces of the new system, so the migration system mimics the new system as much as possible.  |This is resolved by renaming the roles of the new system (e.g. ROLE "new.Manager AS Manager) and exposing the renamed roles during the migration phase. This way, the user doesn't notice changed role names when the new system takes over. Decided on 26 November: the compiler gives role names the prefix of their context in the including context, as it does for other names, which changes DC-7. The roles of `old`, `new` and the migration context are then disjoint, and the menu of the migration system shows the interfaces of all three, each for its own roles. New syntax in the migration script, `ALIAS ROLE new.Co AS Co`, gives a role of the desired system the name it has after the switch. The role `ExecEngine` keeps its name, like `SESSION`, or the automated rules of an included context stop firing. A system of contexts that relies on a shared role, such as an extension that maintains a rule of its core, needs an alias after this change. | 3 |
+| 5 | The role that maintains the relaxed rules. | See 4. Decided on 26 November: the violations of a relaxed rule are a subset of those of the original rule, so they go to the role of the original rule. Open: a blocking invariant of the desired system has no role, which is why it blocks. Proposal of the agent: the aliased roles of the desired system that can change a relation of the rule through an interface, listed in the report so that the engineer can change them. | 3 |
 | 6 | A relation that was renamed, or whose signature changed. | The report lists it as staying behind, and the engineer writes the copy rule in the generated script. Issue #1429 proposes a mapping of names in the inclusion statement, which would let the generator do it. | 3 |
 | 7 | A concept whose representation changes. | The report lists it; no classification is generated for it (DC-8, consideration 3). | 3 |
-| 8 | A pair that is deleted in the existing system after it was copied. The article names this as a threat to data quality: a person who was removed would reappear. | A rule in the generated script that follows the deletion until the transition. Its design needs care, because a user may add the same pair again after the transition. | 3 |
+| 8 | A pair that is deleted in the existing system after it was copied. The article names this as a threat to data quality: a person who was removed would reappear. | Proposal of the agent, 26 November: two rules per shared relation in the generated script. `ENFORCE new.r :< new.r - (copy_r - old.r)` removes from the desired system a pair that was copied and is no longer in the existing system. `ENFORCE copy_r :< old.r \/ new.r` then forgets that it was copied; it waits until the first rule has acted, so the order in which the ExecEngine fires them does not matter. After the transition the existing system changes no more, so `copy_r - old.r` stays empty, and a user who adds the same pair in the desired system keeps it. An atom that is deleted in the existing system raises the same question, which phase 3 examines with the classification of step 1. | 3 |
 | 9 | A relation on `SESSION` in an included context gets a table of its own, and the installation fails. | An issue for the compiler; until then the report names such relations. | 3 |
-| 10 | Where steps 3 and 4 live. Design choice DC-9, decided on 7 October 2026 and released in v5.11.0, has the compiler add them when a script leaves them out. | The generated script writes them out, as the three demonstrations do. The compiler first warns when it adds them itself, and a later release stops adding them; a script that relies on the addition then needs three lines written out, which the warning shows. This changes DC-9. Issue #1402 proposed a third home in 2023, the violation cache of the framework; that was tried on a branch in October 2026 and not released. | 3 |
-| 11 | Who conducts the three moments. Prototype issue #112 asks for an orchestrator as a service of the back-end. | These are Exec-Engine rules in the Migration system that fire once the condition of completion is reached. | 4 |
+| 10 | Where steps 3 and 4 live. Design choice DC-9, decided on 7 October 2026 and released in v5.11.0, has the compiler add them when a script leaves them out. | Proposal of the agent, 26 November, replacing an earlier one that changed DC-9: DC-9 stays as it is. The generator writes the three items out, with the names the compiler gives them (`fixedU`, `fixU`, `blockU`), so the engineer reads them and can change the message of the blocking invariant. The generator and the compiler use one function for this, `hardenRelaxedInvariants`. A script that states the blocking invariant keeps its own version (DC-9, consideration 5), so the generated script and the addition never clash, and a script written by hand keeps working. Issue #1402 proposed a third home in 2023, the violation cache of the framework; that was tried on a branch in October 2026 and not released. | 3 |
+| 11 | Who conducts the three moments. Prototype issue #112 asks for an orchestrator as a service of the back-end. | These are Exec-Engine rules in the Migration system that fire once the condition of completion is reached. Decided on 26 November: such a rule calls a function in PHP written for the purpose, which switches and cleans up. The function belongs to the migration system and its project, as the functions of the pilot do, so the framework learns nothing about migration. | 4 |
 
 ## Work per repository
 
