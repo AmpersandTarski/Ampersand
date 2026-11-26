@@ -173,7 +173,7 @@ grep -A 50 "allStaticFiles" src/Ampersand/Prototype/StaticFiles_Generated.hs
 **For Each Platform:**
 1. **Setup Environment:**
    - Checkout code
-   - Install MariaDB 11.5
+   - Install MariaDB 12.3
    - Setup PHP (Windows only)
    - Configure platform-specific dependencies
 

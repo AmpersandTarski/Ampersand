@@ -156,7 +156,7 @@ The CI pipeline (`.github/workflows/ci2.yml`) runs tests on:
 
 Tests require:
 - **Haskell Stack**: Build system
-- **MariaDB 11.5**: Database backend
+- **MariaDB 12.3**: Database backend
 - **PHP 8.0+**: Runtime for generated prototypes
 - **System tools**: Standard POSIX utilities
 

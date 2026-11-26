@@ -83,7 +83,7 @@ databasePreflight baseDir = do
               <> map ("      " <>) (L.take 6 errLines)
               <> [ "    Ampersand reads MYSQL_HOST, MYSQL_USER and MYSQL_PASSWORD (defaults: 127.0.0.1, root, empty password).",
                    "    Start a dedicated local database and pass its address, for example:",
-                   "      docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:10.4",
+                   "      docker run -d --name ampersand-regression-db -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 127.0.0.1:3310:3306 mariadb:12.3",
                    "      MYSQL_HOST=127.0.0.1:3310 stack test",
                    "    or run scripts/test-local.sh, which sets this up and runs the suite."
                  ]

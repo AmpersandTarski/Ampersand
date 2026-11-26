@@ -11,7 +11,7 @@ short, accurate conventions that are easy to miss.
 - **Extensions:** `NoImplicitPrelude`, `OverloadedStrings`
 - **Key libraries:** `parsec`, `megaparsec`, `aeson`, `yaml`, `pandoc`, `xlsx`
 - **Ecosystem:** Ampersand compiles ADL (Ampersand Definition Language) into a
-  PHP/Angular framework backed by a MariaDB 10.4 database.
+  PHP/Angular framework backed by a MariaDB 12.3 database.
 
 ## Build & test workflow
 

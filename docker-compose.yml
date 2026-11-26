@@ -3,7 +3,7 @@
 
 services:
   mariadb:
-    image: mariadb:11.5
+    image: mariadb:12.3
     container_name: ampersand-mariadb
     restart: unless-stopped
     command: --bind-address=0.0.0.0

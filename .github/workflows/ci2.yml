@@ -105,7 +105,7 @@ jobs:
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: "mariadb-11.5"
+          mysql-version: "mariadb-12.3"
       - name: Build and test 🏗 🧪
         uses: freckle/stack-action@v5 # stack-action does all these steps: dependencies, build, test.
         with:
@@ -135,7 +135,7 @@ jobs:
       - name: Set up Mariadb 🧰
         uses: shogo82148/actions-setup-mysql@v1
         with:
-          mysql-version: "mariadb-11.5"
+          mysql-version: "mariadb-12.3"
       - name: Setup PHP 🧰
         uses: shivammathur/setup-php@v2
         with:
