@@ -1,0 +1,9 @@
+CONTEXT Migration IN ENGLISH
+-- A relation is shared by the two systems only if its name and its signature are the same (eqn:copy relations).
+-- loan[Book*Person] of the existing system and loan[Book*Member] of the desired system are two relations,
+-- so copying the one into the other is a type error.
+INCLUDE "../scripts/library_migration.adl"
+
+ENFORCE copyLoan : new.loan >: old.loan
+
+ENDCONTEXT

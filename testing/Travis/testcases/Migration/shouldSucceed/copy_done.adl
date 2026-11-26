@@ -1,0 +1,17 @@
+CONTEXT Migration IN ENGLISH
+-- Step 2, the end of the copying, and the moment of transition.
+-- Every pair of old.title is in new.title and registered in copyTitle.
+-- The article promises that both transactional invariants of step 2 are satisfied (T_1)
+-- and that the copying has terminated (eqn:copyingTerminates).
+-- The new invariant authored is violated by b1 and b2; the migration system accepts that,
+-- because there it is a business constraint (B_fix), so the system satisfies its invariants (eqn:satisfaction).
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+
+RULE copiedIntoNew : old.title - copyTitle |- new.title
+RULE copyRegistered : new.title /\ old.title |- copyTitle
+RULE copyingTerminates : old.title = copyTitle
+
+ENDCONTEXT

@@ -1,0 +1,17 @@
+CONTEXT Library IN ENGLISH
+PURPOSE CONTEXT Library
+{+ The desired system of the migration cases, with an empty database.
+It keeps `title` with its property [UNI], drops `shelf` and the rule `titled`,
+gives `loan` another target concept, and adds the relation `author`
+with a new blocking invariant `authored`, which the existing data violates. +}
+
+RELATION title[Book*Title] [UNI]
+RELATION loan[Book*Member]
+RELATION author[Book*Writer] [UNI]
+
+RULE authored : I[Book] |- author;author~
+MEANING "Every book has an author."
+MESSAGE "Every book must have an author."
+VIOLATION (TXT "Give ", SRC I, TXT " an author.")
+
+ENDCONTEXT

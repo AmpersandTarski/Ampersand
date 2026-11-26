@@ -139,6 +139,24 @@ The phase ran on 26 November 2026, with compiler v5.15.0 and framework v2.25.0;
   which every compiler since v5.13.0 refuses; that is issue #1765.
 - PRF-23 to PRF-26 state the proof obligations below, and issue #1714 is closed.
 
+The pilot runs in production on compiler v5.15.0 since 26 November 2026; its project made that move itself.
+Its branches that are not yet merged wait, so that they become the first migrations by this method.
+
+### Tests of the article, before any building
+
+Stef asked on 26 November 2026 to write tests first that cover every case of the article,
+and to add them to the regression test of the compiler, as test-driven design:
+the formal specification of the article is the guard rail, and the tests check that the work stays inside it.
+`testing/Travis/testcases/Migration` holds them.
+A case joins a migration script that is written by hand, adds the population of one moment of the migration,
+and states as a rule what the article promises for that moment; each case has a counterpart that the article excludes.
+Its `README.md` names the equation of the article that each case checks.
+`ampersand check` does not execute an `ENFORCE` rule, so these cases check states;
+the transitions between them, such as the copying by the ExecEngine, are tested in a running prototype in `demos/migration`.
+Stef agreed with that division on 26 November 2026.
+Each phase that builds a choice of this plan adds its cases to that directory, and the generator of phase 3
+is done when the script it generates passes the cases in place of the script written by hand.
+
 ### 2. Reading a production database as it is
 
 The measurement above is the observation.

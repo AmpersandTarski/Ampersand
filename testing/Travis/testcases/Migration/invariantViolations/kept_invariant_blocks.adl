@@ -1,0 +1,9 @@
+CONTEXT Migration IN ENGLISH
+-- A blocking invariant of both systems stays blocking in the migration system (eqn:schema migrsys).
+-- The property [UNI] of title is in both schemas, so new.title may not give b1 two titles.
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b1", "Persuasion") ; ("b2", "Ivanhoe") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+
+ENDCONTEXT

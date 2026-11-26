@@ -1,0 +1,14 @@
+CONTEXT Migration IN ENGLISH
+-- The condition for the moment of completion (eqn:readyForMoC).
+-- Every book has an author and is registered in fixedAuthored,
+-- so the violations of authored are a subset of fixedAuthored, which here means there are none.
+INCLUDE "../scripts/library_migration.adl"
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION copyTitle[old.Book*old.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION new.author[new.Book*new.Writer] CONTAINS [ ("b1", "Austen") ; ("b2", "Scott") ]
+POPULATION fixedAuthored[new.Book*new.Book] CONTAINS [ ("b1", "b1") ; ("b2", "b2") ]
+
+RULE readyForCompletion : I[new.Book] /\ -(new.author;new.author~) |- fixedAuthored
+
+ENDCONTEXT

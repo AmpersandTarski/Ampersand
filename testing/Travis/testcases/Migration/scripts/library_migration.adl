@@ -1,0 +1,31 @@
+CONTEXT Migration INCLUDES Library FROM "../contexts/library_existing.adl" AS old,
+                           Library FROM "../contexts/library_desired.adl" AS new
+CONTEXT Migration IN ENGLISH
+PURPOSE CONTEXT Migration
+{+ The migration system from the existing to the desired library, written by hand
+as section 4.1 of "Data Migration under a Changing Schema in Ampersand" (RAMiCS 2024) prescribes.
+The cases in this directory join this script by a plain INCLUDE, add the population of one moment
+of the migration, and state as a rule what the article promises for that moment.
+The script itself holds no assertions, so a generated script can take its place. +}
+
+-- Step 1. The two data sets are present side by side; the aliases supply the prefixes old and new.
+-- The article keeps the concepts of both systems as one set. The aliases make two concepts of each,
+-- and these classifications state that every atom of the existing system is an atom of the desired one.
+CLASSIFY old.Book ISA new.Book
+CLASSIFY old.Title ISA new.Title
+
+-- Step 2. title is the only relation in both schemas with the same signature (eqn:copy relations).
+-- copyTitle registers what has been copied, so that a user can remove a copied pair from new.title
+-- without it being copied again. shelf is dropped and stays in old; loan[Book*Member] is another
+-- relation than loan[Book*Person], so nothing is copied into it.
+RELATION copyTitle[old.Book*old.Title]
+ENFORCE copyTitleDone : copyTitle >: new.title /\ old.title
+ENFORCE copyTitleNew : new.title >: old.title - copyTitle
+
+-- Steps 3 to 5. authored is the only new blocking invariant (rules of the desired minus rules of the existing system).
+-- Assigning it to a role makes it a business constraint here (B_fix), while it stays a blocking invariant
+-- in the desired system. The compiler adds the relation fixedAuthored (step 3), its transactional invariant (step 4)
+-- and the blocking invariant that keeps a repaired violation from recurring (eqn:blockRule).
+ROLE Librarian MAINTAINS new.authored
+
+ENDCONTEXT

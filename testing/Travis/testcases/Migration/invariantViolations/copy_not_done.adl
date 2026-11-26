@@ -1,0 +1,10 @@
+CONTEXT Migration IN ENGLISH
+-- The counterpart of copy_done: nothing has been copied yet.
+-- The copying has not terminated (eqn:copyingTerminates), and the transactional invariant
+-- that fills new.title is not satisfied, so the check refuses the assertions.
+INCLUDE "../scripts/library_migration.adl"
+
+RULE copiedIntoNew : old.title - copyTitle |- new.title
+RULE copyingTerminates : old.title = copyTitle
+
+ENDCONTEXT

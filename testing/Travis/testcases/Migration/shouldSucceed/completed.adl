@@ -1,0 +1,13 @@
+CONTEXT Completed INCLUDES Library FROM "../contexts/library_existing.adl" AS old,
+                           Library FROM "../contexts/library_desired.adl" AS new
+CONTEXT Completed IN ENGLISH
+-- After the moment of completion, the desired system holds the data with its own blocking invariants:
+-- authored is assigned to no role, so it blocks. The data of the migration system satisfies it,
+-- which the validation in section 4.2 of the article concludes.
+CLASSIFY old.Book ISA new.Book
+CLASSIFY old.Title ISA new.Title
+
+POPULATION new.title[new.Book*new.Title] CONTAINS [ ("b1", "Emma") ; ("b2", "Ivanhoe") ]
+POPULATION new.author[new.Book*new.Writer] CONTAINS [ ("b1", "Austen") ; ("b2", "Scott") ]
+
+ENDCONTEXT
