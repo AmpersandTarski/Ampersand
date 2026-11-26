@@ -1,0 +1,12 @@
+CONTEXT Visits IN ENGLISH
+-- An existing system with a concept Session. Its name differs from SESSION, which every application has,
+-- only in case, so compiled by itself its table gets a disambiguated name.
+
+RELATION visitor[Session*Person] [UNI]
+-- A relation on SESSION, the concept that every application has. Compiled by itself, the system
+-- stores it as a column in its own table SESSION.
+RELATION currentVisit[SESSION*Session] [UNI]
+
+POPULATION visitor CONTAINS [ ("s1", "Ann") ]
+
+ENDCONTEXT

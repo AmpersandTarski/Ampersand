@@ -18,6 +18,10 @@ module Ampersand.Core.ParseTree
     labelsOnOwnDatabase,
     mkRelaxedMeta,
     relaxedRules,
+    mkConceptTablesMeta,
+    conceptTablesOfLabel,
+    mkRootLabelMeta,
+    rootLabelOf,
     mkFileMeta,
     foreignContextFiles,
     mkLabelViewMeta,
@@ -264,6 +268,48 @@ relaxedRules ms =
       mtName m == relaxedMetaName,
       [ns, rule] <- [T.words (mtVal m)]
   ]
+
+-- | The metadata by which a joined context records which concepts have a table of their own
+--   in the database that an included context installs, as that context lays the database out
+--   when it is compiled by itself (phase 2 of the migration plan).
+--   Its value holds the label of that context and the names of those concepts as that context has them.
+conceptTablesMetaName :: Text1
+conceptTablesMetaName = toText1Unsafe "multicontext.concepttables"
+
+mkConceptTablesMeta :: Origin -> Text -> [Text] -> MetaData
+mkConceptTablesMeta orig lbl cpts = MetaData orig conceptTablesMetaName (T.unwords (lbl : cpts))
+
+-- | The concepts that have a table of their own in the database that the context with the given label installs,
+--   if the joined context records them.
+conceptTablesOfLabel :: [MetaData] -> Text -> Maybe [Text]
+conceptTablesOfLabel ms lbl =
+  listToMaybe
+    [ cpts
+      | m <- ms,
+        mtName m == conceptTablesMetaName,
+        l : cpts <- [T.words (mtVal m)],
+        l == lbl
+    ]
+
+-- | The metadata by which a joined context records, for the label of an included context,
+--   the label that the root file has for that context (empty for the context of the root file itself).
+--   The option --context names a context by the latter.
+rootLabelMetaName :: Text1
+rootLabelMetaName = toText1Unsafe "multicontext.rootlabel"
+
+mkRootLabelMeta :: Origin -> Text -> Text -> MetaData
+mkRootLabelMeta orig lbl inRoot = MetaData orig rootLabelMetaName (T.unwords [lbl, if T.null inRoot then "-" else inRoot])
+
+-- | The label that the root file has for the included context with the given label.
+rootLabelOf :: [MetaData] -> Text -> Maybe Text
+rootLabelOf ms lbl =
+  listToMaybe
+    [ if r == "-" then "" else r
+      | m <- ms,
+        mtName m == rootLabelMetaName,
+        [l, r] <- [T.words (mtVal m)],
+        l == lbl
+    ]
 
 instance Traced MetaData where
   origin (MetaData p _ _) = p

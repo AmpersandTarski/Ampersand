@@ -2,13 +2,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Ampersand.Output.ToJSON.Concepts (Concepts, Segment) where
+module Ampersand.Output.ToJSON.Concepts (Concepts, Segment, TableCols (..), conceptTablesOf) where
 
 import Ampersand.ADL1
 import qualified Ampersand.Basics.Name as Name
 import Ampersand.Core.AbstractSyntaxTree (largerConcepts, smallerConcepts)
-import Ampersand.Core.ParseTree (foreignContexts, labelsOnOwnDatabase)
+import Ampersand.Core.ParseTree (databaseOfLabel, foreignContexts, ownDatabase)
 import Ampersand.FSpec
+import Ampersand.FSpec.SQL (hasDerivedAtoms)
 import Ampersand.Output.ToJSON.JSONutils
 import qualified RIO.List as L
 import qualified RIO.Set as Set
@@ -116,9 +117,12 @@ instance JSON A_Concept Concept where
           (_ : _, own : _) -> Just own
           _ -> Nothing, -- this concept has no concept table of its own; see issue #1672
         cptJSONconceptTables = conceptTablesOf fSpec cpt,
-        cptJSONallAtomsQuery = case unionMembersIn (conceptUnions fSpec) cpt of
-          Nothing -> Nothing
-          Just _ -> Just (allAtomsQueryOf fSpec cpt),
+        -- A MULTITABLE union concept (issue #1716) and a concept of an included context without a table
+        -- in its database (claim PRF-27) list their atoms by a query, and have no table to write them in.
+        cptJSONallAtomsQuery =
+          if hasDerivedAtoms fSpec cpt
+            then Just (allAtomsQueryOf fSpec cpt)
+            else Nothing,
         cptJSONlargestConcept = text1ToText . idWithoutType' . largestConcept fSpec $ cpt
       }
     where
@@ -154,13 +158,16 @@ conceptTablesOf fSpec cpt =
     ownFirst ts = case lookupCpt fSpec cpt of
       (own, _) : _ -> own : filter (/= own) ts
       [] -> ts
-    -- A concept of another context is stored elsewhere if that context lands on another database.
-    -- On the same database its table is in this database, and it may be the table of this concept.
-    foreignLabels = filter (`notElem` labelsOnOwnDatabase (metas fSpec)) (map fst (foreignContexts (metas fSpec)))
+    -- A generalisation is stored elsewhere if its context lands on another database than the context of the concept.
+    -- On the same database its table is in that database, and it may be the table of this concept.
+    -- So a generalisation within an included context counts, as it does when that context is compiled by itself.
+    labels = map fst (foreignContexts (metas fSpec))
+    databaseOf :: A_Concept -> Maybe Text
+    databaseOf c = case nameSpaceOf (name c) of
+      h : _ | namePartToText h `elem` labels -> fst <$> databaseOfLabel (metas fSpec) (namePartToText h)
+      _ -> ownDatabase (metas fSpec)
     ownedElsewhere :: A_Concept -> Bool
-    ownedElsewhere c = case nameSpaceOf (name c) of
-      h : _ -> namePartToText h `elem` foreignLabels
-      [] -> False
+    ownedElsewhere c = databaseOf c /= databaseOf cpt
 
 instance JSON ViewDef View where
   fromAmpersand env fSpec vd =

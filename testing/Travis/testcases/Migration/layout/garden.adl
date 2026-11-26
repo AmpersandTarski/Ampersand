@@ -1,0 +1,11 @@
+CONTEXT Garden IN ENGLISH
+-- An existing system in production. No query of its own reads the atoms of PlotName or Gardener,
+-- so compiled by itself it has a table for Plot only, with a column for each relation.
+
+RELATION name[Plot*PlotName] [UNI]
+RELATION keeper[Plot*Gardener] [UNI]
+
+POPULATION name CONTAINS [ ("p1", "North"), ("p2", "South") ]
+POPULATION keeper CONTAINS [ ("p1", "Ann") ]
+
+ENDCONTEXT

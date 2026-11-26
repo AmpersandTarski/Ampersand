@@ -1,0 +1,8 @@
+CONTEXT Migration INCLUDES Garden FROM "../layout/garden.adl" AS old
+CONTEXT Migration IN ENGLISH
+-- The counterpart of shouldSucceed/atoms_from_columns.adl: the existing system has the gardener Ann,
+-- in the column of keeper, so a rule that there is no gardener is violated.
+
+RULE noGardeners : I[old.Gardener] |- -V[old.Gardener*old.Gardener]
+
+ENDCONTEXT

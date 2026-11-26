@@ -17,6 +17,7 @@ import Ampersand.Test.IFC.IFCWiringTest (ifcWiringTest)
 import Ampersand.Test.Incremental.CandidateProperties (doAllCandidatePropertyTests)
 import Ampersand.Test.Incremental.CostProfileTests (doAllCostProfileTests)
 import Ampersand.Test.Incremental.Properties (doAllIncrementalPropertyTests)
+import Ampersand.Test.MultiContext.IncludedLayoutTests (doAllIncludedLayoutTests)
 import Ampersand.Test.MultiContext.QualifyProperties (doAllQualifyPropertyTests)
 import Ampersand.Test.Multitable.StorageLayoutTests (doAllStorageLayoutTests)
 import Ampersand.Test.Parser.QuickChecks
@@ -33,6 +34,7 @@ test = do
   candidatePropertyTest
   costProfileTest
   qualifyPropertyTest
+  includedLayoutTest
   stepReaderTest
   expressTest
   ifcBinderTest'
@@ -128,6 +130,18 @@ qualifyPropertyTest = do
     else do
       logError "\x2757\x2757\x2757 Failed. Property tests of systems of contexts."
       exitWith (SomeTestsFailed ["Property test of systems of contexts failed!"])
+
+-- | A migration context reads the database of an included context in the tables and columns
+--   that the included context creates when it is compiled by itself (claim PRF-27).
+includedLayoutTest :: (HasRunner env) => RIO env ()
+includedLayoutTest = do
+  logInfo "Starting tests of the layout in which a context reads the database of a context it includes."
+  success <- doAllIncludedLayoutTests
+  if success
+    then logInfo "\x2705 Passed."
+    else do
+      logError "\x2757\x2757\x2757 Failed. Tests of the layout of an included context."
+      exitWith (SomeTestsFailed ["Test of the layout of an included context failed!"])
 
 -- | Which concepts get a table (issues #1672, #1716 and #1727): a typology is
 --   stored as a whole or not at all, and a specialisation that is stored apart

@@ -13,6 +13,7 @@ module Ampersand.FSpec.SQL
     derivedViewQuery,
     derivedViewQueryPlain,
     derivedViewIsMergeable,
+    hasDerivedAtoms,
   )
 where
 
@@ -20,6 +21,8 @@ import Ampersand.ADL1
 import Ampersand.ADL1.DerivedViews (materialises, readsAClosure)
 import Ampersand.Basics hiding (Name)
 import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree (smallerConcepts)
+import Ampersand.Core.ParseTree (conceptTablesOfLabel)
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.FSpecAux
@@ -1974,9 +1977,20 @@ derivedConceptQuery fSpec c = case c of
     [] -> fatal "An intersection concept without members."
     m : ms -> Just (listing (foldr (./\.) (EDcI m) (map EDcI ms)), qName (fullName c))
   _ -> case unionMembersIn (conceptUnions fSpec) c of
-    Nothing -> Nothing
     Just (m NE.:| ms) -> Just (listing (foldr (.\/.) (EDcI m) (map EDcI ms)), qName (fullName c))
+    Nothing -> case includedColumnTerms fSpec c of
+      [] -> Nothing
+      t : ts -> Just (foldl' unite (listing t) (map listing ts), qName (fullName c))
   where
+    unite :: QueryExpr -> QueryExpr -> QueryExpr
+    unite q0 q1 =
+      QueryExprSetOp
+        { qe0 = q0,
+          qeCombOp = Union,
+          qeSetQuantifier = Distinct,
+          qeCorresponding = Respectively,
+          qe1 = q1
+        }
     listing :: Expression -> QueryExpr
     listing expr =
       Select
@@ -1990,6 +2004,29 @@ derivedConceptQuery fSpec c = case c of
           qeOffset = Nothing,
           qeFetchFirst = Nothing
         }
+
+-- | A concept of an included context that has no table in the database of that context (phase 2 of the
+--   migration plan, claim PRF-27): compiled by itself, that context reads its atoms nowhere, so it stores
+--   them only in the columns of its relations. Its atoms are the sources of the relations of that context
+--   from the concept or one of its specialisations, and the targets of those to it.
+--   Each term is read from its own table; the source column of the term lists the atoms.
+includedColumnTerms :: FSpec -> A_Concept -> [Expression]
+includedColumnTerms fSpec c
+  | not (null (lookupCpt fSpec c)) = []
+  | not (canBeEnumerated (cptTType fSpec c)) = []
+  | otherwise = case nameSpaceOf (name c) of
+      h : _
+        | isJust (conceptTablesOfLabel (metas fSpec) (namePartToText h)) ->
+            [EDcD r | r <- rels, source r `elem` cs]
+              <> [EFlp (EDcD r) | r <- rels, target r `elem` cs]
+        where
+          rels = [r | r <- toList (vrels fSpec), take 1 (nameSpaceOf (name r)) == [h]]
+          cs = c : smallerConcepts c
+      _ -> []
+
+-- | Whether the atoms of a concept are listed by a query instead of a table of its own.
+hasDerivedAtoms :: FSpec -> A_Concept -> Bool
+hasDerivedAtoms fSpec = isJust . derivedConceptQuery fSpec
 
 -- sqlConcept gives the SQL-name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: FSpec -> A_Concept -> Name

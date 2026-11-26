@@ -29,6 +29,7 @@ are transitions; the running prototype in `demos/migration` tests those (`test.s
 | `shouldSucceed/` | States that the article promises. | `ampersand check` (exit 0) and `ampersand validate` (exit 0). |
 | `invariantViolations/` | The counterpart of each state, which the article excludes. | `ampersand check` has to refuse each of them (exit 10). |
 | `shouldFail/` | A migration script with a type error. | `ampersand check` has to refuse it (exit 10). |
+| `layout/` | Three existing systems and a migration context that includes them. | Nothing; `Ampersand.Test.MultiContext.IncludedLayoutTests` in `stack test` compiles each system by itself and compares the layouts (claim PRF-27). |
 
 ## What each case guards
 
@@ -50,6 +51,8 @@ The labels in the second column are the labels of the equations in the source of
 | `invariantViolations/not_ready_for_completion.adl` | eqn:readyForMoC | With one book left, it does not. |
 | `shouldSucceed/completed.adl` | section 4.2, the third and fourth point | The desired system includes the data with its blocking invariant `authored`, and the data satisfies it. |
 | `invariantViolations/completed_too_early.adl` | section 4.2 | The same before every book is repaired is refused. |
+| `shouldSucceed/atoms_from_columns.adl` | section 4.1, the migration system reads the existing one | The existing system, compiled by itself, stores the atoms of `Gardener` in no table of their own, only in the column of `keeper`; the migration system reads exactly those atoms (claim PRF-27), and `validate` compares the SQL with the evaluator. |
+| `invariantViolations/atoms_from_columns_exist.adl` | section 4.1 | The same atoms are there: a rule that there is no gardener is violated. |
 
 ## What these cases do not cover yet
 

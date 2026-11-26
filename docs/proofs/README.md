@@ -50,6 +50,7 @@ Two habits keep these statuses honest. A status is recorded only after the build
 | [PRF-24](#prf-24) | At the moment of transition the migration system violates none of its blocking invariants, given that the existing system satisfies its own | stated | obligation stated with the migration plan of issue #1393; the second point of the validation in the RAMiCS 2024 article | — |
 | [PRF-25](#prf-25) | At the moment of completion a relation that only the migration system has holds nothing that the desired system needs, so the migration system can be removed | stated | obligation stated with the migration plan of issue #1393 | — |
 | [PRF-26](#prf-26) | The script that the generator of migration scripts writes is the schema of the migration system that the RAMiCS 2024 article defines | stated | obligation stated with the migration plan of issue #1393; to be bound to the code by property tests | — |
+| [PRF-27](#prf-27) | For every relation of an included context that installs a database, a context that includes it reads the same pairs as that context reads from its database when it is compiled by itself | stated | obligation stated with phase 2 of the migration plan of issue #1393; the layout part is tested by `memorybank/migration/layout-experiment` | — |
 
 ### PRF-1 {#prf-1}
 
@@ -199,6 +200,12 @@ Two habits keep these statuses honest. A status is recorded only after the build
 **The script that the generator of migration scripts writes is the schema of the migration system that the RAMiCS 2024 article defines.** The article defines the migration schema as a function of the schema of the existing and of the desired system (section 4.1, steps 1 to 6). The generator of phase 3 of the migration plan writes that schema as an Ampersand script, which the compiler joins with the two included contexts. The claim is that the joined context has the relations, the rules and the transactional invariants of the article's migration schema, relabelled as the inclusion relabels them.
 
 *Status:* stated. Property tests in `stack test` are to bind the claim to the code.
+
+### PRF-27 {#prf-27}
+
+**For every relation of an included context that installs a database, a context that includes it reads the same pairs as that context reads from its database when it is compiled by itself.** A system in production was compiled by itself, and since v5.9.4 such a compilation leaves out a concept table that no query of the system reads. A migration context includes that system and reads its database through views. The claim has two parts. The layout part says that the views name the tables and the columns that the compilation by itself creates. The semantic part says that a query of the including context over a relation of the included one then selects the pairs that the included context stores.
+
+*Status:* stated. The layout part is compared over the scripts of `testing/` by `memorybank/migration/layout-experiment`; the semantic part rests on the views selecting every column of the table as it is (DC-13). *Boundary:* a concept of the included context that has no table there is read from the columns of its relations, so an atom that is in no relation is not seen; the included context, compiled by itself, has no query that sees it either. The claim concerns a database that today's compiler would lay out the same way; a database that an older compiler laid out is detected by comparing the generated files of both compilers (phase 2 of the plan), and the claim says nothing about it.
 
 ## Trails
 

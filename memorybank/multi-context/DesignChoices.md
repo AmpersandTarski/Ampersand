@@ -189,21 +189,39 @@ A context that is reached along two paths is one context with one database.
 In a system of contexts the compiler makes the tables per owner.
 A relation is folded into the table of a concept only if both belong to the same context,
 a classification that relates concepts of two contexts does not make them share a table,
-and every concept gets a table.
+and the database that an included context installs has the tables that context creates when it is compiled by itself.
 
 *Considerations:*
 
 1. The context that owns a table and a context that reads it have to agree on its layout.
    They are compiled separately, so the layout cannot depend on who reads it.
 2. Since v5.9.4 a concept gets a table only if a query of its own context reads it.
-   An including context may read a concept that its owner never reads.
-   The option `--all-concept-tables` therefore gives every concept a table; `ampersand deploy` sets it.
-3. Rejected: one table per relation and per concept everywhere.
+   A system in production was compiled by itself, so its database lacks the tables that no query of its own reads.
+   The compiler therefore compiles every included context that installs a database by itself as well,
+   with the same options, and lays that database out as the compilation by itself does
+   (phase 2 of `memorybank/migration/plan.md`, claim PRF-27).
+   A concept of Ampersand itself, such as `SESSION`, belongs to the compiled context, and its table in the database
+   of an included context holds the relations of that context on it, as in the compilation by itself;
+   the compiled context reads those relations there, and keeps the atoms of the concept in its own table.
+3. The option `--all-concept-tables` gives every concept a table, in the compiled context and in the compilation by itself alike.
+   `ampersand deploy` sets it, so the systems it deploys keep the layout they had.
+4. A query of the including context may ask for all atoms of an included concept that has no table there,
+   as `V[Copy.Name*Name]` in `testing/Travis/testcases/MultiContext/shouldSucceed/plain_and_alias.adl` does.
+   The atoms of such a concept are in the columns of the relations of its context only,
+   so the compiler reads them from those columns, as it reads a `MULTITABLE` union concept from its members.
+   An atom that the included context has in no relation is in no column, and the including context does not see it;
+   the included context, compiled by itself, has no query that sees it either.
+   `concepts.json` gives such a concept a query and no table, so that the framework never writes an atom into it.
+5. Rejected: every concept gets a table in an included context, whatever its owner has.
+   A migration context could then not install next to a system compiled by itself:
+   "Table 'garden_1.gardener' doesn't exist" (phase 1 of the migration plan).
+6. Rejected: one table per relation and per concept everywhere.
    It is simpler, and gives up the wide tables inside a context.
 
 *Impact on the specification:* none.
 
-*Impact in production:* a context that others include is compiled with `--all-concept-tables`.
+*Impact in production:* a migration context reads a system in production as it is.
+A system deployed by `ampersand deploy` has every concept table, and the migration context is compiled with `--all-concept-tables` too.
 
 **A table of another context is a view, and the name of its database is filled in at deployment.**
 *DC-13 · decided · 2026-10-07*

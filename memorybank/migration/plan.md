@@ -241,6 +241,22 @@ Building the generator first is rejected.
 It would be tested on demonstrations only,
 and its first use in production would fail at the installation of the migration system.
 
+Direction A was built on 26 November 2026, with the claims registered first (`layout-experiment/preregistration.md`, PRF-27).
+The compiler compiles every included context that installs a database by itself as well, with the same options,
+and lays out that database as that compilation does (DC-15).
+The experiment found three differences beyond the predicted one, and each is repaired:
+the columns of the generalisations of a specialisation in `concepts.json`,
+the disambiguated name of a table such as `Session_f7f1997`,
+and the relations of the included context on a concept of Ampersand itself, such as `SESSION`.
+After the change 121 scripts of `testing/` have the same tables and columns included and by themselves, and none differs;
+26 are systems of contexts themselves, which the experiment does not compare (`layout-experiment/results.md`).
+The script of the pilot has the same layout as well, for its 201 relations and 49 concepts,
+and the 58 tables that the migration context reads there are all tables of the pilot compiled by itself.
+A term that asks for all atoms of an included concept without a table reads them from the columns of the relations that hold them.
+With `--all-concept-tables` the three demonstrations compile as with v5.15.0 (`layout-experiment/flag_unchanged.sh`).
+`Ampersand.Test.MultiContext.IncludedLayoutTests` in `stack test` keeps the layout as it is.
+Still to come in this phase: the check of a running database (#1405), and the trial on a copy of the production database of the pilot.
+
 ### 3. The generator
 
 Today somebody writes the migration script by hand and chooses by hand
