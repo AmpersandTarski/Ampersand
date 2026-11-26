@@ -144,6 +144,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 scView = id,
                 scTypologies = multiKernels (ctxInfo context),
                 scPrune = True,
+                scExact = False,
                 scBorrowed = const False,
                 scNeeded = (`elem` neededConcepts),
                 scReservedKeys = [],
@@ -192,6 +193,7 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                      all (all isReservedName . toList) (tyCpts t)
                  ],
           scPrune = isJust standAlone,
+          scExact = isJust standAlone,
           scBorrowed = borrowed,
           scNeeded = case standAlone of
             Just cpts -> \c -> fullName (maybe id viewOf root (name c)) `elem` cpts
@@ -301,13 +303,18 @@ makeGeneratedSqlPlugs env context neededConcepts = inspectedCandidateTables -- +
                 -- that nothing reads. (issues #1672 and #1727)
                 -- A typology of a type whose atoms cannot be listed, such as
                 -- INTEGER, never gets a table: every integer exists beforehand.
-                typologyIsWorthStoring =
-                  all listable cpts
-                    && ( not (scPrune sc)
-                           || not (all (null . snd) candidates)
-                           || any isNeeded cpts
-                           || any holdsObjects cpts
-                       )
+                -- In a database that an included context installs, the compilation of that context by itself
+                -- decides alone: an interface of the compiled context can make a concept of it an object,
+                -- while the database in production has no table for it.
+                typologyIsWorthStoring
+                  | scExact sc = all listable cpts && any isNeeded cpts
+                  | otherwise =
+                      all listable cpts
+                        && ( not (scPrune sc)
+                               || not (all (null . snd) candidates)
+                               || any isNeeded cpts
+                               || any holdsObjects cpts
+                           )
             -- A MULTITABLE union concept has no table of its own (issue #1716). It
             -- is cut loose from its members by the mark, so it is a component by
             -- itself, and that component gets no table.
@@ -662,6 +669,8 @@ data Scope = Scope
     scPrune :: Bool,
     -- | whether a concept needs a table of its own, when concept tables are left out
     scNeeded :: A_Concept -> Bool,
+    -- | whether scNeeded alone decides which typologies are stored (the layout of a compilation by itself)
+    scExact :: Bool,
     -- | a concept of another context whose table in this database holds relations of this context;
     --   the table is not a concept table of that concept in the compiled context
     scBorrowed :: A_Concept -> Bool,

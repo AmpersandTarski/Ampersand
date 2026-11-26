@@ -254,6 +254,12 @@ The script of the pilot has the same layout as well, for its 201 relations and 4
 and the 58 tables that the migration context reads there are all tables of the pilot compiled by itself.
 A term that asks for all atoms of an included concept without a table reads them from the columns of the relations that hold them.
 With `--all-concept-tables` the three demonstrations compile as with v5.15.0 (`layout-experiment/flag_unchanged.sh`).
+The migration system of `garden` installs next to an existing and a desired system that are each compiled by themselves,
+and its ExecEngine copies the data into the desired system (`layout-experiment/install_by_itself.sh`).
+The compilation by itself inherits the options of the compilation of the migration context,
+so every context of a system has to be compiled with the same value of `--all-concept-tables`:
+an existing system in production without it next to a migration context with it would be read in the wrong layout.
+The check of #1405 compares that option, which `settings.json` records, and phase 4 deploys accordingly.
 `Ampersand.Test.MultiContext.IncludedLayoutTests` in `stack test` keeps the layout as it is.
 Still to come in this phase: the check of a running database (#1405), and the trial on a copy of the production database of the pilot.
 

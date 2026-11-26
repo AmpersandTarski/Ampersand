@@ -53,6 +53,7 @@ The labels in the second column are the labels of the equations in the source of
 | `invariantViolations/completed_too_early.adl` | section 4.2 | The same before every book is repaired is refused. |
 | `shouldSucceed/atoms_from_columns.adl` | section 4.1, the migration system reads the existing one | The existing system, compiled by itself, stores the atoms of `Gardener` in no table of their own, only in the column of `keeper`; the migration system reads exactly those atoms (claim PRF-27), and `validate` compares the SQL with the evaluator. |
 | `invariantViolations/atoms_from_columns_exist.adl` | section 4.1 | The same atoms are there: a rule that there is no gardener is violated. |
+| `shouldSucceed/atoms_from_own_relation.adl` | section 4.1 | A relation of the migration system, such as a register of copying, holds a gardener that the existing system lacks; an atom of a relation is an atom of its concept, so `I[old.Gardener]` has it too, and an interface on `old.Gardener` gives it no table in the existing database. |
 
 ## What these cases do not cover yet
 

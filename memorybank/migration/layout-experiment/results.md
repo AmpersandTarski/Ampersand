@@ -66,6 +66,9 @@ and one on `PrototypeContext.Role`; the comparison reported a 27th by a flaw of 
 After it, `compare_layout.py` reports no difference.
 `views_have_tables.sh` checks the same at the level of the installation:
 the migration context reads 58 tables of the database of the pilot, and the pilot compiled by itself creates all 58.
+The migration context compiles the pilot twice now, once included and once by itself:
+`ampersand proto` took 32 seconds for the pilot by itself and 53 seconds for the migration context,
+measured once while the regression suite ran on the same machine.
 
 ## With `--all-concept-tables`
 
@@ -76,8 +79,30 @@ apart from the version in the header and the paths in the origins.
 At first the changed compiler added views on tables of `PrototypeContext` in the database of `old`
 that hold no relation of `old`; such a table is now left out, and the three compile to the same files.
 
+## The installation
+
+`install_by_itself.sh` repeats the installation of phase 1, which failed with "Table 'garden_1.gardener' doesn't exist".
+It compiles the existing and the desired system of `garden` each by itself, and the migration context without
+`--all-concept-tables`, with the changed compiler, and installs the three in framework v2.25.0.
+All three installers answer HTTP 200.
+The migration system reads both databases through the views `old.Plot` and `new.Plot`, and has no view on a table that is not there.
+During its installation the ExecEngine copied the five names and the three keepers into the desired system,
+whose script has no population of its own, and the registers of copying hold 5 and 3 pairs,
+so `old.r = copy_r` holds for both relations, the condition under which the article says the copying has ended.
+The relaxed invariant `everyPlotHasKeeper` gives two signals, one for each plot without a keeper.
+
+## Reading the atoms of a concept without a table
+
+`Migration/shouldSucceed/atoms_from_own_relation.adl` gives the migration context a relation of its own on `old.Gardener`,
+with an atom that the existing system does not have, and an interface on `old.Gardener`.
+Two things went wrong at first, and `ampersand validate` showed the second.
+The interface made `old.Gardener` a concept of objects, and a typology of objects always got a table,
+so the view on the missing table `Gardener` came back; the compilation by itself now decides alone.
+And the atoms were read from the relations of the existing system only, so the SQL found Ann and the evaluator Ann and Bob;
+they are now read from every relation that holds them.
+
 ## What this does not show
 
-The experiment compares generated files, and installs nothing.
+Apart from the installation of `garden`, the experiment compares generated files.
 The claim that a migration context reads the same pairs as the export of the production application gives
 is tested on a copy of the production database of the pilot, which the session of that project makes (phase 2 of `../plan.md`).

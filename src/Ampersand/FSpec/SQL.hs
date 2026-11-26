@@ -2007,9 +2007,10 @@ derivedConceptQuery fSpec c = case c of
 
 -- | A concept of an included context that has no table in the database of that context (phase 2 of the
 --   migration plan, claim PRF-27): compiled by itself, that context reads its atoms nowhere, so it stores
---   them only in the columns of its relations. Its atoms are the sources of the relations of that context
---   from the concept or one of its specialisations, and the targets of those to it.
---   Each term is read from its own table; the source column of the term lists the atoms.
+--   them only in the columns of its relations. An atom of a relation is an atom of its concepts, so the atoms
+--   of the concept are the sources of the relations from the concept or one of its specialisations, and the
+--   targets of those to it: the relations of that context, and those of the compiled context, such as a register
+--   of copying. Each term is read from its own table; the source column of the term lists the atoms.
 includedColumnTerms :: FSpec -> A_Concept -> [Expression]
 includedColumnTerms fSpec c
   | not (null (lookupCpt fSpec c)) = []
@@ -2020,7 +2021,7 @@ includedColumnTerms fSpec c
             [EDcD r | r <- rels, source r `elem` cs]
               <> [EFlp (EDcD r) | r <- rels, target r `elem` cs]
         where
-          rels = [r | r <- toList (vrels fSpec), take 1 (nameSpaceOf (name r)) == [h]]
+          rels = toList (vrels fSpec)
           cs = c : smallerConcepts c
       _ -> []
 

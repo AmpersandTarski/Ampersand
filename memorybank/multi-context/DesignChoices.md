@@ -207,10 +207,13 @@ and the database that an included context installs has the tables that context c
    `ampersand deploy` sets it, so the systems it deploys keep the layout they had.
 4. A query of the including context may ask for all atoms of an included concept that has no table there,
    as `V[Copy.Name*Name]` in `testing/Travis/testcases/MultiContext/shouldSucceed/plain_and_alias.adl` does.
-   The atoms of such a concept are in the columns of the relations of its context only,
+   The atoms of such a concept are in the columns of the relations that hold them,
+   those of its own context and those of the compiled context, such as a register of copying,
    so the compiler reads them from those columns, as it reads a `MULTITABLE` union concept from its members.
-   An atom that the included context has in no relation is in no column, and the including context does not see it;
+   An atom that is in no relation is in no column, and the including context does not see it;
    the included context, compiled by itself, has no query that sees it either.
+   The compilation by itself alone decides which concepts have a table there,
+   also when an interface of the compiled context makes a concept of the included context a concept of objects.
    `concepts.json` gives such a concept a query and no table, so that the framework never writes an atom into it.
 5. Rejected: every concept gets a table in an included context, whatever its owner has.
    A migration context could then not install next to a system compiled by itself:
