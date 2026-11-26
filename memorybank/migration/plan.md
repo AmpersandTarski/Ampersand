@@ -82,7 +82,7 @@ The table places every issue on the subject in this plan.
 | Issue | What it asks | Place in this plan |
 | --- | --- | --- |
 | #1393 Generate a data migration script | Compile the new system together with the existing one, and generate the migration script. | Phase 3. This plan is its elaboration. |
-| #1401 Retrieve schema (compiler), prototype #111 Retrieve schema (back-end) | A system gives its schema, from its source and while it runs. | Phase 2: the migration takes what it knows of the existing system from that system, and direction D adds the layout of its tables to the schema. |
+| #1401 Retrieve schema (compiler), prototype #111 Retrieve schema (back-end) | A system gives its schema, from its source and while it runs. | Phase 2: the migration takes what it knows of the existing system from that system, and the stored source of a deployment is that schema. |
 | #1406 Isolate the schema | The schema as a data structure in the compiler. | Phase 3: the generator is a function of two schemas, as in the article. |
 | #1405 Check whether a given deployment implements a given schema | Know whether a running system implements a schema. | Phase 2, the check. |
 | #1402 Implement Cork rules, #1379 Switching between invariance and process rule | A rule that signals its existing violations and blocks new ones, until it works as an invariant. | The cork is what steps 3 to 5 of the article do in the script; choice 10 says where they live. Switching a rule at run time, which both issues ask as well, is outside the article and outside this plan. |
@@ -107,7 +107,8 @@ so that every later phase can show that it left the demonstration as it was.
 It repeats the measurement of the tables on `main`,
 and it installs a migration system against a database of a system compiled by itself,
 to observe what the measurement predicts.
-It compiles the script of the pilot (see phase 5) included twice, as `old` and as `new`,
+Once the pilot has moved to today's compiler (see phase 2),
+it compiles the script of the pilot (see phase 5) included twice, as `old` and as `new`,
 because nobody has compiled a script of that size as an included context.
 It states the proof obligations below in the register.
 Issue #1714 is solved since v5.10.0 and is still open; it closes here,
@@ -143,14 +144,13 @@ The image of the pilot holds its source, because its Dockerfile copies the proje
 A Dockerfile decides that today, so another project may not have it.
 I propose that the compiler writes the source files it read next to the files it generates,
 so that every deployment has them whatever its Dockerfile does.
-The hash of the model then tells whether a source and a compiler reproduce a deployment.
 
 The article does not consider two compilers, and neither does this plan.
 Today's compiler compiles the migration context, on the assumption
 that it lays out the script of the existing system as the compiler of the deployment did.
 Stef decided that on the same day: the plan takes no measure for the case in which the assumption fails,
 and only detects that case.
-The check below compiles the stored source twice, with the stored compiler and with today's,
+A first check compiles the stored source twice, with the stored compiler and with today's,
 and compares the generated files.
 A difference is solved before the migration starts, in the way the project has for a new compiler.
 
@@ -178,11 +178,12 @@ Four directions give the migration context the layout of the existing system.
 A and D both leave the existing system as it is, which the article assumes,
 and which the guide promises: being included changes nothing for the included context.
 A follows from the decision above: it is the direction in which today's compiler computes the layout.
+It holds for the desired system as well, which runs by itself after the completion.
 D serves a deployment that another compiler built, and the plan takes no measure for that case.
 B and C change the system in production before the migration, which the method avoids.
 A changes design choice DC-15.
 
-The second part is a check, which issue #1405 asked for in 2023:
+A second check is what issue #1405 asked for in 2023:
 a command that compares the tables
 and columns that a script expects with those of a running database,
 and reports every difference before anything is deployed.
@@ -302,7 +303,8 @@ The work in the framework is the unknown part:
 issue #495 has a diagnosis and no chosen solution yet.
 
 Prototype issue #112 of 2023 asks for an orchestrator as a service of the back-end.
-Choice 11 proposes generated files and the deployment street of the project instead.
+Choice 11 has ExecEngine rules in the migration system act when the condition of completion is reached.
+The table above predates that choice and follows it once the questions it raises are answered.
 
 ### 5. A trial migration, and the second one
 
@@ -335,10 +337,10 @@ The phase is done when step 4 has run and the guide describes the cycle for a pr
 ## Choices that the article leaves open
 
 The article is the specification, so what it does not contain is a choice and not a step.
-Each row has a proposal;
-the choice is recorded in `memorybank/multi-context/DesignChoices.md` when Stef has made it.
+Stef went through the table on 26 November 2026 and rewrote rows 1, 2, 4, 5 and 11.
+The choices are recorded in `memorybank/multi-context/DesignChoices.md`.
 
-| # | What the article leaves open | Proposal | Phase |
+| # | What the article leaves open | Choice | Phase |
 | --- | --- | --- | --- |
 | 1 | A new invariant that is a property of a relation, such as `[TOT]`, has no name that `ROLE … MAINTAINS` can use (#1720). | The generator treats it as a new invariant. The script names the rule of a property by prefixing the property to the relation name and making it unique. | 3 |
 | 2 | A new `[UNI]` or `[INJ]`. The desired system stores such a relation as a column, which holds one value, so the pairs that violate it cannot be stored there. The article does not address this situation. | The desired system has a data model with the one column, but the migration system must allow for multiple atoms as long as violations of the new rule exist. So, the migration system has relation of its own to stand in for the (too narrow) attribute in the desired system. Every time a violation is mended, the attribute of the desired system is used to store the remaining atom, so the migration system can safely be deleted after all violations are gone. The others are work in the migration system, shown from `old.r`, and a user chooses. | 3 |
@@ -360,7 +362,7 @@ A change lands in the repository it changes, made by a session in that repositor
 | --- | --- | --- |
 | Ampersand | Phases 1 to 3, and the generated files of phase 4. | Branches from `origin/main`, a pull request each, with a release note. |
 | Prototype framework | The trigger for rules over another context (#495), rights per context, a deletion inside a transaction (#494). | Issues there; #494 and #495 exist. |
-| The pilot project | Phase 5. | A task file for its session, and an issue in its repository. |
+| The pilot project | Moving to today's compiler before its first migration (phase 2), and phase 5. | A task file for its session, and an issue in its repository. |
 | Ampersand, `demos/migration` | The director reduced to Docker and the proxy. | With phase 4. |
 
 The branch `incremental-evaluation` is not involved.
@@ -379,6 +381,9 @@ a new claim takes the next free number after a check of the git history.
 - New: at the moment of transition the migration system violates none of its blocking invariants,
   given that the existing system satisfies its own.
   This is the second point of the validation in the article.
+- New: at the moment of completion, a relation that only the migration system has
+  (a register of copying, `fixed`, a stand-in of choice 2) holds nothing that the desired system needs,
+  so the migration system can be removed.
 - New: the script that the generator writes is the schema of the migration system in the article
   (its equation for the migration schema).
   Property tests bind this claim to the code.
