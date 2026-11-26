@@ -125,15 +125,15 @@ The measurement above is the observation.
 The layout of a database also depends on the compiler that installed it:
 v5.9.4 dropped concept tables that no query reads, v5.11.0 added `MULTITABLE`,
 and v5.12.0 lays tables out per database.
-So the migration context needs the layout that the production database has,
-not the layout of today's compiler for the same script.
+So a migration context reads a production database
+only if its compiler lays the script out as that database is laid out.
 
 Stef decided on 26 November 2026 where that layout comes from.
 The schema of a system is its Ampersand source,
 and the layout is what the compiler of that deployment makes of that source.
 So every running container holds the source it was built from,
 together with the version of the compiler and the options of the build,
-and phase 2 gets the layout by compiling that source again with that compiler.
+so that compiling that source again with that compiler reconstructs what the deployment has.
 
 Part of this exists.
 The generated file `settings.json` records the version of the compiler, its options and a hash of the model.
@@ -145,10 +145,28 @@ I propose that the compiler writes the source files it read next to the files it
 so that every deployment has them whatever its Dockerfile does.
 The hash of the model then tells whether a source and a compiler reproduce a deployment.
 
-What stays open is how the reconstructed layout reaches the compilation of the migration context,
-because today's compiler compiles that context and an older compiler may have built the deployment.
-The pilot runs on framework v2.18.1, and today's release is v2.25.0.
-Directions A and D below are the two ways; B and C change the system in production.
+The article does not consider two compilers, and neither does this plan.
+Today's compiler compiles the migration context, on the assumption
+that it lays out the script of the existing system as the compiler of the deployment did.
+Stef decided that on the same day: the plan takes no measure for the case in which the assumption fails,
+and only detects that case.
+The check below compiles the stored source twice, with the stored compiler and with today's,
+and compares the generated files.
+A difference is solved before the migration starts, in the way the project has for a new compiler.
+
+The pilot is such a case, measured on 26 November 2026 with `memorybank/migration/twocompilers.sh`.
+Compiler v5.11.0 built its deployment, in framework v2.18.1.
+Between v5.11.0 and v5.15.0 ten commits touched the files of the table layout,
+the last on 30 October 2026.
+Compiler v5.11.0 compiles the script of the pilot, and v5.15.0 refuses it with 13 errors.
+All 13 follow from issue #1727, in the compiler since v5.13.0:
+a concept of integers or dates has no table, and a term cannot ask for all its atoms.
+Six are rules of the script,
+and seven are properties such as `[UNI]` and `[INJ]` of a relation on such a concept.
+So the pilot first moves to today's compiler, with the export, reinstallation and import it uses today,
+and its first migration by the method starts from that deployment.
+
+Four directions give the migration context the layout of the existing system.
 
 | Direction | What it asks | What it costs |
 | --- | --- | --- |
@@ -159,12 +177,10 @@ Directions A and D below are the two ways; B and C change the system in producti
 
 A and D both leave the existing system as it is, which the article assumes,
 and which the guide promises: being included changes nothing for the included context.
-A suffices as long as the compiler of the deployment lays a script out as today's compiler does;
-D is needed when it does not.
-The first measurement of this phase therefore compiles the source of the pilot twice,
-with the compiler of its deployment and with today's, and compares the generated files.
-I propose D if they differ, because it is the direction that reads the layout the database has.
-Stef chooses after that measurement, and the choice changes design choice DC-15.
+A follows from the decision above: it is the direction in which today's compiler computes the layout.
+D serves a deployment that another compiler built, and the plan takes no measure for that case.
+B and C change the system in production before the migration, which the method avoids.
+A changes design choice DC-15.
 
 The second part is a check, which issue #1405 asked for in 2023:
 a command that compares the tables
