@@ -130,9 +130,18 @@ het prototype-framework raken moet die repo daar doen", and later that day
   Stef on 28 October 2026, about issue #1744: "Noem het maar 'een landelijk geldend
   register van de Rijksoverheid'. Je mag het project en de context gerust FC5
   blijven noemen, want die naam zegt een buitenstaander niets."
-  The client's agency may be named: on 4 November 2026 Stef wrote
+  An article and the landing page may name the client's agency: on 4 November 2026 Stef wrote
   "de NVWA mag in het artikel bij naam genoemd worden",
   and `docs/landingpage/1-interested-visitor.md` has named it since August 2026.
+  An issue that reports a finding from a client's project is anonymised:
+  it names neither the agency nor the files of that project, and it keeps the numbers and the mechanism.
+  On 22 November 2026 the auto mode classifier refused `gh issue create` for a text
+  that named the agency and the rules of the client's project,
+  and gave "[Sensitive Information Leakage]" as its reason.
+  The session asked "hoe wil je het issue geplaatst hebben?",
+  with A "Zoals de tekst nu is, met de NVWA en de regelnamen van FC5"
+  and B "Geanonimiseerd: 'een register van exporteisen', zonder de bestandsnamen van FC5,
+  met de getallen en het mechanisme ongewijzigd"; on 25 November Stef answered "B."
 - The documentation site (Docusaurus) is assembled from the `docs/` folders of
   several repositories. Ampersand's docs are published from the **`documentation`**
   branch, not `main`.
