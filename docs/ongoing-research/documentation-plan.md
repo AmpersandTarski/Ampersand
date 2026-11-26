@@ -6,8 +6,8 @@ for which reader, and from which element of the model each part comes (issue #17
 
 # A plan for the documentation of an Ampersand context
 
-> **Status: plan under review (stage 1 of issue #1760).**
-> The owner of the project reviews this plan before the generator is built.
+> **Status: plan accepted by the owner on 26 November 2026 (stage 1 of issue #1760).**
+> Stage 2 builds the generator against this plan.
 > Code references are to `origin/main` at 5901e4df1 (22 November 2026).
 
 ## Summary and decisions for the owner
