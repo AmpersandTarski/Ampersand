@@ -48,4 +48,14 @@ but leaves a text that the author wrote, `TXT "{EX} …"`, as it is.
 The scripts of the pilot have about 160 such calls, 116 of them of the standard functions `InsPair`, `DelPair`, `InsAtom` and `DelAtom`.
 The demonstrations did not show this, because their included contexts have no ExecEngine rules.
 
-The installation does not write in the existing database: the checksums of all 201 tables of `old` are the same before and after.
+The checksums of all 201 tables of `old` are the same before and after.
+That shows only that a failed installation leaves the existing database as it was:
+the installer stopped inside a transaction of the ExecEngine, which was not committed.
+Whether a successful installation writes in `old`, for instance through an ExecEngine rule of `old` on `SESSION`, is still to be measured.
+
+The pilot has ExecEngine functions that send mail.
+In the containers of the trial they cannot: the function that sends mail returns without sending when no mail service is configured
+in the environment, and the containers were given none; the logs of both installations mention no mail.
+
+The pilot was counted with 201 relations of its own in the experiment on the layout; that was release 1.42.0.
+Release 1.41.0, which this trial reads, has 131.
