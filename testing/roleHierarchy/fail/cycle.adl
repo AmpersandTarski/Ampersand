@@ -1,0 +1,7 @@
+CONTEXT RoleCycle IN ENGLISH
+-- A cycle in the role hierarchy is an error (issue #1376).
+ROLE Maintainer ISA User
+ROLE User ISA Maintainer
+RELATION name[Person*Name] [UNI]
+INTERFACE People FOR User : V[SESSION*Person] cRud BOX [ "name" : name ]
+ENDCONTEXT

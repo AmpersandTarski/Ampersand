@@ -64,6 +64,7 @@ pContext =
             ctx_gs = concat [ys | CCfy ys <- ces], -- The Classify definitions defined in this context, outside the scope of patterns
             ctx_ks = [k | CIndx k <- ces], -- The identity definitions defined in this context, outside the scope of patterns
             ctx_rrules = [x | Cm x <- ces], -- The MAINTAINS statements in the context
+            ctx_risas = [x | CRisa x <- ces], -- The ROLE ... ISA ... statements in the context
             ctx_reprs = [r | CRep r <- ces], -- The representations defined explicitly in this context
             ctx_vs = [v | CView v <- ces], -- The view definitions defined in this context, outside the scope of patterns
             ctx_ifcs = [s | Cifc s <- ces], -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "<>concat ["\n\n   "<>show ifc | Cifc ifc<-ces])
@@ -92,8 +93,8 @@ pContext =
         <$> pConceptDef
         <|> CRep
         <$> pRepresentation
-        <|> Cm
-        <$> pRoleRule
+        <|> either Cm CRisa
+        <$> pRoleStatement
         <|> Cm
         <$> pServiceRule
         <|> CIndx
@@ -223,6 +224,7 @@ data ContextElement
   | CCon (DefinitionContainer -> PConceptDef)
   | CRep P_Representation
   | Cm P_RoleRule
+  | CRisa P_RoleIsa
   | CIndx P_IdentDef
   | CView P_ViewDef
   | Cifc P_Interface
@@ -363,6 +365,7 @@ pPatternDef =
           pt_gns = concat [ys | Py ys <- pes],
           pt_dcs = [d | Pd (d, _) <- pes],
           pt_RRuls = [rr | Pm rr <- pes],
+          pt_RIsas = [ri | Pisa ri <- pes],
           pt_cds = [c (PATTERN nm) | Pc c <- pes],
           pt_Reprs = [x | Prep x <- pes],
           pt_ids = [k | Pk k <- pes],
@@ -383,8 +386,8 @@ pPatElem =
     <$> pClassify
     <|> Pd
     <$> pRelationDef
-    <|> Pm
-    <$> pRoleRule
+    <|> either Pm Pisa
+    <$> pRoleStatement
     <|> Pm
     <$> pServiceRule
     <|> Pc
@@ -407,6 +410,7 @@ data PatElem
   | Py [PClassify]
   | Pd (P_Relation, [P_Population])
   | Pm P_RoleRule
+  | Pisa P_RoleIsa
   | Pc (DefinitionContainer -> PConceptDef)
   | Prep P_Representation
   | Pk P_IdentDef
@@ -912,7 +916,7 @@ pInterface =
       Bool ->
       Bool ->
       (Name, Maybe Label) ->
-      Maybe (NE.NonEmpty Role) ->
+      Maybe (NE.NonEmpty RoleTerm) ->
       Term TermPrim ->
       Maybe P_Cruds ->
       Maybe Name ->
@@ -938,8 +942,25 @@ pInterface =
           pos = p,
           ifc_Prp = "" -- TODO: Nothing in syntax defined for the purpose of the interface.
         }
-    --- Roles ::= 'FOR' RoleList
-    pRoles = (pKey . toText1Unsafe) "FOR" *> pRole False `sepBy1` pComma
+    --- Roles ::= 'FOR' RoleTerm (',' RoleTerm)*
+    pRoles = (pKey . toText1Unsafe) "FOR" *> pRoleTerm `sepBy1` pComma
+
+--- RoleTerm ::= RoleTrm2 (('/\' RoleTrm2)+ | ('\/' RoleTrm2)+)?
+-- The operators on roles follow the operators on terms: union and intersection need brackets
+-- when they are combined, and difference binds stronger than both (issue #1376).
+pRoleTerm :: AmpParser RoleTerm
+pRoleTerm =
+  pRoleTrm2
+    <??> ( invertT (const RoleIsect)
+             <$> rightAssociate (const RoleIsect) (toText1Unsafe "/\\") pRoleTrm2
+             <|> invertT (const RoleUnion)
+             <$> rightAssociate (const RoleUnion) (toText1Unsafe "\\/") pRoleTrm2
+         )
+  where
+    --- RoleTrm2 ::= RoleTrm3 ('-' RoleTrm3)?
+    pRoleTrm2 = pRoleTrm3 <??> (invert (const RoleDiff) <$> posOf pDash <*> pRoleTrm3)
+    --- RoleTrm3 ::= Role | '(' RoleTerm ')'
+    pRoleTrm3 = RoleAtom <$> pRole False <|> pParens pRoleTerm
 
 --- SubInterface ::= 'BOX' HTMLtemplateCall? Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser (P_SubIfc TermPrim)
@@ -1115,20 +1136,27 @@ pPopulation =
         <* (pKey . toText1Unsafe) "CONTAINS"
         <*> pBrackets (pAtomValue `sepBy` pComma)
 
---- RoleRule ::= 'ROLE' RoleList 'MAINTAINS' ADLidList
--- TODO: Rename the RoleRule to RoleMantains.
-pRoleRule :: AmpParser P_RoleRule
-pRoleRule =
-  try
-    ( Maintain
-        <$> currPos
-        <* (pKey . toText1Unsafe) "ROLE"
-        <*> pRole False
-        `sepBy1` pComma
-        <* (pKey . toText1Unsafe) "MAINTAINS"
-    )
-    <*> pNameWithoutLabel RuleName
-    `sepBy1` pComma
+--- RoleStatement ::= 'ROLE' RoleList ('MAINTAINS' ADLidList | 'ISA' Role)
+
+-- | Parses a statement that starts with ROLE: either a MAINTAINS statement or an ISA statement (issue #1376).
+--   Both share the prefix 'ROLE' RoleList, so the parser is left factored.
+pRoleStatement :: AmpParser (Either P_RoleRule P_RoleIsa)
+pRoleStatement =
+  build
+    <$> currPos
+    <*> try ((pKey . toText1Unsafe) "ROLE" *> pRole False `sepBy1` pComma)
+    <*> ( Left
+            <$ (pKey . toText1Unsafe) "MAINTAINS"
+            <*> pNameWithoutLabel RuleName
+            `sepBy1` pComma
+            <|> Right
+            <$ (pKey . toText1Unsafe) "ISA"
+            <*> pRole False
+        )
+  where
+    build :: Origin -> NE.NonEmpty Role -> Either (NE.NonEmpty Name) Role -> Either P_RoleRule P_RoleIsa
+    build orig roles (Left rules) = Left (Maintain orig roles rules)
+    build orig roles (Right gen) = Right (P_RoleIsa orig roles gen)
 
 --- ServiceRule ::= 'SERVICE' RoleList 'MAINTAINS' ADLidList
 -- TODO: Rename the RoleRule to RoleMantains.

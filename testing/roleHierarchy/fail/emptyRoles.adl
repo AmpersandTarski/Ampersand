@@ -1,0 +1,6 @@
+CONTEXT EmptyRoles IN ENGLISH
+-- A role term that denotes no role is an error, because an interface without roles is for every role (issue #1376).
+ROLE Maintainer ISA User
+RELATION name[Person*Name] [UNI]
+INTERFACE People FOR Maintainer - User : V[SESSION*Person] cRud BOX [ "name" : name ]
+ENDCONTEXT

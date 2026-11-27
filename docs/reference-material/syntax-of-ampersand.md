@@ -33,6 +33,7 @@ Not all statements can be used inside a Pattern. This table shows what elements 
 | [<relation\>](#the-relation-statement)     | a declaration of a relation, stating the existence of a relation within the context              | ✅      | ✅      |
 | [<rule\>](#the-rule-statement)             | a statement that declares a rule                                                                 | ✅      | ✅      |
 | <roleRule\>                                | a statement that makes a role responsible for satisfying a rule                                  | ✅      | ✅      |
+| [<roleIsa\>](#role-hierarchies)            | a statement that gives a role everything another role has                                        | ✅      | ✅      |
 | [<enforce\>](#the-enforce-statement)       | a statement to declare an automatic enforcement rule                                             | ✅      | ✅      |
 | [<ident\>](#the-ident-statement)           | a declaration of an identity rule on a concept                                                   | ✅      | ✅      |
 | [<viewDef\>](#the-view-statement)          | a statement that defines how atoms of a concept are presented, instead of their internal id      | ✅      | ✅      |
@@ -794,6 +795,59 @@ The first prints the project's ID, the second the project's name using the relat
 By default rules are invariant rules.  
 By preceding the rule statement with a role specification for this rule, the rule becomes a process rule.
 
+## Role hierarchies {#role-hierarchies}
+
+#### Purpose
+
+Roles in an information system often share most of their rights.
+A functional maintainer and a technical maintainer, for instance, both need every interface for maintainers.
+Without a hierarchy, every interface lists all of these roles after `FOR`, and every list must change when a role is added.
+A role hierarchy states once that a role has everything another role has.
+
+#### Syntax and meaning
+
+```
+<roleIsa> ::= ROLE <role> (',' <role>)* ISA <role>
+```
+
+The statement `ROLE FunctionalMaintainer, TechnicalMaintainer ISA Maintainer` means that each of the two roles has everything `Maintainer` has:
+the interfaces for `Maintainer` and the rules that `Maintainer` maintains.
+The hierarchy is transitive.
+With `ROLE Maintainer ISA User` as well, a functional maintainer also has everything a user has.
+A role cannot be ISA itself, not even through other roles, so the compiler refuses a cycle in the hierarchy.
+
+```
+ROLE FunctionalMaintainer, TechnicalMaintainer ISA Maintainer
+ROLE Maintainer ISA User
+ROLE Auditor ISA User
+ROLE Maintainer MAINTAINS personHasName
+```
+
+In this example the functional and the technical maintainer both see the violations of `personHasName`, because `Maintainer` maintains that rule.
+
+#### Role terms after FOR
+
+After `FOR`, an interface lists role terms, separated by commas.
+A role in a role term stands for itself and for every role that is ISA that role, directly or through other roles.
+The operators `\/`, `/\` and `-` combine those sets of roles by union, intersection and difference, and a comma is a union as well.
+They follow the bracket rules of [terms](./terms.md): `\/` and `/\` need brackets when they are combined, `-` binds more strongly than both, and a second `-` needs brackets.
+With the hierarchy of the example above, these interfaces are for the following roles:
+
+| after `FOR`                                       | the interface is for                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------ |
+| `User`                                            | `User`, `Maintainer`, `FunctionalMaintainer`, `TechnicalMaintainer`, `Auditor` |
+| `User - TechnicalMaintainer`                      | `User`, `Maintainer`, `FunctionalMaintainer`, `Auditor`                  |
+| `Maintainer \/ Auditor`                           | `Maintainer`, `FunctionalMaintainer`, `TechnicalMaintainer`, `Auditor`   |
+| `Maintainer /\ (FunctionalMaintainer \/ Auditor)` | `FunctionalMaintainer`                                                   |
+| `(User - Maintainer) - Auditor`                   | `User`                                                                   |
+
+A difference can thus exclude a role from an interface that it would otherwise have through the hierarchy, as `User - TechnicalMaintainer` does.
+An interface without `FOR` is for every role, so a role term that stands for no role at all, such as `Maintainer - User`, is an error.
+
+The compiler computes the roles of each interface when it compiles the script, and the application then admits a user to an interface when one of the user's active roles is among them.
+A difference therefore excludes a role and not a person:
+a user who has both `User` and `TechnicalMaintainer` active can use an interface `FOR User - TechnicalMaintainer` through the role `User`.
+
 ## The ENFORCE statement {#the-enforce-statement}
 
 #### Purpose
@@ -1217,10 +1271,13 @@ Each interface item has a label that must be unique within the box. After the co
 You can specify that an interface is available only to actors (i.e. computers or persons) in a specific role.
 
 ```
-<forRoles> ::= FOR <roles>
-<roles> ::= <rolename> ',' <roles>
-          | <rolename>
+<forRoles> ::= FOR <roleTerm> (',' <roleTerm>)*
+<roleTerm> ::= <roleTerm2> (('/\' <roleTerm2>)+ | ('\/' <roleTerm2>)+)?
+<roleTerm2> ::= <roleTerm3> ('-' <roleTerm3>)?
+<roleTerm3> ::= <rolename> | '(' <roleTerm> ')'
 ```
+
+A role term combines roles with `\/`, `/\` and `-`, and a role stands for itself and the roles that are ISA it; see [role hierarchies](#role-hierarchies).
 
 #### Using an interface
 

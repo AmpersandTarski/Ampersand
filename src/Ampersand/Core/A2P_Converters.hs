@@ -44,6 +44,7 @@ aCtx2pCtx ctx =
       ctx_cs = map aConcDef2pConcDef $ ctxcdsOutPats ctx,
       ctx_ks = map aIdentityDef2pIdentityDef . ctxks $ ctx,
       ctx_rrules = map aRoleRule2pRoleRule . Set.toList . ctxrrules $ ctx,
+      ctx_risas = map aRoleIsa2pRoleIsa . ctxRoleIsas $ ctx,
       ctx_reprs = reprList (ctxInfo ctx),
       ctx_vs = map aViewDef2pViewDef . ctxvs $ ctx,
       ctx_gs = map aClassify2pClassify (ctxgs ctx) <> map aUnion2pClassify (ctxunions ctx),
@@ -87,6 +88,7 @@ aPattern2pPattern pat =
       pt_gns = map aClassify2pClassify . ptgns $ pat,
       pt_dcs = map aRelation2pRelation . toList . ptdcs $ pat,
       pt_RRuls = map aRoleRule2pRoleRule . Set.toList . udefRoleRules $ pat,
+      pt_RIsas = [], -- the A-structure keeps the ROLE ... ISA ... statements of patterns in the context
       pt_cds = map aConcDef2pConcDef (ptcds pat),
       pt_Reprs = ptrps pat,
       pt_ids = map aIdentityDef2pIdentityDef . ptids $ pat,
@@ -171,6 +173,14 @@ aIdentityDef2pIdentityDef iDef =
       ix_ats = fmap aExpression2pTermPrim (identityAts iDef)
     }
 
+aRoleIsa2pRoleIsa :: A_RoleIsa -> P_RoleIsa
+aRoleIsa2pRoleIsa ri =
+  P_RoleIsa
+    { pos = arsPos ri,
+      risaSpecs = arsSpec ri NE.:| [],
+      risaGen = arsGen ri
+    }
+
 aRoleRule2pRoleRule :: A_RoleRule -> P_RoleRule
 aRoleRule2pRoleRule rr =
   Maintain
@@ -227,7 +237,8 @@ aInterface2pInterface ifc =
       ifc_IsTransactional = ifcIsTransactional ifc,
       ifc_Name = name ifc,
       ifc_lbl = ifclbl ifc,
-      ifc_Roles = ifcRoles ifc,
+      -- The role terms as written, because the roles they denote need not be closed under ISA (issue #1376).
+      ifc_Roles = if null (ifcRoleTerms ifc) then map RoleAtom (ifcRoles ifc) else ifcRoleTerms ifc,
       ifc_Obj = aObjectDef2pObjectDef (BxExpr (ifcObj ifc)),
       pos = origin ifc,
       ifc_Prp = ifcPurpose ifc

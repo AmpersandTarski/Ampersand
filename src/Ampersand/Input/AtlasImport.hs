@@ -141,6 +141,7 @@ instance JSON.FromJSON (Guarded P_Context) where
               { ctx_vs = [],
                 ctx_rs = rules,
                 ctx_rrules = rolerules,
+                ctx_risas = [],
                 ctx_reprs = reprs,
                 ctx_ps = prps,
                 ctx_pos = [],
@@ -207,6 +208,7 @@ instance JSON.FromJSON (Guarded P_Pattern) where
               pt_gns = [], -- staat klaar
               pt_dcs = rels,
               pt_RRuls = [], -- not specified in RAP
+              pt_RIsas = [],
               pt_cds = mapMaybe (\cpt -> cpt (PATTERN nm)) cpts,
               pt_Reprs = reprs,
               pt_ids = [],

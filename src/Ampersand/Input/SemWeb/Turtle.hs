@@ -143,6 +143,7 @@ graph2P_Context graph = do
       { ctx_vs = mempty,
         ctx_rs = mempty,
         ctx_rrules = mempty,
+        ctx_risas = [],
         ctx_reprs = mempty,
         ctx_ps = purposes,
         ctx_pos = mempty,
@@ -209,6 +210,7 @@ graph2P_Context graph = do
                 pt_cds = addDataTypeConcepts cptDefs,
                 pt_Reprs = mempty,
                 pt_RRuls = mempty,
+                pt_RIsas = [],
                 pos = someTurtle
               }
     addDataTypeConcepts :: [PConceptDef] -> [PConceptDef]

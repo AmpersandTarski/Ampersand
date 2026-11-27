@@ -1,0 +1,11 @@
+# Role hierarchies and role terms after FOR (issue #1376).
+# RoleHierarchy.adl declares ROLE ... ISA ... statements, interfaces FOR terms with \/, /\ and -,
+# and a rule maintained by a generic role. It must compile, and the prototype generator must
+# produce its roles and the meta-population (PrototypeContext) without errors.
+# The roles that each term denotes are checked by the known-answer test in
+# src/Ampersand/Test/Parser/QuickChecks.hs (doRoleTermTest).
+testCmds:
+  - command: ampersand check
+    exitcode: 0
+  - command: ampersand proto --no-frontend
+    exitcode: 0

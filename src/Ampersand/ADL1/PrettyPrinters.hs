@@ -87,7 +87,7 @@ instance Pretty Label where
   pretty (Label x) = text "LABEL" <~> (text . T.unpack . tshow) x
 
 instance Pretty P_Context where
-  pretty (PCtx nm lbl _ lang markup pats rs ds cs ks rrules reprs vs gs ifcs ps pops metas enfs) =
+  pretty (PCtx nm lbl _ lang markup pats rs ds cs ks rrules risas reprs vs gs ifcs ps pops metas enfs) =
     text "CONTEXT"
       <~> nm
       <~> lbl
@@ -101,6 +101,7 @@ instance Pretty P_Context where
       <+\> perline cs
       <+\> perline ks
       <+\> perline rrules
+      <+\> perline risas
       <+\> perline reprs
       <+\> perline vs
       <+\> perline gs
@@ -125,11 +126,26 @@ instance Pretty P_RoleRule where
   pretty (Maintain _ roles rules) =
     text "ROLE" <+> listOf1 roles <+> text "MAINTAINS" <+> commas (NE.toList . fmap pretty $ rules)
 
+instance Pretty P_RoleIsa where
+  pretty (P_RoleIsa _ specs gen) =
+    text "ROLE" <+> listOf1 specs <+> text "ISA" <~> gen
+
+-- | Every operand that is itself a combination of roles gets brackets, so the printed term parses back to the same term.
+instance Pretty RoleTerm where
+  pretty t = case t of
+    RoleAtom r -> pretty r
+    RoleUnion a b -> operand a <+> text "\\/" <+> operand b
+    RoleIsect a b -> operand a <+> text "/\\" <+> operand b
+    RoleDiff a b -> operand a <+> text "-" <+> operand b
+    where
+      operand x@(RoleAtom _) = pretty x
+      operand x = parens (pretty x)
+
 instance Pretty Role where
   pretty (Role _ nm _ _) = pretty nm -- FIXME:This doesn't take into account the fact that a role could be a service.
 
 instance Pretty P_Pattern where
-  pretty (P_Pat _ nm lbl rls gns dcs rruls reprs cds ids vds xps pop _ enfs) =
+  pretty (P_Pat _ nm lbl rls gns dcs rruls risas reprs cds ids vds xps pop _ enfs) =
     text "PATTERN"
       <~> nm
       <~> lbl
@@ -137,6 +153,7 @@ instance Pretty P_Pattern where
       <+\> perline gns
       <+\> perline dcs
       <+\> perline rruls
+      <+\> perline risas
       <+\> perline reprs
       <+\> perline cds
       <+\> perline ids
