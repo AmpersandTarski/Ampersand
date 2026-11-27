@@ -248,8 +248,9 @@ het artikel voorschrijft."
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
   **new** workflow file requires `git add -f`.
-- The `.gitignore` pattern `*.py` ignores every Python script, also a measurement
-  script under `memorybank/` that a note refers to; add such a script with `git add -f`.
+- The `.gitignore` patterns `*.py` and `*.json` ignore every Python script and JSON
+  file, also a measurement script or data file under `memorybank/` that a note
+  refers to; add such a file with `git add -f`.
 - `ampersand validate` and `ampersand incremental-bench --sql` write their PHP
   helper to a **fixed** temp path (`$TMPDIR/tmpPhpQueryOfAmpersand.php`, see
   `executePHPStr` in `src/Ampersand/Prototype/PHP.hs`) and use a temp database
