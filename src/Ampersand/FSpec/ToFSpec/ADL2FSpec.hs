@@ -59,9 +59,10 @@ makeFSpec env context =
       fMaintains = fMaintains',
       fRoles =
         zip
-          -- Roles are equal by name, and nub keeps the first occurrence, so the occurrences with a label come first.
-          -- A role reaches an interface through the hierarchy without the label that its own FOR clause may give it (issue #1376).
-          ( (L.sort . L.nub . L.sortOn (isNothing . rlLbl))
+          -- Roles are equal by name, and one role occurs in many places: in a MAINTAINS or SERVICE statement, after FOR, in an ISA statement.
+          -- The occurrences of one name are merged, because a role reaches an interface through the hierarchy
+          -- without the label that its own FOR clause may give it, and only a SERVICE statement says that it is a service (issue #1376).
+          ( (map mergeRoleOccurrences . NE.groupAllWith name)
               ( (map arRole . Set.toList . allRoleRules $ context)
                   <> concatMap rolesInRoleTerm (concatMap ifcRoleTerms (ctxifcs context))
                   <> concatMap ifcRoles (ctxifcs context)
@@ -149,6 +150,12 @@ makeFSpec env context =
               ptxps = ptxps p1 <> ptxps p2,
               ptenfs = ptenfs p1 <> ptenfs p2
             }
+    mergeRoleOccurrences :: NE.NonEmpty Role -> Role
+    mergeRoleOccurrences rs =
+      (NE.head rs)
+        { rlLbl = listToMaybe (mapMaybe rlLbl (NE.toList rs)),
+          rlIsService = any rlIsService rs
+        }
     hierarchy :: RoleHierarchy
     hierarchy = roleHierarchy (ctxRoleIsas context)
     fIsSignal :: Rule -> Bool

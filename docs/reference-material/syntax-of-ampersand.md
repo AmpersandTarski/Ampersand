@@ -824,6 +824,8 @@ ROLE Maintainer MAINTAINS personHasName
 ```
 
 In this example the functional and the technical maintainer both see the violations of `personHasName`, because `Maintainer` maintains that rule.
+A role whose name on the screen holds spaces gets a label, as in `ROLE FunctionalMaintainer LABEL "Functional Maintainer" ISA Maintainer`;
+a role name in double quotes is still accepted, with a warning that it is deprecated.
 
 #### Role terms after FOR
 
