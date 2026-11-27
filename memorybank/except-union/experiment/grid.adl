@@ -1,0 +1,19 @@
+CONTEXT Grid IN ENGLISH
+RELATION p[X*X]
+RELATION q[X*X]
+RELATION t[X*X]
+RELATION big[X*X]
+RELATION small[X*X]
+RELATION bigU[X*X]
+ENFORCE bigU := big - (p \/ p~)
+RELATION bigIU[X*X]
+ENFORCE bigIU := big - ((p \/ p~) /\ (q \/ q~))
+RELATION bigC[X*X]
+ENFORCE bigC := big - t+
+RELATION smallU[X*X]
+ENFORCE smallU := small - (p \/ p~)
+RELATION smallIU[X*X]
+ENFORCE smallIU := small - ((p \/ p~) /\ (q \/ q~))
+RELATION smallC[X*X]
+ENFORCE smallC := small - t+
+ENDCONTEXT
