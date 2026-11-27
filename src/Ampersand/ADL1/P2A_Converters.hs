@@ -517,23 +517,28 @@ pCtx2aCtx
         ]
       hierarchy :: RoleHierarchy
       hierarchy = roleHierarchy aRoleIsas
-      -- \| Every role on a cycle of ISA statements gets one error, at a statement that has it as its specific role.
+      -- \| Every cycle of ISA statements gets one error, at the first statement whose specific role lies on it.
+      --   The roles on the cycle through r are the roles below r that r is below as well.
       checkRoleCycles :: [A_RoleIsa] -> Guarded ()
       checkRoleCycles isas =
         case [ CTXE
                  (origin ri)
-                 ( "Role "
-                     <> tshow (fullName r)
-                     <> " is ISA itself, through the roles "
-                     <> T.intercalate ", " (map (tshow . fullName) (Set.toList (rolesBelow hierarchy r)))
-                     <> ". A role hierarchy may not contain a cycle."
+                 ( case Set.toList cycle' of
+                     [r] -> "Role " <> tshow (fullName r) <> " is ISA itself. A role hierarchy may not contain a cycle."
+                     rs ->
+                       "The roles "
+                         <> T.intercalate ", " (map (tshow . fullName) rs)
+                         <> " are ISA each other in a cycle, so each of them is ISA itself. A role hierarchy may not contain a cycle."
                  )
-               | r <- L.nub (map arsSpec isas),
-                 r `Set.member` Map.findWithDefault mempty r hierarchy,
-                 ri <- take 1 [i | i <- isas, arsSpec i == r]
+               | cycle' <- L.nub [onCycle r | r <- L.nub (map arsSpec isas), r `Set.member` below r],
+                 ri <- take 1 [i | i <- isas, arsSpec i `Set.member` cycle']
              ] of
           [] -> pure ()
           e : es -> Errors (e NE.:| es)
+      below :: Role -> Set Role
+      below r = Map.findWithDefault mempty r hierarchy
+      onCycle :: Role -> Set Role
+      onCycle r = Set.filter (\r' -> r `Set.member` below r') (rolesBelow hierarchy r)
       -- \| Decide for every `ENFORCE r := term` whether `r` becomes a database view (issue #1744).
       --   A view statement loses its ExecEngine rules. Each relation that stays stored for a
       --   reason gets a warning, and so does a write to a view relation that the script asks for.

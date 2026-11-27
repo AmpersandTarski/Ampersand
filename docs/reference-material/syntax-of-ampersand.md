@@ -830,7 +830,7 @@ In this example the functional and the technical maintainer both see the violati
 After `FOR`, an interface lists role terms, separated by commas.
 A role in a role term stands for itself and for every role that is ISA that role, directly or through other roles.
 The operators `\/`, `/\` and `-` combine those sets of roles by union, intersection and difference, and a comma is a union as well.
-They follow the bracket rules of [terms](./terms.md): `\/` and `/\` need brackets when they are combined, `-` binds more strongly than both, and a second `-` needs brackets.
+`\/` and `/\` need brackets when they are combined, `-` binds more strongly than both, and a second `-` needs brackets, as in `(User - Maintainer) - Auditor`.
 With the hierarchy of the example above, these interfaces are for the following roles:
 
 | after `FOR`                                       | the interface is for                                                     |

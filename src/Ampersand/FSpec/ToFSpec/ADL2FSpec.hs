@@ -59,8 +59,11 @@ makeFSpec env context =
       fMaintains = fMaintains',
       fRoles =
         zip
-          ( (L.sort . L.nub)
+          -- Roles are equal by name, and nub keeps the first occurrence, so the occurrences with a label come first.
+          -- A role reaches an interface through the hierarchy without the label that its own FOR clause may give it (issue #1376).
+          ( (L.sort . L.nub . L.sortOn (isNothing . rlLbl))
               ( (map arRole . Set.toList . allRoleRules $ context)
+                  <> concatMap rolesInRoleTerm (concatMap ifcRoleTerms (ctxifcs context))
                   <> concatMap ifcRoles (ctxifcs context)
                   <> concat [[arsSpec ri, arsGen ri] | ri <- ctxRoleIsas context] -- a role in a ROLE ... ISA ... statement is a role (issue #1376)
               )

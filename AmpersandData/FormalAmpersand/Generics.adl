@@ -58,11 +58,13 @@ RELATION FormalAmpersand.interfaces[FormalAmpersand.Role*FormalAmpersand.Interfa
 
 -- Role hierarchy (issue #1376)
 RELATION FormalAmpersand.isaRole[FormalAmpersand.Role*FormalAmpersand.Role]
-MEANING "A pair (r, s) in isaRole means that the script contains ROLE r ISA s: role r has everything role s has."
+MEANING "A pair (r, s) in isaRole means that the script contains ROLE r ISA s: role r maintains every rule that role s maintains, and has every interface for s unless the FOR clause of that interface excludes r."
 RELATION FormalAmpersand.isaRolePlus[FormalAmpersand.Role*FormalAmpersand.Role] [TRN, IRF]
 MEANING "isaRolePlus is the transitive closure of isaRole. Being irreflexive, it forbids a role to be ISA itself, also through other roles."
 RULE FormalAmpersand.isaRoleInPlus LABEL "isaRole is contained in its closure" : FormalAmpersand.isaRole |- FormalAmpersand.isaRolePlus
 MEANING "Every pair of isaRole is a pair of its transitive closure isaRolePlus."
+RULE FormalAmpersand.isaRolePlusMinimal LABEL "isaRolePlus holds no more than the closure" : FormalAmpersand.isaRolePlus |- FormalAmpersand.isaRole \/ FormalAmpersand.isaRole;FormalAmpersand.isaRolePlus
+MEANING "Every pair of isaRolePlus is a pair of isaRole or a pair of isaRole followed by a pair of isaRolePlus. Because isaRolePlus is irreflexive and finite, this rule and the previous one make isaRolePlus exactly the transitive closure of isaRole."
 RULE FormalAmpersand.inheritMaintains LABEL "A role maintains the rules of the roles it is ISA" : FormalAmpersand.isaRole;FormalAmpersand.maintains |- FormalAmpersand.maintains
 MEANING "If role r ISA role s and s maintains a rule, then r maintains that rule as well."
 -- No such rule holds for ifcRoles: a FOR clause may exclude a role from an interface of a role it is ISA,
