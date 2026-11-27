@@ -1,0 +1,7 @@
+# Errors on role hierarchies and role terms (issue #1376).
+#   * cycle.adl        Maintainer ISA User ISA Maintainer: a role may not be ISA itself.
+#   * emptyRoles.adl   FOR Maintainer - User where Maintainer ISA User denotes no role. An interface
+#                      without roles is for every role, so the compiler refuses this term instead.
+testCmds:
+  - command: ampersand check
+    exitcode: 10

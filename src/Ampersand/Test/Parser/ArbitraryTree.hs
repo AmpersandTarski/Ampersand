@@ -207,12 +207,32 @@ instance Arbitrary P_Context where
       <*> smallListOf arbitrary
       <*> smallListOf arbitrary
       <*> smallListOf arbitrary
+      <*> smallListOf arbitrary
 
 instance Arbitrary MetaData where
   arbitrary = MetaData <$> arbitrary <*> safeStr1 <*> safeText
 
 instance Arbitrary P_RoleRule where
   arbitrary = Maintain <$> arbitrary <*> arbitrary <*> listOf1 arbitrary
+
+instance Arbitrary P_RoleIsa where
+  arbitrary = P_RoleIsa <$> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary RoleTerm where
+  arbitrary = sized genRoleTerm
+    where
+      genRoleTerm :: Int -> Gen RoleTerm
+      genRoleTerm n
+        | n <= 0 = RoleAtom <$> arbitrary
+        | otherwise =
+            oneof
+              [ RoleAtom <$> arbitrary,
+                RoleUnion <$> sub <*> sub,
+                RoleIsect <$> sub <*> sub,
+                RoleDiff <$> sub <*> sub
+              ]
+        where
+          sub = genRoleTerm (n `div` 4)
 
 -- | Only generate explicit representations. Implicit representations come from boxes in interfaces, so they must not be generated.
 instance Arbitrary P_Representation where
@@ -243,6 +263,7 @@ instance Arbitrary P_Pattern where
       <$> arbitrary
       <*> uppercaseName
       <*> arbitrary
+      <*> smallListOf arbitrary
       <*> smallListOf arbitrary
       <*> smallListOf arbitrary
       <*> smallListOf arbitrary

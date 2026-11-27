@@ -23,6 +23,9 @@ module Ampersand.Core.ParseTree
     mkLabelViewMeta,
     foreignLabelViews,
     P_RoleRule (..),
+    P_RoleIsa (..),
+    RoleTerm (..),
+    rolesInRoleTerm,
     Role (..),
     P_Enforce (..),
     EnforceOperator (..),
@@ -119,6 +122,8 @@ data P_Context = PCtx
     ctx_ks :: ![P_IdentDef],
     -- | The MAINTAIN definitions from this context, outside the scope of patterns
     ctx_rrules :: ![P_RoleRule],
+    -- | The ROLE ... ISA ... statements from this context, outside the scope of patterns
+    ctx_risas :: ![P_RoleIsa],
     -- | All REPRESENT definitions from this context, outside the scope of patterns
     ctx_reprs :: ![P_Representation],
     -- | The view definitions from this context, outside the scope of patterns
@@ -314,6 +319,39 @@ data P_RoleRule = Maintain
 instance Traced P_RoleRule where
   origin Maintain {pos = orig} = orig
 
+-- | A statement @ROLE a, b ISA c@ means that the roles a and b have everything role c has:
+--   the interfaces for c and the rules c maintains (issue #1376).
+data P_RoleIsa = P_RoleIsa
+  { -- | position in the Ampersand script
+    pos :: !Origin,
+    -- | the specific roles, which get everything the generic role has
+    risaSpecs :: !(NE.NonEmpty Role),
+    -- | the generic role
+    risaGen :: !Role
+  }
+  deriving (Show)
+
+instance Traced P_RoleIsa where
+  origin P_RoleIsa {pos = orig} = orig
+
+-- | A term over roles, as written after FOR in an interface (issue #1376).
+--   A role stands for itself and every role that is (transitively) ISA that role.
+--   The operators are union, intersection and difference of those sets of roles.
+data RoleTerm
+  = RoleAtom !Role
+  | RoleUnion !RoleTerm !RoleTerm
+  | RoleIsect !RoleTerm !RoleTerm
+  | RoleDiff !RoleTerm !RoleTerm
+  deriving (Show)
+
+-- | The roles that a role term mentions.
+rolesInRoleTerm :: RoleTerm -> [Role]
+rolesInRoleTerm t = case t of
+  RoleAtom r -> [r]
+  RoleUnion a b -> rolesInRoleTerm a <> rolesInRoleTerm b
+  RoleIsect a b -> rolesInRoleTerm a <> rolesInRoleTerm b
+  RoleDiff a b -> rolesInRoleTerm a <> rolesInRoleTerm b
+
 data Role = Role
   { pos :: !Origin,
     rlName :: !Name,
@@ -351,6 +389,8 @@ data P_Pattern = P_Pat
     pt_dcs :: ![P_Relation],
     -- | The assignment of roles to rules.
     pt_RRuls :: ![P_RoleRule],
+    -- | The ROLE ... ISA ... statements in this pattern.
+    pt_RIsas :: ![P_RoleIsa],
     -- | The concept definitions defined in this pattern
     pt_cds :: ![PConceptDef],
     -- | The REPRESENT definitions from this pattern, which bind technical types to concepts
@@ -1137,8 +1177,8 @@ data P_Interface = P_Ifc
     -- | the name of the interface
     ifc_Name :: !Name,
     ifc_lbl :: !(Maybe Label),
-    -- | a list of roles that may use this interface
-    ifc_Roles :: ![Role],
+    -- | the role terms after FOR; the interface is for the roles that these terms denote
+    ifc_Roles :: ![RoleTerm],
     -- | the context term (mostly: I[c])
     ifc_Obj :: !(P_BoxItem TermPrim),
     pos :: !Origin,
@@ -1621,6 +1661,7 @@ mergeContexts ctx1 ctx2 =
       ctx_cs = fromContextsKeepDoubles ctx_cs,
       ctx_ks = fromContextsKeepDoubles ctx_ks,
       ctx_rrules = fromContextsKeepDoubles ctx_rrules,
+      ctx_risas = fromContextsKeepDoubles ctx_risas,
       ctx_reprs = fromContextsKeepDoubles ctx_reprs,
       ctx_vs = fromContextsRemoveDoubles ctx_vs,
       ctx_gs = fromContextsKeepDoubles ctx_gs,

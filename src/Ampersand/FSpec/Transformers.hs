@@ -19,6 +19,7 @@ import Ampersand.Core.ShowAStruct (AStruct (showA))
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Instances
 import Data.Typeable (typeOf)
+import qualified RIO.Map as Map
 import qualified RIO.NonEmpty as NE
 import qualified RIO.Set as Set
 import qualified RIO.Text as T
@@ -430,6 +431,25 @@ transformersFormalAmpersand fSpec =
           ++ [ (dirtyId' (genspc isa), dirtyId' (gengen isa))
                | isa@Isa {} <- instanceList fSpec
              ]
+      ),
+      -- The pairs of the ROLE ... ISA ... statements (issue #1376)
+      ( "FormalAmpersand.isaRole",
+        "FormalAmpersand.Role",
+        "FormalAmpersand.Role",
+        [ (dirtyId' (arsSpec ri), dirtyId' (arsGen ri))
+          | ctx :: A_Context <- instanceList fSpec,
+            ri <- ctxRoleIsas ctx
+        ]
+      ),
+      -- The transitive closure of isaRole, as the compiler computes it
+      ( "FormalAmpersand.isaRolePlus",
+        "FormalAmpersand.Role",
+        "FormalAmpersand.Role",
+        [ (dirtyId' spc, dirtyId' gen)
+          | ctx :: A_Context <- instanceList fSpec,
+            (gen, spcs) <- Map.toList (roleHierarchy (ctxRoleIsas ctx)),
+            spc <- Set.toList spcs
+        ]
       ),
       ( "FormalAmpersand.label",
         "FormalAmpersand.FieldDef",

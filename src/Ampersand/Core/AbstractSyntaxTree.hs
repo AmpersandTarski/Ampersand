@@ -64,6 +64,11 @@ module Ampersand.Core.AbstractSyntaxTree
     Meaning (..),
     A_RoleRule (..),
     RoleRules,
+    A_RoleIsa (..),
+    RoleHierarchy,
+    roleHierarchy,
+    rolesBelow,
+    denoteRoleTerm,
     P_Representation (..),
     Flippable (..),
     TType (..),
@@ -150,6 +155,7 @@ import Ampersand.Core.ParseTree
     PairViewSegment (..),
     Pragma,
     Role (..),
+    RoleTerm (..),
     SrcOrTgt (..),
     TType (..),
     Traced (..),
@@ -286,6 +292,8 @@ data A_Context = ACtx
     -- | The identity definitions defined in this context, outside the scope of patterns
     ctxks :: ![IdentityRule],
     ctxrrules :: !RoleRules,
+    -- | The ROLE ... ISA ... statements of this context, including those from patterns (issue #1376)
+    ctxRoleIsas :: ![A_RoleIsa],
     -- | The view definitions defined in this context, outside the scope of patterns
     ctxvs :: ![ViewDef],
     -- | The specialization statements defined in this context, outside the scope of patterns
@@ -471,6 +479,38 @@ data A_RoleRule = A_RoleRule
 
 instance Traced A_RoleRule where
   origin = arPos
+
+-- | One pair of a statement @ROLE spec ISA gen@: role 'arsSpec' has everything role 'arsGen' has (issue #1376).
+data A_RoleIsa = A_RoleIsa
+  { arsPos :: !Origin,
+    arsSpec :: !Role,
+    arsGen :: !Role
+  }
+  deriving (Show, Ord, Eq)
+
+instance Traced A_RoleIsa where
+  origin = arsPos
+
+-- | For every generic role, the roles that are transitively ISA that role, without the role itself.
+--   A role that occurs in its own set lies on a cycle.
+type RoleHierarchy = Map.Map Role (Set.Set Role)
+
+roleHierarchy :: [A_RoleIsa] -> RoleHierarchy
+roleHierarchy isas = transClosureMap (Map.fromListWith Set.union [(arsGen i, Set.singleton (arsSpec i)) | i <- isas])
+
+-- | A role together with every role that is transitively ISA that role.
+--   These are the roles that get the interfaces and the rules of the given role.
+rolesBelow :: RoleHierarchy -> Role -> Set.Set Role
+rolesBelow h r = Set.insert r (Map.findWithDefault mempty r h)
+
+-- | The set of roles that a role term after FOR stands for.
+--   A role stands for itself and the roles below it; the operators are union, intersection and difference.
+denoteRoleTerm :: RoleHierarchy -> RoleTerm -> Set.Set Role
+denoteRoleTerm h t = case t of
+  RoleAtom r -> rolesBelow h r
+  RoleUnion a b -> denoteRoleTerm h a `Set.union` denoteRoleTerm h b
+  RoleIsect a b -> denoteRoleTerm h a `Set.intersection` denoteRoleTerm h b
+  RoleDiff a b -> denoteRoleTerm h a `Set.difference` denoteRoleTerm h b
 
 data RuleKind
   = UserDefined -- This rule was specified explicitly as a rule in the Ampersand script
@@ -875,8 +915,11 @@ data Interface = Ifc
     -- | The name of the interface
     ifcname :: !Name,
     ifclbl :: !(Maybe Label),
-    -- | All roles for which an interface is available (empty means: available for all roles)
+    -- | All roles for which an interface is available (empty means: available for all roles).
+    --   These are the roles that the role terms in 'ifcRoleTerms' denote, given the ROLE ... ISA ... statements.
     ifcRoles :: ![Role],
+    -- | The role terms after FOR, as written in the script (issue #1376)
+    ifcRoleTerms :: ![RoleTerm],
     -- | NOTE: this top-level ObjectDef contains the interface itself (ie. name and expression)
     ifcObj :: !ObjectDef,
     -- | The position in the file (filename, line- and column number)

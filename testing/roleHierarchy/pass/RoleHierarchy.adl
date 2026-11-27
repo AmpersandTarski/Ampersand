@@ -1,0 +1,31 @@
+CONTEXT RoleHierarchy IN ENGLISH
+-- Role hierarchies and role terms after FOR (issue #1376).
+
+ROLE FunctionalMaintainer, TechnicalMaintainer ISA Maintainer
+ROLE Maintainer ISA User
+ROLE Auditor ISA User
+
+RELATION name[Person*Name] [UNI]
+RELATION email[Person*Email] [UNI]
+
+RULE personHasName : I[Person] |- name;name~
+MESSAGE "A person without a name"
+ROLE Maintainer MAINTAINS personHasName
+
+INTERFACE People FOR User : V[SESSION*Person] cRud BOX
+  [ "name" : name ]
+
+INTERFACE PersonalInfo FOR User - TechnicalMaintainer : V[SESSION*Person] cRud BOX
+  [ "name" : name
+  , "email" : email
+  ]
+
+INTERFACE Maintenance FOR Maintainer \/ Auditor : V[SESSION*Person] cRud BOX
+  [ "name" : name
+  , "email" : email
+  ]
+
+INTERFACE FunctionalOnly FOR Maintainer /\ (FunctionalMaintainer \/ Auditor), Auditor : V[SESSION*Person] cRud BOX
+  [ "name" : name ]
+
+ENDCONTEXT

@@ -102,6 +102,7 @@ mkContextOfPops ctxName pops1 =
       ctx_cs = [],
       ctx_ks = [],
       ctx_rrules = [],
+      ctx_risas = [],
       ctx_reprs = [],
       ctx_vs = [],
       ctx_gs = [],

@@ -64,7 +64,15 @@ isDanglingPurpose ctx purp =
     ExplInterface nm -> nm `notElem` map name (ctxifcs ctx)
     ExplEnforce nm -> Just nm `notElem` map enfName (ctxEnforces ctx <> concatMap ptenfs (ctxpats ctx))
     -- A role exists when it maintains a rule or when an interface is meant for it.
-    ExplRole nm -> nm `notElem` map name (map arRole (toList (allRoleRules ctx)) <> concatMap ifcRoles (ctxifcs ctx))
+    ExplRole nm ->
+      nm
+        `notElem` map
+          name
+          ( map arRole (toList (allRoleRules ctx))
+              <> concatMap ifcRoles (ctxifcs ctx)
+              <> concatMap rolesInRoleTerm (concatMap ifcRoleTerms (ctxifcs ctx))
+              <> concat [[arsSpec ri, arsGen ri] | ri <- ctxRoleIsas ctx]
+          )
     ExplContext nm ->
       ctxnm ctx
         /= nm
@@ -391,6 +399,7 @@ pCtx2aCtx
       ctx_cs = p_conceptdefs,
       ctx_ks = p_identdefs,
       ctx_rrules = p_roleRules,
+      ctx_risas = p_roleIsas,
       ctx_reprs = p_representations,
       ctx_vs = p_viewdefs,
       ctx_gs = p_gens,
@@ -409,6 +418,7 @@ pCtx2aCtx
           (validReprs, invalidReprs) = partitionValidRepresentations pCpts allRepresentations
       -- Issue warnings for orphaned REPRESENT statements
       addWarnings (map mkOrphanedRepresentWarning invalidReprs) $ pure ()
+      checkRoleCycles aRoleIsas -- A role may not be ISA itself, not even through other roles (issue #1376)
       interfaces <- traverse (pIfc2aIfc contextInfoPre) p_interfaces
       -- Only process valid REPRESENT statements
       explicitReprs <-
@@ -470,6 +480,7 @@ pCtx2aCtx
                       pRoleRule2aRoleRule
                     $ p_roleRules
                     <> concatMap pt_RRuls p_patterns,
+                ctxRoleIsas = aRoleIsas,
                 ctxvs = viewdefs,
                 ctxgs = classifies,
                 ctxunions = unions',
@@ -497,6 +508,37 @@ pCtx2aCtx
       -- they told the type checker which concepts hold objects. They belong to the application of their own context.
       return actx' {ctxifcs = filter (isNothing . ownerLabel . name) (ctxifcs actx')}
     where
+      -- \| The pairs of all ROLE ... ISA ... statements in this context and its patterns (issue #1376).
+      aRoleIsas :: [A_RoleIsa]
+      aRoleIsas =
+        [ A_RoleIsa {arsPos = origin ri, arsSpec = spc, arsGen = risaGen ri}
+          | ri <- p_roleIsas <> concatMap pt_RIsas p_patterns,
+            spc <- NE.toList (risaSpecs ri)
+        ]
+      hierarchy :: RoleHierarchy
+      hierarchy = roleHierarchy aRoleIsas
+      -- \| Every cycle of ISA statements gets one error, at the first statement whose specific role lies on it.
+      --   The roles on the cycle through r are the roles below r that r is below as well.
+      checkRoleCycles :: [A_RoleIsa] -> Guarded ()
+      checkRoleCycles isas =
+        case [ CTXE
+                 (origin ri)
+                 ( case Set.toList cycle' of
+                     [r] -> "Role " <> tshow (fullName r) <> " is ISA itself. A role hierarchy may not contain a cycle."
+                     rs ->
+                       "The roles "
+                         <> T.intercalate ", " (map (tshow . fullName) rs)
+                         <> " are ISA each other in a cycle, so each of them is ISA itself. A role hierarchy may not contain a cycle."
+                 )
+               | cycle' <- L.nub [onCycle r | r <- L.nub (map arsSpec isas), r `Set.member` below r],
+                 ri <- take 1 [i | i <- isas, arsSpec i `Set.member` cycle']
+             ] of
+          [] -> pure ()
+          e : es -> Errors (e NE.:| es)
+      below :: Role -> Set Role
+      below r = Map.findWithDefault mempty r hierarchy
+      onCycle :: Role -> Set Role
+      onCycle r = Set.filter (\r' -> r `Set.member` below r') (rolesBelow hierarchy r)
       -- \| Decide for every `ENFORCE r := term` whether `r` becomes a database view (issue #1744).
       --   A view statement loses its ExecEngine rules. Each relation that stays stored for a
       --   reason gets a warning, and so does a write to a view relation that the script asks for.
@@ -1122,6 +1164,17 @@ pCtx2aCtx
             case objmsub boxItem of
               Just (Box {siObjs = subBoxes}) -> uniqueLabels (origin pIfc) toLabel (filter hasLabel subBoxes) "BOX"
               _ -> pure ()
+            -- The roles after FOR are role terms; the interface is for the roles they denote (issue #1376).
+            -- An empty list of roles means that the interface is for every role,
+            -- so role terms that denote no role at all are an error rather than a public interface.
+            let ifcRoles' = Set.toList . Set.unions . map (denoteRoleTerm hierarchy) $ ifc_Roles pIfc
+            when (not (null (ifc_Roles pIfc)) && null ifcRoles')
+              . Errors
+              . return
+              . CTXE (origin pIfc)
+              $ "The roles after FOR in INTERFACE "
+              <> tshow (fullName pIfc)
+              <> " denote no role at all, so no user could use this interface."
             -- Note: We don't check the TType here because it hasn't been determined yet.
             -- The TType (Object) will be assigned automatically by getObjReprs after all interfaces are type-checked.
             return
@@ -1130,7 +1183,8 @@ pCtx2aCtx
                   ifcIsTransactional = ifc_IsTransactional pIfc,
                   ifcname = name pIfc,
                   ifclbl = mLabel pIfc,
-                  ifcRoles = ifc_Roles pIfc,
+                  ifcRoles = ifcRoles',
+                  ifcRoleTerms = ifc_Roles pIfc,
                   ifcObj =
                     boxItem
                       { objPlainName = Just . fullName1 . name $ pIfc,

@@ -10,10 +10,14 @@ where
 
 import Ampersand.ADL1.PrettyPrinters (prettyPrint)
 import Ampersand.Basics
-import Ampersand.Core.ParseTree (P_Context)
+import Ampersand.Core.AbstractSyntaxTree (A_RoleIsa (..), denoteRoleTerm, roleHierarchy)
+import Ampersand.Core.ParseTree (P_Context (..), P_Interface (..), P_RoleIsa (..), Role, Traced (..))
 import Ampersand.Input.ADL1.CtxError (Guarded (..))
 import Ampersand.Input.Parsing (parseCtx)
 import Ampersand.Test.Parser.ArbitraryTree ()
+import qualified RIO.List as L
+import qualified RIO.NonEmpty as NE
+import qualified RIO.Set as Set
 import qualified RIO.Text as T
 import Test.QuickCheck
 
@@ -30,7 +34,8 @@ doAllQuickCheckPropertyTests :: (HasLogFunc env) => RIO env Bool
 doAllQuickCheckPropertyTests =
   whileSuccess
     [ doRoundtripTest,
-      doObjectIdShorteningTest
+      doObjectIdShorteningTest,
+      doRoleTermTest
       -- More tests can be inserted here
     ]
   where
@@ -132,3 +137,57 @@ prettyCtx =
   where
     includeLineNr :: (Int, Text) -> Text
     includeLineNr (nr, str) = "{-" <> T.replicate (4 - T.length (tshow nr)) "0" <> tshow nr <> "-} " <> str
+
+-- | Known-answer test for role hierarchies and role terms (issue #1376).
+--   It parses a script with ROLE ... ISA ... statements and interfaces FOR role terms,
+--   and checks the set of roles each interface is for.
+--   A role stands for itself and every role that is transitively ISA it.
+doRoleTermTest :: RIO env TestResult
+doRoleTermTest = do
+  qcResult <- liftIO . quickCheckWithResult stdArgs $ once property'
+  pure
+    TestResult
+      { qcPropName = "Role terms after FOR denote the expected roles.",
+        qcIsSuccess = isSuccess qcResult,
+        qcMessage = ["The roles of an interface follow from its role terms and the ROLE ... ISA ... statements."],
+        qcQuickCheckResult = qcResult
+      }
+  where
+    script =
+      T.unlines
+        [ "CONTEXT RoleTerms",
+          "ROLE FunctionalMaintainer, TechnicalMaintainer ISA Maintainer",
+          "ROLE Maintainer ISA User",
+          "ROLE Auditor ISA User",
+          "INTERFACE All FOR User : I[SESSION] BOX [ \"s\" : I ]",
+          "INTERFACE NotTechnical FOR User - TechnicalMaintainer : I[SESSION] BOX [ \"s\" : I ]",
+          "INTERFACE Both FOR Maintainer /\\ (FunctionalMaintainer \\/ Auditor) : I[SESSION] BOX [ \"s\" : I ]",
+          "INTERFACE Either FOR Maintainer \\/ Auditor : I[SESSION] BOX [ \"s\" : I ]",
+          "INTERFACE OnlyUser FOR (User - Maintainer) - Auditor : I[SESSION] BOX [ \"s\" : I ]",
+          "INTERFACE Listed FOR Auditor, TechnicalMaintainer - Maintainer, FunctionalMaintainer : I[SESSION] BOX [ \"s\" : I ]",
+          "ENDCONTEXT"
+        ]
+    expected :: [(Text, [Text])]
+    expected =
+      [ ("All", ["Auditor", "FunctionalMaintainer", "Maintainer", "TechnicalMaintainer", "User"]),
+        ("NotTechnical", ["Auditor", "FunctionalMaintainer", "Maintainer", "User"]),
+        ("Both", ["FunctionalMaintainer"]),
+        ("Either", ["Auditor", "FunctionalMaintainer", "Maintainer", "TechnicalMaintainer"]),
+        ("OnlyUser", ["User"]),
+        ("Listed", ["Auditor", "FunctionalMaintainer"])
+      ]
+    property' :: Property
+    property' = case fst <$> parseCtx "role term test" script of
+      Errors err -> counterexample (T.unpack (tshow err)) False
+      Checked pCtx _ ->
+        let isas =
+              [ A_RoleIsa {arsPos = origin ri, arsSpec = spc, arsGen = risaGen ri}
+                | ri <- ctx_risas pCtx,
+                  spc <- NE.toList (risaSpecs ri)
+              ]
+            denoted :: P_Interface -> [Text]
+            denoted ifc = map roleName . Set.toList . Set.unions . map (denoteRoleTerm (roleHierarchy isas)) $ ifc_Roles ifc
+            actual = [(fullName ifc, denoted ifc) | ifc <- ctx_ifcs pCtx]
+         in L.sortOn fst actual === L.sortOn fst expected
+    roleName :: Role -> Text
+    roleName = fullName
