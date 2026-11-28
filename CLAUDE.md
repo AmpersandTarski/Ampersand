@@ -261,12 +261,6 @@ in het nieuwe systeem. ... Die, en alleen die overtredingen nemen in de loop van
 Lees het artikel erop na. Alle andere overtredingen mogen gerust toenemen in aantal.
 Je moet wel goed lezen!"
 
-The migration compiles the old script with the compiler of today and assumes that it generates the
-tables of the production database; the old compiler only serves to detect when that assumption fails.
-Stef on 26 November 2026: "Het artikel houdt geen rekening met verschillende compilers. ...
-Nu gaan we uit van de aanname dat de compiler precies dezelfde tabellen genereert en proberen
-we alleen te detecteren of die aanname klopt. Meer niet."
-
 ## Gotcha
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
