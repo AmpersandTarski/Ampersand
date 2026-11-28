@@ -254,6 +254,19 @@ extra berekent? Dat is niet de bedoeling. Zie het artikel.", then "De insluitend
 (migratie) doet alleen zijn eigen regels. ... Dus er worden helemaal geen regels overgenomen",
 and "Een interface mag ook rekenen op de invarianten van de contexten die hij importeert".
 
+Only the violations that old data cause of an invariant of the desired system decrease during a migration;
+the migration system tolerates them for a while, and every other violation may grow.
+Stef on 28 November 2026: "Eis 3 gaat alleen over overtredingen door oude gegevens van invarianten
+in het nieuwe systeem. ... Die, en alleen die overtredingen nemen in de loop van de tijd af.
+Lees het artikel erop na. Alle andere overtredingen mogen gerust toenemen in aantal.
+Je moet wel goed lezen!"
+
+The migration compiles the old script with the compiler of today and assumes that it generates the
+tables of the production database; the old compiler only serves to detect when that assumption fails.
+Stef on 26 November 2026: "Het artikel houdt geen rekening met verschillende compilers. ...
+Nu gaan we uit van de aanname dat de compiler precies dezelfde tabellen genereert en proberen
+we alleen te detecteren of die aanname klopt. Meer niet."
+
 ## Gotcha
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
