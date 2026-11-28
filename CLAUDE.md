@@ -244,6 +244,16 @@ van de back-end"; on the 16th "Als je het artikel goed leest, zie je dat het nie
 zomaar een procesregel is" and "Oei, dan zijn de demo-scripts niet gebouwd zoals
 het artikel voorschrijft."
 
+An included context keeps its own rules, and the including context checks only its own.
+The migration context sees everything in `old` and `new`, takes over no rule of either,
+and writes only in `new`; an interface may rely on the invariants of the contexts it includes.
+The article does not say which application does that work:
+`old` may run as a service of its own or share the database and the application of the migration context.
+Stef on 28 November 2026: "Zeg je nu dat het migratiesysteem de regels van old nog een keer
+extra berekent? Dat is niet de bedoeling. Zie het artikel.", then "De insluitende context
+(migratie) doet alleen zijn eigen regels. ... Dus er worden helemaal geen regels overgenomen",
+and "Een interface mag ook rekenen op de invarianten van de contexten die hij importeert".
+
 ## Gotcha
 
 - The `.gitignore` pattern `*GitHub*` accidentally matches `.github/`, so adding a
